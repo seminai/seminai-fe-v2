@@ -29,138 +29,112 @@ import {
 import authService from "@/utils/auth";
 import { productsApiService } from "@/api/products";
 import { toast } from "sonner";
+import { toList, parseList, buildColumns } from "@/utils/tableHelpers";
 
-class LabelDetailViewModel {
-  readonly title: string;
-  constructor() {
-    this.title = "Dettaglio etichetta";
-  }
+type LabelData = LabelDetail["label"];
 
-  public buildLabelColumns(): EditableColumn[] {
-    return [
-      { id: "prodotto", title: "Prodotto", type: "text", required: false },
-      { id: "categoria", title: "Categoria", type: "text" },
-      { id: "formulazione", title: "Formulazione", type: "text" },
-      { id: "principio_attivo", title: "Principio attivo", type: "text" },
-      { id: "composizione", title: "Composizione", type: "text" },
-      {
-        id: "meccanismo_azione_frac",
-        title: "Meccanismo azione (FRAC)",
-        type: "text",
-      },
-      { id: "malattie", title: "Malattie", type: "text" },
-      { id: "specie", title: "Specie", type: "text" },
-      { id: "colture_target", title: "Colture target", type: "text" },
-      { id: "numero_registrazione", title: "N. registrazione", type: "text" },
-      { id: "titolare", title: "Titolare", type: "text" },
-      { id: "stabilimento", title: "Stabilimento", type: "text" },
-      { id: "caratteristiche", title: "Caratteristiche", type: "text" },
-    ];
-  }
+const buildLabelColumns = (): EditableColumn[] =>
+  buildColumns<LabelData>([
+    { id: "prodotto", title: "Prodotto", type: "text", required: false },
+    { id: "categoria", title: "Categoria", type: "text" },
+    { id: "formulazione", title: "Formulazione", type: "text" },
+    { id: "principio_attivo", title: "Principio attivo", type: "text" },
+    { id: "composizione", title: "Composizione", type: "text" },
+    {
+      id: "meccanismo_azione_frac",
+      title: "Meccanismo azione (FRAC)",
+      type: "text",
+    },
+    { id: "malattie", title: "Malattie", type: "text" },
+    { id: "specie", title: "Specie", type: "text" },
+    { id: "colture_target", title: "Colture target", type: "text" },
+    { id: "numero_registrazione", title: "N. registrazione", type: "text" },
+    { id: "titolare", title: "Titolare", type: "text" },
+    { id: "stabilimento", title: "Stabilimento", type: "text" },
+    { id: "caratteristiche", title: "Caratteristiche", type: "text" },
+  ]);
 
-  public toEditableLabelRow(detail: LabelDetail): Record<string, unknown> {
-    const l = (detail.label || {}) as Record<string, unknown>;
-    const toList = (v: unknown) =>
-      Array.isArray(v)
-        ? (v as unknown[]).map(String).join(", ")
-        : String(v ?? "");
-    return {
-      prodotto: String(l.prodotto ?? detail.productName ?? ""),
-      categoria: String(l.categoria ?? ""),
-      formulazione: String(l.formulazione ?? ""),
-      principio_attivo: String(l.principio_attivo ?? ""),
-      composizione: String(l.composizione ?? ""),
-      meccanismo_azione_frac: String(l.meccanismo_azione_frac ?? ""),
-      malattie: toList(l.malattie),
-      specie: toList(l.specie),
-      colture_target: toList(l.colture_target),
-      numero_registrazione: String(
-        l.numero_registrazione ?? detail.registrationNumber ?? ""
-      ),
-      titolare: String(l.titolare ?? ""),
-      stabilimento: String(l.stabilimento ?? ""),
-      caratteristiche: String(l.caratteristiche ?? ""),
-    };
-  }
+const buildDosaggioColumns = (): EditableColumn[] =>
+  buildColumns<LabelDosaggioDettagliato>([
+    { id: "coltura", title: "Coltura", type: "text" },
+    { id: "malattia", title: "Malattia", type: "text" },
+    { id: "dose", title: "Dose", type: "number" },
+    { id: "dose_um", title: "Dose UM", type: "text" },
+    { id: "acqua_max", title: "Acqua max", type: "number" },
+    { id: "acqua_max_um", title: "Acqua max UM", type: "text" },
+    { id: "n_max_applicazioni", title: "# applicazioni", type: "number" },
+    { id: "n_max_applicazioni_um", title: "# applicazioni UM", type: "text" },
+    {
+      id: "intervallo_min_giorni",
+      title: "Intervallo min (gg)",
+      type: "number",
+    },
+    {
+      id: "intervallo_sicurezza_giorni",
+      title: "Intervallo sicurezza (gg)",
+      type: "number",
+    },
+    { id: "epoca_impiego", title: "Epoca impiego", type: "text" },
+    {
+      id: "modalita_applicazione",
+      title: "Modalità applicazione",
+      type: "text",
+    },
+    { id: "istruzioni", title: "Istruzioni", type: "text" },
+  ]);
 
-  public buildDosaggioColumns(): EditableColumn[] {
-    return [
-      { id: "coltura", title: "Coltura", type: "text" },
-      { id: "malattia", title: "Malattia", type: "text" },
-      { id: "dose", title: "Dose", type: "number" },
-      { id: "dose_um", title: "Dose UM", type: "text" },
-      { id: "acqua_max", title: "Acqua max", type: "number" },
-      { id: "acqua_max_um", title: "Acqua max UM", type: "text" },
-      { id: "n_max_applicazioni", title: "# applicazioni", type: "number" },
-      { id: "n_max_applicazioni_um", title: "# applicazioni UM", type: "text" },
-      {
-        id: "intervallo_min_giorni",
-        title: "Intervallo min (gg)",
-        type: "number",
-      },
-      {
-        id: "intervallo_sicurezza_giorni",
-        title: "Intervallo sicurezza (gg)",
-        type: "number",
-      },
-      { id: "epoca_impiego", title: "Epoca impiego", type: "text" },
-      {
-        id: "modalita_applicazione",
-        title: "Modalità applicazione",
-        type: "text",
-      },
-      { id: "istruzioni", title: "Istruzioni", type: "text" },
-    ];
-  }
+const toLabelRow = (detail: LabelDetail): Record<string, unknown> => {
+  const l = (detail.label || {}) as Record<string, unknown>;
+  return {
+    prodotto: String(l.prodotto ?? detail.productName ?? ""),
+    categoria: String(l.categoria ?? ""),
+    formulazione: String(l.formulazione ?? ""),
+    principio_attivo: String(l.principio_attivo ?? ""),
+    composizione: String(l.composizione ?? ""),
+    meccanismo_azione_frac: String(l.meccanismo_azione_frac ?? ""),
+    malattie: toList(l.malattie),
+    specie: toList(l.specie),
+    colture_target: toList(l.colture_target),
+    numero_registrazione: String(
+      l.numero_registrazione ?? detail.registrationNumber ?? ""
+    ),
+    titolare: String(l.titolare ?? ""),
+    stabilimento: String(l.stabilimento ?? ""),
+    caratteristiche: String(l.caratteristiche ?? ""),
+  };
+};
 
-  public toEditableDosaggioRow(
-    d: LabelDosaggioDettagliato
-  ): Record<string, unknown> {
-    return {
-      coltura: String(d.coltura ?? ""),
-      malattia: String(d.malattia ?? ""),
-      dose: typeof d.dose === "number" ? d.dose : Number(d.dose ?? 0),
-      dose_um: String(d.dose_um ?? ""),
-      acqua_max:
-        typeof d.acqua_max === "number"
-          ? d.acqua_max
-          : Number(d.acqua_max ?? 0),
-      acqua_max_um: String(d.acqua_max_um ?? ""),
-      n_max_applicazioni:
-        typeof d.n_max_applicazioni === "number"
-          ? d.n_max_applicazioni
-          : Number(d.n_max_applicazioni ?? 0),
-      n_max_applicazioni_um: String(d.n_max_applicazioni_um ?? ""),
-      intervallo_min_giorni:
-        typeof d.intervallo_min_giorni === "number"
-          ? d.intervallo_min_giorni
-          : Number(d.intervallo_min_giorni ?? 0),
-      intervallo_sicurezza_giorni:
-        typeof d.intervallo_sicurezza_giorni === "number"
-          ? d.intervallo_sicurezza_giorni
-          : Number(d.intervallo_sicurezza_giorni ?? 0),
-      epoca_impiego: String(d.epoca_impiego ?? ""),
-      modalita_applicazione: String(d.modalita_applicazione ?? ""),
-      istruzioni: String(d.istruzioni ?? ""),
-    };
-  }
-}
-
-function parseList(value: unknown): string[] | undefined {
-  if (typeof value !== "string") return undefined;
-  const parts = value
-    .split(",")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-  return parts;
-}
+const toDosaggioRow = (
+  d: LabelDosaggioDettagliato
+): Record<string, unknown> => ({
+  coltura: String(d.coltura ?? ""),
+  malattia: String(d.malattia ?? ""),
+  dose: typeof d.dose === "number" ? d.dose : Number(d.dose ?? 0),
+  dose_um: String(d.dose_um ?? ""),
+  acqua_max:
+    typeof d.acqua_max === "number" ? d.acqua_max : Number(d.acqua_max ?? 0),
+  acqua_max_um: String(d.acqua_max_um ?? ""),
+  n_max_applicazioni:
+    typeof d.n_max_applicazioni === "number"
+      ? d.n_max_applicazioni
+      : Number(d.n_max_applicazioni ?? 0),
+  n_max_applicazioni_um: String(d.n_max_applicazioni_um ?? ""),
+  intervallo_min_giorni:
+    typeof d.intervallo_min_giorni === "number"
+      ? d.intervallo_min_giorni
+      : Number(d.intervallo_min_giorni ?? 0),
+  intervallo_sicurezza_giorni:
+    typeof d.intervallo_sicurezza_giorni === "number"
+      ? d.intervallo_sicurezza_giorni
+      : Number(d.intervallo_sicurezza_giorni ?? 0),
+  epoca_impiego: String(d.epoca_impiego ?? ""),
+  modalita_applicazione: String(d.modalita_applicazione ?? ""),
+  istruzioni: String(d.istruzioni ?? ""),
+});
 
 export default function LabelDetailPage(): React.ReactElement {
   const params = useParams<{ id: string }>();
   const id = params.id as string;
-  const [vm] = React.useState<LabelDetailViewModel>(
-    () => new LabelDetailViewModel()
-  );
   const [view, setView] = React.useState<"dati" | "dosaggi">("dati");
   const [viewMode, setViewMode] = React.useState<"table" | "json">("table");
   const queryClient = useQueryClient();
@@ -203,6 +177,9 @@ export default function LabelDetailPage(): React.ReactElement {
       )
     );
   }, [detail]);
+
+  const columns = buildLabelColumns();
+  const dosaggioColumns = buildDosaggioColumns();
 
   return (
     <div className="p-6">
@@ -271,8 +248,8 @@ export default function LabelDetailPage(): React.ReactElement {
               {view === "dati" ? (
                 viewMode === "table" ? (
                   <EditableTable
-                    columns={vm.buildLabelColumns()}
-                    rows={[vm.toEditableLabelRow(detail)]}
+                    columns={columns}
+                    rows={[toLabelRow(detail)]}
                     isModify={true}
                     isVertical={true}
                     getRowId={() => "row-0"}
@@ -370,12 +347,8 @@ export default function LabelDetailPage(): React.ReactElement {
                     {(detail.label?.dosaggi_dettagliati ?? []).map((d, idx) => (
                       <EditableTable
                         key={idx}
-                        columns={vm.buildDosaggioColumns()}
-                        rows={[
-                          vm.toEditableDosaggioRow(
-                            d as LabelDosaggioDettagliato
-                          ),
-                        ]}
+                        columns={dosaggioColumns}
+                        rows={[toDosaggioRow(d as LabelDosaggioDettagliato)]}
                         isModify={true}
                         isVertical={true}
                         getRowId={() => `dos-${idx}`}
