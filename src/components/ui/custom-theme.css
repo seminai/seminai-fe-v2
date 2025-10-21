@@ -1,0 +1,130 @@
+/* Effetto vetro per la sidebar */
+[data-sidebar="sidebar"] {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(8px) !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Stile per i pulsanti della sidebar */
+[data-sidebar="menu-button"] {
+  transition: all 0.3s ease;
+  border-radius: 12px !important;
+}
+
+[data-sidebar="menu-button"]:hover {
+  transform: translateY(-2px);
+}
+
+[data-sidebar="menu-button"][data-active="true"] {
+  background: rgba(100, 164, 46, 0.1) !important;
+  color: var(--agri-green-600) !important;
+  font-weight: 500;
+}
+
+/* Personalizzazione quando la sidebar è collassata */
+[data-collapsible="icon"] [data-sidebar="menu-button"] {
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0.5rem !important;
+  height: 3.5rem !important;
+  width: 3.5rem !important;
+  margin: 0.25rem auto !important;
+}
+
+/* Per assicurarsi che le icone siano perfettamente centrate con lo sfondo */
+[data-collapsible="icon"] [data-sidebar="menu-button"] svg {
+  margin: 0 !important;
+}
+
+/* Personalizzazione del separatore quando la sidebar è collassata */
+[data-collapsible="icon"] [data-sidebar="separator"] {
+  width: 60% !important;
+  margin: 0.5rem auto !important;
+}
+
+/* Quando la sidebar è collassata, mostra solo il logo nell'header */
+[data-collapsible="icon"] [data-sidebar="header"] span {
+  display: none !important;
+}
+
+[data-collapsible="icon"] [data-sidebar="header"] {
+  justify-content: center !important;
+  padding: 1rem 0 !important;
+}
+
+[data-collapsible="icon"] [data-sidebar="header"] img {
+  margin-right: 0 !important;
+  height: 2.5rem !important;
+  width: auto !important;
+}
+
+/* Stile per il pulsante di toggle */
+.toggle-text-open,
+.toggle-text-close {
+  display: inline-block;
+}
+
+/* Solo una delle due classi sarà visibile in base allo stato */
+.toggle-text-open {
+  display: inline-block;
+}
+
+.toggle-text-close {
+  display: none;
+}
+
+[data-state="collapsed"] .toggle-text-open {
+  display: none;
+}
+
+[data-state="collapsed"] .toggle-text-close {
+  display: inline-block;
+}
+
+/* Nascondi tutto nella versione collassata */
+[data-collapsible="icon"] .toggle-text-open,
+[data-collapsible="icon"] .toggle-text-close,
+[data-collapsible="icon"] [data-sidebar="menu-button"] span {
+  display: none !important;
+}
+
+/* Gestione delle icone mostrate/nascoste */
+.sidebar-collapsed-icon {
+  display: none;
+}
+
+.sidebar-expanded-icon {
+  display: inline-block;
+}
+
+[data-state="collapsed"] .sidebar-expanded-icon {
+  display: none;
+}
+
+[data-state="collapsed"] .sidebar-collapsed-icon {
+  display: inline-block;
+}
+
+/* Centralizza il contenuto dei menu quando la sidebar è collassata */
+[data-collapsible="icon"] [data-sidebar="menu-item"] {
+  display: flex !important;
+  justify-content: center !important;
+  margin: 0.5rem 0 !important;
+}
+
+[data-collapsible="icon"] [data-sidebar="content"],
+[data-collapsible="icon"] [data-sidebar="footer"] {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+/* Effetto hover per il bottone di toggle della sidebar */
+[data-sidebar="trigger"]:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}

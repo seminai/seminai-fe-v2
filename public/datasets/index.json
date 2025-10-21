@@ -1,0 +1,179 @@
+{
+  "datasets": {
+    "requirements": {
+      "description": "Requisiti colturali per diverse colture",
+      "files": {
+        "melon_requirements.csv": {
+          "description": "Requisiti colturali per il melone",
+          "columns": [
+            "phase",
+            "week",
+            "water_mm",
+            "nitrogen_kg_ha",
+            "phosphorus_kg_ha",
+            "potassium_kg_ha",
+            "idealTempRange",
+            "soilPH"
+          ],
+          "format": "CSV",
+          "schema": {
+            "phase": "integer - Fase di crescita della coltura",
+            "week": "integer - Settimana all'interno della fase",
+            "water_mm": "float - Fabbisogno idrico in millimetri",
+            "nitrogen_kg_ha": "float - Fabbisogno di azoto in kg/ha",
+            "phosphorus_kg_ha": "float - Fabbisogno di fosforo in kg/ha",
+            "potassium_kg_ha": "float - Fabbisogno di potassio in kg/ha",
+            "idealTempRange": "array - Range di temperatura ideale [min, max] in °C",
+            "soilPH": "array - Range di pH del suolo ideale [min, max]"
+          },
+          "path": "datasets/requirements/melon_requirements.csv"
+        }
+      }
+    },
+    "disciplinari": {
+      "description": "Disciplinari di produzione integrata regionali",
+      "files": {
+        "bdf": {
+          "description": "Disciplinari di produzione integrata per tutte le regioni italiane",
+          "columns": ["title", "anno", "url"],
+          "format": "CSV",
+          "schema": {
+            "title": "string - Titolo del disciplinare",
+            "anno": "integer - Anno di riferimento",
+            "url": "string - URL per il download del documento"
+          },
+          "path": "datasets/disciplinari/bdf.csv"
+        }
+      }
+    },
+    "fitosanitari": {
+      "description": "Database completo dei prodotti fitosanitari autorizzati in Italia",
+      "files": {
+        "fts_06062025.csv": {
+          "description": "Registro nazionale dei prodotti fitosanitari autorizzati - formato CSV (anteprima)",
+          "columns": [
+            "num_registrazione",
+            "denominazione_prodotto",
+            "ragione_sociale",
+            "indirizzo_sede_legale",
+            "cap_sede_legale",
+            "comune_sede_legale",
+            "provincia_sede_legale",
+            "indirizzo_sede_amministrativa",
+            "cap_sede_amministrativa",
+            "comune_sede_amministrativa",
+            "provincia_sede_amministrativa",
+            "data_registrazione",
+            "data_scadenza_autorizzazione",
+            "indicazioni_di_pericolo",
+            "attivita",
+            "codice_formulazione",
+            "descrizione_formulazione",
+            "sostanze_attive",
+            "contenuto_per_100g_di_prodotto",
+            "importazione_parallela",
+            "PFnPO",
+            "PFnPE",
+            "stato_amministrativo",
+            "motivo_della revoca",
+            "data_decreto_revoca",
+            "data_decorrenza_revoca"
+          ],
+          "format": "CSV",
+          "schema": {
+            "num_registrazione": "string - Numero di registrazione del prodotto fitosanitario",
+            "denominazione_prodotto": "string - Nome commerciale del prodotto",
+            "ragione_sociale": "string - Ragione sociale dell'azienda produttrice",
+            "indirizzo_sede_legale": "string - Indirizzo della sede legale",
+            "cap_sede_legale": "string - CAP della sede legale",
+            "comune_sede_legale": "string - Comune della sede legale",
+            "provincia_sede_legale": "string - Provincia della sede legale",
+            "indirizzo_sede_amministrativa": "string - Indirizzo della sede amministrativa",
+            "cap_sede_amministrativa": "string - CAP della sede amministrativa",
+            "comune_sede_amministrativa": "string - Comune della sede amministrativa",
+            "provincia_sede_amministrativa": "string - Provincia della sede amministrativa",
+            "data_registrazione": "string - Data di registrazione del prodotto (DD/MM/YYYY)",
+            "data_scadenza_autorizzazione": "string - Data di scadenza dell'autorizzazione (DD/MM/YYYY)",
+            "indicazioni_di_pericolo": "string - Indicazioni di pericolo del prodotto",
+            "attivita": "string - Tipo di attività (FUNGICIDA, INSETTICIDA, ERBICIDA, etc.)",
+            "codice_formulazione": "string - Codice della formulazione del prodotto",
+            "descrizione_formulazione": "string - Descrizione della formulazione",
+            "sostanze_attive": "string - Principi attivi contenuti nel prodotto",
+            "contenuto_per_100g_di_prodotto": "string - Concentrazione del principio attivo per 100g di prodotto",
+            "importazione_parallela": "string - Indica se è un'importazione parallela (SI/NO)",
+            "PFnPO": "string - Prodotto Fitosanitario non Professionale Ornamentale (SI/NO)",
+            "PFnPE": "string - Prodotto Fitosanitario non Professionale Edibile (SI/NO)",
+            "stato_amministrativo": "string - Stato del prodotto (Autorizzato/Revocato/Scaduto)",
+            "motivo_della revoca": "string - Motivo della revoca se applicabile",
+            "data_decreto_revoca": "string - Data del decreto di revoca (DD/MM/YYYY)",
+            "data_decorrenza_revoca": "string - Data di decorrenza della revoca (DD/MM/YYYY)"
+          },
+          "path": "datasets/fitosanitari/fts_06062025.csv"
+        },
+        "fts_06062025.json": {
+          "description": "Registro nazionale dei prodotti fitosanitari autorizzati - formato JSON completo",
+          "columns": [
+            "num_registrazione",
+            "denominazione_prodotto",
+            "ragione_sociale",
+            "indirizzo_sede_legale",
+            "cap_sede_legale",
+            "comune_sede_legale",
+            "provincia_sede_legale",
+            "indirizzo_sede_amministrativa",
+            "cap_sede_amministrativa",
+            "comune_sede_amministrativa",
+            "provincia_sede_amministrativa",
+            "data_registrazione",
+            "data_scadenza_autorizzazione",
+            "indicazioni_di_pericolo",
+            "attivita",
+            "codice_formulazione",
+            "descrizione_formulazione",
+            "sostanze_attive",
+            "contenuto_per_100g_di_prodotto",
+            "importazione_parallela",
+            "PFnPO",
+            "PFnPE",
+            "stato_amministrativo",
+            "motivo_della revoca",
+            "data_decreto_revoca",
+            "data_decorrenza_revoca"
+          ],
+          "format": "JSON",
+          "schema": {
+            "num_registrazione": "string - Numero di registrazione del prodotto fitosanitario",
+            "denominazione_prodotto": "string - Nome commerciale del prodotto",
+            "ragione_sociale": "string - Ragione sociale dell'azienda produttrice",
+            "indirizzo_sede_legale": "string - Indirizzo della sede legale",
+            "cap_sede_legale": "string - CAP della sede legale",
+            "comune_sede_legale": "string - Comune della sede legale",
+            "provincia_sede_legale": "string - Provincia della sede legale",
+            "indirizzo_sede_amministrativa": "string - Indirizzo della sede amministrativa",
+            "cap_sede_amministrativa": "string - CAP della sede amministrativa",
+            "comune_sede_amministrativa": "string - Comune della sede amministrativa",
+            "provincia_sede_amministrativa": "string - Provincia della sede amministrativa",
+            "data_registrazione": "string - Data di registrazione del prodotto (DD/MM/YYYY)",
+            "data_scadenza_autorizzazione": "string - Data di scadenza dell'autorizzazione (DD/MM/YYYY)",
+            "indicazioni_di_pericolo": "string - Indicazioni di pericolo del prodotto",
+            "attivita": "string - Tipo di attività (FUNGICIDA, INSETTICIDA, ERBICIDA, etc.)",
+            "codice_formulazione": "string - Codice della formulazione del prodotto",
+            "descrizione_formulazione": "string - Descrizione della formulazione",
+            "sostanze_attive": "string - Principi attivi contenuti nel prodotto",
+            "contenuto_per_100g_di_prodotto": "string - Concentrazione del principio attivo per 100g di prodotto",
+            "importazione_parallela": "string - Indica se è un'importazione parallela (SI/NO)",
+            "PFnPO": "string - Prodotto Fitosanitario non Professionale Ornamentale (SI/NO)",
+            "PFnPE": "string - Prodotto Fitosanitario non Professionale Edibile (SI/NO)",
+            "stato_amministrativo": "string - Stato del prodotto (Autorizzato/Revocato/Scaduto)",
+            "motivo_della revoca": "string - Motivo della revoca se applicabile",
+            "data_decreto_revoca": "string - Data del decreto di revoca (DD/MM/YYYY)",
+            "data_decorrenza_revoca": "string - Data di decorrenza della revoca (DD/MM/YYYY)"
+          },
+          "path": "datasets/fitosanitari/fts_06062025.json"
+        }
+      }
+    }
+  },
+  "version": "1.1.0",
+  "lastUpdated": "2025-01-20"
+}

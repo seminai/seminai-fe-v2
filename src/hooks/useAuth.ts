@@ -1,0 +1,48 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  login as loginRequest,
+  register as registerRequest,
+  me as meRequest,
+  meWithBearer as meWithBearerRequest,
+  type LoginRequest,
+  type RegisterRequest,
+  type LoginResponse,
+  type RegisterResponse,
+  type MeResponse,
+} from "@/api/auth";
+import authService from "@/utils/auth";
+
+export function useLogin() {
+  return useMutation<LoginResponse, Error, LoginRequest>({
+    mutationFn: async (payload: LoginRequest) => {
+      const result = await loginRequest(payload);
+      authService.setAuthToken(result.data.token);
+      return result;
+    },
+  });
+}
+
+export function useRegister() {
+  return useMutation<RegisterResponse, Error, RegisterRequest>({
+    mutationFn: async (payload: RegisterRequest) => {
+      const result = await registerRequest(payload);
+      return result;
+    },
+  });
+}
+
+export function useMe() {
+  return useQuery<MeResponse, Error>({
+    queryKey: ["auth", "me"],
+    queryFn: async () => {
+      const token = authService.getAuthToken();
+
+      if (token) {
+        return await meWithBearerRequest(token);
+      }
+      return await meRequest();
+    },
+    retry: 0,
+    staleTime: 60 * 1000,
+  });
+}

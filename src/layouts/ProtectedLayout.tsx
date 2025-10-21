@@ -1,0 +1,300 @@
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+} from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { NavigationModel, NavigationItem } from "@/lib/navigation";
+import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  IoHomeOutline,
+  IoCalendarClearOutline,
+  IoPersonCircleOutline,
+  IoFileTrayFullOutline,
+  IoPricetagOutline,
+} from "react-icons/io5";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import authService from "@/utils/auth";
+import { LuLogOut, LuSettings } from "react-icons/lu";
+
+function renderNavIcon(icon: NavigationItem["icon"], className?: string) {
+  const common = cn("size-6", className);
+  switch (icon) {
+    case "home":
+      return <IoHomeOutline className={common} />;
+    case "dataset":
+      return <IoFileTrayFullOutline className={common} />;
+    case "calendar":
+      return <IoCalendarClearOutline className={common} />;
+    default:
+      return <IoPersonCircleOutline className={common} />;
+  }
+}
+
+type ProtectedLayoutProps = {
+  children: React.ReactNode;
+};
+
+type MobileBottomBarProps = {
+  items: NavigationItem[];
+  isMobile: boolean;
+  isActive: (item: NavigationItem) => boolean;
+  hrefFor: (item: NavigationItem) => string;
+};
+
+function MobileBottomBar({
+  items,
+  isMobile,
+  isActive,
+  hrefFor,
+}: MobileBottomBarProps) {
+  if (!isMobile) return null;
+  const location = useLocation();
+  const labelActive = location.pathname.startsWith("/label");
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-20 mx-auto mb-safe w-full max-w-screen-sm">
+      <div className="m-3 rounded-2xl backdrop-blur-xl bg-white/20 supports-backdrop-blur:bg-white/30 border border-white/25 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_8px_32px_0_rgba(31,38,135,0.2)]">
+        <ul className="grid grid-cols-5">
+          {items.map((item) => (
+            <li key={item.id} className="">
+              <Link
+                to={hrefFor(item)}
+                className={cn(
+                  "flex flex-col items-center justify-center p-3 text-[11px] text-gray-800/80",
+                  isActive(item) && "text-gray-900 font-medium"
+                )}
+              >
+                {renderNavIcon(
+                  item.icon,
+                  isActive(item) ? "text-gray-900" : "text-gray-700/90"
+                )}
+                <span className="mt-1">{item.label}</span>
+              </Link>
+            </li>
+          ))}
+          <li key="label" className="">
+            <Link
+              to="/label"
+              className={cn(
+                "flex flex-col items-center justify-center p-3 text-[11px] text-gray-800/80",
+                labelActive && "text-gray-900 font-medium"
+              )}
+            >
+              <IoPricetagOutline
+                className={cn(
+                  "size-6",
+                  labelActive ? "text-gray-900" : "text-gray-700/90"
+                )}
+              />
+              <span className="mt-1">Etichette</span>
+            </Link>
+          </li>
+          <MobileAccountMenu />
+        </ul>
+      </div>
+    </nav>
+  );
+}
+
+function MobileAccountMenu() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  return (
+    <li key="account" className="">
+      <DropdownMenu>
+        <DropdownMenuTrigger className="w-full" asChild>
+          <button
+            type="button"
+            className={cn(
+              "flex w-full flex-col items-center justify-center p-3 text-[11px] text-gray-800/80"
+            )}
+          >
+            <IoPersonCircleOutline className="size-6 text-gray-700/90" />
+            <span className="mt-1">Account</span>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="top" align="center">
+          <DropdownMenuLabel>Il mio account</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => navigate("/settings")}>
+            Impostazioni
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => {
+              authService.logout();
+              queryClient.removeQueries({
+                queryKey: ["auth", "me"],
+                exact: false,
+              });
+              queryClient.removeQueries({
+                queryKey: ["users", "me"],
+                exact: false,
+              });
+              navigate("/auth", { replace: true });
+            }}
+          >
+            Logout
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </li>
+  );
+}
+
+export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const { data } = useCurrentUser();
+  const queryClient = useQueryClient();
+
+  const model = new NavigationModel("/dashboard");
+  const items = model.getNavigationItems();
+  const labelActive = location.pathname.startsWith("/label");
+
+  return (
+    <SidebarProvider defaultOpen={false}>
+      <Sidebar
+        variant="floating"
+        collapsible="icon"
+        // inset-y-auto top-1/2 -translate-y-1/2 h-[50svh]
+        className="bg-transparent py-4"
+        innerClassName="backdrop-blur-lg bg-white/0 border border-neutral-200/50 shadow-sm"
+      >
+        <SidebarHeader className="px-2 pt-2">
+          <div className="flex items-center justify-center">
+            <img src="/logo.png" alt="logo" className="h-7 w-7" />
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {items.map((item) => {
+                  const active = model.isActive(
+                    location.pathname,
+                    location.search,
+                    item
+                  );
+                  const to = model.getItemHref(item);
+                  return (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        tooltip={item.label}
+                        className="data-[active=true]:bg-neutral-900/5"
+                      >
+                        <Link to={to} className="flex items-center gap-2">
+                          {renderNavIcon(item.icon)}
+                          <span className="group-data-[collapsible=icon]:hidden">
+                            {item.label}
+                          </span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+                <SidebarMenuItem key="label">
+                  <SidebarMenuButton
+                    asChild
+                    isActive={labelActive}
+                    tooltip="Etichette"
+                    className="data-[active=true]:bg-neutral-900/5"
+                  >
+                    <Link to="/label" className="flex items-center gap-2">
+                      <IoPricetagOutline className="size-6" />
+                      <span className="group-data-[collapsible=icon]:hidden">
+                        Etichette
+                      </span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter className="pb-4">
+          <div className="px-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-neutral-300">
+                <Avatar className="size-8">
+                  <AvatarImage
+                    src={data?.data.user.profilePictureUrl}
+                    alt={`${data?.data.user.name ?? ""} ${
+                      data?.data.user.surname ?? ""
+                    }`}
+                  />
+                  <AvatarFallback>
+                    {(data?.data.user.name?.[0] ?? "").toUpperCase()}
+                    {(data?.data.user.surname?.[0] ?? "").toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="start">
+                <DropdownMenuLabel>Il mio account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/settings")}>
+                  <LuSettings /> Impostazioni
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => {
+                    authService.logout();
+                    queryClient.removeQueries({
+                      queryKey: ["auth", "me"],
+                      exact: false,
+                    });
+                    queryClient.removeQueries({
+                      queryKey: ["users", "me"],
+                      exact: false,
+                    });
+                    navigate("/auth", { replace: true });
+                  }}
+                  className="cursor-pointer  text-red-600"
+                >
+                  <LuLogOut /> Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </SidebarFooter>
+      </Sidebar>
+
+      <SidebarInset>
+        <div className="min-h-svh w-full">
+          {children}
+          <MobileBottomBar
+            items={items}
+            isMobile={isMobile}
+            isActive={(i) =>
+              model.isActive(location.pathname, location.search, i)
+            }
+            hrefFor={(i) => model.getItemHref(i)}
+          />
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
