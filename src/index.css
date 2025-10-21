@@ -1,0 +1,188 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --sidebar: hsl(0 0% 98%);
+  --sidebar-foreground: hsl(240 5.3% 26.1%);
+  --sidebar-primary: hsl(240 5.9% 10%);
+  --sidebar-primary-foreground: hsl(0 0% 98%);
+  --sidebar-accent: hsl(240 4.8% 95.9%);
+  --sidebar-accent-foreground: hsl(240 5.9% 10%);
+  --sidebar-border: hsl(220 13% 91%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+.dark {
+  --sidebar: hsl(240 5.9% 10%);
+  --sidebar-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-primary: hsl(224.3 76.3% 48%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(240 3.7% 15.9%);
+  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-border: hsl(240 3.7% 15.9%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+@theme inline {
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Colori personalizzati agri-green */
+  --color-agri-green-50: #f0f9f0;
+  --color-agri-green-100: #dcf1dc;
+  --color-agri-green-200: #bce3bc;
+  --color-agri-green-300: #8ece8e;
+  --color-agri-green-400: #61b461;
+  --color-agri-green-500: #3c953c;
+  --color-agri-green-600: #2e782e;
+  --color-agri-green-700: #276127;
+  --color-agri-green-800: #224d22;
+  --color-agri-green-900: #1e401e;
+  --color-agri-green-950: #0c220c;
+
+  /* Colori personalizzati harvest */
+  --color-harvest-100: #fdf6e3;
+  --color-harvest-200: #f8edca;
+  --color-harvest-300: #eed592;
+  --color-harvest-400: #d9b362;
+  --color-harvest-500: #a0955a;
+  --color-harvest-600: #5a5530;
+
+  /* Colori personalizzati field */
+  --color-field-100: #e9f5fd;
+  --color-field-200: #c5e3fa;
+  --color-field-300: #86b9dd;
+  --color-field-400: #5b8ba6;
+  --color-field-500: #3a566b;
+  --color-field-600: #18293d;
+
+  /* Colori personalizzati nature */
+  --color-nature-100: #f1f8e9;
+  --color-nature-200: #dcedc8;
+  --color-nature-300: #6a8d54;
+  --color-nature-400: #4c7031;
+  --color-nature-500: #344a1f;
+  --color-nature-600: #20341a;
+}
+
+@layer base {
+  * {
+    @apply outline-none;
+  }
+  body {
+    @apply bg-white text-black;
+  }
+}
+
+/* Stili per la chat in streaming */
+.streaming-message-container {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.stream-content {
+  position: relative;
+  display: inline-block;
+}
+
+/* Animazione per il cursore lampeggiante */
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.cursor-blink {
+  display: inline-block;
+  width: 3px;
+  height: 1.2em;
+  background-color: #16a34a; /* Colore verde agri */
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: blink 0.8s step-end infinite;
+}
+
+/* Effetto di evidenziazione per il testo in streaming */
+.typing-animation {
+  position: relative;
+}
+
+/* Animazione di fade in per il testo in arrivo */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.typing-animation .last-char {
+  color: #16a34a;
+  font-weight: bold;
+  animation: fadeIn 0.2s ease;
+}
+
+/* Animazione pallini di caricamento */
+.streaming-message-container .animate-bounce {
+  animation-duration: 0.6s;
+}
+
+/* Per assicurarsi che il cursore sia sempre visibile */
+p:empty {
+  min-height: 1.2em;
+  display: inline-block;
+}
+
+/* Assicura che la bolla del messaggio in streaming sia sempre visibile */
+.streaming-message-container {
+  min-height: 3rem;
+}
+
+/* Animazione per la barra di caricamento dell'audio */
+@keyframes loading-bar {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0.6;
+  }
+}
+
+.loading-bar {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-bar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: loading-bar 1.5s ease-in-out infinite;
+}

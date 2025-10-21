@@ -1,0 +1,290 @@
+@layer base {
+  :root {
+    --background: oklch(0.98 0.01 85);
+    --foreground: oklch(0.25 0.02 85);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.25 0.02 85);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.25 0.02 85);
+    --primary: oklch(0.55 0.18 145);
+    --primary-foreground: oklch(0.99 0 0);
+    --secondary: oklch(0.92 0.02 85);
+    --secondary-foreground: oklch(0.25 0.02 85);
+    --muted: oklch(0.95 0.01 85);
+    --muted-foreground: oklch(0.5 0.02 85);
+    --accent: oklch(0.65 0.2 85);
+    --accent-foreground: oklch(0.99 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.99 0 0);
+    --border: oklch(0.88 0.02 85);
+    --input: oklch(0.88 0.02 85);
+    --ring: oklch(0.55 0.18 145);
+    --chart-1: oklch(0.55 0.18 145);
+    --chart-2: oklch(0.65 0.2 85);
+    --chart-3: oklch(0.45 0.15 165);
+    --chart-4: oklch(0.7 0.15 125);
+    --chart-5: oklch(0.6 0.18 105);
+    --radius: 0.75rem;
+
+    /* Custom Colors */
+    --agri-green-50: 145 59% 96.1%;
+    --agri-green-100: 140 47.7% 90.2%;
+    --agri-green-300: 146 33% 60.3%;
+    --agri-green-500: 148 53.2% 40%;
+    --agri-green-600: 142 71% 45%;
+    --agri-green-700: 154 56.6% 28.2%;
+
+    --harvest-50: 48 100% 96.1%;
+    --harvest-100: 48 96.5% 88.8%;
+    --harvest-200: 48 96.6% 76.7%;
+
+    /* Sidebar Variables */
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+    /* Legacy sidebar tokens retained for compatibility */
+    --sidebar-muted: 210 40% 96.1%;
+    --sidebar-muted-foreground: 215.4 16.3% 46.9%;
+  }
+
+  .dark {
+    --background: oklch(0.15 0.01 85);
+    --foreground: oklch(0.95 0.01 85);
+    --card: oklch(0.18 0.01 85);
+    --card-foreground: oklch(0.95 0.01 85);
+    --popover: oklch(0.18 0.01 85);
+    --popover-foreground: oklch(0.95 0.01 85);
+    --primary: oklch(0.6 0.18 145);
+    --primary-foreground: oklch(0.99 0 0);
+    --secondary: oklch(0.25 0.02 85);
+    --secondary-foreground: oklch(0.95 0.01 85);
+    --muted: oklch(0.22 0.02 85);
+    --muted-foreground: oklch(0.6 0.02 85);
+    --accent: oklch(0.65 0.2 85);
+    --accent-foreground: oklch(0.99 0 0);
+    --destructive: oklch(0.5 0.2 27);
+    --destructive-foreground: oklch(0.99 0 0);
+    --border: oklch(0.25 0.02 85);
+    --input: oklch(0.25 0.02 85);
+    --ring: oklch(0.6 0.18 145);
+    --chart-1: oklch(0.55 0.18 145);
+    --chart-2: oklch(0.65 0.2 85);
+    --chart-3: oklch(0.45 0.15 165);
+    --chart-4: oklch(0.7 0.15 125);
+    --chart-5: oklch(0.6 0.18 105);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(0.269 0 0);
+    --sidebar-ring: oklch(0.439 0 0);
+  }
+}
+
+@theme inline {
+  /* Map Tailwind tokens to CSS variables */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* === Mobile Optimizations === */
+
+/* Safe area padding per il footer su iOS */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Stile specifico per dispositivi mobili */
+.mobile-device {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* Evita i bounce sulle pagine */
+html,
+body {
+  overscroll-behavior: none;
+}
+
+/* Migliora lo scrolling */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Migliore visibilità elementi attivi su touch */
+@media (max-width: 768px) {
+  button:active,
+  a:active {
+    opacity: 0.7;
+    transition: opacity 0.1s ease;
+  }
+
+  /* Dimensioni tooltip più grandi per tocco */
+  .mobile-tooltip {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Dimensione più grande per i campi di input */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important; /* Previene lo zoom automatico della tastiera su iOS */
+  }
+}
+
+/* Stili specifici per la sidebar su mobile */
+@media (max-width: 768px) {
+  .sidebar-item-mobile {
+    margin-bottom: 0.5rem;
+    padding: 0.75rem;
+  }
+}
+
+/* === Uniformazione Bottoni === */
+
+/* Stili per bottoni colorati con testo bianco */
+.btn-primary {
+  @apply bg-agri-green-600 text-white hover:bg-agri-green-700 focus-visible:ring-agri-green-600/20 transition-all rounded-xl;
+}
+
+.btn-secondary {
+  @apply bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-600/20 transition-all rounded-xl;
+}
+
+.btn-success {
+  @apply bg-green-600 text-white hover:bg-green-700 focus-visible:ring-green-600/20 transition-all rounded-xl;
+}
+
+.btn-danger {
+  @apply bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600/20 transition-all rounded-xl;
+}
+
+.btn-warning {
+  @apply bg-yellow-600 text-white hover:bg-yellow-700 focus-visible:ring-yellow-600/20 transition-all rounded-xl;
+}
+
+.btn-info {
+  @apply bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-600/20 transition-all rounded-xl;
+}
+
+/* Bottoni outline che diventano colorati al hover */
+.btn-outline-primary {
+  @apply border border-agri-green-600 text-agri-green-600 bg-transparent hover:bg-agri-green-600 hover:text-white transition-all rounded-xl;
+}
+
+.btn-outline-secondary {
+  @apply border border-blue-600 text-blue-600 bg-transparent hover:bg-blue-600 hover:text-white transition-all rounded-xl;
+}
+
+/* === Sistema di Tipografia Unificato === */
+
+/* Classi utility per tipografia consistente */
+.typography-caption {
+  @apply text-caption font-normal;
+}
+
+.typography-body-sm {
+  @apply text-body-sm font-normal;
+}
+
+.typography-body {
+  @apply text-body font-normal;
+}
+
+.typography-body-lg {
+  @apply text-body-lg font-medium;
+}
+
+.typography-heading-sm {
+  @apply text-heading-sm font-semibold;
+}
+
+.typography-heading {
+  @apply text-heading font-semibold;
+}
+
+.typography-heading-lg {
+  @apply text-heading-lg font-bold;
+}
+
+.typography-display {
+  @apply text-display font-bold;
+}
+
+.typography-display-lg {
+  @apply text-display-lg font-bold;
+}
+
+/* Varianti con colori per contesti specifici */
+.typography-muted {
+  @apply text-muted-foreground;
+}
+
+.typography-primary {
+  @apply text-agri-green-600;
+}
+
+.typography-error {
+  @apply text-red-600;
+}
+
+.typography-success {
+  @apply text-green-600;
+}
+
+.typography-warning {
+  @apply text-yellow-600;
+}
