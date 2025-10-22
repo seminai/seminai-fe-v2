@@ -77,6 +77,26 @@ export type LabelDetailResponse = {
   data: LabelDetail;
 };
 
+export type BulkExtractItem = {
+  name: string;
+  regNumber: string;
+};
+
+export type BulkExtractRequest = {
+  items: BulkExtractItem[];
+  concurrency: number;
+};
+
+export type BulkExtractResponse = {
+  status: "success";
+  data: {
+    processed: number;
+    successful: number;
+    failed: number;
+    results: LabelSummary[];
+  };
+};
+
 async function safeReadText(response: Response): Promise<string> {
   try {
     return await response.text();
@@ -122,6 +142,28 @@ export async function getLabelById(
   return (await response.json()) as LabelDetailResponse;
 }
 
+export async function bulkExtractLabels(
+  request: BulkExtractRequest,
+  baseUrl: string = BASE_URL
+): Promise<BulkExtractResponse> {
+  const response = await fetch(`${baseUrl}/labels/bulk-extract`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to extract labels");
+  }
+
+  return (await response.json()) as BulkExtractResponse;
+}
+
 class LabelsApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -134,6 +176,12 @@ class LabelsApiService {
 
   public async getById(id: string): Promise<LabelDetailResponse> {
     return await getLabelById(id, this.baseUrl);
+  }
+
+  public async bulkExtract(
+    request: BulkExtractRequest
+  ): Promise<BulkExtractResponse> {
+    return await bulkExtractLabels(request, this.baseUrl);
   }
 }
 

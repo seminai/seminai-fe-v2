@@ -6,6 +6,7 @@ import Settings from "./routes/Settings";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Label from "./routes/Label";
 import LabelDetailPage from "./routes/Label/Detail";
+import NewLabel from "./routes/Label/New";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/label" element={<Label />} />
+        <Route path="/new-label" element={<NewLabel />} />
         <Route path="/label/:id" element={<LabelDetailPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
