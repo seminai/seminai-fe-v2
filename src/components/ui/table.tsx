@@ -204,6 +204,23 @@ export class EditableTable extends React.Component<
     };
   }
 
+  componentDidUpdate(prevProps: EditableTableProps): void {
+    // Update internal state when rows prop changes (e.g., filtering)
+    if (prevProps.rows !== this.props.rows) {
+      const newRows: InternalRow[] = (this.props.rows || []).map((r, idx) => ({
+        id: String(this.props.getRowId ? this.props.getRowId(r, idx) : idx),
+        data: { ...r },
+        isNew: false,
+        isDirty: false,
+      }));
+      this.setState({
+        rows: newRows,
+        touched: {},
+        selected: {},
+      });
+    }
+  }
+
   private generateTempId(): string {
     return `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   }
