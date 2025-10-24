@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLogin, useRegister, useMe } from "@/hooks/useAuth";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -69,120 +68,204 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-harvest-100 px-4">
-      <Card className="w-full max-w-md p-6">
-        <h1 className="text-2xl font-semibold text-center mb-6">
-          Accedi o Registrati
-        </h1>
-        <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid grid-cols-2">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="register">Registrati</TabsTrigger>
-          </TabsList>
+    <div className="min-h-screen w-full flex">
+      {/* Left Side - Background with branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-agri-green-50 via-nature-100 to-agri-green-100 p-12 flex-col justify-between">
+        <div className="flex items-center gap-3">
+          <img src="/logo.png" alt="SeminAI Logo" className="h-10 w-auto" />
+          <span className="text-xl font-semibold text-agri-green-800">
+            SeminAI
+          </span>
+        </div>
 
-          <TabsContent value="login">
-            <form onSubmit={handleLoginSubmit} className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
-                <Input
-                  type="email"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Password</label>
-                <Input
-                  type="password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={loginMutation.isPending}
-                className="w-full"
-              >
-                {loginMutation.isPending ? "Accesso in corso..." : "Accedi"}
-              </Button>
-            </form>
-          </TabsContent>
+        <div className="max-w-md">
+          <p className="text-base text-agri-green-700 leading-relaxed">
+            "Questa piattaforma ha rivoluzionato il modo in cui gestisco la mia
+            azienda agricola, aiutandomi a prendere decisioni più informate e a
+            ottimizzare i miei raccolti."
+          </p>
+          <p className="mt-4 text-sm text-agri-green-600">
+            - Marco Rossi, Agricoltore
+          </p>
+        </div>
+      </div>
 
-          <TabsContent value="register">
-            <form onSubmit={handleRegisterSubmit} className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-3">
+      {/* Right Side - Auth Forms */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
+        <div className="w-full max-w-md space-y-8">
+          {/* Logo mobile - visibile solo su schermi piccoli */}
+          <div className="flex lg:hidden items-center justify-center gap-3 mb-8">
+            <img src="/logo.png" alt="SeminAI Logo" className="h-8 w-auto" />
+            <span className="text-lg font-semibold text-agri-green-800">
+              SeminAI
+            </span>
+          </div>
+
+          <Tabs defaultValue="login" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="register">Registrati</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="login" className="space-y-6">
+              <div className="space-y-2 text-center">
+                <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+                  Accedi al tuo account
+                </h1>
+                <p className="text-sm text-slate-500">
+                  Inserisci la tua email per accedere
+                </p>
+              </div>
+
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Nome</label>
                   <Input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    type="email"
+                    placeholder="nome@esempio.com"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
                     required
+                    className="h-11"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Cognome</label>
                   <Input
-                    value={surname}
-                    onChange={(e) => setSurname(e.target.value)}
+                    type="password"
+                    placeholder="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
                     required
+                    className="h-11"
                   />
                 </div>
+                <Button
+                  type="submit"
+                  disabled={loginMutation.isPending}
+                  className="w-full h-11 bg-agri-green-600 hover:bg-agri-green-700"
+                >
+                  {loginMutation.isPending
+                    ? "Accesso in corso..."
+                    : "Accedi con Email"}
+                </Button>
+              </form>
+
+              <p className="text-xs text-center text-slate-500 px-8">
+                Cliccando continua, accetti i nostri{" "}
+                <span className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer">
+                  Termini di Servizio
+                </span>{" "}
+                e la{" "}
+                <span className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer">
+                  Privacy Policy
+                </span>
+                .
+              </p>
+            </TabsContent>
+
+            <TabsContent value="register" className="space-y-6">
+              <div className="space-y-2 text-center">
+                <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+                  Crea un account
+                </h1>
+                <p className="text-sm text-slate-500">
+                  Inserisci i tuoi dati per registrarti
+                </p>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Password</label>
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Codice Fiscale</label>
-                <Input
-                  value={fiscalCode}
-                  onChange={(e) => setFiscalCode(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Telefono</label>
-                <Input
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Indirizzo</label>
-                <Input
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={registerMutation.isPending}
-                className="w-full"
-              >
-                {registerMutation.isPending ? "Registrazione..." : "Registrati"}
-              </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
-      </Card>
+
+              <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Nome"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Cognome"
+                      value={surname}
+                      onChange={(e) => setSurname(e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Input
+                    type="email"
+                    placeholder="nome@esempio.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Input
+                    type="password"
+                    placeholder="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Codice Fiscale"
+                    value={fiscalCode}
+                    onChange={(e) => setFiscalCode(e.target.value)}
+                    required
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Telefono"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    required
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Indirizzo"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    required
+                    className="h-11"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={registerMutation.isPending}
+                  className="w-full h-11 bg-agri-green-600 hover:bg-agri-green-700"
+                >
+                  {registerMutation.isPending
+                    ? "Registrazione..."
+                    : "Registrati con Email"}
+                </Button>
+              </form>
+
+              <p className="text-xs text-center text-slate-500 px-8">
+                Cliccando continua, accetti i nostri{" "}
+                <span className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer">
+                  Termini di Servizio
+                </span>{" "}
+                e la{" "}
+                <span className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer">
+                  Privacy Policy
+                </span>
+                .
+              </p>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </div>
   );
 }

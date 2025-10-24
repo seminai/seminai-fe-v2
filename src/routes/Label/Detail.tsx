@@ -58,7 +58,8 @@ const buildDosaggioColumns = (): EditableColumn[] =>
   buildColumns<LabelDosaggioDettagliato>([
     { id: "coltura", title: "Coltura", type: "text" },
     { id: "malattia", title: "Malattia", type: "text" },
-    { id: "dose", title: "Dose", type: "number" },
+    { id: "dose_minima", title: "Dose minima", type: "number" },
+    { id: "dose_massima", title: "Dose massima", type: "number" },
     { id: "dose_um", title: "Dose UM", type: "text" },
     { id: "acqua_max", title: "Acqua max", type: "number" },
     { id: "acqua_max_um", title: "Acqua max UM", type: "text" },
@@ -109,7 +110,14 @@ const toDosaggioRow = (
 ): Record<string, unknown> => ({
   coltura: String(d.coltura ?? ""),
   malattia: String(d.malattia ?? ""),
-  dose: typeof d.dose === "number" ? d.dose : Number(d.dose ?? 0),
+  dose_minima:
+    typeof d.dose_minima === "number"
+      ? d.dose_minima
+      : Number(d.dose_minima ?? 0),
+  dose_massima:
+    typeof d.dose_massima === "number"
+      ? d.dose_massima
+      : Number(d.dose_massima ?? 0),
   dose_um: String(d.dose_um ?? ""),
   acqua_max:
     typeof d.acqua_max === "number" ? d.acqua_max : Number(d.acqua_max ?? 0),
@@ -360,10 +368,18 @@ export default function LabelDetailPage(): React.ReactElement {
                               malattia: String(
                                 row.malattia ?? d.malattia ?? ""
                               ),
-                              dose:
-                                typeof row.dose === "number"
-                                  ? row.dose
-                                  : Number(row.dose ?? d.dose ?? 0),
+                              dose_minima:
+                                typeof row.dose_minima === "number"
+                                  ? row.dose_minima
+                                  : Number(
+                                      row.dose_minima ?? d.dose_minima ?? 0
+                                    ),
+                              dose_massima:
+                                typeof row.dose_massima === "number"
+                                  ? row.dose_massima
+                                  : Number(
+                                      row.dose_massima ?? d.dose_massima ?? 0
+                                    ),
                               dose_um: String(row.dose_um ?? d.dose_um ?? ""),
                               acqua_max:
                                 typeof row.acqua_max === "number"
