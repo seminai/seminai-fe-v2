@@ -17,7 +17,8 @@ export type LabelsSummaryResponse = {
 export type LabelDosaggioDettagliato = {
   coltura: string;
   malattia: string;
-  dose: number;
+  dose_minima: number;
+  dose_massima: number;
   dose_um: string;
   acqua_max?: number;
   acqua_max_um?: string;
