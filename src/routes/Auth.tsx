@@ -151,13 +151,23 @@ export default function Auth() {
 
               <p className="text-xs text-center text-slate-500 px-8">
                 Cliccando continua, accetti i nostri{" "}
-                <span className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer">
+                <a
+                  href="/terms-of-service"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer"
+                >
                   Termini di Servizio
-                </span>{" "}
+                </a>{" "}
                 e la{" "}
-                <span className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer">
+                <a
+                  href="/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer"
+                >
                   Privacy Policy
-                </span>
+                </a>
                 .
               </p>
             </TabsContent>
@@ -253,13 +263,23 @@ export default function Auth() {
 
               <p className="text-xs text-center text-slate-500 px-8">
                 Cliccando continua, accetti i nostri{" "}
-                <span className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer">
+                <a
+                  href="/terms-of-service"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer"
+                >
                   Termini di Servizio
-                </span>{" "}
+                </a>{" "}
                 e la{" "}
-                <span className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer">
+                <a
+                  href="/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer"
+                >
                   Privacy Policy
-                </span>
+                </a>
                 .
               </p>
             </TabsContent>

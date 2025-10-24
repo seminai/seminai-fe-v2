@@ -7,12 +7,16 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Label from "./routes/Label";
 import LabelDetailPage from "./routes/Label/Detail";
 import NewLabel from "./routes/Label/New";
+import TermsOfService from "./routes/TermsOfService";
+import PrivacyPolicy from "./routes/PrivacyPolicy";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/terms-of-service" element={<TermsOfService />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/settings" element={<Settings />} />
