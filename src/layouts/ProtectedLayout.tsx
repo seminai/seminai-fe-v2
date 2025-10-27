@@ -33,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useCompanies } from "@/hooks/useCompanies";
 import authService from "@/utils/auth";
 import { LuLogOut, LuSettings } from "react-icons/lu";
 
@@ -43,11 +44,12 @@ type ProtectedLayoutProps = {
 type MobileBottomBarProps = {
   items: NavigationItem[];
   isMobile: boolean;
+  hasCompanies: boolean;
   isActive: (item: NavigationItem) => boolean;
   hrefFor: (item: NavigationItem) => string;
 };
 
-function MobileBottomBar({ isMobile }: MobileBottomBarProps) {
+function MobileBottomBar({ isMobile, hasCompanies }: MobileBottomBarProps) {
   if (!isMobile) return null;
 
   const labelActive = location.pathname.startsWith("/label");
@@ -93,23 +95,25 @@ function MobileBottomBar({ isMobile }: MobileBottomBarProps) {
               <span className="mt-1">Etichette</span>
             </Link>
           </li>
-          <li key="fields">
-            <Link
-              to="/fields"
-              className={cn(
-                "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
-                fieldsActive && "text-gray-900 font-medium"
-              )}
-            >
-              <IoGridOutline
+          {hasCompanies && (
+            <li key="fields">
+              <Link
+                to="/fields"
                 className={cn(
-                  "size-5",
-                  fieldsActive ? "text-gray-900" : "text-gray-700/90"
+                  "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
+                  fieldsActive && "text-gray-900 font-medium"
                 )}
-              />
-              <span className="mt-1">Campi</span>
-            </Link>
-          </li>
+              >
+                <IoGridOutline
+                  className={cn(
+                    "size-5",
+                    fieldsActive ? "text-gray-900" : "text-gray-700/90"
+                  )}
+                />
+                <span className="mt-1">Campi</span>
+              </Link>
+            </li>
+          )}
           <li key="company">
             <Link
               to="/company"
@@ -186,10 +190,13 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { data } = useCurrentUser();
+  const { companies } = useCompanies();
   const queryClient = useQueryClient();
 
   const model = new NavigationModel("/dashboard");
   const items = model.getNavigationItems();
+
+  const hasCompanies = companies.length > 0;
 
   const labelActive =
     location.pathname === "/label" || location.pathname.startsWith("/label/");
@@ -251,21 +258,23 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem key="fields">
-                  <SidebarMenuButton
-                    asChild
-                    isActive={fieldsActive}
-                    tooltip="Campi"
-                    className="data-[active=true]:bg-neutral-900/5"
-                  >
-                    <Link to="/fields" className="flex items-center gap-2">
-                      <IoGridOutline className="size-6" />
-                      <span className="group-data-[collapsible=icon]:hidden">
-                        Campi
-                      </span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {hasCompanies && (
+                  <SidebarMenuItem key="fields">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={fieldsActive}
+                      tooltip="Campi"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link to="/fields" className="flex items-center gap-2">
+                        <IoGridOutline className="size-6" />
+                        <span className="group-data-[collapsible=icon]:hidden">
+                          Campi
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
                 <SidebarMenuItem key="company">
                   <SidebarMenuButton
                     asChild
@@ -338,6 +347,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           <MobileBottomBar
             items={items}
             isMobile={isMobile}
+            hasCompanies={hasCompanies}
             isActive={(i) =>
               model.isActive(location.pathname, location.search, i)
             }
