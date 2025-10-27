@@ -7,6 +7,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Label from "./routes/Label";
 import LabelDetailPage from "./routes/Label/Detail";
 import NewLabel from "./routes/Label/New";
+import Fields from "./routes/Fields";
+import Company from "./routes/Company";
 import TermsOfService from "./routes/TermsOfService";
 import PrivacyPolicy from "./routes/PrivacyPolicy";
 
@@ -23,6 +25,8 @@ function App() {
         <Route path="/label" element={<Label />} />
         <Route path="/new-label" element={<NewLabel />} />
         <Route path="/label/:id" element={<LabelDetailPage />} />
+        <Route path="/fields" element={<Fields />} />
+        <Route path="/company" element={<Company />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

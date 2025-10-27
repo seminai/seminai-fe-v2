@@ -126,7 +126,12 @@ export {
 // EditableTable - Notion-like editable table with bulk add/save
 // The component follows an OOP approach using a React Class.
 
-type EditableCellType = "text" | "number" | "select" | "date" | "currency";
+export type EditableCellType =
+  | "text"
+  | "number"
+  | "select"
+  | "date"
+  | "currency";
 
 export interface EditableColumn {
   id: string;
@@ -145,6 +150,7 @@ export interface EditableTableProps {
   rows?: Array<Record<string, unknown>>;
   isModify?: boolean;
   isVertical?: boolean;
+  addButton?: boolean;
   lastComponent?:
     | React.ReactNode
     | ((row: Record<string, unknown>) => React.ReactNode);
@@ -183,6 +189,7 @@ export class EditableTable extends React.Component<
     rows: [],
     isModify: false,
     isVertical: false,
+    addButton: false,
     getRowId: (_row: Record<string, unknown>, index: number) => index,
     newRowDefaults: {},
   };
@@ -502,7 +509,7 @@ export class EditableTable extends React.Component<
               <th
                 data-slot="table-head"
                 className={cn(
-                  "h-9 px-3 align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap text-left"
+                  "h-9 p-3 align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap text-left"
                 )}
               >
                 Field
@@ -512,7 +519,7 @@ export class EditableTable extends React.Component<
                   key={row.id}
                   data-slot="table-head"
                   className={cn(
-                    "h-9 px-3 align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap",
+                    "h-9 p-3 align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap",
                     "text-left"
                   )}
                 >
@@ -608,27 +615,31 @@ export class EditableTable extends React.Component<
           </tbody>
         </table>
 
-        <div className="sticky left-0 bottom-0 w-full border-t border-agri-green-50 inset-shadow-xs border-border/30 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex items-center justify-between px-2 py-2">
-            <Button
-              variant="ghost"
-              className="text-muted-foreground"
-              onClick={this.addNewRow}
-            >
-              + New page
-            </Button>
-            <div className="ml-auto flex items-center gap-2">
-              {showSave ? (
+        {(this.props.addButton || showSave) && (
+          <div className="sticky left-0 bottom-0 w-full border-t border-agri-green-50 inset-shadow-xs border-border/30 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex items-center justify-between px-2 py-2">
+              {this.props.addButton && (
                 <Button
-                  onClick={this.handleSave}
-                  disabled={false /* per-cell validation handled on save */}
+                  variant="ghost"
+                  className="text-muted-foreground"
+                  onClick={this.addNewRow}
                 >
-                  Save
+                  + New page
                 </Button>
-              ) : null}
+              )}
+              <div className="ml-auto flex items-center gap-2">
+                {showSave ? (
+                  <Button
+                    onClick={this.handleSave}
+                    disabled={false /* per-cell validation handled on save */}
+                  >
+                    Save
+                  </Button>
+                ) : null}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
@@ -655,6 +666,40 @@ export class EditableTable extends React.Component<
           className
         )}
       >
+        {/* Top action bar - Pulsante Elimina in alto a destra */}
+        {anySelected ? (
+          <div className="flex items-center justify-between px-4 py-3 border-b border-agri-green-50 bg-blue-50/50">
+            <span className="text-sm text-gray-600">
+              {this.selectedIds.length} element
+              {this.selectedIds.length === 1 ? "o" : "i"} selezionat
+              {this.selectedIds.length === 1 ? "o" : "i"}
+            </span>
+            <Button
+              onClick={this.handleDelete}
+              className={cn(
+                "border border-red-200 text-red-400 hover:bg-red-50"
+              )}
+              variant="ghost"
+              size="sm"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="h-4 w-4 mr-2"
+              >
+                <path d="M3 6h18" />
+                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6M14 11v6" />
+              </svg>
+              Elimina
+            </Button>
+          </div>
+        ) : null}
+
         <table
           data-slot="table"
           className={cn("w-full caption-bottom text-sm")}
@@ -684,7 +729,7 @@ export class EditableTable extends React.Component<
                   style={{ width: c.width }}
                   className={cn(
                     // Base header cell styles
-                    "h-9 px-3 align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap",
+                    "h-9 p-3 align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap",
                     // Align numbers like body cells to avoid header/cell misalignment
                     c.type === "number" || c.type === "currency"
                       ? "text-right tabular-nums"
@@ -701,7 +746,7 @@ export class EditableTable extends React.Component<
                 <th
                   data-slot="table-head"
                   className={cn(
-                    "h-9 px-2 text-right align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap w-24"
+                    "h-9 p-3 text-right align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap w-24"
                   )}
                 ></th>
               ) : null}
@@ -709,7 +754,7 @@ export class EditableTable extends React.Component<
                 <th
                   data-slot="table-head"
                   className={cn(
-                    "h-9 px-2 text-right align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap w-24"
+                    "h-9 p-3 text-right align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap w-24"
                   )}
                 ></th>
               ) : null}
@@ -757,7 +802,7 @@ export class EditableTable extends React.Component<
                           "text-right tabular-nums"
                       )}
                     >
-                      {isModify
+                      {isModify && row.isNew
                         ? this.renderInput(row, c)
                         : this.renderReadOnlyCell(c, row.data[c.id], row)}
                     </td>
@@ -801,48 +846,28 @@ export class EditableTable extends React.Component<
         </table>
 
         {/* Bottom action row similar to Notion "New page" */}
-        <div className="sticky left-0 bottom-0 w-full border-t border-agri-green-50 inset-shadow-xs border-border/30 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex items-center justify-between px-2 py-2">
-            <Button
-              variant="ghost"
-              className="text-muted-foreground"
-              onClick={this.addNewRow}
-            >
-              + New page
-            </Button>
-            <div className="ml-auto flex items-center gap-2">
-              {anySelected ? (
+        {(this.props.addButton || showSave) && (
+          <div className="sticky left-0 bottom-0 w-full border-t border-agri-green-50 inset-shadow-xs border-border/30 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex items-center justify-between px-2 py-2">
+              {this.props.addButton && (
                 <Button
-                  onClick={this.handleDelete}
-                  className={cn(
-                    "border border-red-200 text-red-400 hover:bg-red-50"
-                  )}
                   variant="ghost"
+                  className="text-muted-foreground"
+                  onClick={this.addNewRow}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="h-4 w-4 mr-2"
-                  >
-                    <path d="M3 6h18" />
-                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                    <path d="M10 11v6M14 11v6" />
-                  </svg>
-                  Delete
+                  + New page
                 </Button>
-              ) : null}
-              {showSave ? (
-                <Button onClick={this.handleSave} disabled={hasErrors}>
-                  Save
-                </Button>
-              ) : null}
+              )}
+              <div className="ml-auto flex items-center gap-2">
+                {showSave ? (
+                  <Button onClick={this.handleSave} disabled={hasErrors}>
+                    Save
+                  </Button>
+                ) : null}
+              </div>
             </div>
           </div>
-        </div>
+        )}
         {hasDetails ? (
           <Drawer open={this.state.drawerOpen} onOpenChange={this.closeDetails}>
             <DrawerContent data-vaul-drawer-direction="right">

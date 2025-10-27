@@ -165,6 +165,34 @@ export async function bulkExtractLabels(
   return (await response.json()) as BulkExtractResponse;
 }
 
+export type BulkDeleteResponse = {
+  status: "success";
+  message: string;
+  deleted_count: number;
+};
+
+async function bulkDeleteLabels(
+  ids: string[],
+  baseUrl: string
+): Promise<BulkDeleteResponse> {
+  const response = await fetch(`${baseUrl}/labels/bulk`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ ids }),
+  });
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to delete labels");
+  }
+
+  return (await response.json()) as BulkDeleteResponse;
+}
+
 class LabelsApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -183,6 +211,10 @@ class LabelsApiService {
     request: BulkExtractRequest
   ): Promise<BulkExtractResponse> {
     return await bulkExtractLabels(request, this.baseUrl);
+  }
+
+  public async bulkDelete(ids: string[]): Promise<BulkDeleteResponse> {
+    return await bulkDeleteLabels(ids, this.baseUrl);
   }
 }
 
