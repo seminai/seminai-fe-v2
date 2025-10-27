@@ -1,6 +1,6 @@
 import * as React from "react";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { labelsApiService, type LabelSummary } from "@/api/labels";
 import { Spinner } from "@/components/ui/spinner";
 import { EditableTable, type EditableColumn } from "@/components/ui/table";
@@ -8,61 +8,39 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
-import {
-  buildColumns,
-  formatConfidence,
-  formatQuality,
-  formatErrors,
-} from "@/utils/tableHelpers";
+import { buildColumns, formatConfidence } from "@/utils/tableHelpers";
+import { createTextSearch } from "@/utils/filter";
+import { toast } from "sonner";
 
 const buildLabelSummaryColumns = (): EditableColumn[] =>
   buildColumns<LabelSummary>([
-    { id: "productName", title: "Product", type: "text", width: "28%" },
+    {
+      id: "productName",
+      title: "Nome commerciale",
+      type: "text",
+      width: "30%",
+    },
     {
       id: "registrationNumber",
-      title: "Registration No.",
+      title: "Numero di registrazione",
       type: "text",
-      width: "20%",
+      width: "30%",
     },
     {
       id: "extractionConfidence",
-      title: "Confidence",
+      title: "Qualità estrazione",
       type: "number",
-      width: "14%",
+      width: "10%",
       render: (value: unknown) =>
         formatConfidence(
           typeof value === "number" ? value : Number(value ?? 0)
         ),
     },
-    {
-      id: "qualityExtraction",
-      title: "Quality",
-      type: "text",
-      width: "24%",
-      render: (value: unknown) =>
-        formatQuality(Array.isArray(value) ? (value as number[]) : []),
-    },
-    {
-      id: "errors",
-      title: "Errors",
-      type: "text",
-      width: "14%",
-      render: (value: unknown) =>
-        formatErrors(Array.isArray(value) ? (value as unknown[]) : []),
-    },
   ]);
-
-const toRow = (item: LabelSummary): Record<string, unknown> => ({
-  id: item.id,
-  productName: item.productName,
-  registrationNumber: item.registrationNumber,
-  extractionConfidence: item.extractionConfidence,
-  qualityExtraction: item.qualityExtraction,
-  errors: item.errors,
-});
 
 export default function Label(): React.ReactElement {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchFilter, setSearchFilter] = useState<string>("");
 
   const { data, isLoading, error } = useQuery({
@@ -70,25 +48,64 @@ export default function Label(): React.ReactElement {
     queryFn: async () => labelsApiService.getSummary(),
   });
 
-  const columns = buildLabelSummaryColumns();
-  const items: LabelSummary[] = data?.data ?? [];
+  // Mutation per l'eliminazione bulk
+  const deleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      return await labelsApiService.bulkDelete(ids);
+    },
+    onSuccess: (response) => {
+      // Invalida la query per ricaricare i dati
+      queryClient.invalidateQueries({ queryKey: ["labels", "summary"] });
 
-  // Filtra gli items in base al termine di ricerca
-  const filteredItems = items.filter((item) => {
-    if (!searchFilter.trim()) return true;
-
-    const searchLower = searchFilter.toLowerCase();
-    const productNameMatch = item.productName
-      .toLowerCase()
-      .includes(searchLower);
-    const registrationNumberMatch = item.registrationNumber
-      .toLowerCase()
-      .includes(searchLower);
-
-    return productNameMatch || registrationNumberMatch;
+      // Mostra notifica di successo
+      toast.success(
+        `${response.deleted_count} etichet${
+          response.deleted_count === 1 ? "ta eliminata" : "te eliminate"
+        } con successo`
+      );
+    },
+    onError: (error: Error) => {
+      // Mostra notifica di errore
+      toast.error(`Errore durante l'eliminazione: ${error.message}`);
+    },
   });
 
-  const rows = filteredItems.map(toRow);
+  const columns = buildLabelSummaryColumns();
+
+  const items: LabelSummary[] = useMemo(() => data?.data ?? [], [data]);
+
+  // Crea il filtro di ricerca testuale (riutilizzabile)
+  const textSearch = useMemo(
+    () => createTextSearch<LabelSummary>(["productName", "registrationNumber"]),
+    []
+  );
+
+  // Applica il filtro
+  const filteredItems = useMemo(() => {
+    return textSearch.setSearchTerm(searchFilter).filter(items);
+  }, [items, searchFilter, textSearch]);
+
+  // Handler per l'eliminazione di elementi selezionati
+  const handleDeleteSelected = (
+    removedRows: Array<Record<string, unknown>>
+  ) => {
+    const ids = removedRows.map((row) => String(row.id)).filter(Boolean);
+
+    if (ids.length === 0) {
+      toast.error("Nessun elemento selezionato per l'eliminazione");
+      return;
+    }
+
+    // Conferma eliminazione
+    const confirmMessage =
+      ids.length === 1
+        ? "Sei sicuro di voler eliminare questa etichetta?"
+        : `Sei sicuro di voler eliminare ${ids.length} etichette?`;
+
+    if (window.confirm(confirmMessage)) {
+      deleteMutation.mutate(ids);
+    }
+  };
 
   return (
     <div className="p-6">
@@ -144,11 +161,12 @@ export default function Label(): React.ReactElement {
       ) : (
         <EditableTable
           columns={columns}
-          rows={rows}
+          rows={filteredItems}
           isModify={false}
           getRowId={(row, index) =>
             (typeof row.id === "string" && row.id) || index
           }
+          onDeleteSelected={handleDeleteSelected}
           lastComponent={(row) => (
             <Button
               size="sm"

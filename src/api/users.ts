@@ -7,6 +7,7 @@ export type CurrentUser = {
   name: string;
   surname: string;
   fiscalCode: string;
+  companyId: string;
   companyName: string;
   vatNumber: string;
   phoneNumber: string;

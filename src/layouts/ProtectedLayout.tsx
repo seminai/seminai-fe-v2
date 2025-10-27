@@ -19,10 +19,10 @@ import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   IoHomeOutline,
-  IoCalendarClearOutline,
   IoPersonCircleOutline,
-  IoFileTrayFullOutline,
   IoPricetagOutline,
+  IoGridOutline,
+  IoBusinessOutline,
 } from "react-icons/io5";
 import {
   DropdownMenu,
@@ -36,20 +36,6 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import authService from "@/utils/auth";
 import { LuLogOut, LuSettings } from "react-icons/lu";
 
-function renderNavIcon(icon: NavigationItem["icon"], className?: string) {
-  const common = cn("size-6", className);
-  switch (icon) {
-    case "home":
-      return <IoHomeOutline className={common} />;
-    case "dataset":
-      return <IoFileTrayFullOutline className={common} />;
-    case "calendar":
-      return <IoCalendarClearOutline className={common} />;
-    default:
-      return <IoPersonCircleOutline className={common} />;
-  }
-}
-
 type ProtectedLayoutProps = {
   children: React.ReactNode;
 };
@@ -61,51 +47,84 @@ type MobileBottomBarProps = {
   hrefFor: (item: NavigationItem) => string;
 };
 
-function MobileBottomBar({
-  items,
-  isMobile,
-  isActive,
-  hrefFor,
-}: MobileBottomBarProps) {
+function MobileBottomBar({ isMobile }: MobileBottomBarProps) {
   if (!isMobile) return null;
-  const location = useLocation();
+
   const labelActive = location.pathname.startsWith("/label");
+  const labelDashboard = location.pathname.startsWith("/dashboard");
+  const fieldsActive = location.pathname.startsWith("/fields");
+  const companyActive = location.pathname.startsWith("/company");
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-20 mx-auto mb-safe w-full max-w-screen-sm">
       <div className="m-3 rounded-2xl backdrop-blur-xl bg-white/20 supports-backdrop-blur:bg-white/30 border border-white/25 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_8px_32px_0_rgba(31,38,135,0.2)]">
-        <ul className="grid grid-cols-5">
-          {items.map((item) => (
-            <li key={item.id} className="">
-              <Link
-                to={hrefFor(item)}
+        <ul className="flex items-center justify-center gap-1">
+          <li key="dashboard">
+            <Link
+              to="/dashboard"
+              className={cn(
+                "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
+                labelDashboard && "text-gray-900 font-medium"
+              )}
+            >
+              <IoHomeOutline
                 className={cn(
-                  "flex flex-col items-center justify-center p-3 text-[11px] text-gray-800/80",
-                  isActive(item) && "text-gray-900 font-medium"
+                  "size-5",
+                  labelDashboard ? "text-gray-900" : "text-gray-700/90"
                 )}
-              >
-                {renderNavIcon(
-                  item.icon,
-                  isActive(item) ? "text-gray-900" : "text-gray-700/90"
-                )}
-                <span className="mt-1">{item.label}</span>
-              </Link>
-            </li>
-          ))}
+              />
+              <span className="mt-1">Home</span>
+            </Link>
+          </li>
           <li key="label" className="">
             <Link
               to="/label"
               className={cn(
-                "flex flex-col items-center justify-center p-3 text-[11px] text-gray-800/80",
+                "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
                 labelActive && "text-gray-900 font-medium"
               )}
             >
               <IoPricetagOutline
                 className={cn(
-                  "size-6",
+                  "size-5",
                   labelActive ? "text-gray-900" : "text-gray-700/90"
                 )}
               />
               <span className="mt-1">Etichette</span>
+            </Link>
+          </li>
+          <li key="fields">
+            <Link
+              to="/fields"
+              className={cn(
+                "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
+                fieldsActive && "text-gray-900 font-medium"
+              )}
+            >
+              <IoGridOutline
+                className={cn(
+                  "size-5",
+                  fieldsActive ? "text-gray-900" : "text-gray-700/90"
+                )}
+              />
+              <span className="mt-1">Campi</span>
+            </Link>
+          </li>
+          <li key="company">
+            <Link
+              to="/company"
+              className={cn(
+                "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
+                companyActive && "text-gray-900 font-medium"
+              )}
+            >
+              <IoBusinessOutline
+                className={cn(
+                  "size-5",
+                  companyActive ? "text-gray-900" : "text-gray-700/90"
+                )}
+              />
+              <span className="mt-1">Aziende</span>
             </Link>
           </li>
           <MobileAccountMenu />
@@ -171,7 +190,17 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
 
   const model = new NavigationModel("/dashboard");
   const items = model.getNavigationItems();
-  const labelActive = location.pathname.startsWith("/label");
+
+  const labelActive =
+    location.pathname === "/label" || location.pathname.startsWith("/label/");
+  const labelDashboard =
+    location.pathname === "/dashboard" ||
+    location.pathname.startsWith("/dashboard/");
+  const fieldsActive =
+    location.pathname === "/fields" || location.pathname.startsWith("/fields/");
+  const companyActive =
+    location.pathname === "/company" ||
+    location.pathname.startsWith("/company/");
 
   return (
     <SidebarProvider defaultOpen={false}>
@@ -191,31 +220,22 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
-                {items.map((item) => {
-                  const active = model.isActive(
-                    location.pathname,
-                    location.search,
-                    item
-                  );
-                  const to = model.getItemHref(item);
-                  return (
-                    <SidebarMenuItem key={item.id}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={active}
-                        tooltip={item.label}
-                        className="data-[active=true]:bg-neutral-900/5"
-                      >
-                        <Link to={to} className="flex items-center gap-2">
-                          {renderNavIcon(item.icon)}
-                          <span className="group-data-[collapsible=icon]:hidden">
-                            {item.label}
-                          </span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
+                {" "}
+                <SidebarMenuItem key="dashboard">
+                  <SidebarMenuButton
+                    asChild
+                    isActive={labelDashboard}
+                    tooltip="Dashboard"
+                    className="data-[active=true]:bg-neutral-900/5"
+                  >
+                    <Link to="/dashboard" className="flex items-center gap-2">
+                      <IoHomeOutline className="size-6" />
+                      <span className="group-data-[collapsible=icon]:hidden">
+                        Dashboard
+                      </span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
                 <SidebarMenuItem key="label">
                   <SidebarMenuButton
                     asChild
@@ -227,6 +247,36 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       <IoPricetagOutline className="size-6" />
                       <span className="group-data-[collapsible=icon]:hidden">
                         Etichette
+                      </span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem key="fields">
+                  <SidebarMenuButton
+                    asChild
+                    isActive={fieldsActive}
+                    tooltip="Campi"
+                    className="data-[active=true]:bg-neutral-900/5"
+                  >
+                    <Link to="/fields" className="flex items-center gap-2">
+                      <IoGridOutline className="size-6" />
+                      <span className="group-data-[collapsible=icon]:hidden">
+                        Campi
+                      </span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem key="company">
+                  <SidebarMenuButton
+                    asChild
+                    isActive={companyActive}
+                    tooltip="Aziende"
+                    className="data-[active=true]:bg-neutral-900/5"
+                  >
+                    <Link to="/company" className="flex items-center gap-2">
+                      <IoBusinessOutline className="size-6" />
+                      <span className="group-data-[collapsible=icon]:hidden">
+                        Aziende
                       </span>
                     </Link>
                   </SidebarMenuButton>
