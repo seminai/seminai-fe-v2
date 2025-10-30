@@ -3,6 +3,7 @@ import {
   companiesApiService,
   type Company,
   type BulkCompanyInput,
+  type BulkCompanyUpdateInput,
   type CompaniesResponse,
   type BulkCompaniesResponse,
 } from "@/api/companies";
@@ -11,6 +12,8 @@ import { toast } from "sonner";
 interface UseCompaniesOptions {
   onCreateSuccess?: (response: BulkCompaniesResponse) => void;
   onCreateError?: (error: Error) => void;
+  onUpdateSuccess?: (response: BulkCompaniesResponse) => void;
+  onUpdateError?: (error: Error) => void;
 }
 
 export function useCompanies(options?: UseCompaniesOptions) {
@@ -53,6 +56,39 @@ export function useCompanies(options?: UseCompaniesOptions) {
     },
   });
 
+  // Mutation per aggiornare companies in bulk
+  const updateMutation = useMutation({
+    mutationFn: async (companies: BulkCompanyUpdateInput[]) => {
+      return await companiesApiService.bulkUpdate({
+        companies,
+      });
+    },
+    onSuccess: async (response) => {
+      // Refetch esplicito per assicurarsi che i dati vengano aggiornati
+      await queryClient.invalidateQueries({ queryKey: ["companies"] });
+      await companiesQuery.refetch();
+
+      // Gestione sicura della risposta per il toast
+      const count = response?.data?.companies?.length ?? 0;
+      if (count > 0) {
+        toast.success(
+          `${count} aziend${
+            count === 1 ? "a aggiornata" : "e aggiornate"
+          } con successo`
+        );
+      } else {
+        toast.success("Aziende aggiornate con successo");
+      }
+
+      options?.onUpdateSuccess?.(response);
+    },
+    onError: (error: Error) => {
+      console.error("Errore aggiornamento companies:", error);
+      toast.error(`Errore durante l'aggiornamento: ${error.message}`);
+      options?.onUpdateError?.(error);
+    },
+  });
+
   return {
     // Dati e stati della query
     companies: companiesQuery.data?.data.companies ?? [],
@@ -63,6 +99,10 @@ export function useCompanies(options?: UseCompaniesOptions) {
     // Mutation per creare companies
     createCompanies: createMutation.mutate,
     isCreating: createMutation.isPending,
+
+    // Mutation per aggiornare companies
+    updateCompanies: updateMutation.mutate,
+    isUpdating: updateMutation.isPending,
 
     // Utility per refetch
     refetch: companiesQuery.refetch,

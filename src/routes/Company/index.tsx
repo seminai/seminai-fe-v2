@@ -1,6 +1,10 @@
 import * as React from "react";
 import { useState, useMemo } from "react";
-import { type Company, type BulkCompanyInput } from "@/api/companies";
+import {
+  type Company,
+  type BulkCompanyInput,
+  type BulkCompanyUpdateInput,
+} from "@/api/companies";
 import { Spinner } from "@/components/ui/spinner";
 import { EditableTable, type EditableColumn } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -32,6 +36,12 @@ const buildCompaniesEditColumns = (): EditableColumn[] => {
       type: "text",
       required: true,
       placeholder: "es. RSSMRA80A01H501Z",
+    },
+    {
+      id: "cuaa",
+      title: "CUAA",
+      type: "text",
+      placeholder: "es. 12345678901",
     },
     {
       id: "nation",
@@ -87,7 +97,8 @@ const buildCompaniesEditColumns = (): EditableColumn[] => {
 export default function Company(): React.ReactElement {
   const [searchFilter, setSearchFilter] = useState<string>("");
 
-  const { companies, isLoading, error, createCompanies } = useCompanies();
+  const { companies, isLoading, error, createCompanies, updateCompanies } =
+    useCompanies();
 
   const textSearch = useMemo(
     () =>
@@ -121,6 +132,7 @@ export default function Company(): React.ReactElement {
         fiscalCode: String(company.fiscalCode || ""),
       };
 
+      if (company.cuaa) bulkCompany.cuaa = String(company.cuaa);
       if (company.nation) bulkCompany.nation = String(company.nation);
       if (company.city) bulkCompany.city = String(company.city);
       if (company.address) bulkCompany.address = String(company.address);
@@ -134,12 +146,42 @@ export default function Company(): React.ReactElement {
       return bulkCompany;
     });
 
-    if (companiesToCreate.length === 0) {
-      toast.error("Aggiungi almeno un'azienda");
+    const companiesToUpdate = payload.updated.map((company) => {
+      const updateCompany: Record<string, unknown> = {
+        id: String(company.id),
+      };
+
+      if (company.name) updateCompany.name = String(company.name);
+      if (company.vatNumber)
+        updateCompany.vatNumber = String(company.vatNumber);
+      if (company.fiscalCode)
+        updateCompany.fiscalCode = String(company.fiscalCode);
+      if (company.cuaa) updateCompany.cuaa = String(company.cuaa);
+      if (company.nation) updateCompany.nation = String(company.nation);
+      if (company.city) updateCompany.city = String(company.city);
+      if (company.address) updateCompany.address = String(company.address);
+      if (company.cap) updateCompany.cap = String(company.cap);
+      if (company.email) updateCompany.email = String(company.email);
+      if (company.phoneNumber)
+        updateCompany.phoneNumber = String(company.phoneNumber);
+      if (company.website) updateCompany.website = String(company.website);
+      if (company.logoUrl) updateCompany.logoUrl = String(company.logoUrl);
+
+      return updateCompany;
+    });
+
+    if (companiesToCreate.length === 0 && companiesToUpdate.length === 0) {
+      toast.error("Nessuna modifica da salvare");
       return;
     }
 
-    createCompanies(companiesToCreate);
+    if (companiesToCreate.length > 0) {
+      createCompanies(companiesToCreate);
+    }
+
+    if (companiesToUpdate.length > 0) {
+      updateCompanies(companiesToUpdate as BulkCompanyUpdateInput[]);
+    }
   };
 
   // Colonne unificate per view e edit
@@ -194,6 +236,7 @@ export default function Company(): React.ReactElement {
             name: "",
             vatNumber: "",
             fiscalCode: "",
+            cuaa: "",
             nation: "",
             city: "",
             address: "",

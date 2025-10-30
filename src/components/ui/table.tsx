@@ -177,8 +177,11 @@ interface EditableTableState {
   rows: InternalRow[];
   touched: Record<string, Record<string, boolean>>; // rowId -> colId -> touched
   selected: Record<string, boolean>; // rowId -> selected
+  isEditMode: boolean; // Modalità modifica globale
   drawerOpen: boolean;
   drawerRow?: InternalRow;
+  sortColumn?: string; // Colonna ordinata
+  sortDirection: "asc" | "desc"; // Direzione ordinamento
 }
 
 export class EditableTable extends React.Component<
@@ -206,8 +209,11 @@ export class EditableTable extends React.Component<
       rows: initialRows,
       touched: {},
       selected: {},
+      isEditMode: false,
       drawerOpen: false,
       drawerRow: undefined,
+      sortColumn: undefined,
+      sortDirection: "asc",
     };
   }
 
@@ -224,6 +230,9 @@ export class EditableTable extends React.Component<
         rows: newRows,
         touched: {},
         selected: {},
+        isEditMode: false,
+        sortColumn: undefined,
+        sortDirection: "asc",
       });
     }
   }
@@ -231,6 +240,32 @@ export class EditableTable extends React.Component<
   private generateTempId(): string {
     return `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   }
+
+  /**
+   * Metodo pubblico per aggiungere righe programmaticamente (es. da CSV import)
+   */
+  public addRows = (rowsData: Array<Record<string, unknown>>): void => {
+    const newRows: InternalRow[] = rowsData.map((data) => ({
+      id: this.generateTempId(),
+      data: { ...data },
+      isNew: true,
+      isDirty: true,
+    }));
+
+    this.setState((prev) => {
+      const touched = { ...prev.touched };
+      newRows.forEach((row) => {
+        touched[row.id] = Object.fromEntries(
+          this.props.columns.map((c) => [c.id, true])
+        );
+      });
+
+      return {
+        rows: [...prev.rows, ...newRows],
+        touched,
+      };
+    });
+  };
 
   private addNewRow = (): void => {
     const empty: Record<string, unknown> = {};
@@ -284,6 +319,12 @@ export class EditableTable extends React.Component<
     }));
   };
 
+  private toggleEditMode = (): void => {
+    this.setState((prev) => ({
+      isEditMode: !prev.isEditMode,
+    }));
+  };
+
   private get selectedIds(): string[] {
     return Object.entries(this.state.selected)
       .filter(([, v]) => Boolean(v))
@@ -312,6 +353,55 @@ export class EditableTable extends React.Component<
 
   private closeDetails = (open: boolean): void => {
     this.setState({ drawerOpen: open });
+  };
+
+  private handleSort = (columnId: string): void => {
+    this.setState((prev) => {
+      const isSameColumn = prev.sortColumn === columnId;
+      const newDirection: "asc" | "desc" = isSameColumn
+        ? prev.sortDirection === "asc"
+          ? "desc"
+          : "asc"
+        : "asc";
+
+      const column = this.props.columns.find((c) => c.id === columnId);
+      const sortedRows = [...prev.rows].sort((a, b) => {
+        const aVal = a.data[columnId];
+        const bVal = b.data[columnId];
+
+        // Handle null/undefined values
+        if (aVal === null || aVal === undefined) return 1;
+        if (bVal === null || bVal === undefined) return -1;
+
+        let comparison = 0;
+
+        // Sort based on column type
+        switch (column?.type) {
+          case "number":
+          case "currency":
+            comparison = Number(aVal) - Number(bVal);
+            break;
+          case "date": {
+            const dateA = new Date(String(aVal)).getTime();
+            const dateB = new Date(String(bVal)).getTime();
+            comparison = dateA - dateB;
+            break;
+          }
+          case "text":
+          default:
+            comparison = String(aVal).localeCompare(String(bVal));
+            break;
+        }
+
+        return newDirection === "asc" ? comparison : -comparison;
+      });
+
+      return {
+        rows: sortedRows,
+        sortColumn: columnId,
+        sortDirection: newDirection,
+      };
+    });
   };
 
   private get hasDirtyRows(): boolean {
@@ -350,10 +440,11 @@ export class EditableTable extends React.Component<
       created: created.map((r) => r.data),
       updated: updated.map((r) => r.data),
     });
-    // Reset dirty flags
+    // Reset dirty flags and editing state
     this.setState((prev) => ({
       rows: prev.rows.map((r) => ({ ...r, isDirty: false, isNew: false })),
       touched: {},
+      isEditMode: false,
     }));
   };
 
@@ -492,11 +583,18 @@ export class EditableTable extends React.Component<
     return (
       <div
         data-slot="table-container"
-        className={cn(
-          "relative w-full overflow-x-auto rounded-lg bg-background",
-          className
-        )}
+        className={cn("relative w-full rounded-lg bg-background", className)}
       >
+        {/* Top action bar per modalità verticale */}
+        {showSave && (
+          <div className="flex items-center justify-end px-4 py-3 border-b border-agri-green-50 bg-blue-50/50">
+            <div className="flex items-center gap-2">
+              <Button onClick={this.handleSave} disabled={false} size="sm">
+                Salva
+              </Button>
+            </div>
+          </div>
+        )}
         <table
           data-slot="table"
           className={cn("w-full caption-bottom text-sm")}
@@ -509,7 +607,7 @@ export class EditableTable extends React.Component<
               <th
                 data-slot="table-head"
                 className={cn(
-                  "h-9 p-3 align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap text-left"
+                  "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px] text-left w-[250px] min-w-[200px]"
                 )}
               >
                 Field
@@ -519,8 +617,8 @@ export class EditableTable extends React.Component<
                   key={row.id}
                   data-slot="table-head"
                   className={cn(
-                    "h-9 p-3 align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap",
-                    "text-left"
+                    "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px]",
+                    "text-left min-w-[150px]"
                   )}
                 >
                   {this.getRowHeaderLabel(row, idx)}
@@ -550,14 +648,16 @@ export class EditableTable extends React.Component<
                   <td
                     data-slot="table-cell"
                     className={cn(
-                      "p-3 align-middle whitespace-nowrap text-left"
+                      "p-3 align-top text-left w-[250px] min-w-[200px]"
                     )}
                   >
-                    <div className="text-muted-foreground text-[13px]">
-                      {c.title}
-                      {c.required ? (
-                        <span className="text-red-500 ml-1">*</span>
-                      ) : null}
+                    <div className="text-muted-foreground font-semibold text-[14px] break-words">
+                      <span>
+                        {c.title}
+                        {c.required ? (
+                          <span className="text-red-500 ml-1">*</span>
+                        ) : null}
+                      </span>
                     </div>
                   </td>
                   {rows.map((row) => (
@@ -565,12 +665,10 @@ export class EditableTable extends React.Component<
                       key={row.id}
                       data-slot="table-cell"
                       className={cn(
-                        "p-3 align-middle whitespace-nowrap",
-                        (c.type === "number" || c.type === "currency") &&
-                          "text-right tabular-nums"
+                        "p-3 align-top text-left break-words min-w-[150px]"
                       )}
                     >
-                      {isModify
+                      {isModify && this.state.isEditMode
                         ? this.renderInput(row, c)
                         : this.renderReadOnlyCell(c, row.data[c.id], row)}
                     </td>
@@ -587,9 +685,11 @@ export class EditableTable extends React.Component<
               >
                 <td
                   data-slot="table-cell"
-                  className={cn("p-3 align-middle whitespace-nowrap text-left")}
+                  className={cn(
+                    "p-3 align-top text-left w-[250px] min-w-[200px]"
+                  )}
                 >
-                  <div className="text-muted-foreground text-[13px]">
+                  <div className="text-muted-foreground font-semibold text-[14px]">
                     Actions
                   </div>
                 </td>
@@ -597,9 +697,7 @@ export class EditableTable extends React.Component<
                   <td
                     key={row.id}
                     data-slot="table-cell"
-                    className={cn(
-                      "p-3 align-middle whitespace-nowrap text-right"
-                    )}
+                    className={cn("p-3 align-top text-left min-w-[150px]")}
                   >
                     {typeof this.props.lastComponent === "function"
                       ? (
@@ -615,28 +713,16 @@ export class EditableTable extends React.Component<
           </tbody>
         </table>
 
-        {(this.props.addButton || showSave) && (
+        {this.props.addButton && (
           <div className="sticky left-0 bottom-0 w-full border-t border-agri-green-50 inset-shadow-xs border-border/30 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex items-center justify-between px-2 py-2">
-              {this.props.addButton && (
-                <Button
-                  variant="ghost"
-                  className="text-muted-foreground"
-                  onClick={this.addNewRow}
-                >
-                  + New page
-                </Button>
-              )}
-              <div className="ml-auto flex items-center gap-2">
-                {showSave ? (
-                  <Button
-                    onClick={this.handleSave}
-                    disabled={false /* per-cell validation handled on save */}
-                  >
-                    Save
-                  </Button>
-                ) : null}
-              </div>
+              <Button
+                variant="ghost"
+                className="text-muted-foreground"
+                onClick={this.addNewRow}
+              >
+                + New page
+              </Button>
             </div>
           </div>
         )}
@@ -666,37 +752,96 @@ export class EditableTable extends React.Component<
           className
         )}
       >
-        {/* Top action bar - Pulsante Elimina in alto a destra */}
-        {anySelected ? (
+        {/* Top action bar - Pulsanti azione in alto a destra */}
+        {anySelected || (isModify && rows.some((r) => !r.isNew)) || showSave ? (
           <div className="flex items-center justify-between px-4 py-3 border-b border-agri-green-50 bg-blue-50/50">
             <span className="text-sm text-gray-600">
-              {this.selectedIds.length} element
-              {this.selectedIds.length === 1 ? "o" : "i"} selezionat
-              {this.selectedIds.length === 1 ? "o" : "i"}
+              {anySelected
+                ? `${this.selectedIds.length} element${
+                    this.selectedIds.length === 1 ? "o" : "i"
+                  } selezionat${this.selectedIds.length === 1 ? "o" : "i"}`
+                : " "}
             </span>
-            <Button
-              onClick={this.handleDelete}
-              className={cn(
-                "border border-red-200 text-red-400 hover:bg-red-50"
+            <div className="flex items-center gap-2">
+              {isModify && rows.some((r) => !r.isNew) && !anySelected && (
+                <Button
+                  onClick={this.toggleEditMode}
+                  className={cn(
+                    "border",
+                    this.state.isEditMode
+                      ? "border-gray-500 text-gray-500 hover:bg-gray-50"
+                      : "border-blue-200 text-blue-600 hover:bg-blue-50"
+                  )}
+                  variant="ghost"
+                  size="sm"
+                >
+                  {this.state.isEditMode ? (
+                    <>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="h-4 w-4 mr-2"
+                      >
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                      Annulla
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="h-4 w-4 mr-2"
+                      >
+                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                      </svg>
+                      Modifica
+                    </>
+                  )}
+                </Button>
               )}
-              variant="ghost"
-              size="sm"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="h-4 w-4 mr-2"
-              >
-                <path d="M3 6h18" />
-                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                <path d="M10 11v6M14 11v6" />
-              </svg>
-              Elimina
-            </Button>
+              {anySelected && (
+                <Button
+                  onClick={this.handleDelete}
+                  className={cn(
+                    "border border-red-200 text-red-400 hover:bg-red-50"
+                  )}
+                  variant="ghost"
+                  size="sm"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="h-4 w-4 mr-2"
+                  >
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                  </svg>
+                  Elimina
+                </Button>
+              )}
+              {showSave && (
+                <Button
+                  onClick={this.handleSave}
+                  disabled={hasErrors}
+                  size="sm"
+                >
+                  Salva
+                </Button>
+              )}
+            </div>
           </div>
         ) : null}
 
@@ -712,7 +857,7 @@ export class EditableTable extends React.Component<
               <th
                 data-slot="table-head"
                 className={cn(
-                  "h-9 px-2 text-left align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap w-8"
+                  "h-9 px-2 text-left align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap w-8"
                 )}
               >
                 <Checkbox
@@ -729,24 +874,44 @@ export class EditableTable extends React.Component<
                   style={{ width: c.width }}
                   className={cn(
                     // Base header cell styles
-                    "h-9 p-3 align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap",
-                    // Align numbers like body cells to avoid header/cell misalignment
-                    c.type === "number" || c.type === "currency"
-                      ? "text-right tabular-nums"
-                      : "text-left"
+                    "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap cursor-pointer hover:bg-muted/10 transition-colors text-left"
                   )}
+                  onClick={() => this.handleSort(c.id)}
                 >
-                  {c.title}
-                  {c.required ? (
-                    <span className="text-red-500 ml-1">*</span>
-                  ) : null}
+                  <div className="flex items-center gap-2 justify-between">
+                    <span>
+                      {c.title}
+                      {c.required ? (
+                        <span className="text-red-500 ml-1">*</span>
+                      ) : null}
+                    </span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className={cn(
+                        "h-3 w-3 transition-all",
+                        this.state.sortColumn === c.id
+                          ? "opacity-100"
+                          : "opacity-30",
+                        this.state.sortColumn === c.id &&
+                          this.state.sortDirection === "desc"
+                          ? "rotate-180"
+                          : ""
+                      )}
+                    >
+                      <polyline points="18 15 12 9 6 15" />
+                    </svg>
+                  </div>
                 </th>
               ))}
               {hasDetails ? (
                 <th
                   data-slot="table-head"
                   className={cn(
-                    "h-9 p-3 text-right align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap w-24"
+                    "h-9 p-3 text-left align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap w-24"
                   )}
                 ></th>
               ) : null}
@@ -754,7 +919,7 @@ export class EditableTable extends React.Component<
                 <th
                   data-slot="table-head"
                   className={cn(
-                    "h-9 p-3 text-right align-middle font-normal text-muted-foreground text-[13px] whitespace-nowrap w-24"
+                    "h-9 p-3 text-left align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap w-24"
                   )}
                 ></th>
               ) : null}
@@ -797,12 +962,10 @@ export class EditableTable extends React.Component<
                       key={c.id}
                       data-slot="table-cell"
                       className={cn(
-                        "p-3 align-middle whitespace-nowrap",
-                        (c.type === "number" || c.type === "currency") &&
-                          "text-right tabular-nums"
+                        "p-3 align-middle whitespace-nowrap text-left"
                       )}
                     >
-                      {isModify && row.isNew
+                      {isModify && (row.isNew || this.state.isEditMode)
                         ? this.renderInput(row, c)
                         : this.renderReadOnlyCell(c, row.data[c.id], row)}
                     </td>
@@ -811,7 +974,7 @@ export class EditableTable extends React.Component<
                     <td
                       data-slot="table-cell"
                       className={cn(
-                        "p-3 align-middle text-right whitespace-nowrap w-24"
+                        "p-3 align-middle text-left whitespace-nowrap w-24"
                       )}
                     >
                       <Button
@@ -827,7 +990,7 @@ export class EditableTable extends React.Component<
                     <td
                       data-slot="table-cell"
                       className={cn(
-                        "p-3 align-middle text-right whitespace-nowrap w-24"
+                        "p-3 align-middle text-left whitespace-nowrap w-24"
                       )}
                     >
                       {typeof this.props.lastComponent === "function"
@@ -846,25 +1009,16 @@ export class EditableTable extends React.Component<
         </table>
 
         {/* Bottom action row similar to Notion "New page" */}
-        {(this.props.addButton || showSave) && (
+        {this.props.addButton && (
           <div className="sticky left-0 bottom-0 w-full border-t border-agri-green-50 inset-shadow-xs border-border/30 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex items-center justify-between px-2 py-2">
-              {this.props.addButton && (
-                <Button
-                  variant="ghost"
-                  className="text-muted-foreground"
-                  onClick={this.addNewRow}
-                >
-                  + New page
-                </Button>
-              )}
-              <div className="ml-auto flex items-center gap-2">
-                {showSave ? (
-                  <Button onClick={this.handleSave} disabled={hasErrors}>
-                    Save
-                  </Button>
-                ) : null}
-              </div>
+              <Button
+                variant="ghost"
+                className="text-muted-foreground"
+                onClick={this.addNewRow}
+              >
+                + New page
+              </Button>
             </div>
           </div>
         )}

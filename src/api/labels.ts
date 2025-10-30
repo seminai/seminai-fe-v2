@@ -7,6 +7,7 @@ export type LabelSummary = {
   extractionConfidence: number;
   qualityExtraction: number[];
   errors: string[];
+  createdAt: string;
 };
 
 export type LabelsSummaryResponse = {

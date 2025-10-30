@@ -1,0 +1,4 @@
+Azienda;Nome Campo;Indirizzo;Sezione;Foglio;Mappale;Particella;Superficie Catastale (mq);Città;SAU (Ha);Uso;Tipo Suolo;CAP;Regione;Provincia;CUAA;Superficie GIS (mq);Superficie condotta (mq)
+Azienda Agricola Rossi;Campo Nord;Via Roma 123;A;12;;345;15000;Torino;1,5;Seminativo;FRANCO-SABBIOSO;10100;Piemonte;TO;01234567890;15200;14800
+Azienda Agricola Rossi;Campo Sud;Via Milano 45;B;13;;678;20000;Torino;2,0;Frutteto;ARGILLOSO;10100;Piemonte;TO;01234567890;20100;19500
+Azienda Agricola Verdi;Campo Est;Via Napoli 89;C;14;5;901;12000;Asti;1,2;Vigneto;LIMOSO;14100;Piemonte;AT;98765432100;12050;11800

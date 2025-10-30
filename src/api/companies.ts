@@ -6,6 +6,7 @@ export type Company = {
   vatNumber: string;
   ownerId: string | null;
   fiscalCode: string;
+  cuaa: string | null;
   nation: string | null;
   city: string | null;
   address: string | null;
@@ -29,6 +30,7 @@ export type BulkCompanyInput = {
   name: string;
   vatNumber: string;
   fiscalCode: string;
+  cuaa?: string | null;
   nation?: string | null;
   city?: string | null;
   address?: string | null;
@@ -101,6 +103,38 @@ export async function bulkCreateCompanies(
   return data as BulkCompaniesResponse;
 }
 
+export type BulkCompanyUpdateInput = {
+  id: string;
+} & Partial<BulkCompanyInput>;
+
+export type BulkCompaniesUpdateRequest = {
+  companies: BulkCompanyUpdateInput[];
+};
+
+export async function bulkUpdateCompanies(
+  request: BulkCompaniesUpdateRequest,
+  baseUrl: string = BASE_URL
+): Promise<BulkCompaniesResponse> {
+  const response = await fetch(`${baseUrl}/companies/bulk`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to update companies");
+  }
+
+  const data = await response.json();
+  console.log("Risposta bulkUpdateCompanies:", data);
+  return data as BulkCompaniesResponse;
+}
+
 class CompaniesApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -115,6 +149,12 @@ class CompaniesApiService {
     request: BulkCompaniesRequest
   ): Promise<BulkCompaniesResponse> {
     return await bulkCreateCompanies(request, this.baseUrl);
+  }
+
+  public async bulkUpdate(
+    request: BulkCompaniesUpdateRequest
+  ): Promise<BulkCompaniesResponse> {
+    return await bulkUpdateCompanies(request, this.baseUrl);
   }
 }
 

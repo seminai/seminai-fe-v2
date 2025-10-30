@@ -18,13 +18,30 @@ const buildLabelSummaryColumns = (): EditableColumn[] =>
       id: "productName",
       title: "Nome commerciale",
       type: "text",
-      width: "30%",
+      width: "25%",
     },
     {
       id: "registrationNumber",
       title: "Numero di registrazione",
       type: "text",
-      width: "30%",
+      width: "25%",
+    },
+    {
+      id: "createdAt",
+      title: "Data creazione",
+      type: "text",
+      width: "15%",
+      render: (value: unknown) => {
+        if (!value) return "-";
+        const date = new Date(value as string);
+        return new Intl.DateTimeFormat("it-IT", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        }).format(date);
+      },
     },
     {
       id: "extractionConfidence",
