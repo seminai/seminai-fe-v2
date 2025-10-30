@@ -88,8 +88,10 @@ export type BulkFieldInput = {
   subalterno?: string | null;
   nation?: string | null;
   region?: string | null;
+  province?: string | null;
   city?: string | null;
   cap?: string | null;
+  cuaa?: string | null;
   variazioneMq?: string | null;
   inizioConduzione?: string | null;
   fineConduzione?: string | null;
@@ -155,6 +157,36 @@ export async function bulkCreateFields(
   return (await response.json()) as BulkFieldsResponse;
 }
 
+export type BulkFieldUpdateInput = {
+  id: string;
+} & Partial<Omit<BulkFieldInput, "companyId">>;
+
+export type BulkFieldsUpdateRequest = {
+  fields: BulkFieldUpdateInput[];
+};
+
+export async function bulkUpdateFields(
+  request: BulkFieldsUpdateRequest,
+  baseUrl: string = BASE_URL
+): Promise<BulkFieldsResponse> {
+  const response = await fetch(`${baseUrl}/fields/bulk`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to update fields");
+  }
+
+  return (await response.json()) as BulkFieldsResponse;
+}
+
 class FieldsApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -169,6 +201,12 @@ class FieldsApiService {
     request: BulkFieldsRequest
   ): Promise<BulkFieldsResponse> {
     return await bulkCreateFields(request, this.baseUrl);
+  }
+
+  public async bulkUpdate(
+    request: BulkFieldsUpdateRequest
+  ): Promise<BulkFieldsResponse> {
+    return await bulkUpdateFields(request, this.baseUrl);
   }
 }
 

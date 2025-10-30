@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -23,6 +24,8 @@ import {
   IoPricetagOutline,
   IoGridOutline,
   IoBusinessOutline,
+  IoChevronForwardOutline,
+  IoChevronBackOutline,
 } from "react-icons/io5";
 import {
   DropdownMenu,
@@ -185,6 +188,8 @@ function MobileAccountMenu() {
   );
 }
 
+const SIDEBAR_STATE_KEY = "sidebar-open-state";
+
 export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -192,6 +197,16 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const { data } = useCurrentUser();
   const { companies } = useCompanies();
   const queryClient = useQueryClient();
+
+  // Gestione stato sidebar con localStorage
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
+    const stored = localStorage.getItem(SIDEBAR_STATE_KEY);
+    return stored ? JSON.parse(stored) : false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_STATE_KEY, JSON.stringify(sidebarOpen));
+  }, [sidebarOpen]);
 
   const model = new NavigationModel("/dashboard");
   const items = model.getNavigationItems();
@@ -210,7 +225,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     location.pathname.startsWith("/company/");
 
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <Sidebar
         variant="floating"
         collapsible="icon"
@@ -294,6 +309,19 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+
+        <div className="px-2 pb-20">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="flex h-10 w-full items-center justify-center rounded-lg   transition-colors"
+          >
+            {sidebarOpen ? (
+              <IoChevronBackOutline className="size-5 text-neutral-700" />
+            ) : (
+              <IoChevronForwardOutline className="size-5 text-neutral-700" />
+            )}
+          </button>
+        </div>
         <SidebarFooter className="pb-4">
           <div className="px-2">
             <DropdownMenu>

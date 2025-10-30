@@ -30,6 +30,7 @@ import authService from "@/utils/auth";
 import { productsApiService } from "@/api/products";
 import { toast } from "sonner";
 import { toList, parseList, buildColumns } from "@/utils/tableHelpers";
+import { Separator } from "@/components/ui/separator";
 
 type LabelData = LabelDetail["label"];
 
@@ -225,18 +226,28 @@ export default function LabelDetailPage(): React.ReactElement {
               <SelectItem value="json">Vista JSON</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant={view === "dati" ? "default" : "outline"}
-            onClick={() => setView("dati")}
-          >
-            Dati etichetta
-          </Button>
-          <Button
-            variant={view === "dosaggi" ? "default" : "outline"}
-            onClick={() => setView("dosaggi")}
-          >
-            Dosaggi dettagliati
-          </Button>
+          <div className="inline-flex p-1 bg-gray-100 rounded-lg gap-1">
+            <button
+              onClick={() => setView("dati")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                view === "dati"
+                  ? "bg-white shadow-sm text-gray-900"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Dettaggli
+            </button>
+            <button
+              onClick={() => setView("dosaggi")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                view === "dosaggi"
+                  ? "bg-white shadow-sm text-gray-900"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Dosaggi
+            </button>
+          </div>
         </div>
       </div>
 
@@ -251,8 +262,8 @@ export default function LabelDetailPage(): React.ReactElement {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-4 md:h-[calc(100svh-12rem)]">
-          <div className="space-y-4 md:overflow-auto">
-            <Card className="p-4 shadow-none">
+          <div className="space-y-4 md:h-full md:overflow-auto">
+            <Card className="p-4 shadow-none md:h-full">
               {view === "dati" ? (
                 viewMode === "table" ? (
                   <EditableTable
@@ -353,100 +364,114 @@ export default function LabelDetailPage(): React.ReactElement {
                 viewMode === "table" ? (
                   <div className="space-y-4 md:max-h-[calc(100svh-18rem)] md:overflow-auto pr-1">
                     {(detail.label?.dosaggi_dettagliati ?? []).map((d, idx) => (
-                      <EditableTable
-                        key={idx}
-                        columns={dosaggioColumns}
-                        rows={[toDosaggioRow(d as LabelDosaggioDettagliato)]}
-                        isModify={true}
-                        isVertical={true}
-                        getRowId={() => `dos-${idx}`}
-                        onSave={async ({ updated }) => {
-                          try {
-                            const row = updated?.[0] ?? {};
-                            const updatedDosaggio: LabelDosaggioDettagliato = {
-                              coltura: String(row.coltura ?? d.coltura ?? ""),
-                              malattia: String(
-                                row.malattia ?? d.malattia ?? ""
-                              ),
-                              dose_minima:
-                                typeof row.dose_minima === "number"
-                                  ? row.dose_minima
-                                  : Number(
-                                      row.dose_minima ?? d.dose_minima ?? 0
-                                    ),
-                              dose_massima:
-                                typeof row.dose_massima === "number"
-                                  ? row.dose_massima
-                                  : Number(
-                                      row.dose_massima ?? d.dose_massima ?? 0
-                                    ),
-                              dose_um: String(row.dose_um ?? d.dose_um ?? ""),
-                              acqua_max:
-                                typeof row.acqua_max === "number"
-                                  ? row.acqua_max
-                                  : Number(row.acqua_max ?? d.acqua_max ?? 0),
-                              acqua_max_um: String(
-                                row.acqua_max_um ?? d.acqua_max_um ?? ""
-                              ),
-                              n_max_applicazioni:
-                                typeof row.n_max_applicazioni === "number"
-                                  ? row.n_max_applicazioni
-                                  : Number(
-                                      row.n_max_applicazioni ??
-                                        d.n_max_applicazioni ??
-                                        0
-                                    ),
-                              n_max_applicazioni_um: String(
-                                row.n_max_applicazioni_um ??
-                                  d.n_max_applicazioni_um ??
-                                  ""
-                              ),
-                              intervallo_min_giorni:
-                                typeof row.intervallo_min_giorni === "number"
-                                  ? row.intervallo_min_giorni
-                                  : Number(
-                                      row.intervallo_min_giorni ??
-                                        d.intervallo_min_giorni ??
-                                        0
-                                    ),
-                              intervallo_sicurezza_giorni:
-                                typeof row.intervallo_sicurezza_giorni ===
-                                "number"
-                                  ? row.intervallo_sicurezza_giorni
-                                  : Number(
-                                      row.intervallo_sicurezza_giorni ??
-                                        d.intervallo_sicurezza_giorni ??
-                                        0
-                                    ),
-                              epoca_impiego: String(
-                                row.epoca_impiego ?? d.epoca_impiego ?? ""
-                              ),
-                              modalita_applicazione: String(
-                                row.modalita_applicazione ??
-                                  d.modalita_applicazione ??
-                                  ""
-                              ),
-                              istruzioni: String(
-                                row.istruzioni ?? d.istruzioni ?? ""
-                              ),
-                            };
+                      <>
+                        <EditableTable
+                          key={idx}
+                          columns={dosaggioColumns}
+                          rows={[toDosaggioRow(d as LabelDosaggioDettagliato)]}
+                          isModify={true}
+                          isVertical={true}
+                          getRowId={() => `dos-${idx}`}
+                          onSave={async ({ updated }) => {
+                            try {
+                              const row = updated?.[0] ?? {};
+                              const updatedDosaggio: LabelDosaggioDettagliato =
+                                {
+                                  coltura: String(
+                                    row.coltura ?? d.coltura ?? ""
+                                  ),
+                                  malattia: String(
+                                    row.malattia ?? d.malattia ?? ""
+                                  ),
+                                  dose_minima:
+                                    typeof row.dose_minima === "number"
+                                      ? row.dose_minima
+                                      : Number(
+                                          row.dose_minima ?? d.dose_minima ?? 0
+                                        ),
+                                  dose_massima:
+                                    typeof row.dose_massima === "number"
+                                      ? row.dose_massima
+                                      : Number(
+                                          row.dose_massima ??
+                                            d.dose_massima ??
+                                            0
+                                        ),
+                                  dose_um: String(
+                                    row.dose_um ?? d.dose_um ?? ""
+                                  ),
+                                  acqua_max:
+                                    typeof row.acqua_max === "number"
+                                      ? row.acqua_max
+                                      : Number(
+                                          row.acqua_max ?? d.acqua_max ?? 0
+                                        ),
+                                  acqua_max_um: String(
+                                    row.acqua_max_um ?? d.acqua_max_um ?? ""
+                                  ),
+                                  n_max_applicazioni:
+                                    typeof row.n_max_applicazioni === "number"
+                                      ? row.n_max_applicazioni
+                                      : Number(
+                                          row.n_max_applicazioni ??
+                                            d.n_max_applicazioni ??
+                                            0
+                                        ),
+                                  n_max_applicazioni_um: String(
+                                    row.n_max_applicazioni_um ??
+                                      d.n_max_applicazioni_um ??
+                                      ""
+                                  ),
+                                  intervallo_min_giorni:
+                                    typeof row.intervallo_min_giorni ===
+                                    "number"
+                                      ? row.intervallo_min_giorni
+                                      : Number(
+                                          row.intervallo_min_giorni ??
+                                            d.intervallo_min_giorni ??
+                                            0
+                                        ),
+                                  intervallo_sicurezza_giorni:
+                                    typeof row.intervallo_sicurezza_giorni ===
+                                    "number"
+                                      ? row.intervallo_sicurezza_giorni
+                                      : Number(
+                                          row.intervallo_sicurezza_giorni ??
+                                            d.intervallo_sicurezza_giorni ??
+                                            0
+                                        ),
+                                  epoca_impiego: String(
+                                    row.epoca_impiego ?? d.epoca_impiego ?? ""
+                                  ),
+                                  modalita_applicazione: String(
+                                    row.modalita_applicazione ??
+                                      d.modalita_applicazione ??
+                                      ""
+                                  ),
+                                  istruzioni: String(
+                                    row.istruzioni ?? d.istruzioni ?? ""
+                                  ),
+                                };
 
-                            const base = [
-                              ...(detail.label?.dosaggi_dettagliati ?? []),
-                            ];
-                            base[idx] = updatedDosaggio;
-                            await saveAsync({
-                              label: {
-                                ...detail.label,
-                                dosaggi_dettagliati: base,
-                              },
-                            });
-                          } catch {
-                            /* handled in mutation */
-                          }
-                        }}
-                        className="bg-background"
-                      />
+                              const base = [
+                                ...(detail.label?.dosaggi_dettagliati ?? []),
+                              ];
+                              base[idx] = updatedDosaggio;
+                              await saveAsync({
+                                label: {
+                                  ...detail.label,
+                                  dosaggi_dettagliati: base,
+                                },
+                              });
+                            } catch {
+                              /* handled in mutation */
+                            }
+                          }}
+                          className="bg-background"
+                        />
+                        <Separator className="my-4 bg-gray-200 " />
+                        <Separator className="my-4 bg-gray-200 " />
+                      </>
                     ))}
                     {detail.label?.dosaggi_dettagliati?.length ? null : (
                       <div className="text-sm text-gray-600">

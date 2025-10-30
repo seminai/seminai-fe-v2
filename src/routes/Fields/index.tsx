@@ -1,12 +1,17 @@
 import * as React from "react";
-import { useState, useMemo } from "react";
-import { type Field, type BulkFieldInput } from "@/api/fields";
+import { useState, useMemo, useRef } from "react";
+import {
+  type Field,
+  type BulkFieldInput,
+  type BulkFieldUpdateInput,
+} from "@/api/fields";
 import { Spinner } from "@/components/ui/spinner";
 import { EditableTable, type EditableColumn } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { createTextSearch } from "@/utils/filter";
 import { DrawerFieldContent } from "./DrawerField";
+import { ImportFieldByCsv } from "./importFieldByCsv";
 import { useFields } from "@/hooks/useFields";
 import { useCompanies } from "@/hooks/useCompanies";
 import { toast } from "sonner";
@@ -105,8 +110,9 @@ const buildFieldsEditColumns = (companies: Company[]): EditableColumn[] => {
 
 export default function Fields(): React.ReactElement {
   const [searchFilter, setSearchFilter] = useState<string>("");
+  const tableRef = useRef<EditableTable>(null);
 
-  const { fields, isLoading, error, createFields } = useFields();
+  const { fields, isLoading, error, createFields, updateFields } = useFields();
   const { companies, isLoading: isLoadingCompanies } = useCompanies();
 
   const textSearch = useMemo(
@@ -128,6 +134,41 @@ export default function Fields(): React.ReactElement {
   const renderDetails = (row: Record<string, unknown>): React.ReactNode => {
     const field = row as unknown as Field;
     return <DrawerFieldContent field={field} />;
+  };
+
+  /**
+   * Gestisce l'importazione dei campi da CSV
+   * Aggiunge i campi come nuove righe nella tabella editabile
+   */
+  const handleImportFromCsv = (fieldsToImport: BulkFieldInput[]): void => {
+    if (!tableRef.current) {
+      toast.error("Tabella non disponibile");
+      return;
+    }
+
+    // Converti i campi in formato row per la tabella
+    const rowsToAdd = fieldsToImport.map((field) => ({
+      companyId: field.companyId || "",
+      name: field.name || "",
+      address: field.address || "",
+      sezione: field.sezione || "",
+      foglio: field.foglio || "",
+      particella: field.particella || "",
+      superficieCatastaleMq: field.superficieCatastaleMq || "",
+      city: field.city || "",
+      sauHa: field.sauHa || "",
+      uso: field.uso || "",
+      soilType: field.soilType || "",
+    }));
+
+    // Aggiungi le righe alla tabella
+    tableRef.current.addRows(rowsToAdd);
+
+    toast.success(
+      `${fieldsToImport.length} camp${
+        fieldsToImport.length === 1 ? "o aggiunto" : "i aggiunti"
+      } alla tabella. Completa i dati e salva.`
+    );
   };
 
   const handleSave = (payload: {
@@ -153,12 +194,38 @@ export default function Fields(): React.ReactElement {
       return bulkField;
     });
 
-    if (fieldsToCreate.length === 0) {
-      toast.error("Aggiungi almeno un campo");
+    const fieldsToUpdate = payload.updated.map((field) => {
+      const updateField: Record<string, unknown> = {
+        id: String(field.id),
+      };
+
+      if (field.name) updateField.name = String(field.name);
+      if (field.address) updateField.address = String(field.address);
+      if (field.sezione) updateField.sezione = String(field.sezione);
+      if (field.foglio) updateField.foglio = String(field.foglio);
+      if (field.particella) updateField.particella = String(field.particella);
+      if (field.superficieCatastaleMq)
+        updateField.superficieCatastaleMq = Number(field.superficieCatastaleMq);
+      if (field.city) updateField.city = String(field.city);
+      if (field.sauHa) updateField.sauHa = Number(field.sauHa);
+      if (field.uso) updateField.uso = String(field.uso);
+      if (field.soilType) updateField.soilType = String(field.soilType);
+
+      return updateField;
+    });
+
+    if (fieldsToCreate.length === 0 && fieldsToUpdate.length === 0) {
+      toast.error("Nessuna modifica da salvare");
       return;
     }
 
-    createFields(fieldsToCreate);
+    if (fieldsToCreate.length > 0) {
+      createFields(fieldsToCreate);
+    }
+
+    if (fieldsToUpdate.length > 0) {
+      updateFields(fieldsToUpdate as BulkFieldUpdateInput[]);
+    }
   };
 
   // Colonne unificate per view e edit
@@ -168,6 +235,11 @@ export default function Fields(): React.ReactElement {
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-semibold">Campi</h1>
+
+        <ImportFieldByCsv
+          companies={companies}
+          onImportSuccess={handleImportFromCsv}
+        />
       </div>
 
       <div className="mb-4 max-w-md">
@@ -208,6 +280,7 @@ export default function Fields(): React.ReactElement {
         </div>
       ) : (
         <EditableTable
+          ref={tableRef}
           columns={columns}
           rows={filteredItems}
           isModify={true}
