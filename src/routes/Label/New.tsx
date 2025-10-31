@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
@@ -13,19 +13,31 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Upload, FileText, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface LabelFormItem extends BulkExtractItem {
   id: string;
 }
 
+type UploadMode = "manual" | "pdf";
+
+interface PdfFile {
+  id: string;
+  file: File;
+}
+
 export default function NewLabel(): React.ReactElement {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [uploadMode, setUploadMode] = useState<UploadMode>("manual");
   const [items, setItems] = useState<LabelFormItem[]>([
     { id: crypto.randomUUID(), name: "", regNumber: "" },
   ]);
+  const [pdfFiles, setPdfFiles] = useState<PdfFile[]>([]);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const [concurrency, setConcurrency] = useState<number>(2);
 
   const mutation = useMutation({
@@ -42,6 +54,47 @@ export default function NewLabel(): React.ReactElement {
     },
     onError: (error: Error) => {
       toast.error(`Errore durante l'estrazione: ${error.message}`);
+    },
+  });
+
+  const pdfMutation = useMutation({
+    mutationFn: async ({
+      files,
+      concurrency,
+    }: {
+      files: File[];
+      concurrency: number;
+    }) => {
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append("files", file);
+      });
+      formData.append("concurrency", concurrency.toString());
+
+      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
+      const response = await fetch(`${BASE_URL}/labels/bulk-pdf-label`, {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        throw new Error(errorText || `Errore HTTP: ${response.status}`);
+      }
+
+      return await response.json();
+    },
+    onSuccess: (response) => {
+      const { processed, successful, failed } = response;
+      toast.success(
+        `Elaborazione completata: ${successful}/${processed} successi, ${failed} falliti`
+      );
+      queryClient.invalidateQueries({ queryKey: ["labels", "summary"] });
+      navigate("/label");
+    },
+    onError: (error: Error) => {
+      toast.error(`Errore durante l'estrazione PDF: ${error.message}`);
     },
   });
 
@@ -65,27 +118,94 @@ export default function NewLabel(): React.ReactElement {
     );
   };
 
+  const validatePdfFile = (file: File): boolean => {
+    if (file.type !== "application/pdf") {
+      toast.error(`${file.name} non è un file PDF valido`);
+      return false;
+    }
+    // Note: Page count validation would require reading the PDF, which is complex client-side
+    // The server will validate the 6-page limit
+    return true;
+  };
+
+  const handlePdfFiles = (files: FileList | File[]): void => {
+    const fileArray = Array.from(files);
+    const validFiles = fileArray.filter(validatePdfFile);
+
+    if (validFiles.length === 0) return;
+
+    const newPdfFiles: PdfFile[] = validFiles.map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+    }));
+
+    setPdfFiles((prev) => [...prev, ...newPdfFiles]);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>): void => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>): void => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>): void => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files) {
+      handlePdfFiles(e.dataTransfer.files);
+    }
+  };
+
+  const handleFileInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): void => {
+    if (e.target.files) {
+      handlePdfFiles(e.target.files);
+    }
+  };
+
+  const handleRemovePdfFile = (id: string): void => {
+    setPdfFiles((prev) => prev.filter((file) => file.id !== id));
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
 
-    const validItems = items.filter(
-      (item) => item.name.trim() !== "" && item.regNumber.trim() !== ""
-    );
+    if (uploadMode === "manual") {
+      const validItems = items.filter(
+        (item) => item.name.trim() !== "" && item.regNumber.trim() !== ""
+      );
 
-    if (validItems.length === 0) {
-      toast.error("Inserisci almeno un'etichetta valida");
-      return;
+      if (validItems.length === 0) {
+        toast.error("Inserisci almeno un'etichetta valida");
+        return;
+      }
+
+      const request: BulkExtractRequest = {
+        items: validItems.map(({ name, regNumber }) => ({ name, regNumber })),
+        concurrency,
+      };
+
+      mutation.mutate(request);
+    } else {
+      if (pdfFiles.length === 0) {
+        toast.error("Carica almeno un file PDF");
+        return;
+      }
+
+      const files = pdfFiles.map((pdfFile) => pdfFile.file);
+      pdfMutation.mutate({ files, concurrency });
     }
-
-    const request: BulkExtractRequest = {
-      items: validItems.map(({ name, regNumber }) => ({ name, regNumber })),
-      concurrency,
-    };
-
-    mutation.mutate(request);
   };
 
   const canRemove = items.length > 1;
+
+  const isLoading = mutation.isPending || pdfMutation.isPending;
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -96,77 +216,184 @@ export default function NewLabel(): React.ReactElement {
         </p>
       </div>
 
+      {/* Mode Toggle */}
+      <div className="mb-6 flex justify-center">
+        <div className="inline-flex p-1 bg-gray-100 rounded-lg gap-1">
+          <button
+            type="button"
+            onClick={() => setUploadMode("manual")}
+            disabled={isLoading}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              uploadMode === "manual"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Carica numero di registrazione e nome
+          </button>
+          <button
+            type="button"
+            onClick={() => setUploadMode("pdf")}
+            disabled={isLoading}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              uploadMode === "pdf"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Carica PDF etichette
+          </button>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit}>
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Etichette da Processare</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {items.map((item, index) => (
-              <div
-                key={item.id}
-                className="flex gap-4 items-start p-4 border rounded-lg bg-gray-50"
-              >
-                <div className="flex-1 grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor={`name-${item.id}`}>
-                      Nome Prodotto <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id={`name-${item.id}`}
-                      type="text"
-                      placeholder="es. REVOLUTION"
-                      value={item.name}
-                      onChange={(e) =>
-                        handleItemChange(item.id, "name", e.target.value)
-                      }
-                      required
-                    />
+        {uploadMode === "manual" ? (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Etichette da Processare</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex gap-4 items-start p-4 border rounded-lg bg-gray-50"
+                >
+                  <div className="flex-1 grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor={`name-${item.id}`}>
+                        Nome Prodotto <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id={`name-${item.id}`}
+                        type="text"
+                        placeholder="es. REVOLUTION"
+                        value={item.name}
+                        onChange={(e) =>
+                          handleItemChange(item.id, "name", e.target.value)
+                        }
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`regNumber-${item.id}`}>
+                        Numero Registrazione{" "}
+                        <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id={`regNumber-${item.id}`}
+                        type="text"
+                        placeholder="es. 16667"
+                        value={item.regNumber}
+                        onChange={(e) =>
+                          handleItemChange(item.id, "regNumber", e.target.value)
+                        }
+                        required
+                      />
+                    </div>
                   </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveItem(item.id)}
+                    disabled={!canRemove}
+                    className="mt-8"
+                    title={
+                      canRemove ? "Rimuovi" : "Almeno un'etichetta richiesta"
+                    }
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAddItem}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Aggiungi Etichetta
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Carica File PDF</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Drag & Drop Area */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
+                  isDragging
+                    ? "border-primary bg-primary/5"
+                    : "border-gray-300 hover:border-primary hover:bg-gray-50"
+                )}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/pdf"
+                  multiple
+                  onChange={handleFileInputChange}
+                  className="hidden"
+                />
+                <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <p className="text-lg font-medium mb-2">
+                  Trascina i file PDF qui
+                </p>
+                <p className="text-sm text-gray-500 mb-1">
+                  oppure clicca per selezionare i file
+                </p>
+                <p className="text-xs text-gray-400">
+                  Ogni file può contenere massimo 6 pagine
+                </p>
+              </div>
+
+              {/* File List */}
+              {pdfFiles.length > 0 && (
+                <div className="space-y-2">
+                  <Label>File caricati ({pdfFiles.length})</Label>
                   <div className="space-y-2">
-                    <Label htmlFor={`regNumber-${item.id}`}>
-                      Numero Registrazione{" "}
-                      <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id={`regNumber-${item.id}`}
-                      type="text"
-                      placeholder="es. 16667"
-                      value={item.regNumber}
-                      onChange={(e) =>
-                        handleItemChange(item.id, "regNumber", e.target.value)
-                      }
-                      required
-                    />
+                    {pdfFiles.map((pdfFile) => (
+                      <div
+                        key={pdfFile.id}
+                        className="flex items-center justify-between p-3 border rounded-lg bg-gray-50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-red-500" />
+                          <div>
+                            <p className="text-sm font-medium">
+                              {pdfFile.file.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {(pdfFile.file.size / 1024).toFixed(2)} KB
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemovePdfFile(pdfFile.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveItem(item.id)}
-                  disabled={!canRemove}
-                  className="mt-8"
-                  title={
-                    canRemove ? "Rimuovi" : "Almeno un'etichetta richiesta"
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleAddItem}
-              className="w-full"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Aggiungi Etichetta
-            </Button>
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="mb-6">
           <CardHeader>
@@ -198,12 +425,12 @@ export default function NewLabel(): React.ReactElement {
             type="button"
             variant="outline"
             onClick={() => navigate("/label")}
-            disabled={mutation.isPending}
+            disabled={isLoading}
           >
             Annulla
           </Button>
-          <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending ? (
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? (
               <>
                 <Spinner size={16} className="mr-2" />
                 Elaborazione in corso...
