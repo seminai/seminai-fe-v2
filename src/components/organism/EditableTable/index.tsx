@@ -647,7 +647,7 @@ export class EditableTable extends React.Component<
                 className="text-muted-foreground"
                 onClick={this.addNewRow}
               >
-                + New page
+                + Aggiungi
               </Button>
             </div>
           </div>
@@ -678,8 +678,8 @@ export class EditableTable extends React.Component<
         className={cn("relative w-full rounded-lg bg-background", className)}
       >
         {/* Top action bar - Pulsanti azione in alto a destra - FISSO */}
-        {anySelected || (isModify && rows.some((r) => !r.isNew)) || showSave ? (
-          <div className="flex items-center justify-between px-4 py-3 border-b border-agri-green-50 bg-blue-50/50 sticky top-0 left-0 right-0 z-10">
+        {anySelected || isModify || this.props.addButton || showSave ? (
+          <div className="flex items-center justify-between px-4 py-3 border-b border-agri-green-50 bg-agri-green-50 rounded-t-lg sticky top-0 left-0 right-0 z-10">
             <span className="text-sm text-gray-600">
               {anySelected
                 ? `${this.selectedIds.length} element${
@@ -688,17 +688,16 @@ export class EditableTable extends React.Component<
                 : " "}
             </span>
             <div className="flex items-center gap-2">
-              {isModify && rows.some((r) => !r.isNew) && !anySelected && (
+              {isModify && !anySelected && (
                 <Button
                   onClick={this.toggleEditMode}
                   className={cn(
-                    "border",
+                    "border cursor-pointer",
                     this.state.isEditMode
-                      ? "border-gray-500 text-gray-500 hover:bg-gray-50"
-                      : "border-blue-200 text-blue-600 hover:bg-blue-50"
+                      ? "border-none text-gray-500 hover:bg-gray-50"
+                      : "border-none bg-blue-200 text-blue-700 hover:bg-blue-50"
                   )}
                   variant="ghost"
-                  size="sm"
                 >
                   {this.state.isEditMode ? (
                     <>
@@ -723,13 +722,21 @@ export class EditableTable extends React.Component<
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="2"
-                        className="h-4 w-4 mr-2"
+                        className="h-4 w-4"
                       >
                         <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
                       </svg>
-                      Modifica
                     </>
                   )}
+                </Button>
+              )}
+              {this.props.addButton && (
+                <Button
+                  variant="ghost"
+                  className="text-muted-foreground bg-agri-green-200 text-agri-green-700 cursor-pointer"
+                  onClick={this.addNewRow}
+                >
+                  +
                 </Button>
               )}
               {anySelected && (
@@ -954,20 +961,12 @@ export class EditableTable extends React.Component<
           </table>
         </div>
 
-        {/* Bottom action row similar to Notion "New page" */}
-        {this.props.addButton && (
-          <div className="sticky left-0 bottom-0 w-full border-t border-agri-green-50 inset-shadow-xs border-border/30 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex items-center justify-between px-2 py-2">
-              <Button
-                variant="ghost"
-                className="text-muted-foreground"
-                onClick={this.addNewRow}
-              >
-                + New page
-              </Button>
-            </div>
+        {/* TODO:  pagiazione*/}
+        {/* {this.props.addButton && (
+          <div className="sticky left-0 bottom-0 w-full border-t border-agri-green-50 bg-agri-green-50 rounded-b-lg inset-shadow-xs border-border/30 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex items-center justify-between px-2 py-2"></div>
           </div>
-        )}
+        )} */}
         {hasDetails ? (
           <Drawer open={this.state.drawerOpen} onOpenChange={this.closeDetails}>
             <DrawerContent data-vaul-drawer-direction="right">

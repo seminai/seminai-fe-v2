@@ -14,6 +14,11 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NavigationModel, NavigationItem } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
@@ -26,6 +31,8 @@ import {
   IoBusinessOutline,
   IoChevronForwardOutline,
   IoChevronBackOutline,
+  IoChevronDownOutline,
+  IoStatsChartOutline,
 } from "react-icons/io5";
 import {
   DropdownMenu,
@@ -201,6 +208,7 @@ function MobileAccountMenu() {
 }
 
 const SIDEBAR_STATE_KEY = "sidebar-open-state";
+const MANAGE_MENU_STATE_KEY = "manage-menu-open-state";
 
 export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const location = useLocation();
@@ -216,9 +224,19 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     return stored ? JSON.parse(stored) : false;
   });
 
+  // Gestione stato menu "Gestisci" con localStorage
+  const [manageMenuOpen, setManageMenuOpen] = useState<boolean>(() => {
+    const stored = localStorage.getItem(MANAGE_MENU_STATE_KEY);
+    return stored ? JSON.parse(stored) : true; // aperto di default
+  });
+
   useEffect(() => {
     localStorage.setItem(SIDEBAR_STATE_KEY, JSON.stringify(sidebarOpen));
   }, [sidebarOpen]);
+
+  useEffect(() => {
+    localStorage.setItem(MANAGE_MENU_STATE_KEY, JSON.stringify(manageMenuOpen));
+  }, [manageMenuOpen]);
 
   const model = new NavigationModel("/dashboard");
   const items = model.getNavigationItems();
@@ -241,91 +259,164 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       <Sidebar
         variant="floating"
         collapsible="icon"
-        // inset-y-auto top-1/2 -translate-y-1/2 h-[50svh]
         className="bg-transparent py-4"
         innerClassName="backdrop-blur-lg bg-white/0 border border-neutral-200/50 shadow-sm"
       >
-        <SidebarHeader className="px-2 pt-2">
-          <div className="flex items-center justify-center">
-            <img src="/logo.png" alt="logo" className="h-7 w-7" />
+        <SidebarHeader className="px-4 pt-4 pb-2">
+          <div className="flex items-center justify-center group-data-[collapsible=icon]:justify-center">
+            <img src="/logo.png" alt="logo" className="h-8 w-8" />
           </div>
         </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup>
+        <SidebarContent className="px-2">
+          <SidebarGroup className="py-2">
             <SidebarGroupContent>
-              <SidebarMenu>
-                {" "}
+              <SidebarMenu className="gap-1.5">
                 <SidebarMenuItem key="dashboard">
                   <SidebarMenuButton
                     asChild
                     isActive={labelDashboard}
                     tooltip="Dashboard"
-                    className="data-[active=true]:bg-neutral-900/5"
+                    size="lg"
+                    className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                   >
-                    <Link to="/dashboard" className="flex items-center gap-2">
-                      <IoHomeOutline className="size-6" />
+                    <Link to="/dashboard" className="flex items-center gap-3">
+                      <IoHomeOutline className="size-5" />
                       <span className="group-data-[collapsible=icon]:hidden">
                         Dashboard
                       </span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
                 <SidebarMenuItem key="label">
                   <SidebarMenuButton
                     asChild
                     isActive={labelActive}
                     tooltip="Etichette"
-                    className="data-[active=true]:bg-neutral-900/5"
+                    size="lg"
+                    className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                   >
-                    <Link to="/label" className="flex items-center gap-2">
-                      <IoPricetagOutline className="size-6" />
+                    <Link to="/label" className="flex items-center gap-3">
+                      <IoPricetagOutline className="size-5" />
                       <span className="group-data-[collapsible=icon]:hidden">
                         Etichette
                       </span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                {hasCompanies && (
-                  <SidebarMenuItem key="fields">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={fieldsActive}
-                      tooltip="Campi"
-                      className="data-[active=true]:bg-neutral-900/5"
-                    >
-                      <Link to="/fields" className="flex items-center gap-2">
-                        <IoGridOutline className="size-6" />
-                        <span className="group-data-[collapsible=icon]:hidden">
-                          Campi
-                        </span>
-                      </Link>
-                    </SidebarMenuButton>
+
+                {/* Modalità espansa: mostra menu collapsible */}
+                <Collapsible
+                  open={manageMenuOpen}
+                  onOpenChange={setManageMenuOpen}
+                  className="group/collapsible group-data-[collapsible=icon]:hidden"
+                >
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton
+                        tooltip="Gestisci"
+                        size="lg"
+                        className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
+                      >
+                        <IoStatsChartOutline className="size-5" />
+                        <span>Gestisci</span>
+                        <IoChevronDownOutline
+                          className={cn(
+                            "ml-auto size-4 transition-transform",
+                            manageMenuOpen && "rotate-180"
+                          )}
+                        />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenu className="pl-2 border-l-2 border-neutral-200/50 ml-6 mt-2 gap-1">
+                        <SidebarMenuItem key="company">
+                          <SidebarMenuButton
+                            asChild
+                            isActive={companyActive}
+                            tooltip="Aziende"
+                            size="lg"
+                            className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                          >
+                            <Link
+                              to="/company"
+                              className="flex items-center gap-3"
+                            >
+                              <IoBusinessOutline className="size-5" />
+                              <span>Aziende</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+
+                        {hasCompanies && (
+                          <SidebarMenuItem key="fields">
+                            <SidebarMenuButton
+                              asChild
+                              isActive={fieldsActive}
+                              tooltip="Campi"
+                              size="lg"
+                              className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                            >
+                              <Link
+                                to="/fields"
+                                className="flex items-center gap-3"
+                              >
+                                <IoGridOutline className="size-5" />
+                                <span>Campi</span>
+                              </Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        )}
+                      </SidebarMenu>
+                    </CollapsibleContent>
                   </SidebarMenuItem>
-                )}
-                <SidebarMenuItem key="company">
+                </Collapsible>
+
+                {/* Modalità collassata: mostra icone separate */}
+                <SidebarMenuItem
+                  key="company-icon"
+                  className="hidden group-data-[collapsible=icon]:block"
+                >
                   <SidebarMenuButton
                     asChild
                     isActive={companyActive}
                     tooltip="Aziende"
+                    size="lg"
                     className="data-[active=true]:bg-neutral-900/5"
                   >
-                    <Link to="/company" className="flex items-center gap-2">
-                      <IoBusinessOutline className="size-6" />
-                      <span className="group-data-[collapsible=icon]:hidden">
-                        Aziende
-                      </span>
+                    <Link to="/company" className="flex items-center gap-3">
+                      <IoBusinessOutline className="size-5" />
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
+                {hasCompanies && (
+                  <SidebarMenuItem
+                    key="fields-icon"
+                    className="hidden group-data-[collapsible=icon]:block"
+                  >
+                    <SidebarMenuButton
+                      asChild
+                      isActive={fieldsActive}
+                      tooltip="Campi"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link to="/fields" className="flex items-center gap-3">
+                        <IoGridOutline className="size-5" />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
 
-        <div className="px-2 pb-20">
+        <div className="px-4 pb-20">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex h-10 w-full items-center justify-center rounded-lg   transition-colors"
+            className="flex h-10 w-full items-center justify-center rounded-lg hover:bg-neutral-100/50 transition-colors"
           >
             {sidebarOpen ? (
               <IoChevronBackOutline className="size-5 text-neutral-700" />
@@ -334,11 +425,11 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
             )}
           </button>
         </div>
-        <SidebarFooter className="pb-4">
-          <div className="px-2">
+        <SidebarFooter className="pb-4 px-4">
+          <div>
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-neutral-300">
-                <Avatar className="size-8">
+              <DropdownMenuTrigger className="flex items-center gap-3 w-full rounded-xl p-2 hover:bg-neutral-100/50 transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-300">
+                <Avatar className="size-9">
                   <AvatarImage
                     src={data?.data.user.profilePictureUrl}
                     alt={`${data?.data.user.name ?? ""} ${
@@ -350,6 +441,14 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     {(data?.data.user.surname?.[0] ?? "").toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
+                <div className="flex flex-col items-start text-left group-data-[collapsible=icon]:hidden">
+                  <span className="text-sm font-medium text-neutral-900">
+                    {data?.data.user.name} {data?.data.user.surname}
+                  </span>
+                  <span className="text-xs text-neutral-500">
+                    {data?.data.user.email}
+                  </span>
+                </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="right" align="start">
                 <DropdownMenuLabel>Il mio account</DropdownMenuLabel>
