@@ -342,7 +342,7 @@ export default function LabelDetailPage(): React.ReactElement {
                 <div className="space-y-4 pr-1">
                   {JSON.stringify(editedDosaggi) !==
                     JSON.stringify(detail.label?.dosaggi_dettagliati ?? []) && (
-                    <div className="flex justify-end gap-2 mb-4">
+                    <div className="sticky top-0 z-10 flex justify-end gap-2 mb-4 pb-2 bg-background">
                       <Button
                         variant="outline"
                         onClick={() => {
