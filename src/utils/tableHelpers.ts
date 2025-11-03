@@ -1,4 +1,7 @@
-import type { EditableColumn, EditableCellType } from "@/components/ui/table";
+import {
+  EditableCellType,
+  EditableColumn,
+} from "@/components/organism/EditableTable";
 
 export function buildColumns<T>(
   config: Array<{

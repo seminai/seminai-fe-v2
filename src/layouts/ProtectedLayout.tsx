@@ -167,17 +167,29 @@ function MobileAccountMenu() {
           </DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
-            onClick={() => {
-              authService.logout();
-              queryClient.removeQueries({
-                queryKey: ["auth", "me"],
-                exact: false,
-              });
-              queryClient.removeQueries({
-                queryKey: ["users", "me"],
-                exact: false,
-              });
-              navigate("/auth", { replace: true });
+            onClick={async () => {
+              try {
+                // Esegui il logout (chiama backend + cancella cookie client)
+                await authService.logout();
+
+                // Pulisci la cache di React Query
+                queryClient.removeQueries({
+                  queryKey: ["auth", "me"],
+                  exact: false,
+                });
+                queryClient.removeQueries({
+                  queryKey: ["users", "me"],
+                  exact: false,
+                });
+
+                // Forza un hard reload per assicurarsi che tutto sia pulito
+                // Questo resetta completamente lo stato dell'app
+                window.location.href = "/auth";
+              } catch (error) {
+                console.error("Logout error:", error);
+                // Anche in caso di errore, forza il redirect
+                window.location.href = "/auth";
+              }
             }}
           >
             Logout
@@ -347,17 +359,28 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
-                  onClick={() => {
-                    authService.logout();
-                    queryClient.removeQueries({
-                      queryKey: ["auth", "me"],
-                      exact: false,
-                    });
-                    queryClient.removeQueries({
-                      queryKey: ["users", "me"],
-                      exact: false,
-                    });
-                    navigate("/auth", { replace: true });
+                  onClick={async () => {
+                    try {
+                      // Esegui il logout (chiama backend + cancella cookie client)
+                      await authService.logout();
+
+                      // Pulisci la cache di React Query
+                      queryClient.removeQueries({
+                        queryKey: ["auth", "me"],
+                        exact: false,
+                      });
+                      queryClient.removeQueries({
+                        queryKey: ["users", "me"],
+                        exact: false,
+                      });
+
+                      // Forza un hard reload per assicurarsi che tutto sia pulito
+                      window.location.href = "/auth";
+                    } catch (error) {
+                      console.error("Logout error:", error);
+                      // Anche in caso di errore, forza il redirect
+                      window.location.href = "/auth";
+                    }
                   }}
                   className="cursor-pointer  text-red-600"
                 >
@@ -369,8 +392,8 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset>
-        <div className="min-h-svh w-full">
+      <SidebarInset className="overflow-hidden">
+        <div className="h-svh w-full overflow-hidden flex flex-col">
           {children}
           <MobileBottomBar
             items={items}
