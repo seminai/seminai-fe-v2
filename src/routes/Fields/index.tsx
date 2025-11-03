@@ -6,7 +6,10 @@ import {
   type BulkFieldUpdateInput,
 } from "@/api/fields";
 import { Spinner } from "@/components/ui/spinner";
-import { EditableTable, type EditableColumn } from "@/components/ui/table";
+import {
+  EditableTable,
+  type EditableColumn,
+} from "@/components/organism/EditableTable";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { createTextSearch } from "@/utils/filter";
@@ -82,6 +85,7 @@ const buildFieldsEditColumns = (companies: Company[]): EditableColumn[] => {
       id: "sauHa",
       title: "SAU (Ha)",
       type: "number",
+      required: true,
       placeholder: "es. 1.2",
     },
     {
@@ -148,7 +152,7 @@ export default function Fields(): React.ReactElement {
 
     // Converti i campi in formato row per la tabella
     const rowsToAdd = fieldsToImport.map((field) => ({
-      companyId: field.companyId || "",
+      companyName: field.companyId || "",
       name: field.name || "",
       address: field.address || "",
       sezione: field.sezione || "",
@@ -175,41 +179,58 @@ export default function Fields(): React.ReactElement {
     created: Array<Record<string, unknown>>;
     updated: Array<Record<string, unknown>>;
   }) => {
+    // Validazione: verifica che tutti i campi da creare abbiano un'azienda
+    const fieldsWithoutCompany = payload.created.filter(
+      (field) => !field.companyName
+    );
+    if (fieldsWithoutCompany.length > 0) {
+      toast.error(
+        `Devi selezionare un'azienda per ${
+          fieldsWithoutCompany.length === 1 ? "il campo" : "i campi"
+        } da creare`
+      );
+      return;
+    }
+
     const fieldsToCreate = payload.created.map((field) => {
       const bulkField: BulkFieldInput = {
-        companyId: String(field.companyId || ""),
+        companyId: String(field.companyName || ""),
         name: String(field.name || ""),
         address: String(field.address || ""),
         sezione: String(field.sezione || ""),
         foglio: String(field.foglio || ""),
         particella: String(field.particella || ""),
         superficieCatastaleMq: Number(field.superficieCatastaleMq || 0),
+        city: String(field.city || ""),
+        sauHa: field.sauHa ? Number(field.sauHa) : 0,
+        uso: String(field.uso || ""),
+        soilType: String(field.soilType || ""),
       };
-
-      if (field.city) bulkField.city = String(field.city);
-      if (field.sauHa) bulkField.sauHa = Number(field.sauHa);
-      if (field.uso) bulkField.uso = String(field.uso);
-      if (field.soilType) bulkField.soilType = String(field.soilType);
 
       return bulkField;
     });
 
     const fieldsToUpdate = payload.updated.map((field) => {
-      const updateField: Record<string, unknown> = {
+      const updateField: BulkFieldUpdateInput = {
         id: String(field.id),
       };
 
-      if (field.name) updateField.name = String(field.name);
-      if (field.address) updateField.address = String(field.address);
-      if (field.sezione) updateField.sezione = String(field.sezione);
-      if (field.foglio) updateField.foglio = String(field.foglio);
-      if (field.particella) updateField.particella = String(field.particella);
-      if (field.superficieCatastaleMq)
+      if (field.name !== undefined) updateField.name = String(field.name);
+      if (field.address !== undefined)
+        updateField.address = String(field.address);
+      if (field.sezione !== undefined)
+        updateField.sezione = String(field.sezione);
+      if (field.foglio !== undefined) updateField.foglio = String(field.foglio);
+      if (field.particella !== undefined)
+        updateField.particella = String(field.particella);
+      if (field.superficieCatastaleMq !== undefined)
         updateField.superficieCatastaleMq = Number(field.superficieCatastaleMq);
-      if (field.city) updateField.city = String(field.city);
-      if (field.sauHa) updateField.sauHa = Number(field.sauHa);
-      if (field.uso) updateField.uso = String(field.uso);
-      if (field.soilType) updateField.soilType = String(field.soilType);
+      if (field.city !== undefined) updateField.city = String(field.city);
+      if (field.sauHa !== undefined)
+        updateField.sauHa = field.sauHa ? Number(field.sauHa) : 0;
+      if (field.uso !== undefined) updateField.uso = String(field.uso);
+      if (field.soilType !== undefined)
+        updateField.soilType = String(field.soilType);
 
       return updateField;
     });
@@ -232,77 +253,86 @@ export default function Fields(): React.ReactElement {
   const columns = buildFieldsEditColumns(companies);
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-semibold">Campi</h1>
-
-        <ImportFieldByCsv
-          companies={companies}
-          onImportSuccess={handleImportFromCsv}
-        />
-      </div>
-
-      <div className="mb-4 max-w-md">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Cerca per nome, indirizzo, città, foglio o particella..."
-            value={searchFilter}
-            onChange={(e) => setSearchFilter(e.target.value)}
-            className="pl-10"
+    <div className="flex flex-col h-full">
+      {/* Header fisso */}
+      <div className="flex-shrink-0 p-6 pb-0">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-semibold">Campi</h1>
+          <ImportFieldByCsv
+            companies={companies}
+            onImportSuccess={handleImportFromCsv}
           />
         </div>
-        {searchFilter && (
-          <p className="text-xs text-gray-500 mt-2">
-            {filteredItems.length} risultat
-            {filteredItems.length === 1 ? "o" : "i"} su {fields.length}
-          </p>
-        )}
+
+        <div className="mb-4 max-w-md">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Cerca per nome, indirizzo, città, foglio o particella..."
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {searchFilter && (
+            <p className="text-xs text-gray-500 mt-2">
+              {filteredItems.length} risultat
+              {filteredItems.length === 1 ? "o" : "i"} su {fields.length}
+            </p>
+          )}
+        </div>
       </div>
 
-      {isLoading || isLoadingCompanies ? (
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Spinner size={20} ariaLabel="Caricamento dati" />
-          <span>Caricamento dati…</span>
-        </div>
-      ) : error ? (
-        <div className="text-sm text-red-600">
-          Impossibile caricare i campi. Errore:{" "}
-          {error instanceof Error ? error.message : "Errore sconosciuto"}
-        </div>
-      ) : companies.length === 0 ? (
-        <div className="text-center py-8 text-yellow-600 bg-yellow-50 rounded-lg border border-yellow-200">
-          <p className="text-sm font-medium">Nessuna azienda disponibile</p>
-          <p className="text-xs mt-1">
-            Devi prima creare un'azienda prima di poter aggiungere campi
-          </p>
-        </div>
-      ) : (
-        <EditableTable
-          ref={tableRef}
-          columns={columns}
-          rows={filteredItems}
-          isModify={true}
-          addButton={true}
-          getRowId={(row, index) =>
-            (typeof row.id === "string" && row.id) || index
-          }
-          onSave={handleSave}
-          newRowDefaults={{
-            companyId: "",
-            name: "",
-            address: "",
-            sezione: "",
-            foglio: "",
-            particella: "",
-            superficieCatastaleMq: "",
-          }}
-          detailsRenderer={renderDetails}
-          detailsTitle="Dettagli Campo"
-          className="bg-background"
-        />
-      )}
+      {/* Area scrollabile - solo la tabella */}
+      <div className="flex-1 overflow-auto px-6 pb-6">
+        {isLoading || isLoadingCompanies ? (
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Spinner size={20} ariaLabel="Caricamento dati" />
+            <span>Caricamento dati…</span>
+          </div>
+        ) : error ? (
+          <div className="text-sm text-red-600">
+            Impossibile caricare i campi. Errore:{" "}
+            {error instanceof Error ? error.message : "Errore sconosciuto"}
+          </div>
+        ) : companies.length === 0 ? (
+          <div className="text-center py-8 text-yellow-600 bg-yellow-50 rounded-lg border border-yellow-200">
+            <p className="text-sm font-medium">Nessuna azienda disponibile</p>
+            <p className="text-xs mt-1">
+              Devi prima creare un'azienda prima di poter aggiungere campi
+            </p>
+          </div>
+        ) : (
+          <EditableTable
+            ref={tableRef}
+            columns={columns}
+            rows={filteredItems}
+            isModify={true}
+            addButton={true}
+            getRowId={(row, index) =>
+              (typeof row.id === "string" && row.id) || index
+            }
+            onSave={handleSave}
+            newRowDefaults={{
+              companyName: "",
+              name: "",
+              address: "",
+              sezione: "",
+              foglio: "",
+              particella: "",
+              superficieCatastaleMq: "",
+              city: "",
+              sauHa: "",
+              uso: "",
+              soilType: "",
+            }}
+            detailsRenderer={renderDetails}
+            detailsTitle="Dettagli Campo"
+            className="bg-background"
+          />
+        )}
+      </div>
     </div>
   );
 }

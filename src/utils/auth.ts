@@ -1,10 +1,12 @@
 import cookieService from "./cookies";
 import type { User } from "@/api/auth";
+import { logout as logoutRequest } from "@/api/auth";
 
 // Nomi dei cookies
 // Nota: il token leggibile dal client usa un nome diverso dall'httpOnly del server
 // per evitare conflitti (un cookie httpOnly con lo stesso nome non è sovrascrivibile da JS)
 const TOKEN_COOKIE_NAME = "auth_bearer";
+const TOKEN_COOKIE_NAME_BE = "auth_token";
 const USER_COOKIE_NAME = "user_data";
 
 // Durata del cookie in giorni
@@ -67,11 +69,21 @@ class AuthService {
   }
 
   /**
-   * Effettua il logout, rimuovendo tutti i cookies relativi all'autenticazione
+   * Effettua il logout, invalidando la sessione server-side e rimuovendo tutti i cookies relativi all'autenticazione
    */
-  logout(): void {
-    cookieService.deleteCookie(TOKEN_COOKIE_NAME);
-    cookieService.deleteCookie(USER_COOKIE_NAME);
+  async logout(): Promise<void> {
+    try {
+      // Prima invalida la sessione server-side (cancella i cookie httpOnly)
+      await logoutRequest();
+    } catch (error) {
+      console.error("Errore durante il logout server-side:", error);
+      // Continua comunque con la pulizia client-side
+    } finally {
+      // Poi cancella i cookie client-side
+      cookieService.deleteCookie(TOKEN_COOKIE_NAME);
+      cookieService.deleteCookie(TOKEN_COOKIE_NAME_BE);
+      cookieService.deleteCookie(USER_COOKIE_NAME);
+    }
   }
 
   /**

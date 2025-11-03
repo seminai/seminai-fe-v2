@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   companiesApiService,
-  type Company,
   type BulkCompanyInput,
   type BulkCompanyUpdateInput,
   type CompaniesResponse,

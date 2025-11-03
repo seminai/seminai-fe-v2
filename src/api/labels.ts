@@ -7,6 +7,7 @@ export type LabelSummary = {
   extractionConfidence: number;
   qualityExtraction: number[];
   errors: string[];
+  isVerified: boolean;
   createdAt: string;
 };
 
@@ -70,6 +71,7 @@ export type LabelDetail = {
   extractedFields: string[];
   errors: string[];
   qualityExtraction: number[];
+  isVerified: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -194,6 +196,81 @@ async function bulkDeleteLabels(
   return (await response.json()) as BulkDeleteResponse;
 }
 
+export type UpdateLabelPayload = Partial<{
+  productName: string;
+  registrationNumber: string;
+  sourceUrl: string;
+  extractionConfidence: number;
+  extractedFields: string[];
+  errors: string[];
+  qualityExtraction: number[];
+  rawText: string;
+  label: Partial<LabelInner>;
+}>;
+
+export type UpdateLabelResponse = {
+  status: "success";
+  data: LabelDetail;
+};
+
+async function updateLabel(
+  id: string,
+  payload: UpdateLabelPayload,
+  baseUrl: string
+): Promise<UpdateLabelResponse> {
+  const response = await fetch(`${baseUrl}/labels/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to update label");
+  }
+
+  return (await response.json()) as UpdateLabelResponse;
+}
+
+export type VerifyLabelPayload = {
+  isVerified: boolean;
+};
+
+export type VerifyLabelResponse = {
+  status: "success";
+  data: LabelDetail;
+};
+
+async function verifyLabel(
+  id: string,
+  payload: VerifyLabelPayload,
+  baseUrl: string
+): Promise<VerifyLabelResponse> {
+  const response = await fetch(
+    `${baseUrl}/labels/verify-label/${encodeURIComponent(id)}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to verify label");
+  }
+
+  return (await response.json()) as VerifyLabelResponse;
+}
+
 class LabelsApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -216,6 +293,20 @@ class LabelsApiService {
 
   public async bulkDelete(ids: string[]): Promise<BulkDeleteResponse> {
     return await bulkDeleteLabels(ids, this.baseUrl);
+  }
+
+  public async update(
+    id: string,
+    payload: UpdateLabelPayload
+  ): Promise<UpdateLabelResponse> {
+    return await updateLabel(id, payload, this.baseUrl);
+  }
+
+  public async verify(
+    id: string,
+    payload: VerifyLabelPayload
+  ): Promise<VerifyLabelResponse> {
+    return await verifyLabel(id, payload, this.baseUrl);
   }
 }
 

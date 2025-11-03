@@ -1,14 +1,13 @@
 import * as React from "react";
 import { Link, useParams } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  labelsApiService,
-  type LabelDetail,
-  type LabelDosaggioDettagliato,
-} from "@/api/labels";
+import { type LabelDetail, type LabelDosaggioDettagliato } from "@/api/labels";
+import { useLabel } from "@/hooks/useLabel";
 import { Spinner } from "@/components/ui/spinner";
-import { Card } from "@/components/ui/card";
-import { EditableTable, type EditableColumn } from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  EditableTable,
+  type EditableColumn,
+} from "@/components/organism/EditableTable";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -26,11 +25,17 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import authService from "@/utils/auth";
-import { productsApiService } from "@/api/products";
 import { toast } from "sonner";
 import { toList, parseList, buildColumns } from "@/utils/tableHelpers";
-import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type LabelData = LabelDetail["label"];
 
@@ -55,36 +60,6 @@ const buildLabelColumns = (): EditableColumn[] =>
     { id: "caratteristiche", title: "Caratteristiche", type: "text" },
   ]);
 
-const buildDosaggioColumns = (): EditableColumn[] =>
-  buildColumns<LabelDosaggioDettagliato>([
-    { id: "coltura", title: "Coltura", type: "text" },
-    { id: "malattia", title: "Malattia", type: "text" },
-    { id: "dose_minima", title: "Dose minima", type: "number" },
-    { id: "dose_massima", title: "Dose massima", type: "number" },
-    { id: "dose_um", title: "Dose UM", type: "text" },
-    { id: "acqua_max", title: "Acqua max", type: "number" },
-    { id: "acqua_max_um", title: "Acqua max UM", type: "text" },
-    { id: "n_max_applicazioni", title: "# applicazioni", type: "number" },
-    { id: "n_max_applicazioni_um", title: "# applicazioni UM", type: "text" },
-    {
-      id: "intervallo_min_giorni",
-      title: "Intervallo min (gg)",
-      type: "number",
-    },
-    {
-      id: "intervallo_sicurezza_giorni",
-      title: "Intervallo sicurezza (gg)",
-      type: "number",
-    },
-    { id: "epoca_impiego", title: "Epoca impiego", type: "text" },
-    {
-      id: "modalita_applicazione",
-      title: "Modalità applicazione",
-      type: "text",
-    },
-    { id: "istruzioni", title: "Istruzioni", type: "text" },
-  ]);
-
 const toLabelRow = (detail: LabelDetail): Record<string, unknown> => {
   const l = (detail.label || {}) as Record<string, unknown>;
   return {
@@ -106,76 +81,52 @@ const toLabelRow = (detail: LabelDetail): Record<string, unknown> => {
   };
 };
 
-const toDosaggioRow = (
-  d: LabelDosaggioDettagliato
-): Record<string, unknown> => ({
-  coltura: String(d.coltura ?? ""),
-  malattia: String(d.malattia ?? ""),
-  dose_minima:
-    typeof d.dose_minima === "number"
-      ? d.dose_minima
-      : Number(d.dose_minima ?? 0),
-  dose_massima:
-    typeof d.dose_massima === "number"
-      ? d.dose_massima
-      : Number(d.dose_massima ?? 0),
-  dose_um: String(d.dose_um ?? ""),
-  acqua_max:
-    typeof d.acqua_max === "number" ? d.acqua_max : Number(d.acqua_max ?? 0),
-  acqua_max_um: String(d.acqua_max_um ?? ""),
-  n_max_applicazioni:
-    typeof d.n_max_applicazioni === "number"
-      ? d.n_max_applicazioni
-      : Number(d.n_max_applicazioni ?? 0),
-  n_max_applicazioni_um: String(d.n_max_applicazioni_um ?? ""),
-  intervallo_min_giorni:
-    typeof d.intervallo_min_giorni === "number"
-      ? d.intervallo_min_giorni
-      : Number(d.intervallo_min_giorni ?? 0),
-  intervallo_sicurezza_giorni:
-    typeof d.intervallo_sicurezza_giorni === "number"
-      ? d.intervallo_sicurezza_giorni
-      : Number(d.intervallo_sicurezza_giorni ?? 0),
-  epoca_impiego: String(d.epoca_impiego ?? ""),
-  modalita_applicazione: String(d.modalita_applicazione ?? ""),
-  istruzioni: String(d.istruzioni ?? ""),
-});
+const countFilledFields = (d: LabelDosaggioDettagliato): string => {
+  const fields = [
+    d.coltura,
+    d.malattia,
+    d.dose_minima,
+    d.dose_massima,
+    d.dose_um,
+    d.acqua_max,
+    d.acqua_max_um,
+    d.n_max_applicazioni,
+    d.n_max_applicazioni_um,
+    d.intervallo_min_giorni,
+    d.intervallo_sicurezza_giorni,
+    d.epoca_impiego,
+    d.modalita_applicazione,
+    d.istruzioni,
+  ];
+  const filled = fields.filter((f) => {
+    if (typeof f === "string") return f.trim().length > 0;
+    if (typeof f === "number") return f > 0;
+    return false;
+  }).length;
+  return `${filled}/${fields.length}`;
+};
 
 export default function LabelDetailPage(): React.ReactElement {
   const params = useParams<{ id: string }>();
   const id = params.id as string;
   const [view, setView] = React.useState<"dati" | "dosaggi">("dati");
   const [viewMode, setViewMode] = React.useState<"table" | "json">("table");
-  const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["labels", "detail", id],
-    queryFn: async () => labelsApiService.getById(id),
-    enabled: Boolean(id),
-  });
-
-  const detail: LabelDetail | undefined = data?.data;
-
-  const { mutateAsync: saveAsync, isPending: isSaving } = useMutation({
-    mutationFn: async (payload: Record<string, unknown>) => {
-      const token = authService.getAuthToken();
-      if (!token) throw new Error("Unauthorized");
-      return await productsApiService.updateWithBearer(token, id, payload);
-    },
-    onSuccess: async () => {
-      toast.success("Dati salvati");
-      await queryClient.invalidateQueries({
-        queryKey: ["labels", "detail", id],
-      });
-    },
-    onError: (e: unknown) => {
-      const message = e instanceof Error ? e.message : "Salvataggio fallito";
-      toast.error(message);
-    },
-  });
+  const {
+    detail,
+    isLoading,
+    error,
+    saveAsync,
+    isSaving,
+    verifyAsync,
+    isVerifying,
+  } = useLabel({ id });
 
   const [labelJson, setLabelJson] = React.useState<string>("{}");
   const [dosaggiJson, setDosaggiJson] = React.useState<string[]>([]);
+  const [editedDosaggi, setEditedDosaggi] = React.useState<
+    LabelDosaggioDettagliato[]
+  >([]);
 
   React.useEffect(() => {
     if (!detail) return;
@@ -185,10 +136,10 @@ export default function LabelDetailPage(): React.ReactElement {
         JSON.stringify(d, null, 2)
       )
     );
+    setEditedDosaggi(detail.label?.dosaggi_dettagliati ?? []);
   }, [detail]);
 
   const columns = buildLabelColumns();
-  const dosaggioColumns = buildDosaggioColumns();
 
   return (
     <div className="p-6">
@@ -208,11 +159,37 @@ export default function LabelDetailPage(): React.ReactElement {
         </BreadcrumbList>
       </Breadcrumb>
       <div className="flex items-center justify-between mb-4 gap-2">
-        <h1 className="text-2xl font-semibold">
-          {detail
-            ? `${detail.productName} - no. ${detail.registrationNumber}`
-            : ""}
-        </h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-semibold">
+            {detail
+              ? `${detail.productName} - no. ${detail.registrationNumber}`
+              : ""}
+          </h1>
+          {detail ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
+              <Checkbox
+                id="is-verified"
+                checked={detail.isVerified}
+                disabled={isVerifying}
+                onCheckedChange={async (checked) => {
+                  try {
+                    await verifyAsync(Boolean(checked));
+                  } catch {
+                    /* handled in mutation */
+                  }
+                }}
+              />
+              <label
+                htmlFor="is-verified"
+                className={`text-sm font-medium cursor-pointer ${
+                  detail.isVerified ? "text-green-700" : "text-gray-600"
+                }`}
+              >
+                {detail.isVerified ? "✓ Verificata" : "Non verificata"}
+              </label>
+            </div>
+          ) : null}
+        </div>
         <div className="flex items-center gap-2">
           <Select
             value={viewMode}
@@ -262,93 +239,132 @@ export default function LabelDetailPage(): React.ReactElement {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-4 md:h-[calc(100svh-12rem)]">
-          <div className="space-y-4 md:h-full md:overflow-auto">
-            <Card className="p-4 shadow-none md:h-full">
-              {view === "dati" ? (
-                viewMode === "table" ? (
-                  <EditableTable
-                    columns={columns}
-                    rows={[toLabelRow(detail)]}
-                    isModify={true}
-                    isVertical={true}
-                    getRowId={() => "row-0"}
-                    onSave={async ({ updated }) => {
-                      try {
-                        const row = updated?.[0] ?? {};
-                        const payloadLabel = {
-                          ...detail.label,
-                          prodotto: String(
-                            row.prodotto ?? detail.label?.prodotto ?? ""
-                          ),
-                          categoria: String(
-                            row.categoria ?? detail.label?.categoria ?? ""
-                          ),
-                          formulazione: String(
-                            row.formulazione ?? detail.label?.formulazione ?? ""
-                          ),
-                          principio_attivo: String(
-                            row.principio_attivo ??
-                              detail.label?.principio_attivo ??
-                              ""
-                          ),
-                          composizione: String(
-                            row.composizione ?? detail.label?.composizione ?? ""
-                          ),
-                          meccanismo_azione_frac: String(
-                            row.meccanismo_azione_frac ??
-                              detail.label?.meccanismo_azione_frac ??
-                              ""
-                          ),
-                          malattie:
-                            parseList(row.malattie) ??
-                            detail.label?.malattie ??
-                            [],
-                          specie:
-                            parseList(row.specie) ?? detail.label?.specie ?? [],
-                          colture_target:
-                            parseList(row.colture_target) ??
-                            detail.label?.colture_target ??
-                            [],
-                          numero_registrazione: String(
-                            row.numero_registrazione ??
-                              detail.label?.numero_registrazione ??
-                              detail.registrationNumber ??
-                              ""
-                          ),
-                          titolare: String(
-                            row.titolare ?? detail.label?.titolare ?? ""
-                          ),
-                          stabilimento: String(
-                            row.stabilimento ?? detail.label?.stabilimento ?? ""
-                          ),
-                          caratteristiche: String(
-                            row.caratteristiche ??
-                              detail.label?.caratteristiche ??
-                              ""
-                          ),
-                        };
-                        await saveAsync({ label: payloadLabel });
-                      } catch {
-                        /* handled in mutation */
-                      }
-                    }}
-                    className="bg-background"
+          <div className="md:h-full md:overflow-auto">
+            {view === "dati" ? (
+              viewMode === "table" ? (
+                <EditableTable
+                  columns={columns}
+                  rows={[toLabelRow(detail)]}
+                  isModify={true}
+                  isVertical={true}
+                  alwaysEdit={true}
+                  getRowId={() => "row-0"}
+                  onSave={async ({ updated }) => {
+                    try {
+                      const row = updated?.[0] ?? {};
+                      const payloadLabel = {
+                        ...detail.label,
+                        prodotto: String(
+                          row.prodotto ?? detail.label?.prodotto ?? ""
+                        ),
+                        categoria: String(
+                          row.categoria ?? detail.label?.categoria ?? ""
+                        ),
+                        formulazione: String(
+                          row.formulazione ?? detail.label?.formulazione ?? ""
+                        ),
+                        principio_attivo: String(
+                          row.principio_attivo ??
+                            detail.label?.principio_attivo ??
+                            ""
+                        ),
+                        composizione: String(
+                          row.composizione ?? detail.label?.composizione ?? ""
+                        ),
+                        meccanismo_azione_frac: String(
+                          row.meccanismo_azione_frac ??
+                            detail.label?.meccanismo_azione_frac ??
+                            ""
+                        ),
+                        malattie:
+                          parseList(row.malattie) ??
+                          detail.label?.malattie ??
+                          [],
+                        specie:
+                          parseList(row.specie) ?? detail.label?.specie ?? [],
+                        colture_target:
+                          parseList(row.colture_target) ??
+                          detail.label?.colture_target ??
+                          [],
+                        numero_registrazione: String(
+                          row.numero_registrazione ??
+                            detail.label?.numero_registrazione ??
+                            detail.registrationNumber ??
+                            ""
+                        ),
+                        titolare: String(
+                          row.titolare ?? detail.label?.titolare ?? ""
+                        ),
+                        stabilimento: String(
+                          row.stabilimento ?? detail.label?.stabilimento ?? ""
+                        ),
+                        caratteristiche: String(
+                          row.caratteristiche ??
+                            detail.label?.caratteristiche ??
+                            ""
+                        ),
+                      };
+                      await saveAsync({ label: payloadLabel });
+                    } catch {
+                      /* handled in mutation */
+                    }
+                  }}
+                  className="bg-background"
+                />
+              ) : (
+                <div className="space-y-2">
+                  <Textarea
+                    value={labelJson}
+                    onChange={(e) => setLabelJson(e.target.value)}
+                    className="font-mono min-h-[400px]"
                   />
-                ) : (
-                  <div className="space-y-2">
-                    <Textarea
-                      value={labelJson}
-                      onChange={(e) => setLabelJson(e.target.value)}
-                      className="font-mono min-h-[400px]"
-                    />
-                    <div className="flex justify-end">
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const obj = JSON.parse(labelJson);
+                          await saveAsync({ label: obj });
+                        } catch {
+                          toast.error("JSON non valido");
+                        }
+                      }}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? "Salvataggio…" : "Salva"}
+                    </Button>
+                  </div>
+                </div>
+              )
+            ) : null}
+
+            {view === "dosaggi" ? (
+              viewMode === "table" ? (
+                <div className="space-y-4 pr-1">
+                  {JSON.stringify(editedDosaggi) !==
+                    JSON.stringify(detail.label?.dosaggi_dettagliati ?? []) && (
+                    <div className="flex justify-end gap-2 mb-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditedDosaggi(
+                            detail.label?.dosaggi_dettagliati ?? []
+                          );
+                        }}
+                        disabled={isSaving}
+                      >
+                        Annulla
+                      </Button>
                       <Button
                         onClick={async () => {
                           try {
-                            const obj = JSON.parse(labelJson);
-                            await saveAsync({ label: obj });
+                            await saveAsync({
+                              label: {
+                                ...detail.label,
+                                dosaggi_dettagliati: editedDosaggi,
+                              },
+                            });
                           } catch {
-                            toast.error("JSON non valido");
+                            /* handled in mutation */
                           }
                         }}
                         disabled={isSaving}
@@ -356,107 +372,332 @@ export default function LabelDetailPage(): React.ReactElement {
                         {isSaving ? "Salvataggio…" : "Salva"}
                       </Button>
                     </div>
-                  </div>
-                )
-              ) : null}
+                  )}
 
-              {view === "dosaggi" ? (
-                viewMode === "table" ? (
-                  <div className="space-y-4 md:max-h-[calc(100svh-18rem)] md:overflow-auto pr-1">
-                    {(detail.label?.dosaggi_dettagliati ?? []).map((d, idx) => (
-                      <>
-                        <EditableTable
+                  {editedDosaggi.length > 0 ? (
+                    <Accordion type="multiple" className="space-y-2">
+                      {editedDosaggi.map((d, idx) => (
+                        <AccordionItem
                           key={idx}
-                          columns={dosaggioColumns}
-                          rows={[toDosaggioRow(d as LabelDosaggioDettagliato)]}
-                          isModify={true}
-                          isVertical={true}
-                          getRowId={() => `dos-${idx}`}
-                          onSave={async ({ updated }) => {
+                          value={`dosaggio-${idx}`}
+                          className="border rounded-lg px-4"
+                        >
+                          <AccordionTrigger className="hover:no-underline">
+                            <span className="text-left">
+                              <span className="font-semibold">#{idx + 1}</span>{" "}
+                              - {d.coltura || "Coltura non specificata"} -{" "}
+                              {d.malattia || "Malattia non specificata"} -{" "}
+                              <span className="text-muted-foreground text-sm text-agri-green-700 font-bold">
+                                {countFilledFields(d)}
+                              </span>
+                            </span>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <Card className="shadow-none border-0">
+                              <CardContent className="space-y-4 pt-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`coltura-${idx}`}>
+                                      Coltura
+                                    </Label>
+                                    <Input
+                                      id={`coltura-${idx}`}
+                                      value={d.coltura ?? ""}
+                                      onChange={(e) => {
+                                        const newDosaggi = [...editedDosaggi];
+                                        newDosaggi[idx] = {
+                                          ...newDosaggi[idx],
+                                          coltura: e.target.value,
+                                        };
+                                        setEditedDosaggi(newDosaggi);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`malattia-${idx}`}>
+                                      Malattia
+                                    </Label>
+                                    <Input
+                                      id={`malattia-${idx}`}
+                                      value={d.malattia ?? ""}
+                                      onChange={(e) => {
+                                        const newDosaggi = [...editedDosaggi];
+                                        newDosaggi[idx] = {
+                                          ...newDosaggi[idx],
+                                          malattia: e.target.value,
+                                        };
+                                        setEditedDosaggi(newDosaggi);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`dose-minima-${idx}`}>
+                                      Dose minima
+                                    </Label>
+                                    <Input
+                                      id={`dose-minima-${idx}`}
+                                      type="number"
+                                      value={d.dose_minima ?? ""}
+                                      onChange={(e) => {
+                                        const newDosaggi = [...editedDosaggi];
+                                        newDosaggi[idx] = {
+                                          ...newDosaggi[idx],
+                                          dose_minima: Number(e.target.value),
+                                        };
+                                        setEditedDosaggi(newDosaggi);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`dose-massima-${idx}`}>
+                                      Dose massima
+                                    </Label>
+                                    <Input
+                                      id={`dose-massima-${idx}`}
+                                      type="number"
+                                      value={d.dose_massima ?? ""}
+                                      onChange={(e) => {
+                                        const newDosaggi = [...editedDosaggi];
+                                        newDosaggi[idx] = {
+                                          ...newDosaggi[idx],
+                                          dose_massima: Number(e.target.value),
+                                        };
+                                        setEditedDosaggi(newDosaggi);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`dose-um-${idx}`}>
+                                      Dose UM
+                                    </Label>
+                                    <Input
+                                      id={`dose-um-${idx}`}
+                                      value={d.dose_um ?? ""}
+                                      onChange={(e) => {
+                                        const newDosaggi = [...editedDosaggi];
+                                        newDosaggi[idx] = {
+                                          ...newDosaggi[idx],
+                                          dose_um: e.target.value,
+                                        };
+                                        setEditedDosaggi(newDosaggi);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`acqua-max-${idx}`}>
+                                      Acqua max
+                                    </Label>
+                                    <Input
+                                      id={`acqua-max-${idx}`}
+                                      type="number"
+                                      value={d.acqua_max ?? ""}
+                                      onChange={(e) => {
+                                        const newDosaggi = [...editedDosaggi];
+                                        newDosaggi[idx] = {
+                                          ...newDosaggi[idx],
+                                          acqua_max: Number(e.target.value),
+                                        };
+                                        setEditedDosaggi(newDosaggi);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`acqua-max-um-${idx}`}>
+                                      Acqua max UM
+                                    </Label>
+                                    <Input
+                                      id={`acqua-max-um-${idx}`}
+                                      value={d.acqua_max_um ?? ""}
+                                      onChange={(e) => {
+                                        const newDosaggi = [...editedDosaggi];
+                                        newDosaggi[idx] = {
+                                          ...newDosaggi[idx],
+                                          acqua_max_um: e.target.value,
+                                        };
+                                        setEditedDosaggi(newDosaggi);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label
+                                      htmlFor={`n-max-applicazioni-${idx}`}
+                                    >
+                                      # applicazioni
+                                    </Label>
+                                    <Input
+                                      id={`n-max-applicazioni-${idx}`}
+                                      type="number"
+                                      value={d.n_max_applicazioni ?? ""}
+                                      onChange={(e) => {
+                                        const newDosaggi = [...editedDosaggi];
+                                        newDosaggi[idx] = {
+                                          ...newDosaggi[idx],
+                                          n_max_applicazioni: Number(
+                                            e.target.value
+                                          ),
+                                        };
+                                        setEditedDosaggi(newDosaggi);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label
+                                      htmlFor={`n-max-applicazioni-um-${idx}`}
+                                    >
+                                      # applicazioni UM
+                                    </Label>
+                                    <Input
+                                      id={`n-max-applicazioni-um-${idx}`}
+                                      value={d.n_max_applicazioni_um ?? ""}
+                                      onChange={(e) => {
+                                        const newDosaggi = [...editedDosaggi];
+                                        newDosaggi[idx] = {
+                                          ...newDosaggi[idx],
+                                          n_max_applicazioni_um: e.target.value,
+                                        };
+                                        setEditedDosaggi(newDosaggi);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label
+                                      htmlFor={`intervallo-min-giorni-${idx}`}
+                                    >
+                                      Intervallo min (gg)
+                                    </Label>
+                                    <Input
+                                      id={`intervallo-min-giorni-${idx}`}
+                                      type="number"
+                                      value={d.intervallo_min_giorni ?? ""}
+                                      onChange={(e) => {
+                                        const newDosaggi = [...editedDosaggi];
+                                        newDosaggi[idx] = {
+                                          ...newDosaggi[idx],
+                                          intervallo_min_giorni: Number(
+                                            e.target.value
+                                          ),
+                                        };
+                                        setEditedDosaggi(newDosaggi);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label
+                                      htmlFor={`intervallo-sicurezza-giorni-${idx}`}
+                                    >
+                                      Intervallo sicurezza (gg)
+                                    </Label>
+                                    <Input
+                                      id={`intervallo-sicurezza-giorni-${idx}`}
+                                      type="number"
+                                      value={
+                                        d.intervallo_sicurezza_giorni ?? ""
+                                      }
+                                      onChange={(e) => {
+                                        const newDosaggi = [...editedDosaggi];
+                                        newDosaggi[idx] = {
+                                          ...newDosaggi[idx],
+                                          intervallo_sicurezza_giorni: Number(
+                                            e.target.value
+                                          ),
+                                        };
+                                        setEditedDosaggi(newDosaggi);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2 md:col-span-2">
+                                    <Label htmlFor={`epoca-impiego-${idx}`}>
+                                      Epoca impiego
+                                    </Label>
+                                    <Input
+                                      id={`epoca-impiego-${idx}`}
+                                      value={d.epoca_impiego ?? ""}
+                                      onChange={(e) => {
+                                        const newDosaggi = [...editedDosaggi];
+                                        newDosaggi[idx] = {
+                                          ...newDosaggi[idx],
+                                          epoca_impiego: e.target.value,
+                                        };
+                                        setEditedDosaggi(newDosaggi);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2 md:col-span-2">
+                                    <Label
+                                      htmlFor={`modalita-applicazione-${idx}`}
+                                    >
+                                      Modalità applicazione
+                                    </Label>
+                                    <Input
+                                      id={`modalita-applicazione-${idx}`}
+                                      value={d.modalita_applicazione ?? ""}
+                                      onChange={(e) => {
+                                        const newDosaggi = [...editedDosaggi];
+                                        newDosaggi[idx] = {
+                                          ...newDosaggi[idx],
+                                          modalita_applicazione: e.target.value,
+                                        };
+                                        setEditedDosaggi(newDosaggi);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="space-y-2 md:col-span-2">
+                                    <Label htmlFor={`istruzioni-${idx}`}>
+                                      Istruzioni
+                                    </Label>
+                                    <Textarea
+                                      id={`istruzioni-${idx}`}
+                                      value={d.istruzioni ?? ""}
+                                      onChange={(e) => {
+                                        const newDosaggi = [...editedDosaggi];
+                                        newDosaggi[idx] = {
+                                          ...newDosaggi[idx],
+                                          istruzioni: e.target.value,
+                                        };
+                                        setEditedDosaggi(newDosaggi);
+                                      }}
+                                      className="min-h-[100px]"
+                                    />
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  ) : (
+                    <div className="text-sm text-gray-600">
+                      Nessun dosaggio presente.
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4 pr-1">
+                  {(detail.label?.dosaggi_dettagliati ?? []).map((d, idx) => (
+                    <div key={idx} className="space-y-2">
+                      <Textarea
+                        value={dosaggiJson[idx] ?? JSON.stringify(d, null, 2)}
+                        onChange={(e) => {
+                          setDosaggiJson((prev) => {
+                            const next = [...prev];
+                            next[idx] = e.target.value;
+                            return next;
+                          });
+                        }}
+                        className="font-mono min-h-[240px]"
+                      />
+                      <div className="flex justify-end">
+                        <Button
+                          onClick={async () => {
                             try {
-                              const row = updated?.[0] ?? {};
-                              const updatedDosaggio: LabelDosaggioDettagliato =
-                                {
-                                  coltura: String(
-                                    row.coltura ?? d.coltura ?? ""
-                                  ),
-                                  malattia: String(
-                                    row.malattia ?? d.malattia ?? ""
-                                  ),
-                                  dose_minima:
-                                    typeof row.dose_minima === "number"
-                                      ? row.dose_minima
-                                      : Number(
-                                          row.dose_minima ?? d.dose_minima ?? 0
-                                        ),
-                                  dose_massima:
-                                    typeof row.dose_massima === "number"
-                                      ? row.dose_massima
-                                      : Number(
-                                          row.dose_massima ??
-                                            d.dose_massima ??
-                                            0
-                                        ),
-                                  dose_um: String(
-                                    row.dose_um ?? d.dose_um ?? ""
-                                  ),
-                                  acqua_max:
-                                    typeof row.acqua_max === "number"
-                                      ? row.acqua_max
-                                      : Number(
-                                          row.acqua_max ?? d.acqua_max ?? 0
-                                        ),
-                                  acqua_max_um: String(
-                                    row.acqua_max_um ?? d.acqua_max_um ?? ""
-                                  ),
-                                  n_max_applicazioni:
-                                    typeof row.n_max_applicazioni === "number"
-                                      ? row.n_max_applicazioni
-                                      : Number(
-                                          row.n_max_applicazioni ??
-                                            d.n_max_applicazioni ??
-                                            0
-                                        ),
-                                  n_max_applicazioni_um: String(
-                                    row.n_max_applicazioni_um ??
-                                      d.n_max_applicazioni_um ??
-                                      ""
-                                  ),
-                                  intervallo_min_giorni:
-                                    typeof row.intervallo_min_giorni ===
-                                    "number"
-                                      ? row.intervallo_min_giorni
-                                      : Number(
-                                          row.intervallo_min_giorni ??
-                                            d.intervallo_min_giorni ??
-                                            0
-                                        ),
-                                  intervallo_sicurezza_giorni:
-                                    typeof row.intervallo_sicurezza_giorni ===
-                                    "number"
-                                      ? row.intervallo_sicurezza_giorni
-                                      : Number(
-                                          row.intervallo_sicurezza_giorni ??
-                                            d.intervallo_sicurezza_giorni ??
-                                            0
-                                        ),
-                                  epoca_impiego: String(
-                                    row.epoca_impiego ?? d.epoca_impiego ?? ""
-                                  ),
-                                  modalita_applicazione: String(
-                                    row.modalita_applicazione ??
-                                      d.modalita_applicazione ??
-                                      ""
-                                  ),
-                                  istruzioni: String(
-                                    row.istruzioni ?? d.istruzioni ?? ""
-                                  ),
-                                };
-
+                              const obj = JSON.parse(
+                                dosaggiJson[idx] ?? JSON.stringify(d)
+                              );
                               const base = [
                                 ...(detail.label?.dosaggi_dettagliati ?? []),
                               ];
-                              base[idx] = updatedDosaggio;
+                              base[idx] = obj as LabelDosaggioDettagliato;
                               await saveAsync({
                                 label: {
                                   ...detail.label,
@@ -464,73 +705,24 @@ export default function LabelDetailPage(): React.ReactElement {
                                 },
                               });
                             } catch {
-                              /* handled in mutation */
+                              toast.error("JSON non valido");
                             }
                           }}
-                          className="bg-background"
-                        />
-                        <Separator className="my-4 bg-gray-200 " />
-                        <Separator className="my-4 bg-gray-200 " />
-                      </>
-                    ))}
-                    {detail.label?.dosaggi_dettagliati?.length ? null : (
-                      <div className="text-sm text-gray-600">
-                        Nessun dosaggio presente.
+                          disabled={isSaving}
+                        >
+                          {isSaving ? "Salvataggio…" : "Salva"}
+                        </Button>
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-4 md:max-h-[calc(100svh-18rem)] md:overflow-auto pr-1">
-                    {(detail.label?.dosaggi_dettagliati ?? []).map((d, idx) => (
-                      <div key={idx} className="space-y-2">
-                        <Textarea
-                          value={dosaggiJson[idx] ?? JSON.stringify(d, null, 2)}
-                          onChange={(e) => {
-                            setDosaggiJson((prev) => {
-                              const next = [...prev];
-                              next[idx] = e.target.value;
-                              return next;
-                            });
-                          }}
-                          className="font-mono min-h-[240px]"
-                        />
-                        <div className="flex justify-end">
-                          <Button
-                            onClick={async () => {
-                              try {
-                                const obj = JSON.parse(
-                                  dosaggiJson[idx] ?? JSON.stringify(d)
-                                );
-                                const base = [
-                                  ...(detail.label?.dosaggi_dettagliati ?? []),
-                                ];
-                                base[idx] = obj as LabelDosaggioDettagliato;
-                                await saveAsync({
-                                  label: {
-                                    ...detail.label,
-                                    dosaggi_dettagliati: base,
-                                  },
-                                });
-                              } catch {
-                                toast.error("JSON non valido");
-                              }
-                            }}
-                            disabled={isSaving}
-                          >
-                            {isSaving ? "Salvataggio…" : "Salva"}
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                    {detail.label?.dosaggi_dettagliati?.length ? null : (
-                      <div className="text-sm text-gray-600">
-                        Nessun dosaggio presente.
-                      </div>
-                    )}
-                  </div>
-                )
-              ) : null}
-            </Card>
+                    </div>
+                  ))}
+                  {detail.label?.dosaggi_dettagliati?.length ? null : (
+                    <div className="text-sm text-gray-600">
+                      Nessun dosaggio presente.
+                    </div>
+                  )}
+                </div>
+              )
+            ) : null}
           </div>
           <div className="md:h-full md:overflow-auto">
             {String(detail.sourceUrl || "").length > 0 ? (

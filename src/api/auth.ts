@@ -159,3 +159,15 @@ export async function updatePasswordWithBearer(
 
   return (await response.json()) as UpdatePasswordResponse;
 }
+
+export async function logout(baseUrl: string = BASE_URL): Promise<void> {
+  const response = await fetch(`${baseUrl}/auth/logout`, {
+    method: "POST",
+    credentials: "include", // Include i cookie httpOnly per invalidarli server-side
+  });
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Logout failed");
+  }
+}

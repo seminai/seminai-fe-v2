@@ -1,16 +1,20 @@
 import * as React from "react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import {
   type Company,
   type BulkCompanyInput,
   type BulkCompanyUpdateInput,
 } from "@/api/companies";
 import { Spinner } from "@/components/ui/spinner";
-import { EditableTable, type EditableColumn } from "@/components/ui/table";
+import {
+  EditableTable,
+  type EditableColumn,
+} from "@/components/organism/EditableTable";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { createTextSearch } from "@/utils/filter";
 import { DrawerCompanyContent } from "./DrawerCompany";
+import { ImportCompanyByPdf } from "./ImportCompanyByPdf";
 import { useCompanies } from "@/hooks/useCompanies";
 import { toast } from "sonner";
 
@@ -96,6 +100,7 @@ const buildCompaniesEditColumns = (): EditableColumn[] => {
 
 export default function Company(): React.ReactElement {
   const [searchFilter, setSearchFilter] = useState<string>("");
+  const tableRef = useRef<EditableTable>(null);
 
   const { companies, isLoading, error, createCompanies, updateCompanies } =
     useCompanies();
@@ -119,6 +124,42 @@ export default function Company(): React.ReactElement {
   const renderDetails = (row: Record<string, unknown>): React.ReactNode => {
     const company = row as unknown as Company;
     return <DrawerCompanyContent company={company} />;
+  };
+
+  /**
+   * Gestisce l'importazione delle aziende da PDF
+   * Aggiunge le aziende come nuove righe nella tabella editabile
+   */
+  const handleImportFromPdf = (companiesToImport: BulkCompanyInput[]): void => {
+    if (!tableRef.current) {
+      toast.error("Tabella non disponibile");
+      return;
+    }
+
+    // Converti le aziende in formato row per la tabella
+    const rowsToAdd = companiesToImport.map((company) => ({
+      name: company.name || "",
+      vatNumber: company.vatNumber || "",
+      fiscalCode: company.fiscalCode || "",
+      cuaa: company.cuaa || "",
+      nation: company.nation || "",
+      city: company.city || "",
+      address: company.address || "",
+      cap: company.cap || "",
+      email: company.email || "",
+      phoneNumber: company.phoneNumber || "",
+      website: company.website || "",
+      logoUrl: company.logoUrl || "",
+    }));
+
+    // Aggiungi le righe alla tabella
+    tableRef.current.addRows(rowsToAdd);
+
+    toast.success(
+      `${companiesToImport.length} aziend${
+        companiesToImport.length === 1 ? "a aggiunta" : "e aggiunte"
+      } alla tabella. Completa i dati e salva.`
+    );
   };
 
   const handleSave = (payload: {
@@ -188,69 +229,77 @@ export default function Company(): React.ReactElement {
   const columns = buildCompaniesEditColumns();
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-semibold">Aziende</h1>
+    <div className="flex flex-col h-full">
+      {/* Header fisso */}
+      <div className="flex-shrink-0 p-6 pb-0">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-semibold">Aziende</h1>
+          <ImportCompanyByPdf onImportSuccess={handleImportFromPdf} />
+        </div>
+
+        <div className="mb-4 max-w-md">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Cerca per nome, P.IVA, codice fiscale, città o email..."
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {searchFilter && (
+            <p className="text-xs text-gray-500 mt-2">
+              {filteredItems.length} risultat
+              {filteredItems.length === 1 ? "o" : "i"} su {companies.length}
+            </p>
+          )}
+        </div>
       </div>
 
-      <div className="mb-4 max-w-md">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Cerca per nome, P.IVA, codice fiscale, città o email..."
-            value={searchFilter}
-            onChange={(e) => setSearchFilter(e.target.value)}
-            className="pl-10"
+      {/* Area scrollabile - solo la tabella */}
+      <div className="flex-1 overflow-auto px-6 pb-6">
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Spinner size={20} ariaLabel="Caricamento aziende" />
+            <span>Caricamento aziende…</span>
+          </div>
+        ) : error ? (
+          <div className="text-sm text-red-600">
+            Impossibile caricare le aziende. Errore:{" "}
+            {error instanceof Error ? error.message : "Errore sconosciuto"}
+          </div>
+        ) : (
+          <EditableTable
+            ref={tableRef}
+            columns={columns}
+            rows={filteredItems}
+            isModify={true}
+            addButton={true}
+            getRowId={(row, index) =>
+              (typeof row.id === "string" && row.id) || index
+            }
+            onSave={handleSave}
+            newRowDefaults={{
+              name: "",
+              vatNumber: "",
+              fiscalCode: "",
+              cuaa: "",
+              nation: "",
+              city: "",
+              address: "",
+              cap: "",
+              email: "",
+              phoneNumber: "",
+              website: "",
+              logoUrl: "",
+            }}
+            detailsRenderer={renderDetails}
+            detailsTitle="Dettagli Azienda"
+            className="bg-background"
           />
-        </div>
-        {searchFilter && (
-          <p className="text-xs text-gray-500 mt-2">
-            {filteredItems.length} risultat
-            {filteredItems.length === 1 ? "o" : "i"} su {companies.length}
-          </p>
         )}
       </div>
-
-      {isLoading ? (
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Spinner size={20} ariaLabel="Caricamento aziende" />
-          <span>Caricamento aziende…</span>
-        </div>
-      ) : error ? (
-        <div className="text-sm text-red-600">
-          Impossibile caricare le aziende. Errore:{" "}
-          {error instanceof Error ? error.message : "Errore sconosciuto"}
-        </div>
-      ) : (
-        <EditableTable
-          columns={columns}
-          rows={filteredItems}
-          isModify={true}
-          addButton={true}
-          getRowId={(row, index) =>
-            (typeof row.id === "string" && row.id) || index
-          }
-          onSave={handleSave}
-          newRowDefaults={{
-            name: "",
-            vatNumber: "",
-            fiscalCode: "",
-            cuaa: "",
-            nation: "",
-            city: "",
-            address: "",
-            cap: "",
-            email: "",
-            phoneNumber: "",
-            website: "",
-            logoUrl: "",
-          }}
-          detailsRenderer={renderDetails}
-          detailsTitle="Dettagli Azienda"
-          className="bg-background"
-        />
-      )}
     </div>
   );
 }
