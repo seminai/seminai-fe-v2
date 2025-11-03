@@ -8,12 +8,11 @@ import {
   type EditableColumn,
 } from "@/components/organism/EditableTable";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
 import { buildColumns, formatConfidence } from "@/utils/tableHelpers";
 import { createTextSearch } from "@/utils/filter";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/organism/Header";
 
 const buildLabelSummaryColumns = (): EditableColumn[] =>
   buildColumns<LabelSummary>([
@@ -181,35 +180,22 @@ export default function Label(): React.ReactElement {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header fisso */}
-      <div className="flex-shrink-0 p-6 pb-0">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-semibold">Etichette</h1>
-          <Button onClick={() => navigate("/new-label")}>
+      <PageHeader
+        title="Etichette"
+        searchPlaceholder="Cerca per nome prodotto o numero registrazione..."
+        searchValue={searchFilter}
+        onSearchChange={setSearchFilter}
+        totalItems={items.length}
+        filteredItems={filteredItems.length}
+        rightElement={
+          <Button
+            onClick={() => navigate("/new-label")}
+            className="whitespace-nowrap"
+          >
             Aggiungi Etichette
           </Button>
-        </div>
-
-        {/* Filtro di ricerca */}
-        <div className="mb-4 max-w-md">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Cerca per nome prodotto o numero registrazione..."
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          {searchFilter && (
-            <p className="text-xs text-gray-500 mt-2">
-              {filteredItems.length} risultat
-              {filteredItems.length === 1 ? "o" : "i"} su {items.length}
-            </p>
-          )}
-        </div>
-      </div>
+        }
+      />
 
       {/* Area scrollabile - solo la tabella */}
       <div className="flex-1 overflow-auto px-6 pb-6">
