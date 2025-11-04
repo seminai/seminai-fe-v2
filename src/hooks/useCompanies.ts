@@ -63,7 +63,38 @@ export function useCompanies(options?: UseCompaniesOptions) {
       });
     },
     onSuccess: async (response) => {
-      // Refetch esplicito per assicurarsi che i dati vengano aggiornati
+      // Aggiorna immediatamente la cache con i nuovi dati dalla risposta
+      if (response?.data?.companies) {
+        const updatedCompanies = response.data.companies;
+        
+        // Ottieni i dati attuali dalla cache
+        const currentData = queryClient.getQueryData<CompaniesResponse>([
+          "companies",
+        ]);
+
+        if (currentData) {
+          // Crea una mappa delle aziende aggiornate per lookup veloce
+          const updatedMap = new Map(
+            updatedCompanies.map((c) => [c.id, c])
+          );
+
+          // Aggiorna le aziende nella lista esistente
+          const updatedCompaniesList = currentData.data.companies.map(
+            (company) => updatedMap.get(company.id) || company
+          );
+
+          // Aggiorna la cache immediatamente
+          queryClient.setQueryData<CompaniesResponse>(["companies"], {
+            ...currentData,
+            data: {
+              ...currentData.data,
+              companies: updatedCompaniesList,
+            },
+          });
+        }
+      }
+
+      // Invalida e refetch per sincronizzare con il server
       await queryClient.invalidateQueries({ queryKey: ["companies"] });
       await companiesQuery.refetch();
 
