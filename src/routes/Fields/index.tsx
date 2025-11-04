@@ -115,7 +115,14 @@ export default function Fields(): React.ReactElement {
   const [searchFilter, setSearchFilter] = useState<string>("");
   const tableRef = useRef<EditableTable>(null);
 
-  const { fields, isLoading, error, createFields, updateFields } = useFields();
+  const {
+    fields,
+    isLoading,
+    error,
+    createFields,
+    updateFields,
+    isUpdating,
+  } = useFields();
   const { companies, isLoading: isLoadingCompanies } = useCompanies();
 
   const textSearch = useMemo(
@@ -135,8 +142,28 @@ export default function Fields(): React.ReactElement {
   }, [fields, searchFilter, textSearch]);
 
   const renderDetails = (row: Record<string, unknown>): React.ReactNode => {
-    const field = row as unknown as Field;
-    return <DrawerFieldContent field={field} />;
+    const fieldId = typeof row.id === "string" ? row.id : String(row.id);
+
+    // Trova sempre il campo più recente dalla lista aggiornata
+    const field =
+      fields.find((f) => f.id === fieldId) || (row as unknown as Field);
+
+    const handleUpdate = (update: BulkFieldUpdateInput): void => {
+      updateFields([update]);
+    };
+
+    // Usa updatedAt come key per forzare il re-render quando i dati cambiano
+    const key = `${field.id}-${field.updatedAt || Date.now()}`;
+
+    return (
+      <DrawerFieldContent
+        key={key}
+        field={field}
+        onUpdate={handleUpdate}
+        isUpdating={isUpdating}
+        companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+      />
+    );
   };
 
   /**

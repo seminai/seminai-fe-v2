@@ -57,20 +57,56 @@ export function useFields(options?: UseFieldsOptions) {
         fields,
       });
     },
-    onSuccess: (response, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["fields"] });
+    onSuccess: async (response) => {
+      // Aggiorna immediatamente la cache con i nuovi dati dalla risposta
+      if (response?.data?.fields) {
+        const updatedFields = response.data.fields;
+        
+        // Ottieni i dati attuali dalla cache
+        const currentData = queryClient.getQueryData<FieldsResponse>([
+          "fields",
+        ]);
 
-      // Gestione sicura della risposta
-      const updatedCount = response?.data?.fields?.length ?? variables.length;
-      toast.success(
-        `${updatedCount} camp${
-          updatedCount === 1 ? "o aggiornato" : "i aggiornati"
-        } con successo`
-      );
+        if (currentData) {
+          // Crea una mappa dei campi aggiornati per lookup veloce
+          const updatedMap = new Map(
+            updatedFields.map((f) => [f.id, f])
+          );
+
+          // Aggiorna i campi nella lista esistente
+          const updatedFieldsList = currentData.data.fields.map(
+            (field) => updatedMap.get(field.id) || field
+          );
+
+          // Aggiorna la cache immediatamente
+          queryClient.setQueryData<FieldsResponse>(["fields"], {
+            ...currentData,
+            data: {
+              ...currentData.data,
+              fields: updatedFieldsList,
+            },
+          });
+        }
+      }
+
+      // Invalida e refetch per sincronizzare con il server
+      await queryClient.invalidateQueries({ queryKey: ["fields"] });
+      await fieldsQuery.refetch();
+
+      // Gestione sicura della risposta per il toast
+      const count = response?.data?.fields?.length ?? 0;
+      if (count > 0) {
+        toast.success(
+          `${count} camp${count === 1 ? "o aggiornato" : "i aggiornati"} con successo`
+        );
+      } else {
+        toast.success("Campi aggiornati con successo");
+      }
 
       options?.onUpdateSuccess?.(response);
     },
     onError: (error: Error) => {
+      console.error("Errore aggiornamento fields:", error);
       toast.error(`Errore durante l'aggiornamento: ${error.message}`);
       options?.onUpdateError?.(error);
     },

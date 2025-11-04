@@ -101,8 +101,14 @@ export default function Company(): React.ReactElement {
   const [searchFilter, setSearchFilter] = useState<string>("");
   const tableRef = useRef<EditableTable>(null);
 
-  const { companies, isLoading, error, createCompanies, updateCompanies } =
-    useCompanies();
+  const {
+    companies,
+    isLoading,
+    error,
+    createCompanies,
+    updateCompanies,
+    isUpdating,
+  } = useCompanies();
 
   const textSearch = useMemo(
     () =>
@@ -121,8 +127,27 @@ export default function Company(): React.ReactElement {
   }, [companies, searchFilter, textSearch]);
 
   const renderDetails = (row: Record<string, unknown>): React.ReactNode => {
-    const company = row as unknown as Company;
-    return <DrawerCompanyContent company={company} />;
+    const companyId = typeof row.id === "string" ? row.id : String(row.id);
+
+    // Trova sempre l'azienda più recente dalla lista aggiornata
+    const company =
+      companies.find((c) => c.id === companyId) || (row as unknown as Company);
+
+    const handleUpdate = (update: BulkCompanyUpdateInput): void => {
+      updateCompanies([update]);
+    };
+
+    // Usa updatedAt come key per forzare il re-render quando i dati cambiano
+    const key = `${company.id}-${company.updatedAt || Date.now()}`;
+
+    return (
+      <DrawerCompanyContent
+        key={key}
+        company={company}
+        onUpdate={handleUpdate}
+        isUpdating={isUpdating}
+      />
+    );
   };
 
   /**
@@ -236,7 +261,9 @@ export default function Company(): React.ReactElement {
         onSearchChange={setSearchFilter}
         totalItems={companies.length}
         filteredItems={filteredItems.length}
-        rightElement={<ImportCompanyByPdf onImportSuccess={handleImportFromPdf} />}
+        rightElement={
+          <ImportCompanyByPdf onImportSuccess={handleImportFromPdf} />
+        }
       />
 
       {/* Area scrollabile - solo la tabella */}

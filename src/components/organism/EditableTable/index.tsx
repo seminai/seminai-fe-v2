@@ -118,6 +118,18 @@ export class EditableTable extends React.Component<
         isNew: false,
         isDirty: false,
       }));
+
+      // Se la drawer è aperta, aggiorna anche drawerRow con i nuovi dati
+      let updatedDrawerRow = this.state.drawerRow;
+      if (this.state.drawerOpen && this.state.drawerRow) {
+        const updatedRow = newRows.find(
+          (r) => r.id === this.state.drawerRow?.id
+        );
+        if (updatedRow) {
+          updatedDrawerRow = updatedRow;
+        }
+      }
+
       this.setState({
         rows: newRows,
         touched: {},
@@ -125,6 +137,7 @@ export class EditableTable extends React.Component<
         isEditMode: false,
         sortColumn: undefined,
         sortDirection: "asc",
+        drawerRow: updatedDrawerRow,
       });
     }
   }
@@ -514,7 +527,7 @@ export class EditableTable extends React.Component<
         {showSave && (
           <div className="flex items-center justify-end px-4 py-3 border-b border-agri-green-50 bg-blue-50/50">
             <div className="flex items-center gap-2">
-              <Button onClick={this.handleSave} disabled={false} size="sm">
+              <Button onClick={this.handleSave} disabled={false}>
                 Salva
               </Button>
             </div>
@@ -765,11 +778,7 @@ export class EditableTable extends React.Component<
                 </Button>
               )}
               {showSave && (
-                <Button
-                  onClick={this.handleSave}
-                  disabled={hasErrors}
-                  size="sm"
-                >
+                <Button onClick={this.handleSave} disabled={hasErrors}>
                   Salva
                 </Button>
               )}
@@ -975,7 +984,7 @@ export class EditableTable extends React.Component<
                   {this.props.detailsTitle || "Details"}
                 </DrawerTitle>
               </DrawerHeader>
-              <div className="p-4">
+              <div className="p-6 overflow-y-auto max-h-[calc(100vh-120px)]">
                 {this.state.drawerRow
                   ? this.props.detailsRenderer?.(this.state.drawerRow.data)
                   : null}
