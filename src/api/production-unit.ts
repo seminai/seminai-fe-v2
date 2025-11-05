@@ -154,6 +154,95 @@ export async function deleteProductionUnit(
   }
 }
 
+// Types for update
+export type ProductionUnitUpdateInput = {
+  name?: string;
+  cropName?: string;
+  cropType?: string;
+  variety?: string;
+  protocoll?: string;
+  areaHa?: number;
+  protectionStructure?: string;
+  startDate?: string;
+  floweringDate?: string | null;
+  harvestingDate?: string | null;
+  endDate?: string | null;
+  occupazione?: string | null;
+  destinazioneDiUso?: string | null;
+  acquaTotalePeridoL?: number | null;
+};
+
+export type ProductionUnitUpdateResponse = {
+  status: "success";
+  data: {
+    productionUnit: ProductionUnit;
+  };
+};
+
+// API function for single update
+export async function updateProductionUnit(
+  id: string,
+  data: ProductionUnitUpdateInput,
+  baseUrl: string = BASE_URL
+): Promise<ProductionUnitUpdateResponse> {
+  const response = await fetch(`${baseUrl}/production-units/${id}`, {
+    method: "PUT",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to update production unit");
+  }
+
+  return (await response.json()) as ProductionUnitUpdateResponse;
+}
+
+// Types for bulk update
+export type BulkUpdateProductionUnitItem = {
+  id: string;
+} & ProductionUnitUpdateInput;
+
+export type BulkUpdateProductionUnitsRequest = {
+  productionUnits: BulkUpdateProductionUnitItem[];
+};
+
+export type BulkUpdateProductionUnitsResponse = {
+  status: "success";
+  data: {
+    updated: number;
+    productionUnits: ProductionUnit[];
+  };
+};
+
+// API function for bulk update
+export async function bulkUpdateProductionUnits(
+  request: BulkUpdateProductionUnitsRequest,
+  baseUrl: string = BASE_URL
+): Promise<BulkUpdateProductionUnitsResponse> {
+  const response = await fetch(`${baseUrl}/production-units/bulk`, {
+    method: "PUT",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to bulk update production units");
+  }
+
+  return (await response.json()) as BulkUpdateProductionUnitsResponse;
+}
+
 class ProductionUnitApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -170,10 +259,128 @@ class ProductionUnitApiService {
     return await bulkCreateProductionUnits(request, this.baseUrl);
   }
 
+  public async bulkImport(
+    request: BulkImportRequest
+  ): Promise<BulkImportResponse> {
+    return await bulkImportProductionUnits(request, this.baseUrl);
+  }
+
   public async delete(id: string): Promise<void> {
     return await deleteProductionUnit(id, this.baseUrl);
+  }
+
+  public async update(
+    id: string,
+    data: ProductionUnitUpdateInput
+  ): Promise<ProductionUnitUpdateResponse> {
+    return await updateProductionUnit(id, data, this.baseUrl);
+  }
+
+  public async bulkUpdate(
+    request: BulkUpdateProductionUnitsRequest
+  ): Promise<BulkUpdateProductionUnitsResponse> {
+    return await bulkUpdateProductionUnits(request, this.baseUrl);
   }
 }
 
 export const productionUnitApiService = new ProductionUnitApiService(BASE_URL);
 
+// Types for bulk-import (from CSV)
+export type BulkImportFieldAllocation = {
+  fieldName: string;
+  sezione?: string;
+  foglio?: string;
+  particella?: string;
+  subalterno?: string;
+  areaHa: number;
+};
+
+export type BulkImportProductionUnit = {
+  name: string;
+  cropName: string;
+  cropType: string;
+  variety: string;
+  protocoll: string;
+  protectionStructure: string;
+  startDate: string;
+  floweringDate?: string;
+  harvestingDate?: string;
+  endDate?: string;
+  occupazione?: string;
+  destinazioneDiUso?: string;
+  acquaTotalePeridoL?: number;
+  fieldAllocations: BulkImportFieldAllocation[];
+};
+
+export type BulkImportField = {
+  name: string;
+  coordinates?: [number, number];
+  latitude?: number;
+  longitude?: number;
+  polygon?: string;
+  gisHa?: number;
+  sauHa?: number;
+  ph?: number;
+  nitrogen?: number;
+  phosphorus?: number;
+  potassium?: number;
+  calcium?: number;
+  magnesium?: number;
+  soilType?: string;
+  uso?: string;
+  qualita?: string;
+  superficieCatastaleMq?: number;
+  sezione?: string;
+  foglio?: string;
+  particella?: string;
+  subalterno?: string;
+  nation?: string;
+  region?: string;
+  city?: string;
+  address?: string;
+  cap?: string;
+  variazioneMq?: number;
+  inizioConduzione?: string;
+  fineConduzione?: string;
+};
+
+export type BulkImportRequest = {
+  companyName: string;
+  vatNumber: string;
+  fields: BulkImportField[];
+  productionUnits: BulkImportProductionUnit[];
+};
+
+export type BulkImportResponse = {
+  status: "success";
+  data: {
+    message: string;
+    created: {
+      fields: number;
+      productionUnits: number;
+    };
+  };
+};
+
+// API function for bulk-import (CSV)
+export async function bulkImportProductionUnits(
+  request: BulkImportRequest,
+  baseUrl: string = BASE_URL
+): Promise<BulkImportResponse> {
+  const response = await fetch(`${baseUrl}/production-units/bulk-import`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to bulk import production units");
+  }
+
+  return (await response.json()) as BulkImportResponse;
+}
