@@ -16,7 +16,6 @@ interface DrawerFieldContentProps {
   field: Field;
   onUpdate?: (update: BulkFieldUpdateInput) => void;
   isUpdating?: boolean;
-  companies?: Array<{ id: string; name: string }>;
 }
 
 const SOIL_TYPE_OPTIONS = [
@@ -38,7 +37,6 @@ export function DrawerFieldContent({
   field,
   onUpdate,
   isUpdating = false,
-  companies = [],
 }: DrawerFieldContentProps): React.ReactElement {
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState<Partial<Field>>({
@@ -258,7 +256,9 @@ export function DrawerFieldContent({
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-agri-green-600 mb-1.5">CAP</p>
+            <p className="text-xs font-medium text-agri-green-600 mb-1.5">
+              CAP
+            </p>
             {isEditing ? (
               <Input
                 value={editedData.cap || ""}
@@ -573,9 +573,7 @@ export function DrawerFieldContent({
                 onChange={(e) =>
                   setEditedData({
                     ...editedData,
-                    nitrogen: e.target.value
-                      ? Number(e.target.value)
-                      : null,
+                    nitrogen: e.target.value ? Number(e.target.value) : null,
                   })
                 }
                 className="bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
@@ -599,9 +597,7 @@ export function DrawerFieldContent({
                 onChange={(e) =>
                   setEditedData({
                     ...editedData,
-                    phosphorus: e.target.value
-                      ? Number(e.target.value)
-                      : null,
+                    phosphorus: e.target.value ? Number(e.target.value) : null,
                   })
                 }
                 className="bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
@@ -625,9 +621,7 @@ export function DrawerFieldContent({
                 onChange={(e) =>
                   setEditedData({
                     ...editedData,
-                    potassium: e.target.value
-                      ? Number(e.target.value)
-                      : null,
+                    potassium: e.target.value ? Number(e.target.value) : null,
                   })
                 }
                 className="bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
@@ -675,9 +669,7 @@ export function DrawerFieldContent({
                 onChange={(e) =>
                   setEditedData({
                     ...editedData,
-                    magnesium: e.target.value
-                      ? Number(e.target.value)
-                      : null,
+                    magnesium: e.target.value ? Number(e.target.value) : null,
                   })
                 }
                 className="bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
@@ -722,11 +714,15 @@ export function DrawerFieldContent({
                   <span>{unit.cropVariety || "-"}</span>
                 </div>
                 <div>
-                  <span className="text-nature-600 font-medium">Categoria: </span>
+                  <span className="text-nature-600 font-medium">
+                    Categoria:{" "}
+                  </span>
                   <span>{unit.cropCategory || "-"}</span>
                 </div>
                 <div>
-                  <span className="text-nature-600 font-medium">SAU (Ha): </span>
+                  <span className="text-nature-600 font-medium">
+                    SAU (Ha):{" "}
+                  </span>
                   <span>{unit.sauHa ? unit.sauHa.toFixed(2) : "-"}</span>
                 </div>
               </div>

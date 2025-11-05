@@ -33,6 +33,7 @@ import {
   IoChevronBackOutline,
   IoChevronDownOutline,
   IoStatsChartOutline,
+  IoLeafOutline,
 } from "react-icons/io5";
 import {
   DropdownMenu,
@@ -66,6 +67,7 @@ function MobileBottomBar({ isMobile, hasCompanies }: MobileBottomBarProps) {
   const labelDashboard = location.pathname.startsWith("/dashboard");
   const fieldsActive = location.pathname.startsWith("/fields");
   const companyActive = location.pathname.startsWith("/company");
+  const productionUnitActive = location.pathname.startsWith("/production-unit");
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-20 mx-auto mb-safe w-full max-w-screen-sm">
@@ -121,6 +123,25 @@ function MobileBottomBar({ isMobile, hasCompanies }: MobileBottomBarProps) {
                   )}
                 />
                 <span className="mt-1">Campi</span>
+              </Link>
+            </li>
+          )}
+          {hasCompanies && (
+            <li key="production-unit">
+              <Link
+                to="/production-unit"
+                className={cn(
+                  "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
+                  productionUnitActive && "text-gray-900 font-medium"
+                )}
+              >
+                <IoLeafOutline
+                  className={cn(
+                    "size-5",
+                    productionUnitActive ? "text-gray-900" : "text-gray-700/90"
+                  )}
+                />
+                <span className="mt-1">Unità Prod.</span>
               </Link>
             </li>
           )}
@@ -253,6 +274,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const companyActive =
     location.pathname === "/company" ||
     location.pathname.startsWith("/company/");
+  const productionUnitActive =
+    location.pathname === "/production-unit" ||
+    location.pathname.startsWith("/production-unit/");
 
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -367,6 +391,26 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         )}
+
+                        {hasCompanies && (
+                          <SidebarMenuItem key="production-unit">
+                            <SidebarMenuButton
+                              asChild
+                              isActive={productionUnitActive}
+                              tooltip="Unità Produttive"
+                              size="lg"
+                              className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                            >
+                              <Link
+                                to="/production-unit"
+                                className="flex items-center gap-3"
+                              >
+                                <IoLeafOutline className="size-5" />
+                                <span>Unità Produttive</span>
+                              </Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        )}
                       </SidebarMenu>
                     </CollapsibleContent>
                   </SidebarMenuItem>
@@ -404,6 +448,28 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     >
                       <Link to="/fields" className="flex items-center gap-3">
                         <IoGridOutline className="size-5" />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                {hasCompanies && (
+                  <SidebarMenuItem
+                    key="production-unit-icon"
+                    className="hidden group-data-[collapsible=icon]:block"
+                  >
+                    <SidebarMenuButton
+                      asChild
+                      isActive={productionUnitActive}
+                      tooltip="Unità Produttive"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link
+                        to="/production-unit"
+                        className="flex items-center gap-3"
+                      >
+                        <IoLeafOutline className="size-5" />
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
