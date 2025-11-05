@@ -1,6 +1,9 @@
 import * as React from "react";
 import { useState, useMemo } from "react";
-import { type ProductionUnit } from "@/api/production-unit";
+import {
+  type ProductionUnit,
+  type ProductionUnitUpdateInput,
+} from "@/api/production-unit";
 import { Spinner } from "@/components/ui/spinner";
 import {
   EditableTable,
@@ -11,8 +14,10 @@ import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { PageHeader } from "@/components/organism/Header";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Save, X } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -88,6 +93,11 @@ export default function ProductionUnit(): React.ReactElement {
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState<ProductionUnitUpdateInput>(
+    {}
+  );
+  const [isSaving, setIsSaving] = useState(false);
 
   const { productionUnits, isLoading, error, refetch } = useProductionUnit();
 
@@ -154,6 +164,57 @@ export default function ProductionUnit(): React.ReactElement {
     }
   };
 
+  const handleEdit = (productionUnit: ProductionUnit) => {
+    const pu = productionUnit.productionUnit;
+    setEditingId(pu.id);
+    setEditFormData({
+      name: pu.name,
+      cropName: pu.cropName,
+      cropType: pu.cropType,
+      variety: pu.variety,
+      protocoll: pu.protocoll,
+      areaHa: pu.areaHa,
+      protectionStructure: pu.protectionStructure,
+      startDate: pu.startDate,
+      floweringDate: pu.floweringDate,
+      harvestingDate: pu.harvestingDate,
+      endDate: pu.endDate,
+      occupazione: pu.occupazione,
+      destinazioneDiUso: pu.destinazioneDiUso,
+      acquaTotalePeridoL: pu.acquaTotalePeridoL,
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditFormData({});
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId) return;
+
+    setIsSaving(true);
+    try {
+      const { productionUnitApiService } = await import(
+        "@/api/production-unit"
+      );
+      await productionUnitApiService.update(editingId, editFormData);
+      toast.success("Unità produttiva aggiornata con successo");
+      refetch();
+      setEditingId(null);
+      setEditFormData({});
+    } catch (error) {
+      console.error("Errore nell'aggiornamento:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Errore nell'aggiornamento dell'unità produttiva"
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const renderDetails = (row: Record<string, unknown>): React.ReactNode => {
     const productionUnit = row.productionUnit as ProductionUnit;
     if (!productionUnit) {
@@ -161,135 +222,402 @@ export default function ProductionUnit(): React.ReactElement {
     }
 
     const pu = productionUnit.productionUnit;
+    const isEditing = editingId === pu.id;
+
+    // Helper per convertire date ISO in formato YYYY-MM-DD per input
+    const formatDateForInput = (dateStr: string | null) => {
+      if (!dateStr) return "";
+      return dateStr.split("T")[0];
+    };
 
     return (
       <div className="p-4 space-y-4">
+        {/* Header con pulsante edit */}
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">
+            {isEditing
+              ? "Modifica Unità Produttiva"
+              : "Dettagli Unità Produttiva"}
+          </h3>
+          {!isEditing && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEdit(productionUnit)}
+              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            >
+              <Pencil className="w-4 h-4 mr-2" />
+              Modifica
+            </Button>
+          )}
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
+          {/* Nome Unità Produttiva */}
           <div>
-            <label className="text-sm font-medium text-gray-500">
+            <Label className="text-sm font-medium text-gray-500">
               Nome Unità Produttiva
-            </label>
-            <p className="text-sm">{pu.name}</p>
+            </Label>
+            {isEditing ? (
+              <Input
+                value={editFormData.name || ""}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, name: e.target.value })
+                }
+                className="mt-1"
+              />
+            ) : (
+              <p className="text-sm">{pu.name}</p>
+            )}
           </div>
+
+          {/* Azienda - Non modificabile */}
           <div>
-            <label className="text-sm font-medium text-gray-500">Azienda</label>
+            <Label className="text-sm font-medium text-gray-500">Azienda</Label>
             <p className="text-sm">{productionUnit.companyName}</p>
           </div>
+
+          {/* Campo - Non modificabile */}
           <div>
-            <label className="text-sm font-medium text-gray-500">Campo</label>
+            <Label className="text-sm font-medium text-gray-500">Campo</Label>
             <p className="text-sm">{productionUnit.field?.name || "-"}</p>
           </div>
+
+          {/* Area sul Campo - Non modificabile */}
           <div>
-            <label className="text-sm font-medium text-gray-500">
+            <Label className="text-sm font-medium text-gray-500">
               Area sul Campo (Ha)
-            </label>
+            </Label>
             <p className="text-sm">{productionUnit.areaHaOnField ?? "-"}</p>
           </div>
+
+          {/* Coltura */}
           <div>
-            <label className="text-sm font-medium text-gray-500">Coltura</label>
-            <p className="text-sm">{pu.cropName}</p>
+            <Label className="text-sm font-medium text-gray-500">Coltura</Label>
+            {isEditing ? (
+              <Input
+                value={editFormData.cropName || ""}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, cropName: e.target.value })
+                }
+                className="mt-1"
+              />
+            ) : (
+              <p className="text-sm">{pu.cropName}</p>
+            )}
           </div>
+
+          {/* Tipo Coltura */}
           <div>
-            <label className="text-sm font-medium text-gray-500">
+            <Label className="text-sm font-medium text-gray-500">
               Tipo Coltura
-            </label>
-            <p className="text-sm">{pu.cropType}</p>
+            </Label>
+            {isEditing ? (
+              <Input
+                value={editFormData.cropType || ""}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, cropType: e.target.value })
+                }
+                className="mt-1"
+              />
+            ) : (
+              <p className="text-sm">{pu.cropType}</p>
+            )}
           </div>
+
+          {/* Varietà */}
           <div>
-            <label className="text-sm font-medium text-gray-500">Varietà</label>
-            <p className="text-sm">{pu.variety}</p>
+            <Label className="text-sm font-medium text-gray-500">Varietà</Label>
+            {isEditing ? (
+              <Input
+                value={editFormData.variety || ""}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, variety: e.target.value })
+                }
+                className="mt-1"
+              />
+            ) : (
+              <p className="text-sm">{pu.variety}</p>
+            )}
           </div>
+
+          {/* Protocollo */}
           <div>
-            <label className="text-sm font-medium text-gray-500">
+            <Label className="text-sm font-medium text-gray-500">
               Protocollo
-            </label>
-            <p className="text-sm">{pu.protocoll}</p>
+            </Label>
+            {isEditing ? (
+              <Input
+                value={editFormData.protocoll || ""}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    protocoll: e.target.value,
+                  })
+                }
+                className="mt-1"
+              />
+            ) : (
+              <p className="text-sm">{pu.protocoll}</p>
+            )}
           </div>
+
+          {/* Area Totale */}
           <div>
-            <label className="text-sm font-medium text-gray-500">
+            <Label className="text-sm font-medium text-gray-500">
               Area Totale (Ha)
-            </label>
-            <p className="text-sm">{pu.areaHa}</p>
+            </Label>
+            {isEditing ? (
+              <Input
+                type="number"
+                step="0.01"
+                value={editFormData.areaHa || ""}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    areaHa: parseFloat(e.target.value) || 0,
+                  })
+                }
+                className="mt-1"
+              />
+            ) : (
+              <p className="text-sm">{pu.areaHa}</p>
+            )}
           </div>
+
+          {/* Struttura Protezione */}
           <div>
-            <label className="text-sm font-medium text-gray-500">
+            <Label className="text-sm font-medium text-gray-500">
               Struttura Protezione
-            </label>
-            <p className="text-sm">{pu.protectionStructure}</p>
+            </Label>
+            {isEditing ? (
+              <Input
+                value={editFormData.protectionStructure || ""}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    protectionStructure: e.target.value,
+                  })
+                }
+                className="mt-1"
+              />
+            ) : (
+              <p className="text-sm">{pu.protectionStructure}</p>
+            )}
           </div>
+
+          {/* Data Inizio */}
           <div>
-            <label className="text-sm font-medium text-gray-500">
+            <Label className="text-sm font-medium text-gray-500">
               Data Inizio
-            </label>
-            <p className="text-sm">
-              {pu.startDate
-                ? new Date(pu.startDate).toLocaleDateString("it-IT")
-                : "-"}
-            </p>
+            </Label>
+            {isEditing ? (
+              <Input
+                type="date"
+                value={formatDateForInput(editFormData.startDate || "")}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    startDate: e.target.value
+                      ? new Date(e.target.value).toISOString()
+                      : "",
+                  })
+                }
+                className="mt-1"
+              />
+            ) : (
+              <p className="text-sm">
+                {pu.startDate
+                  ? new Date(pu.startDate).toLocaleDateString("it-IT")
+                  : "-"}
+              </p>
+            )}
           </div>
+
+          {/* Data Fioritura */}
           <div>
-            <label className="text-sm font-medium text-gray-500">
+            <Label className="text-sm font-medium text-gray-500">
               Data Fioritura
-            </label>
-            <p className="text-sm">
-              {pu.floweringDate
-                ? new Date(pu.floweringDate).toLocaleDateString("it-IT")
-                : "-"}
-            </p>
+            </Label>
+            {isEditing ? (
+              <Input
+                type="date"
+                value={formatDateForInput(editFormData.floweringDate || "")}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    floweringDate: e.target.value
+                      ? new Date(e.target.value).toISOString()
+                      : null,
+                  })
+                }
+                className="mt-1"
+              />
+            ) : (
+              <p className="text-sm">
+                {pu.floweringDate
+                  ? new Date(pu.floweringDate).toLocaleDateString("it-IT")
+                  : "-"}
+              </p>
+            )}
           </div>
+
+          {/* Data Raccolta */}
           <div>
-            <label className="text-sm font-medium text-gray-500">
+            <Label className="text-sm font-medium text-gray-500">
               Data Raccolta
-            </label>
-            <p className="text-sm">
-              {pu.harvestingDate
-                ? new Date(pu.harvestingDate).toLocaleDateString("it-IT")
-                : "-"}
-            </p>
+            </Label>
+            {isEditing ? (
+              <Input
+                type="date"
+                value={formatDateForInput(editFormData.harvestingDate || "")}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    harvestingDate: e.target.value
+                      ? new Date(e.target.value).toISOString()
+                      : null,
+                  })
+                }
+                className="mt-1"
+              />
+            ) : (
+              <p className="text-sm">
+                {pu.harvestingDate
+                  ? new Date(pu.harvestingDate).toLocaleDateString("it-IT")
+                  : "-"}
+              </p>
+            )}
           </div>
+
+          {/* Data Fine */}
           <div>
-            <label className="text-sm font-medium text-gray-500">
+            <Label className="text-sm font-medium text-gray-500">
               Data Fine
-            </label>
-            <p className="text-sm">
-              {pu.endDate
-                ? new Date(pu.endDate).toLocaleDateString("it-IT")
-                : "-"}
-            </p>
+            </Label>
+            {isEditing ? (
+              <Input
+                type="date"
+                value={formatDateForInput(editFormData.endDate || "")}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    endDate: e.target.value
+                      ? new Date(e.target.value).toISOString()
+                      : null,
+                  })
+                }
+                className="mt-1"
+              />
+            ) : (
+              <p className="text-sm">
+                {pu.endDate
+                  ? new Date(pu.endDate).toLocaleDateString("it-IT")
+                  : "-"}
+              </p>
+            )}
           </div>
+
+          {/* Occupazione */}
           <div>
-            <label className="text-sm font-medium text-gray-500">
+            <Label className="text-sm font-medium text-gray-500">
               Occupazione
-            </label>
-            <p className="text-sm">{pu.occupazione || "-"}</p>
+            </Label>
+            {isEditing ? (
+              <Input
+                value={editFormData.occupazione || ""}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    occupazione: e.target.value || null,
+                  })
+                }
+                className="mt-1"
+              />
+            ) : (
+              <p className="text-sm">{pu.occupazione || "-"}</p>
+            )}
           </div>
+
+          {/* Destinazione d'Uso */}
           <div>
-            <label className="text-sm font-medium text-gray-500">
+            <Label className="text-sm font-medium text-gray-500">
               Destinazione d'Uso
-            </label>
-            <p className="text-sm">{pu.destinazioneDiUso || "-"}</p>
+            </Label>
+            {isEditing ? (
+              <Input
+                value={editFormData.destinazioneDiUso || ""}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    destinazioneDiUso: e.target.value || null,
+                  })
+                }
+                className="mt-1"
+              />
+            ) : (
+              <p className="text-sm">{pu.destinazioneDiUso || "-"}</p>
+            )}
           </div>
+
+          {/* Acqua Totale Periodo */}
           <div>
-            <label className="text-sm font-medium text-gray-500">
+            <Label className="text-sm font-medium text-gray-500">
               Acqua Totale Periodo (L)
-            </label>
-            <p className="text-sm">
-              {pu.acquaTotalePeridoL
-                ? pu.acquaTotalePeridoL.toLocaleString("it-IT")
-                : "-"}
-            </p>
+            </Label>
+            {isEditing ? (
+              <Input
+                type="number"
+                value={editFormData.acquaTotalePeridoL || ""}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    acquaTotalePeridoL: parseInt(e.target.value) || null,
+                  })
+                }
+                className="mt-1"
+              />
+            ) : (
+              <p className="text-sm">
+                {pu.acquaTotalePeridoL
+                  ? pu.acquaTotalePeridoL.toLocaleString("it-IT")
+                  : "-"}
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Pulsante Elimina */}
-        <div className="mt-6 pt-4 border-t">
-          <Button
-            variant="destructive"
-            onClick={() => setDeletingId(pu.id)}
-            disabled={isDeleting}
-          >
-            Elimina Unità Produttiva
-          </Button>
+        {/* Pulsanti azioni */}
+        <div className="mt-6 pt-4 border-t flex gap-2">
+          {isEditing ? (
+            <>
+              <Button
+                variant="default"
+                onClick={handleSaveEdit}
+                disabled={isSaving}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {isSaving ? "Salvataggio..." : "Salva"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleCancelEdit}
+                disabled={isSaving}
+              >
+                <X className="w-4 h-4 mr-2" />
+                Annulla
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="destructive"
+              onClick={() => setDeletingId(pu.id)}
+              disabled={isDeleting}
+            >
+              Elimina Unità Produttiva
+            </Button>
+          )}
         </div>
       </div>
     );

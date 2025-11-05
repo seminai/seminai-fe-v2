@@ -9,6 +9,7 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
+  DrawerDescription,
 } from "@/components/ui/drawer";
 import { IoOpenOutline } from "react-icons/io5";
 
@@ -983,6 +984,9 @@ export class EditableTable extends React.Component<
                 <DrawerTitle>
                   {this.props.detailsTitle || "Details"}
                 </DrawerTitle>
+                <DrawerDescription>
+                  Visualizza e modifica i dettagli dell'elemento selezionato
+                </DrawerDescription>
               </DrawerHeader>
               <div className="p-6 overflow-y-auto max-h-[calc(100vh-120px)]">
                 {this.state.drawerRow
