@@ -12,6 +12,17 @@ import { PageHeader } from "@/components/organism/Header";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const buildProductionUnitColumns = (): EditableColumn[] => {
   return [
@@ -75,8 +86,10 @@ const buildProductionUnitColumns = (): EditableColumn[] => {
 
 export default function ProductionUnit(): React.ReactElement {
   const [searchFilter, setSearchFilter] = useState<string>("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const { productionUnits, isLoading, error } = useProductionUnit();
+  const { productionUnits, isLoading, error, refetch } = useProductionUnit();
 
   // Converti i dati delle unità produttive in formato row per la tabella
   const rows = useMemo(() => {
@@ -90,7 +103,7 @@ export default function ProductionUnit(): React.ReactElement {
       protocoll: pu.productionUnit.protocoll,
       areaHa: pu.productionUnit.areaHa,
       protectionStructure: pu.productionUnit.protectionStructure,
-      fieldName: pu.field.name,
+      fieldName: pu.field?.name || "-",
       startDate: pu.productionUnit.startDate
         ? new Date(pu.productionUnit.startDate).toISOString().split("T")[0]
         : "",
@@ -104,7 +117,7 @@ export default function ProductionUnit(): React.ReactElement {
 
   const textSearch = useMemo(
     () =>
-      createTextSearch<typeof rows[0]>([
+      createTextSearch<(typeof rows)[0]>([
         "name",
         "companyName",
         "cropName",
@@ -118,6 +131,28 @@ export default function ProductionUnit(): React.ReactElement {
   const filteredItems = useMemo(() => {
     return textSearch.setSearchTerm(searchFilter).filter(rows);
   }, [rows, searchFilter, textSearch]);
+
+  const handleDelete = async (id: string) => {
+    setIsDeleting(true);
+    try {
+      const { productionUnitApiService } = await import(
+        "@/api/production-unit"
+      );
+      await productionUnitApiService.delete(id);
+      toast.success("Unità produttiva eliminata con successo");
+      refetch();
+      setDeletingId(null);
+    } catch (error) {
+      console.error("Errore nell'eliminazione:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Errore nell'eliminazione dell'unità produttiva"
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const renderDetails = (row: Record<string, unknown>): React.ReactNode => {
     const productionUnit = row.productionUnit as ProductionUnit;
@@ -142,13 +177,13 @@ export default function ProductionUnit(): React.ReactElement {
           </div>
           <div>
             <label className="text-sm font-medium text-gray-500">Campo</label>
-            <p className="text-sm">{productionUnit.field.name}</p>
+            <p className="text-sm">{productionUnit.field?.name || "-"}</p>
           </div>
           <div>
             <label className="text-sm font-medium text-gray-500">
               Area sul Campo (Ha)
             </label>
-            <p className="text-sm">{productionUnit.areaHaOnField}</p>
+            <p className="text-sm">{productionUnit.areaHaOnField ?? "-"}</p>
           </div>
           <div>
             <label className="text-sm font-medium text-gray-500">Coltura</label>
@@ -245,6 +280,17 @@ export default function ProductionUnit(): React.ReactElement {
             </p>
           </div>
         </div>
+
+        {/* Pulsante Elimina */}
+        <div className="mt-6 pt-4 border-t">
+          <Button
+            variant="destructive"
+            onClick={() => setDeletingId(pu.id)}
+            disabled={isDeleting}
+          >
+            Elimina Unità Produttiva
+          </Button>
+        </div>
       </div>
     );
   };
@@ -261,7 +307,7 @@ export default function ProductionUnit(): React.ReactElement {
         totalItems={productionUnits.length}
         filteredItems={filteredItems.length}
         rightElement={
-          <Button asChild>
+          <Button variant="outline" asChild>
             <Link to="/new-production-unit">
               <Plus className="w-4 h-4 mr-2" />
               Aggiungi unità produttiva
@@ -310,7 +356,32 @@ export default function ProductionUnit(): React.ReactElement {
           />
         )}
       </div>
+
+      {/* Dialog di conferma eliminazione */}
+      <AlertDialog
+        open={deletingId !== null}
+        onOpenChange={(open) => !open && setDeletingId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler eliminare questa unità produttiva? Questa
+              azione non può essere annullata.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingId && handleDelete(deletingId)}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? "Eliminazione..." : "Elimina"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
-
