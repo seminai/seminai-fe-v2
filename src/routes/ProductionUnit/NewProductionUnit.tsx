@@ -100,6 +100,10 @@ type ProductionUnitInput = {
   occupazione: string;
   destinazioneDiUso: string;
   acquaTotalePeridoL: number;
+  // Date personalizzabili (se non impostate, vengono calcolate dalla coltura)
+  customSowingDate?: Date | null;
+  customFloweringDate?: Date | null;
+  customHarvestingDate?: Date | null;
 };
 
 // Funzione helper per ottenere l'inizio e fine anno corrente
@@ -233,6 +237,7 @@ const ProductionUnitsManagementStep: React.FC<{
     address?: string | null;
     city?: string | null;
   }>;
+  dateRange: { start: Date; end: Date };
   onNext: () => void;
   onPrevious: () => void;
 }> = ({
@@ -242,6 +247,7 @@ const ProductionUnitsManagementStep: React.FC<{
   onProductionUnitsChange,
   allocatedFields,
   allFields,
+  dateRange,
   onNext,
   onPrevious,
 }) => {
@@ -260,6 +266,9 @@ const ProductionUnitsManagementStep: React.FC<{
       occupazione: "",
       destinazioneDiUso: "",
       acquaTotalePeridoL: 0,
+      customSowingDate: null,
+      customFloweringDate: null,
+      customHarvestingDate: null,
     };
     setEditingUnit(newUnit);
     setShowForm(true);
@@ -311,6 +320,7 @@ const ProductionUnitsManagementStep: React.FC<{
           allocatedFields={allocatedFields}
           allFields={allFields}
           getTotalAllocatedForField={getTotalAllocatedForField}
+          dateRange={dateRange}
           onSave={saveUnit}
           onCancel={() => {
             setShowForm(false);
@@ -446,6 +456,7 @@ const ProductionUnitForm: React.FC<{
     city?: string | null;
   }>;
   getTotalAllocatedForField: (fieldId: string) => number;
+  dateRange: { start: Date; end: Date };
   onSave: (unit: ProductionUnitInput) => void;
   onCancel: () => void;
 }> = ({
@@ -454,11 +465,38 @@ const ProductionUnitForm: React.FC<{
   allocatedFields,
   allFields,
   getTotalAllocatedForField,
+  dateRange,
   onSave,
   onCancel,
 }) => {
   const [formData, setFormData] = useState<ProductionUnitInput>(unit);
+  const [cropSearchQuery, setCropSearchQuery] = useState("");
   const selectedCrop = cropVarieties.find((v) => v.code === formData.cropCode);
+
+  // Filtra le colture in base alla ricerca
+  const filteredCropVarieties = useMemo(() => {
+    if (!cropSearchQuery.trim()) return cropVarieties;
+    const query = cropSearchQuery.toLowerCase();
+    return cropVarieties.filter(
+      (variety) =>
+        variety.species.toLowerCase().includes(query) ||
+        variety.cropType.toLowerCase().includes(query) ||
+        variety.code.toLowerCase().includes(query)
+    );
+  }, [cropVarieties, cropSearchQuery]);
+
+  // Calcola le date di default dalla coltura
+  const defaultCropDates = selectedCrop
+    ? calculateCropDates(selectedCrop, dateRange.start)
+    : null;
+
+  // Usa le date personalizzate se presenti, altrimenti usa quelle di default
+  const effectiveSowingDate =
+    formData.customSowingDate || defaultCropDates?.sowingDate;
+  const effectiveFloweringDate =
+    formData.customFloweringDate || defaultCropDates?.floweringDate;
+  const effectiveHarvestingDate =
+    formData.customHarvestingDate || defaultCropDates?.harvestingDate;
 
   const handleSave = () => {
     if (
@@ -518,19 +556,57 @@ const ProductionUnitForm: React.FC<{
             <label className="text-sm font-medium">Coltura *</label>
             <Select
               value={formData.cropCode}
-              onValueChange={(value) =>
-                setFormData({ ...formData, cropCode: value })
-              }
+              onValueChange={(value) => {
+                setFormData({ ...formData, cropCode: value });
+                setCropSearchQuery(""); // Reset search quando si seleziona
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seleziona una varietà..." />
               </SelectTrigger>
-              <SelectContent>
-                {cropVarieties.slice(0, 10).map((variety) => (
-                  <SelectItem key={variety.code} value={variety.code}>
-                    {variety.species} - {variety.cropType}
-                  </SelectItem>
-                ))}
+              <SelectContent className="max-h-[400px]">
+                {/* Campo di ricerca */}
+                <div className="sticky top-0 z-10 bg-white border-b p-2">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Cerca coltura..."
+                      value={cropSearchQuery}
+                      onChange={(e) => setCropSearchQuery(e.target.value)}
+                      className="pl-8"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                </div>
+
+                {/* Lista colture filtrate */}
+                <div className="max-h-[300px] overflow-y-auto">
+                  {filteredCropVarieties.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-gray-500">
+                      Nessuna coltura trovata
+                    </div>
+                  ) : (
+                    filteredCropVarieties.map((variety) => (
+                      <SelectItem key={variety.code} value={variety.code}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{variety.species}</span>
+                          <span className="text-xs text-gray-500">
+                            {variety.cropType} • {variety.code}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
+                </div>
+
+                {/* Info sui risultati */}
+                {cropSearchQuery && (
+                  <div className="sticky bottom-0 bg-gray-50 border-t p-2 text-xs text-gray-600 text-center">
+                    {filteredCropVarieties.length} colture trovate su{" "}
+                    {cropVarieties.length}
+                  </div>
+                )}
               </SelectContent>
             </Select>
             {selectedCrop && (
@@ -545,6 +621,142 @@ const ProductionUnitForm: React.FC<{
               </div>
             )}
           </div>
+
+          {/* Date colturali */}
+          {selectedCrop && defaultCropDates && (
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-medium mb-3">
+                Calendario Colturale
+                <span className="text-xs text-gray-500 ml-2">
+                  (Date calcolate dalla coltura - modificabili)
+                </span>
+              </h4>
+              <div className="grid grid-cols-3 gap-4">
+                {/* Data Semina */}
+                <div>
+                  <label className="text-sm font-medium">Data Semina</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal mt-1",
+                          !effectiveSowingDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {effectiveSowingDate
+                          ? format(effectiveSowingDate, "dd/MM/yyyy", {
+                              locale: it,
+                            })
+                          : "Seleziona"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={effectiveSowingDate}
+                        onSelect={(date) =>
+                          setFormData({
+                            ...formData,
+                            customSowingDate: date || null,
+                          })
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {!formData.customSowingDate && defaultCropDates && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Default: {selectedCrop.sowingPeriod.minDate}
+                    </p>
+                  )}
+                </div>
+
+                {/* Data Fioritura */}
+                <div>
+                  <label className="text-sm font-medium">Data Fioritura</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal mt-1",
+                          !effectiveFloweringDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {effectiveFloweringDate
+                          ? format(effectiveFloweringDate, "dd/MM/yyyy", {
+                              locale: it,
+                            })
+                          : "Seleziona"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={effectiveFloweringDate}
+                        onSelect={(date) =>
+                          setFormData({
+                            ...formData,
+                            customFloweringDate: date || null,
+                          })
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {!formData.customFloweringDate && defaultCropDates && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Default: {selectedCrop.floweringPeriod.minDate}
+                    </p>
+                  )}
+                </div>
+
+                {/* Data Raccolta */}
+                <div>
+                  <label className="text-sm font-medium">Data Raccolta</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal mt-1",
+                          !effectiveHarvestingDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {effectiveHarvestingDate
+                          ? format(effectiveHarvestingDate, "dd/MM/yyyy", {
+                              locale: it,
+                            })
+                          : "Seleziona"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={effectiveHarvestingDate}
+                        onSelect={(date) =>
+                          setFormData({
+                            ...formData,
+                            customHarvestingDate: date || null,
+                          })
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {!formData.customHarvestingDate && defaultCropDates && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Default: {selectedCrop.harvestPeriod.minDate}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             {/* Struttura Protezione */}
@@ -1177,7 +1389,14 @@ export default function NewProductionUnit(): React.ReactElement {
           }
 
           // Calcola le date della coltura in base al periodo selezionato
+          // Se l'utente ha personalizzato le date, usale, altrimenti usa quelle calcolate
           const cropDates = calculateCropDates(crop, dateRange.start);
+
+          const finalSowingDate = unit.customSowingDate || cropDates.sowingDate;
+          const finalFloweringDate =
+            unit.customFloweringDate || cropDates.floweringDate;
+          const finalHarvestingDate =
+            unit.customHarvestingDate || cropDates.harvestingDate;
 
           return {
             name: unit.name,
@@ -1193,9 +1412,9 @@ export default function NewProductionUnit(): React.ReactElement {
               })
             ),
             protectionStructure: unit.protectionStructure || "",
-            startDate: cropDates.sowingDate.toISOString(),
-            floweringDate: cropDates.floweringDate.toISOString(),
-            harvestingDate: cropDates.harvestingDate.toISOString(),
+            startDate: finalSowingDate.toISOString(),
+            floweringDate: finalFloweringDate.toISOString(),
+            harvestingDate: finalHarvestingDate.toISOString(),
             endDate: dateRange.end.toISOString(),
             occupazione: unit.occupazione || null,
             destinazioneDiUso: unit.destinazioneDiUso || null,
@@ -1583,6 +1802,7 @@ export default function NewProductionUnit(): React.ReactElement {
             onProductionUnitsChange={setProductionUnits}
             allocatedFields={allocatedFields}
             allFields={allFields}
+            dateRange={dateRange}
             onNext={() => setCurrentStep(3)}
             onPrevious={() => setCurrentStep(1)}
           />

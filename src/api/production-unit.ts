@@ -135,6 +135,25 @@ export async function bulkCreateProductionUnits(
   return (await response.json()) as BulkCreateProductionUnitsResponse;
 }
 
+// API function for delete
+export async function deleteProductionUnit(
+  id: string,
+  baseUrl: string = BASE_URL
+): Promise<void> {
+  const response = await fetch(`${baseUrl}/production-units/${id}`, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
+    },
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to delete production unit");
+  }
+}
+
 class ProductionUnitApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -149,6 +168,10 @@ class ProductionUnitApiService {
     request: BulkCreateProductionUnitsRequest
   ): Promise<BulkCreateProductionUnitsResponse> {
     return await bulkCreateProductionUnits(request, this.baseUrl);
+  }
+
+  public async delete(id: string): Promise<void> {
+    return await deleteProductionUnit(id, this.baseUrl);
   }
 }
 
