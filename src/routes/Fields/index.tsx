@@ -161,7 +161,6 @@ export default function Fields(): React.ReactElement {
         field={field}
         onUpdate={handleUpdate}
         isUpdating={isUpdating}
-        companies={companies.map((c) => ({ id: c.id, name: c.name }))}
       />
     );
   };

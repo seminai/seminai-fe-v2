@@ -210,4 +210,81 @@ class FieldsApiService {
   }
 }
 
+// Types for fields availability API
+export type FieldAvailability = {
+  id: string;
+  name: string;
+  sauHa: number;
+  areaOccupied: number;
+  areaAvailable: number;
+  coordinates: number[];
+  latitude: number | null;
+  longitude: number | null;
+  polygon: Record<string, unknown> | unknown[] | null;
+  gisHa: number | null;
+  ph: number | null;
+  nitrogen: number | null;
+  phosphorus: number | null;
+  potassium: number | null;
+  calcium: number | null;
+  magnesium: number | null;
+  soilType: string | null;
+  uso: string | null;
+  qualita: string | null;
+  superficieCatastaleMq: number;
+  sezione: string;
+  foglio: string;
+  particella: string;
+  subalterno: string | null;
+  nation: string | null;
+  region: string | null;
+  city: string | null;
+  address: string;
+  cap: string | null;
+  variazioneMq: string | null;
+  inizioConduzione: string | null;
+  fineConduzione: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CompanyFieldsAvailability = {
+  companyId: string;
+  companyName: string;
+  fields: FieldAvailability[];
+};
+
+export type FieldsAvailabilityResponse = {
+  status: "success";
+  data: {
+    companies: CompanyFieldsAvailability[];
+  };
+};
+
+export async function getFieldsAvailability(
+  startAt: string,
+  endAt: string,
+  baseUrl: string = BASE_URL
+): Promise<FieldsAvailabilityResponse> {
+  const params = new URLSearchParams({
+    startAt,
+    endAt,
+  });
+
+  const response = await fetch(`${baseUrl}/fields/availability?${params}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to load fields availability");
+  }
+
+  return (await response.json()) as FieldsAvailabilityResponse;
+}
+
 export const fieldsApiService = new FieldsApiService(BASE_URL);

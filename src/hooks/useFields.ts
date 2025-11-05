@@ -61,7 +61,7 @@ export function useFields(options?: UseFieldsOptions) {
       // Aggiorna immediatamente la cache con i nuovi dati dalla risposta
       if (response?.data?.fields) {
         const updatedFields = response.data.fields;
-        
+
         // Ottieni i dati attuali dalla cache
         const currentData = queryClient.getQueryData<FieldsResponse>([
           "fields",
@@ -69,9 +69,7 @@ export function useFields(options?: UseFieldsOptions) {
 
         if (currentData) {
           // Crea una mappa dei campi aggiornati per lookup veloce
-          const updatedMap = new Map(
-            updatedFields.map((f) => [f.id, f])
-          );
+          const updatedMap = new Map(updatedFields.map((f) => [f.id, f]));
 
           // Aggiorna i campi nella lista esistente
           const updatedFieldsList = currentData.data.fields.map(
@@ -97,7 +95,9 @@ export function useFields(options?: UseFieldsOptions) {
       const count = response?.data?.fields?.length ?? 0;
       if (count > 0) {
         toast.success(
-          `${count} camp${count === 1 ? "o aggiornato" : "i aggiornati"} con successo`
+          `${count} camp${
+            count === 1 ? "o aggiornato" : "i aggiornati"
+          } con successo`
         );
       } else {
         toast.success("Campi aggiornati con successo");
