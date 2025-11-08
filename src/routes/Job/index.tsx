@@ -270,6 +270,32 @@ export default function JobPage() {
     }
   };
 
+  // Gestisce l'eliminazione multipla
+  const handleDeleteSelected = async (
+    removed: Array<Record<string, unknown>>
+  ) => {
+    try {
+      const jobIds = removed.map((row) => row.id as string);
+
+      console.log("Deleting jobs:", jobIds);
+
+      await jobsApiService.bulkDelete({ jobIds });
+
+      toast.success("Operazioni eliminate", {
+        description: `${jobIds.length} operazioni eliminate con successo`,
+      });
+
+      // Ricarica i dati
+      await refetch();
+    } catch (error) {
+      toast.error("Errore durante l'eliminazione", {
+        description:
+          error instanceof Error ? error.message : "Riprova più tardi",
+      });
+      console.error("Error deleting jobs:", error);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Operazioni" rightElement={companyFilter} />
@@ -313,6 +339,7 @@ export default function JobPage() {
                 isModify={true}
                 alwaysEdit={true}
                 onSave={handleSave}
+                onDeleteSelected={handleDeleteSelected}
                 getRowId={(row) => row.id as string}
                 className="bg-white rounded-xl border border-neutral-200 shadow-sm"
               />

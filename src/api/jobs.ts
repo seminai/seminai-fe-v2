@@ -71,6 +71,15 @@ export type UpdateJobResponse = {
   data?: unknown;
 };
 
+export type BulkDeleteJobsPayload = {
+  jobIds: string[];
+};
+
+export type BulkDeleteJobsResponse = {
+  status: "success" | string;
+  data?: unknown;
+};
+
 export async function getJobs(
   companyName?: string,
   baseUrl: string = BASE_URL
@@ -135,6 +144,36 @@ export async function updateJob(
   return jsonData as UpdateJobResponse;
 }
 
+export async function bulkDeleteJobs(
+  payload: BulkDeleteJobsPayload,
+  baseUrl: string = BASE_URL
+): Promise<BulkDeleteJobsResponse> {
+  console.log("Bulk deleting jobs:", payload);
+
+  const response = await fetch(`${baseUrl}/jobs/bulk`, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  console.log("Bulk delete response status:", response.status);
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    console.error("Bulk delete error:", errorText);
+    throw new Error(errorText || "Bulk delete jobs failed");
+  }
+
+  const jsonData = await response.json();
+  console.log("Bulk delete response data:", jsonData);
+
+  return jsonData as BulkDeleteJobsResponse;
+}
+
 class JobsApiService {
   private readonly baseUrl: string;
 
@@ -151,6 +190,12 @@ class JobsApiService {
     payload: UpdateJobPayload
   ): Promise<UpdateJobResponse> {
     return await updateJob(jobId, payload, this.baseUrl);
+  }
+
+  public async bulkDelete(
+    payload: BulkDeleteJobsPayload
+  ): Promise<BulkDeleteJobsResponse> {
+    return await bulkDeleteJobs(payload, this.baseUrl);
   }
 }
 
