@@ -191,4 +191,3 @@ export function createWarehousesApiService(
 ): WarehousesApiService {
   return new WarehousesApiService(baseUrl);
 }
-

@@ -43,6 +43,7 @@ export interface EditableColumn {
   searchPlaceholder?: string;
   emptyStateMessage?: string;
   noneOptionLabel?: string;
+  readOnly?: boolean; // Column is always read-only even in edit mode
 }
 
 export interface EditableTableProps {
@@ -278,9 +279,44 @@ export class EditableTable extends React.Component<
   };
 
   private toggleEditMode = (): void => {
-    this.setState((prev) => ({
-      isEditMode: !prev.isEditMode,
+    this.setState((prev) => {
+      // Se stiamo uscendo dalla modalità edit, resettiamo i dati
+      if (prev.isEditMode) {
+        const resetRows: InternalRow[] = (this.props.rows || []).map(
+          (r, idx) => ({
+            id: String(this.props.getRowId ? this.props.getRowId(r, idx) : idx),
+            data: { ...r },
+            isNew: false,
+            isDirty: false,
+          })
+        );
+        return {
+          ...prev,
+          rows: resetRows,
+          isEditMode: false,
+          touched: {},
+        };
+      }
+      return {
+        ...prev,
+        isEditMode: true,
+      };
+    });
+  };
+
+  private handleCancel = (): void => {
+    // Resetta i dati alle props originali
+    const resetRows: InternalRow[] = (this.props.rows || []).map((r, idx) => ({
+      id: String(this.props.getRowId ? this.props.getRowId(r, idx) : idx),
+      data: { ...r },
+      isNew: false,
+      isDirty: false,
     }));
+    this.setState({
+      rows: resetRows,
+      touched: {},
+      isEditMode: false,
+    });
   };
 
   private get selectedIds(): string[] {
@@ -596,6 +632,13 @@ export class EditableTable extends React.Component<
         {showSave && (
           <div className="flex items-center justify-end px-4 py-3 border-b border-agri-green-50 bg-blue-50/50">
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                onClick={this.handleCancel}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Annulla
+              </Button>
               <Button onClick={this.handleSave} disabled={false}>
                 Salva
               </Button>
@@ -676,7 +719,8 @@ export class EditableTable extends React.Component<
                       )}
                     >
                       {isModify &&
-                      (this.state.isEditMode || this.props.alwaysEdit)
+                      (this.state.isEditMode || this.props.alwaysEdit) &&
+                      !c.readOnly
                         ? this.renderInput(row, c)
                         : this.renderReadOnlyCell(c, row.data[c.id], row)}
                     </td>
@@ -770,7 +814,7 @@ export class EditableTable extends React.Component<
                 : " "}
             </span>
             <div className="flex items-center gap-2">
-              {isModify && !anySelected && (
+              {isModify && !anySelected && !this.props.alwaysEdit && (
                 <Button
                   onClick={this.toggleEditMode}
                   className={cn(
@@ -847,9 +891,18 @@ export class EditableTable extends React.Component<
                 </Button>
               )}
               {showSave && (
-                <Button onClick={this.handleSave} disabled={hasErrors}>
-                  Salva
-                </Button>
+                <>
+                  <Button
+                    variant="ghost"
+                    onClick={this.handleCancel}
+                    className="text-gray-600 hover:text-gray-900"
+                  >
+                    Annulla
+                  </Button>
+                  <Button onClick={this.handleSave} disabled={hasErrors}>
+                    Salva
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -991,7 +1044,9 @@ export class EditableTable extends React.Component<
                           c.type !== "text" && "whitespace-nowrap"
                         )}
                       >
-                        {isModify && (row.isNew || this.state.isEditMode)
+                        {isModify &&
+                        (row.isNew || this.state.isEditMode) &&
+                        !c.readOnly
                           ? this.renderInput(row, c)
                           : this.renderReadOnlyCell(c, row.data[c.id], row)}
                       </td>

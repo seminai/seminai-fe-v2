@@ -36,6 +36,7 @@ import {
   IoLeafOutline,
   IoCalculatorOutline,
   IoCubeOutline,
+  IoListOutline,
 } from "react-icons/io5";
 import {
   DropdownMenu,
@@ -71,6 +72,7 @@ function MobileBottomBar({ isMobile, hasCompanies }: MobileBottomBarProps) {
   // const companyActive = location.pathname.startsWith("/company");
   const productionUnitActive = location.pathname.startsWith("/production-unit");
   const dosageManagerActive = location.pathname.startsWith("/dosage-manager");
+  const jobActive = location.pathname.startsWith("/job");
   const productsActive = location.pathname.startsWith("/products");
 
   return (
@@ -165,6 +167,25 @@ function MobileBottomBar({ isMobile, hasCompanies }: MobileBottomBarProps) {
                   )}
                 />
                 <span className="mt-1">Dosaggi</span>
+              </Link>
+            </li>
+          )}
+          {hasCompanies && (
+            <li key="job">
+              <Link
+                to="/job"
+                className={cn(
+                  "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
+                  jobActive && "text-gray-900 font-medium"
+                )}
+              >
+                <IoListOutline
+                  className={cn(
+                    "size-5",
+                    jobActive ? "text-gray-900" : "text-gray-700/90"
+                  )}
+                />
+                <span className="mt-1">Operazioni</span>
               </Link>
             </li>
           )}
@@ -305,6 +326,8 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const dosageManagerActive =
     location.pathname === "/dosage-manager" ||
     location.pathname.startsWith("/dosage-manager/");
+  const jobActive =
+    location.pathname === "/job" || location.pathname.startsWith("/job/");
   const productsActive =
     location.pathname === "/products" ||
     location.pathname.startsWith("/products/");
@@ -379,6 +402,28 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                         <IoCalculatorOutline className="size-5" />
                         <span className="group-data-[collapsible=icon]:hidden">
                           Gestione Dosaggi
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                {hasCompanies && (
+                  <SidebarMenuItem
+                    key="job"
+                    className="group-data-[collapsible=icon]:hidden"
+                  >
+                    <SidebarMenuButton
+                      asChild
+                      isActive={jobActive}
+                      tooltip="Operazioni"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
+                    >
+                      <Link to="/job" className="flex items-center gap-3">
+                        <IoListOutline className="size-5" />
+                        <span className="group-data-[collapsible=icon]:hidden">
+                          Operazioni
                         </span>
                       </Link>
                     </SidebarMenuButton>
@@ -546,6 +591,47 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                         className="flex items-center gap-3"
                       >
                         <IoLeafOutline className="size-5" />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                {hasCompanies && (
+                  <SidebarMenuItem
+                    key="dosage-manager-icon"
+                    className="hidden group-data-[collapsible=icon]:block"
+                  >
+                    <SidebarMenuButton
+                      asChild
+                      isActive={dosageManagerActive}
+                      tooltip="Gestione Dosaggi"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link
+                        to="/dosage-manager"
+                        className="flex items-center gap-3"
+                      >
+                        <IoCalculatorOutline className="size-5" />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                {hasCompanies && (
+                  <SidebarMenuItem
+                    key="job-icon"
+                    className="hidden group-data-[collapsible=icon]:block"
+                  >
+                    <SidebarMenuButton
+                      asChild
+                      isActive={jobActive}
+                      tooltip="Operazioni"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link to="/job" className="flex items-center gap-3">
+                        <IoListOutline className="size-5" />
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
