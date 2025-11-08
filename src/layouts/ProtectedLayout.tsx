@@ -34,6 +34,8 @@ import {
   IoChevronDownOutline,
   IoStatsChartOutline,
   IoLeafOutline,
+  IoCalculatorOutline,
+  IoCubeOutline,
 } from "react-icons/io5";
 import {
   DropdownMenu,
@@ -66,8 +68,10 @@ function MobileBottomBar({ isMobile, hasCompanies }: MobileBottomBarProps) {
   const labelActive = location.pathname.startsWith("/label");
   const labelDashboard = location.pathname.startsWith("/dashboard");
   const fieldsActive = location.pathname.startsWith("/fields");
-  const companyActive = location.pathname.startsWith("/company");
+  // const companyActive = location.pathname.startsWith("/company");
   const productionUnitActive = location.pathname.startsWith("/production-unit");
+  const dosageManagerActive = location.pathname.startsWith("/dosage-manager");
+  const productsActive = location.pathname.startsWith("/products");
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-20 mx-auto mb-safe w-full max-w-screen-sm">
@@ -145,23 +149,44 @@ function MobileBottomBar({ isMobile, hasCompanies }: MobileBottomBarProps) {
               </Link>
             </li>
           )}
-          <li key="company">
-            <Link
-              to="/company"
-              className={cn(
-                "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
-                companyActive && "text-gray-900 font-medium"
-              )}
-            >
-              <IoBusinessOutline
+          {hasCompanies && (
+            <li key="dosage-manager">
+              <Link
+                to="/dosage-manager"
                 className={cn(
-                  "size-5",
-                  companyActive ? "text-gray-900" : "text-gray-700/90"
+                  "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
+                  dosageManagerActive && "text-gray-900 font-medium"
                 )}
-              />
-              <span className="mt-1">Aziende</span>
-            </Link>
-          </li>
+              >
+                <IoCalculatorOutline
+                  className={cn(
+                    "size-5",
+                    dosageManagerActive ? "text-gray-900" : "text-gray-700/90"
+                  )}
+                />
+                <span className="mt-1">Dosaggi</span>
+              </Link>
+            </li>
+          )}
+          {hasCompanies && (
+            <li key="products">
+              <Link
+                to="/products"
+                className={cn(
+                  "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
+                  productsActive && "text-gray-900 font-medium"
+                )}
+              >
+                <IoCubeOutline
+                  className={cn(
+                    "size-5",
+                    productsActive ? "text-gray-900" : "text-gray-700/90"
+                  )}
+                />
+                <span className="mt-1">Prodotti</span>
+              </Link>
+            </li>
+          )}
           <MobileAccountMenu />
         </ul>
       </div>
@@ -277,6 +302,12 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const productionUnitActive =
     location.pathname === "/production-unit" ||
     location.pathname.startsWith("/production-unit/");
+  const dosageManagerActive =
+    location.pathname === "/dosage-manager" ||
+    location.pathname.startsWith("/dosage-manager/");
+  const productsActive =
+    location.pathname === "/products" ||
+    location.pathname.startsWith("/products/");
 
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -328,6 +359,31 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
+                {hasCompanies && (
+                  <SidebarMenuItem
+                    key="dosage-manager"
+                    className="group-data-[collapsible=icon]:hidden"
+                  >
+                    <SidebarMenuButton
+                      asChild
+                      isActive={dosageManagerActive}
+                      tooltip="Gestione Dosaggi"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
+                    >
+                      <Link
+                        to="/dosage-manager"
+                        className="flex items-center gap-3"
+                      >
+                        <IoCalculatorOutline className="size-5" />
+                        <span className="group-data-[collapsible=icon]:hidden">
+                          Gestione Dosaggi
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
 
                 {/* Modalità espansa: mostra menu collapsible */}
                 <Collapsible
@@ -411,6 +467,26 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         )}
+
+                        {hasCompanies && (
+                          <SidebarMenuItem key="products">
+                            <SidebarMenuButton
+                              asChild
+                              isActive={productsActive}
+                              tooltip="Prodotti"
+                              size="lg"
+                              className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                            >
+                              <Link
+                                to="/products"
+                                className="flex items-center gap-3"
+                              >
+                                <IoCubeOutline className="size-5" />
+                                <span>Prodotti</span>
+                              </Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        )}
                       </SidebarMenu>
                     </CollapsibleContent>
                   </SidebarMenuItem>
@@ -470,6 +546,25 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                         className="flex items-center gap-3"
                       >
                         <IoLeafOutline className="size-5" />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                {hasCompanies && (
+                  <SidebarMenuItem
+                    key="products-icon"
+                    className="hidden group-data-[collapsible=icon]:block"
+                  >
+                    <SidebarMenuButton
+                      asChild
+                      isActive={productsActive}
+                      tooltip="Prodotti"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link to="/products" className="flex items-center gap-3">
+                        <IoCubeOutline className="size-5" />
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

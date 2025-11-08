@@ -201,7 +201,7 @@ export function LabelJobsTable({
   }
 
   if (jobs.length === 0) {
-    return null; // Don't show anything if no jobs
+    return <></>; // Don't show anything if no jobs
   }
 
   const activeJobs = jobs.filter(
@@ -212,10 +212,10 @@ export function LabelJobsTable({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 ">
       {/* Active Jobs */}
       {activeJobs.length > 0 && (
-        <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm mb-6">
+        <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm mb-6 ">
           <CardHeader className="flex flex-row items-center justify-between pb-6">
             <CardTitle className="flex items-center gap-2 text-lg font-medium">
               Job in Corso

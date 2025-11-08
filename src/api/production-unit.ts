@@ -30,7 +30,8 @@ export type FieldInfo = {
   id: string;
   name: string;
   sauHa: number;
-  gisHa: number;
+  gisHa: number | null;
+  areaHaOnField: number;
 };
 
 export type ProductionUnit = {
@@ -38,8 +39,7 @@ export type ProductionUnit = {
   companyId: string;
   companyName: string;
   crop: Crop;
-  field: FieldInfo;
-  areaHaOnField: number;
+  fields: FieldInfo[];
 };
 
 export type ProductionUnitsResponse = {

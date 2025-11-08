@@ -1,8 +1,9 @@
 import * as React from "react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   type ProductionUnit,
   type ProductionUnitUpdateInput,
+  type FieldInfo,
 } from "@/api/production-unit";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -18,6 +19,7 @@ import { Plus, Pencil, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,8 +30,214 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
-const buildProductionUnitColumns = (): EditableColumn[] => {
+type CropPeriod = {
+  minDate: string;
+  maxDate: string;
+};
+
+type CropCatalogItem = {
+  code: string;
+  species: string;
+  cropType: string;
+  sowingPeriod: CropPeriod;
+  floweringPeriod: CropPeriod;
+  harvestPeriod: CropPeriod;
+  estimatedYield: {
+    min: number;
+    max: number;
+  };
+};
+
+type CropSelection = {
+  species: string;
+  cropType: string;
+  code: string;
+};
+
+class CropCatalog {
+  private readonly items: CropCatalogItem[];
+  private readonly byCode: Map<string, CropCatalogItem>;
+  private readonly speciesOptions: Array<{ label: string; value: string }>;
+  private readonly cropTypeOptions: Array<{ label: string; value: string }>;
+  private readonly varietyOptions: Array<{ label: string; value: string }>;
+  private readonly codeToLabel: Map<string, { label: string; value: string }>;
+
+  constructor(items: CropCatalogItem[]) {
+    this.items = items;
+    this.byCode = new Map(items.map((item) => [item.code, item]));
+    this.speciesOptions = this.buildOptions(items.map((item) => item.species));
+    this.cropTypeOptions = this.buildOptions(
+      items.map((item) => item.cropType)
+    );
+    this.codeToLabel = new Map(
+      items.map((item) => [
+        item.code,
+        {
+          label: `${item.species} • ${item.cropType} (${item.code})`,
+          value: item.code,
+        },
+      ])
+    );
+    this.varietyOptions = Array.from(this.codeToLabel.values()).sort((a, b) =>
+      a.label.localeCompare(b.label)
+    );
+  }
+
+  private buildOptions(
+    values: string[],
+    mapFn?: (value: string) => { label: string; value: string }
+  ): Array<{ label: string; value: string }> {
+    const unique = Array.from(new Set(values)).sort((a, b) =>
+      a.localeCompare(b)
+    );
+    return unique.map((value) =>
+      mapFn ? mapFn(value) : { label: value, value }
+    );
+  }
+
+  private toSelection(item: CropCatalogItem): CropSelection {
+    return {
+      species: item.species,
+      cropType: item.cropType,
+      code: item.code,
+    };
+  }
+
+  public getSpeciesOptions(): Array<{ label: string; value: string }> {
+    return this.speciesOptions;
+  }
+
+  public getCropTypeOptions(): Array<{ label: string; value: string }> {
+    return this.cropTypeOptions;
+  }
+
+  public getVarietyOptions(): Array<{ label: string; value: string }> {
+    return this.varietyOptions;
+  }
+
+  public getVarietyLabel(code: string): string {
+    return this.codeToLabel.get(code)?.label ?? code;
+  }
+
+  public resolve(
+    rowData: Record<string, unknown>,
+    overrides: Partial<CropSelection>
+  ): CropSelection | null {
+    const current: Partial<CropSelection> = {
+      species:
+        typeof rowData.cropName === "string" ? rowData.cropName : undefined,
+      cropType:
+        typeof rowData.cropType === "string" ? rowData.cropType : undefined,
+      code: typeof rowData.variety === "string" ? rowData.variety : undefined,
+    };
+
+    const request: Partial<CropSelection> = {
+      ...current,
+      ...overrides,
+    };
+
+    if (request.code) {
+      const matchByCode = this.byCode.get(request.code);
+      if (matchByCode) {
+        return this.toSelection(matchByCode);
+      }
+    }
+
+    let candidates = this.items;
+
+    if (request.species) {
+      candidates = candidates.filter(
+        (item) => item.species === request.species
+      );
+    }
+
+    if (request.cropType) {
+      candidates = candidates.filter(
+        (item) => item.cropType === request.cropType
+      );
+    }
+
+    if (candidates.length === 0) {
+      return null;
+    }
+
+    if (request.code) {
+      const candidateByCode = candidates.find(
+        (item) => item.code === request.code
+      );
+      if (candidateByCode) {
+        return this.toSelection(candidateByCode);
+      }
+    }
+
+    if (current.code) {
+      const stillValid = candidates.find((item) => item.code === current.code);
+      if (stillValid) {
+        return this.toSelection(stillValid);
+      }
+    }
+
+    return this.toSelection(candidates[0]);
+  }
+
+  public buildSelection(
+    rowData: Record<string, unknown>,
+    overrides: Partial<CropSelection>
+  ): CropSelection {
+    const shouldClear = Object.values(overrides).some(
+      (value) => typeof value === "string" && value.length === 0
+    );
+
+    if (shouldClear) {
+      return { species: "", cropType: "", code: "" };
+    }
+
+    const resolved = this.resolve(rowData, overrides);
+
+    if (resolved) {
+      return resolved;
+    }
+
+    return {
+      species:
+        overrides.species !== undefined
+          ? String(overrides.species)
+          : typeof rowData.cropName === "string"
+          ? rowData.cropName
+          : "",
+      cropType:
+        overrides.cropType !== undefined
+          ? String(overrides.cropType)
+          : typeof rowData.cropType === "string"
+          ? rowData.cropType
+          : "",
+      code:
+        overrides.code !== undefined
+          ? String(overrides.code)
+          : typeof rowData.variety === "string"
+          ? rowData.variety
+          : "",
+    };
+  }
+}
+
+const buildProductionUnitColumns = (
+  catalog: CropCatalog | null,
+  onFieldClick: (field: FieldInfo) => void
+): EditableColumn[] => {
+  const speciesOptions = catalog?.getSpeciesOptions() ?? [];
+  const cropTypeOptions = catalog?.getCropTypeOptions() ?? [];
+  const varietyOptions = catalog?.getVarietyOptions() ?? [];
+
   return [
     {
       id: "companyName",
@@ -44,17 +252,101 @@ const buildProductionUnitColumns = (): EditableColumn[] => {
     {
       id: "cropName",
       title: "Coltura",
-      type: "text",
+      type: "select",
+      options: speciesOptions,
+      placeholder: "Seleziona coltura",
+      enableSearch: true,
+      searchPlaceholder: "Cerca coltura...",
+      emptyStateMessage: "Nessuna coltura trovata",
+      noneOptionLabel: "Nessuna selezione",
+      onValueChange: ({ value, rowData }) => {
+        const sanitizedValue =
+          typeof value === "string" ? value : String(value ?? "");
+
+        if (!catalog) {
+          return sanitizedValue === ""
+            ? { cropName: "", cropType: "", variety: "" }
+            : { cropName: sanitizedValue };
+        }
+
+        const selection = catalog.buildSelection(rowData, {
+          species: sanitizedValue,
+        });
+
+        return {
+          cropName: selection.species,
+          cropType: selection.cropType,
+          variety: selection.code,
+        };
+      },
     },
     {
       id: "cropType",
       title: "Tipo Coltura",
-      type: "text",
+      type: "select",
+      options: cropTypeOptions,
+      placeholder: "Seleziona tipo coltura",
+      enableSearch: true,
+      searchPlaceholder: "Cerca tipo coltura...",
+      emptyStateMessage: "Nessun tipo coltura trovato",
+      noneOptionLabel: "Nessuna selezione",
+      onValueChange: ({ value, rowData }) => {
+        const sanitizedValue =
+          typeof value === "string" ? value : String(value ?? "");
+
+        if (!catalog) {
+          return sanitizedValue === ""
+            ? { cropName: "", cropType: "", variety: "" }
+            : { cropType: sanitizedValue };
+        }
+
+        const selection = catalog.buildSelection(rowData, {
+          cropType: sanitizedValue,
+        });
+
+        return {
+          cropName: selection.species,
+          cropType: selection.cropType,
+          variety: selection.code,
+        };
+      },
     },
     {
       id: "variety",
       title: "Varietà",
-      type: "text",
+      type: "select",
+      options: varietyOptions,
+      placeholder: "Seleziona varietà",
+      enableSearch: true,
+      searchPlaceholder: "Cerca varietà...",
+      emptyStateMessage: "Nessuna varietà trovata",
+      noneOptionLabel: "Nessuna selezione",
+      render: (value: unknown) => {
+        if (!catalog) {
+          return String(value ?? "");
+        }
+        return catalog.getVarietyLabel(String(value ?? ""));
+      },
+      onValueChange: ({ value, rowData }) => {
+        const sanitizedValue =
+          typeof value === "string" ? value : String(value ?? "");
+
+        if (!catalog) {
+          return sanitizedValue === ""
+            ? { cropName: "", cropType: "", variety: "" }
+            : { variety: sanitizedValue };
+        }
+
+        const selection = catalog.buildSelection(rowData, {
+          code: sanitizedValue,
+        });
+
+        return {
+          cropName: selection.species,
+          cropType: selection.cropType,
+          variety: selection.code,
+        };
+      },
     },
     {
       id: "protocoll",
@@ -72,9 +364,32 @@ const buildProductionUnitColumns = (): EditableColumn[] => {
       type: "text",
     },
     {
-      id: "fieldName",
-      title: "Campo",
+      id: "fields",
+      title: "Campi",
       type: "text",
+      render: (value: unknown) => {
+        const fields = value as FieldInfo[] | undefined;
+        if (!fields || fields.length === 0) {
+          return <span className="text-gray-400">-</span>;
+        }
+        return (
+          <div className="flex flex-wrap gap-1">
+            {fields.map((field) => (
+              <Badge
+                key={field.id}
+                variant="secondary"
+                className="cursor-pointer hover:bg-blue-100 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onFieldClick(field);
+                }}
+              >
+                {field.name}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
     },
     {
       id: "startDate",
@@ -98,8 +413,62 @@ export default function ProductionUnit(): React.ReactElement {
     {}
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [cropCatalog, setCropCatalog] = useState<CropCatalog | null>(null);
+  const [isCatalogLoading, setIsCatalogLoading] = useState<boolean>(true);
+  const [catalogError, setCatalogError] = useState<Error | null>(null);
+  const [selectedField, setSelectedField] = useState<FieldInfo | null>(null);
+  const [isFieldDrawerOpen, setIsFieldDrawerOpen] = useState(false);
 
   const { productionUnits, isLoading, error, refetch } = useProductionUnit();
+
+  const handleFieldClick = useCallback((field: FieldInfo) => {
+    setSelectedField(field);
+    setIsFieldDrawerOpen(true);
+  }, []);
+
+  const handleCloseFieldDrawer = useCallback(() => {
+    setIsFieldDrawerOpen(false);
+    setSelectedField(null);
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCatalog = async () => {
+      try {
+        const response = await fetch("/datasets/varietà/index.json");
+        if (!response.ok) {
+          throw new Error("Impossibile caricare le varietà");
+        }
+        const data = (await response.json()) as CropCatalogItem[];
+        if (!isMounted) return;
+        setCropCatalog(new CropCatalog(data));
+      } catch (err) {
+        if (!isMounted) return;
+        setCatalogError(
+          err instanceof Error
+            ? err
+            : new Error("Errore nel caricamento delle varietà")
+        );
+      } finally {
+        if (isMounted) {
+          setIsCatalogLoading(false);
+        }
+      }
+    };
+
+    loadCatalog();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (catalogError) {
+      toast.error(catalogError.message);
+    }
+  }, [catalogError]);
 
   // Converti i dati delle unità produttive in formato row per la tabella
   const rows = useMemo(() => {
@@ -113,7 +482,7 @@ export default function ProductionUnit(): React.ReactElement {
       protocoll: pu.productionUnit.protocoll,
       areaHa: pu.productionUnit.areaHa,
       protectionStructure: pu.productionUnit.protectionStructure,
-      fieldName: pu.field?.name || "-",
+      fields: pu.fields || [],
       startDate: pu.productionUnit.startDate
         ? new Date(pu.productionUnit.startDate).toISOString().split("T")[0]
         : "",
@@ -133,7 +502,6 @@ export default function ProductionUnit(): React.ReactElement {
         "cropName",
         "cropType",
         "variety",
-        "fieldName",
       ]),
     []
   );
@@ -215,6 +583,140 @@ export default function ProductionUnit(): React.ReactElement {
     }
   };
 
+  const handleEditCropSelection = (overrides: Partial<CropSelection>) => {
+    setEditFormData((prev) => {
+      const normalized: Partial<CropSelection> = {
+        species:
+          overrides.species !== undefined
+            ? String(overrides.species ?? "")
+            : undefined,
+        cropType:
+          overrides.cropType !== undefined
+            ? String(overrides.cropType ?? "")
+            : undefined,
+        code:
+          overrides.code !== undefined
+            ? String(overrides.code ?? "")
+            : undefined,
+      };
+
+      if (!cropCatalog) {
+        const shouldClear = Object.values(normalized).some(
+          (value) => value === ""
+        );
+
+        if (shouldClear) {
+          return {
+            ...prev,
+            cropName: "",
+            cropType: "",
+            variety: "",
+          };
+        }
+
+        return {
+          ...prev,
+          ...(normalized.species !== undefined
+            ? { cropName: normalized.species }
+            : {}),
+          ...(normalized.cropType !== undefined
+            ? { cropType: normalized.cropType }
+            : {}),
+          ...(normalized.code !== undefined
+            ? { variety: normalized.code }
+            : {}),
+        };
+      }
+
+      const selection = cropCatalog.buildSelection(
+        {
+          cropName: prev.cropName ?? "",
+          cropType: prev.cropType ?? "",
+          variety: prev.variety ?? "",
+        },
+        normalized
+      );
+
+      return {
+        ...prev,
+        cropName: selection.species,
+        cropType: selection.cropType,
+        variety: selection.code,
+      };
+    });
+  };
+
+  const handleBulkSave = async (payload: {
+    created: Array<Record<string, unknown>>;
+    updated: Array<Record<string, unknown>>;
+  }) => {
+    if (payload.updated.length === 0) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { productionUnitApiService } = await import(
+        "@/api/production-unit"
+      );
+
+      // Converti i dati della tabella in formato API
+      const productionUnitsToUpdate = payload.updated.map((row) => {
+        const id = String(row.id ?? "");
+        const updateData: Record<string, unknown> = {
+          id,
+        };
+
+        // Aggiungi solo i campi che possono essere modificati
+        if (row.name !== undefined) updateData.name = String(row.name);
+        if (row.cropName !== undefined)
+          updateData.cropName = String(row.cropName);
+        if (row.cropType !== undefined)
+          updateData.cropType = String(row.cropType);
+        if (row.variety !== undefined) updateData.variety = String(row.variety);
+        if (row.protocoll !== undefined)
+          updateData.protocoll = String(row.protocoll);
+        if (row.areaHa !== undefined) updateData.areaHa = Number(row.areaHa);
+        if (row.protectionStructure !== undefined)
+          updateData.protectionStructure = String(row.protectionStructure);
+        if (row.startDate !== undefined)
+          updateData.startDate = String(row.startDate);
+        if (row.endDate !== undefined) updateData.endDate = String(row.endDate);
+
+        return updateData;
+      });
+
+      await productionUnitApiService.bulkUpdate({
+        productionUnits: productionUnitsToUpdate as Array<{
+          id: string;
+          name?: string;
+          cropName?: string;
+          cropType?: string;
+          variety?: string;
+          protocoll?: string;
+          areaHa?: number;
+          protectionStructure?: string;
+          startDate?: string;
+          endDate?: string;
+        }>,
+      });
+
+      toast.success(
+        `${productionUnitsToUpdate.length} unità produttive aggiornate con successo`
+      );
+      refetch();
+    } catch (error) {
+      console.error("Errore nell'aggiornamento bulk:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Errore nell'aggiornamento delle unità produttive"
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const renderDetails = (row: Record<string, unknown>): React.ReactNode => {
     const productionUnit = row.productionUnit as ProductionUnit;
     if (!productionUnit) {
@@ -277,30 +779,45 @@ export default function ProductionUnit(): React.ReactElement {
             <p className="text-sm">{productionUnit.companyName}</p>
           </div>
 
-          {/* Campo - Non modificabile */}
-          <div>
-            <Label className="text-sm font-medium text-gray-500">Campo</Label>
-            <p className="text-sm">{productionUnit.field?.name || "-"}</p>
-          </div>
-
-          {/* Area sul Campo - Non modificabile */}
-          <div>
-            <Label className="text-sm font-medium text-gray-500">
-              Area sul Campo (Ha)
-            </Label>
-            <p className="text-sm">{productionUnit.areaHaOnField ?? "-"}</p>
+          {/* Campi - Non modificabile */}
+          <div className="col-span-2">
+            <Label className="text-sm font-medium text-gray-500">Campi</Label>
+            {productionUnit.fields && productionUnit.fields.length > 0 ? (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {productionUnit.fields.map((field) => (
+                  <Badge
+                    key={field.id}
+                    variant="secondary"
+                    className="cursor-pointer hover:bg-blue-100 transition-colors"
+                    onClick={() => handleFieldClick(field)}
+                  >
+                    {field.name} ({field.areaHaOnField} Ha)
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm">-</p>
+            )}
           </div>
 
           {/* Coltura */}
           <div>
             <Label className="text-sm font-medium text-gray-500">Coltura</Label>
             {isEditing ? (
-              <Input
-                value={editFormData.cropName || ""}
-                onChange={(e) =>
-                  setEditFormData({ ...editFormData, cropName: e.target.value })
+              <SearchableSelect
+                value={editFormData.cropName ?? ""}
+                options={cropCatalog?.getSpeciesOptions() ?? []}
+                placeholder="Seleziona coltura"
+                searchPlaceholder="Cerca coltura..."
+                emptyMessage="Nessuna coltura trovata"
+                noneOptionLabel="Nessuna selezione"
+                loading={isCatalogLoading}
+                loadingMessage="Caricamento varietà..."
+                disabled={!cropCatalog}
+                onChange={(selected) =>
+                  handleEditCropSelection({ species: selected })
                 }
-                className="mt-1"
+                wrapperClassName="mt-1"
               />
             ) : (
               <p className="text-sm">{pu.cropName}</p>
@@ -313,12 +830,20 @@ export default function ProductionUnit(): React.ReactElement {
               Tipo Coltura
             </Label>
             {isEditing ? (
-              <Input
-                value={editFormData.cropType || ""}
-                onChange={(e) =>
-                  setEditFormData({ ...editFormData, cropType: e.target.value })
+              <SearchableSelect
+                value={editFormData.cropType ?? ""}
+                options={cropCatalog?.getCropTypeOptions() ?? []}
+                placeholder="Seleziona tipo coltura"
+                searchPlaceholder="Cerca tipo coltura..."
+                emptyMessage="Nessun tipo coltura trovato"
+                noneOptionLabel="Nessuna selezione"
+                loading={isCatalogLoading}
+                loadingMessage="Caricamento varietà..."
+                disabled={!cropCatalog}
+                onChange={(selected) =>
+                  handleEditCropSelection({ cropType: selected })
                 }
-                className="mt-1"
+                wrapperClassName="mt-1"
               />
             ) : (
               <p className="text-sm">{pu.cropType}</p>
@@ -329,15 +854,27 @@ export default function ProductionUnit(): React.ReactElement {
           <div>
             <Label className="text-sm font-medium text-gray-500">Varietà</Label>
             {isEditing ? (
-              <Input
-                value={editFormData.variety || ""}
-                onChange={(e) =>
-                  setEditFormData({ ...editFormData, variety: e.target.value })
+              <SearchableSelect
+                value={editFormData.variety ?? ""}
+                options={cropCatalog?.getVarietyOptions() ?? []}
+                placeholder="Seleziona varietà"
+                searchPlaceholder="Cerca varietà..."
+                emptyMessage="Nessuna varietà trovata"
+                noneOptionLabel="Nessuna selezione"
+                loading={isCatalogLoading}
+                loadingMessage="Caricamento varietà..."
+                disabled={!cropCatalog}
+                onChange={(selected) =>
+                  handleEditCropSelection({ code: selected })
                 }
-                className="mt-1"
+                wrapperClassName="mt-1"
               />
             ) : (
-              <p className="text-sm">{pu.variety}</p>
+              <p className="text-sm">
+                {cropCatalog
+                  ? cropCatalog.getVarietyLabel(pu.variety)
+                  : pu.variety}
+              </p>
             )}
           </div>
 
@@ -623,7 +1160,10 @@ export default function ProductionUnit(): React.ReactElement {
     );
   };
 
-  const columns = buildProductionUnitColumns();
+  const columns = useMemo(
+    () => buildProductionUnitColumns(cropCatalog, handleFieldClick),
+    [cropCatalog, handleFieldClick]
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -678,6 +1218,7 @@ export default function ProductionUnit(): React.ReactElement {
             getRowId={(row, index) =>
               (typeof row.id === "string" && row.id) || index
             }
+            onSave={handleBulkSave}
             detailsRenderer={renderDetails}
             detailsTitle="Dettagli Unità Produttiva"
             className="bg-background"
@@ -710,6 +1251,76 @@ export default function ProductionUnit(): React.ReactElement {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Drawer dettagli campo */}
+      <Sheet open={isFieldDrawerOpen} onOpenChange={setIsFieldDrawerOpen}>
+        <SheetContent className="w-[400px] sm:w-[540px]">
+          <SheetHeader>
+            <SheetTitle>Dettagli Campo</SheetTitle>
+            <SheetDescription>
+              Visualizza le informazioni del campo selezionato
+            </SheetDescription>
+          </SheetHeader>
+          {selectedField && (
+            <div className="mt-6 space-y-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-500">
+                  Nome Campo
+                </Label>
+                <p className="text-sm mt-1">{selectedField.name}</p>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium text-gray-500">
+                  Area SAU (Ha)
+                </Label>
+                <p className="text-sm mt-1">
+                  {selectedField.sauHa.toLocaleString("it-IT", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </p>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium text-gray-500">
+                  Area GIS (Ha)
+                </Label>
+                <p className="text-sm mt-1">
+                  {selectedField.gisHa !== null
+                    ? selectedField.gisHa.toLocaleString("it-IT", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                    : "-"}
+                </p>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium text-gray-500">
+                  Area Occupata dall'Unità Produttiva (Ha)
+                </Label>
+                <p className="text-sm mt-1">
+                  {selectedField.areaHaOnField.toLocaleString("it-IT", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </p>
+              </div>
+
+              <div className="pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={handleCloseFieldDrawer}
+                  className="w-full"
+                >
+                  Chiudi
+                </Button>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

@@ -11,6 +11,8 @@ import Fields from "./routes/Fields";
 import Company from "./routes/Company";
 import ProductionUnit from "./routes/ProductionUnit";
 import NewProductionUnit from "./routes/ProductionUnit/NewProductionUnit";
+import DosageManager from "./routes/DosageManager";
+import Products from "./routes/Products";
 import TermsOfService from "./routes/TermsOfService";
 import PrivacyPolicy from "./routes/PrivacyPolicy";
 
@@ -31,6 +33,8 @@ function App() {
         <Route path="/company" element={<Company />} />
         <Route path="/production-unit" element={<ProductionUnit />} />
         <Route path="/new-production-unit" element={<NewProductionUnit />} />
+        <Route path="/dosage-manager" element={<DosageManager />} />
+        <Route path="/products" element={<Products />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
