@@ -1,6 +1,11 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { type Company, type BulkCompanyUpdateInput } from "@/api/companies";
+import {
+  type Warehouse,
+  type CreateWarehouseRequest,
+  type UpdateWarehouseRequest,
+} from "@/api/warehouses";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,6 +28,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCompanyUsers } from "@/hooks/useCompanyUsers";
+import { useCompanyWarehouses } from "@/hooks/useCompanyWarehouses";
 import {
   type UserOnCompany,
   type UserOnCompanyRole,
@@ -37,6 +43,9 @@ import {
   ShieldCheck,
   Trash2,
   RefreshCcw,
+  Warehouse as WarehouseIcon,
+  PlusCircle,
+  Save,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -59,7 +68,9 @@ export function DrawerCompanyContent({
 }: DrawerCompanyContentProps): React.ReactElement {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState<"details" | "users">("details");
+  const [activeTab, setActiveTab] = useState<
+    "details" | "users" | "warehouses"
+  >("details");
   const [editedData, setEditedData] = useState<Partial<Company>>({
     name: company.name,
     vatNumber: company.vatNumber,
@@ -88,6 +99,20 @@ export function DrawerCompanyContent({
     updateRole: updateCompanyUserRole,
     isUpdatingRole: isUpdatingCompanyUserRole,
   } = useCompanyUsers(company.id);
+
+  const {
+    warehouses: companyWarehouses,
+    isLoading: isLoadingWarehouses,
+    isError: isWarehousesError,
+    error: warehousesError,
+    refetch: refetchCompanyWarehouses,
+    createWarehouse,
+    isCreating: isCreatingWarehouse,
+    updateWarehouse,
+    isUpdating: isUpdatingWarehouse,
+    deleteWarehouse,
+    isDeleting: isDeletingWarehouse,
+  } = useCompanyWarehouses(company.id);
 
   // Aggiorna i dati quando la company cambia (dopo un update)
   useEffect(() => {
@@ -506,32 +531,46 @@ export function DrawerCompanyContent({
     );
   };
 
+  const isDetailsTab = activeTab === "details";
+  const isUsersTab = activeTab === "users";
+  const isWarehousesTab = activeTab === "warehouses";
+
+  const headerTitle = isDetailsTab
+    ? isEditing
+      ? "Modifica Azienda"
+      : "Dettagli Azienda"
+    : isUsersTab
+    ? "Gestione Utenti"
+    : "Gestione Magazzini";
+
+  const headerSubtitle: string | null =
+    isDetailsTab && !isEditing
+      ? "Tocca la matita per modificare"
+      : isUsersTab
+      ? "Gestisci gli utenti associati all'azienda"
+      : isWarehousesTab
+      ? "Gestisci i magazzini dell'azienda"
+      : null;
+
   return (
     <Tabs
       value={activeTab}
-      onValueChange={(value) => setActiveTab(value as "details" | "users")}
+      onValueChange={(value) =>
+        setActiveTab(value as "details" | "users" | "warehouses")
+      }
       className="space-y-6"
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-agri-green-100/50">
           <div>
             <h2 className="text-lg font-semibold text-foreground">
-              {activeTab === "details"
-                ? isEditing
-                  ? "Modifica Azienda"
-                  : "Dettagli Azienda"
-                : "Gestione Utenti"}
+              {headerTitle}
             </h2>
-            {activeTab === "details" ? (
-              !isEditing && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Tocca la matita per modificare
-                </p>
-              )
-            ) : (
+            {headerSubtitle && (
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                Gestisci gli utenti associati all'azienda
+                {isUsersTab && <Users className="h-3 w-3" />}
+                {isWarehousesTab && <WarehouseIcon className="h-3 w-3" />}
+                {headerSubtitle}
               </p>
             )}
           </div>
@@ -539,8 +578,9 @@ export function DrawerCompanyContent({
             <TabsList>
               <TabsTrigger value="details">Dettagli</TabsTrigger>
               <TabsTrigger value="users">Utenti</TabsTrigger>
+              <TabsTrigger value="warehouses">Magazzini</TabsTrigger>
             </TabsList>
-            {activeTab === "details" &&
+            {isDetailsTab &&
               (isEditing ? (
                 <div className="flex items-center gap-2">
                   <Button
@@ -605,6 +645,26 @@ export function DrawerCompanyContent({
           isRemoving={isRemovingCompanyUser}
           onUpdateRole={updateCompanyUserRole}
           isUpdatingRole={isUpdatingCompanyUserRole}
+        />
+      </TabsContent>
+
+      <TabsContent value="warehouses" className="mt-4">
+        <CompanyWarehousesPanel
+          companyId={company.id}
+          companyName={company.name}
+          warehouses={companyWarehouses}
+          isLoading={isLoadingWarehouses}
+          isError={isWarehousesError}
+          error={warehousesError}
+          onRetry={refetchCompanyWarehouses}
+          onCreate={createWarehouse}
+          isCreating={isCreatingWarehouse}
+          onUpdate={async (warehouseId, data) => {
+            await updateWarehouse({ warehouseId, data });
+          }}
+          isUpdating={isUpdatingWarehouse}
+          onDelete={deleteWarehouse}
+          isDeleting={isDeletingWarehouse}
         />
       </TabsContent>
     </Tabs>
@@ -1070,6 +1130,821 @@ class CompanyUsersPanel extends React.Component<
             </div>
           )}
         </div>
+      </div>
+    );
+  }
+}
+
+interface CompanyWarehousesPanelProps {
+  companyId: string;
+  companyName: string;
+  warehouses: Warehouse[];
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+  onRetry: () => Promise<Warehouse[]>;
+  onCreate: (input: Omit<CreateWarehouseRequest, "companyId">) => Promise<void>;
+  isCreating: boolean;
+  onUpdate: (
+    warehouseId: string,
+    data: UpdateWarehouseRequest
+  ) => Promise<void>;
+  isUpdating: boolean;
+  onDelete: (warehouseId: string) => Promise<void>;
+  isDeleting: boolean;
+}
+
+type WarehouseDraft = {
+  name: string;
+  nation: string;
+  region: string;
+  city: string;
+  address: string;
+  cap: string;
+  sezione: string;
+  foglio: string;
+  particella: string;
+  subalterno: string;
+};
+
+type WarehouseDrafts = Record<string, WarehouseDraft>;
+
+interface CompanyWarehousesPanelState {
+  createDraft: WarehouseDraft;
+  editingWarehouseId: string | null;
+  editDrafts: WarehouseDrafts;
+  pendingUpdateWarehouseId: string | null;
+  pendingDeleteWarehouseId: string | null;
+  isCreateExpanded: boolean;
+}
+
+class CompanyWarehousesPanel extends React.Component<
+  CompanyWarehousesPanelProps,
+  CompanyWarehousesPanelState
+> {
+  private static readonly requiredFields: Array<keyof WarehouseDraft> = [
+    "name",
+    "nation",
+    "region",
+    "city",
+    "address",
+    "cap",
+  ];
+
+  private static readonly fieldDefinitions: Array<{
+    field: keyof WarehouseDraft;
+    label: string;
+    required?: boolean;
+  }> = [
+    { field: "name", label: "Nome Magazzino", required: true },
+    { field: "nation", label: "Nazione", required: true },
+    { field: "region", label: "Regione", required: true },
+    { field: "city", label: "Città", required: true },
+    { field: "address", label: "Indirizzo", required: true },
+    { field: "cap", label: "CAP", required: true },
+    { field: "sezione", label: "Sezione" },
+    { field: "foglio", label: "Foglio" },
+    { field: "particella", label: "Particella" },
+    { field: "subalterno", label: "Subalterno" },
+  ];
+
+  public constructor(props: CompanyWarehousesPanelProps) {
+    super(props);
+    this.state = {
+      createDraft: CompanyWarehousesPanel.createEmptyDraft(),
+      editingWarehouseId: null,
+      editDrafts: CompanyWarehousesPanel.createDraftsFromWarehouses(
+        props.warehouses
+      ),
+      pendingUpdateWarehouseId: null,
+      pendingDeleteWarehouseId: null,
+      isCreateExpanded: true,
+    };
+  }
+
+  public componentDidUpdate(prevProps: CompanyWarehousesPanelProps): void {
+    if (prevProps.warehouses !== this.props.warehouses) {
+      this.reconcileEditDrafts(prevProps.warehouses);
+    }
+  }
+
+  private static createEmptyDraft(): WarehouseDraft {
+    return {
+      name: "",
+      nation: "",
+      region: "",
+      city: "",
+      address: "",
+      cap: "",
+      sezione: "",
+      foglio: "",
+      particella: "",
+      subalterno: "",
+    };
+  }
+
+  private static createDraftFromWarehouse(
+    warehouse: Warehouse
+  ): WarehouseDraft {
+    return {
+      name: warehouse.name ?? "",
+      nation: warehouse.nation ?? "",
+      region: warehouse.region ?? "",
+      city: warehouse.city ?? "",
+      address: warehouse.address ?? "",
+      cap: warehouse.cap ?? "",
+      sezione: warehouse.sezione ?? "",
+      foglio: warehouse.foglio ?? "",
+      particella: warehouse.particella ?? "",
+      subalterno: warehouse.subalterno ?? "",
+    };
+  }
+
+  private static createDraftsFromWarehouses(
+    warehouses: Warehouse[]
+  ): WarehouseDrafts {
+    return warehouses.reduce((drafts, warehouse) => {
+      drafts[warehouse.id] =
+        CompanyWarehousesPanel.createDraftFromWarehouse(warehouse);
+      return drafts;
+    }, {} as WarehouseDrafts);
+  }
+
+  private reconcileEditDrafts(previousWarehouses: Warehouse[]): void {
+    const currentDrafts: WarehouseDrafts = { ...this.state.editDrafts };
+    const currentEditingId = this.state.editingWarehouseId;
+    const nextWarehousesMap = new Map(
+      this.props.warehouses.map((warehouse) => [warehouse.id, warehouse])
+    );
+    let changed = false;
+
+    this.props.warehouses.forEach((warehouse) => {
+      const previous = previousWarehouses.find(
+        (item) => item.id === warehouse.id
+      );
+      const defaultDraft =
+        CompanyWarehousesPanel.createDraftFromWarehouse(warehouse);
+
+      if (!currentDrafts[warehouse.id]) {
+        currentDrafts[warehouse.id] = defaultDraft;
+        changed = true;
+        return;
+      }
+
+      if (
+        currentEditingId !== warehouse.id &&
+        this.hasWarehouseChanged(previous, warehouse)
+      ) {
+        currentDrafts[warehouse.id] = defaultDraft;
+        changed = true;
+      }
+    });
+
+    Object.keys(currentDrafts).forEach((warehouseId) => {
+      if (!nextWarehousesMap.has(warehouseId)) {
+        delete currentDrafts[warehouseId];
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      this.setState({ editDrafts: currentDrafts });
+    }
+  }
+
+  private hasWarehouseChanged(
+    previous: Warehouse | undefined,
+    next: Warehouse
+  ): boolean {
+    if (!previous) {
+      return true;
+    }
+
+    return (
+      previous.name !== next.name ||
+      previous.nation !== next.nation ||
+      previous.region !== next.region ||
+      previous.city !== next.city ||
+      previous.address !== next.address ||
+      previous.cap !== next.cap ||
+      previous.sezione !== next.sezione ||
+      previous.foglio !== next.foglio ||
+      previous.particella !== next.particella ||
+      previous.subalterno !== next.subalterno
+    );
+  }
+
+  private handleToggleCreate = (): void => {
+    this.setState((prevState) => ({
+      isCreateExpanded: !prevState.isCreateExpanded,
+    }));
+  };
+
+  private handleCreateInputChange =
+    (field: keyof WarehouseDraft) =>
+    (event: React.ChangeEvent<HTMLInputElement>): void => {
+      const value = event.target.value;
+      this.setState((prevState) => ({
+        createDraft: {
+          ...prevState.createDraft,
+          [field]: value,
+        },
+      }));
+    };
+
+  private handleEditInputChange =
+    (warehouseId: string, field: keyof WarehouseDraft) =>
+    (event: React.ChangeEvent<HTMLInputElement>): void => {
+      const value = event.target.value;
+      this.setState((prevState) => ({
+        editDrafts: {
+          ...prevState.editDrafts,
+          [warehouseId]: {
+            ...(prevState.editDrafts[warehouseId] ??
+              CompanyWarehousesPanel.createEmptyDraft()),
+            [field]: value,
+          },
+        },
+      }));
+    };
+
+  private handleCreateSubmit = async (
+    event: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    event.preventDefault();
+    if (!this.isDraftValid(this.state.createDraft)) {
+      return;
+    }
+
+    try {
+      await this.props.onCreate(
+        this.buildCreatePayload(this.state.createDraft)
+      );
+      this.setState({
+        createDraft: CompanyWarehousesPanel.createEmptyDraft(),
+      });
+    } catch (error) {
+      console.error("Failed to create warehouse", error);
+    }
+  };
+
+  private handleStartEdit = (warehouseId: string): void => {
+    const warehouse = this.props.warehouses.find(
+      (item) => item.id === warehouseId
+    );
+    if (!warehouse) {
+      return;
+    }
+
+    this.setState((prevState) => ({
+      editingWarehouseId: warehouseId,
+      editDrafts: {
+        ...prevState.editDrafts,
+        [warehouseId]:
+          CompanyWarehousesPanel.createDraftFromWarehouse(warehouse),
+      },
+    }));
+  };
+
+  private handleCancelEdit = (warehouseId: string): void => {
+    const warehouse = this.props.warehouses.find(
+      (item) => item.id === warehouseId
+    );
+    this.setState((prevState) => ({
+      editingWarehouseId:
+        prevState.editingWarehouseId === warehouseId
+          ? null
+          : prevState.editingWarehouseId,
+      editDrafts:
+        warehouse !== undefined
+          ? {
+              ...prevState.editDrafts,
+              [warehouseId]:
+                CompanyWarehousesPanel.createDraftFromWarehouse(warehouse),
+            }
+          : prevState.editDrafts,
+    }));
+  };
+
+  private handleEditSubmit = async (
+    event: React.FormEvent<HTMLFormElement>,
+    warehouseId: string
+  ): Promise<void> => {
+    event.preventDefault();
+    await this.handleSaveEdit(warehouseId);
+  };
+
+  private handleSaveEdit = async (warehouseId: string): Promise<void> => {
+    const warehouse = this.props.warehouses.find(
+      (item) => item.id === warehouseId
+    );
+    if (!warehouse) {
+      return;
+    }
+
+    const draft =
+      this.state.editDrafts[warehouseId] ??
+      CompanyWarehousesPanel.createDraftFromWarehouse(warehouse);
+
+    if (!this.isDraftValid(draft)) {
+      return;
+    }
+
+    const updatePayload = this.buildUpdatePayload(warehouse, draft);
+
+    if (Object.keys(updatePayload).length === 0) {
+      this.setState({ editingWarehouseId: null });
+      return;
+    }
+
+    this.setState({ pendingUpdateWarehouseId: warehouseId });
+    try {
+      await this.props.onUpdate(warehouseId, updatePayload);
+      this.setState({
+        editingWarehouseId: null,
+      });
+    } catch (error) {
+      console.error("Failed to update warehouse", error);
+    } finally {
+      this.setState({ pendingUpdateWarehouseId: null });
+    }
+  };
+
+  private handleDeleteWarehouse = async (
+    warehouseId: string
+  ): Promise<void> => {
+    this.setState({ pendingDeleteWarehouseId: warehouseId });
+    try {
+      await this.props.onDelete(warehouseId);
+    } catch (error) {
+      console.error("Failed to delete warehouse", error);
+    } finally {
+      this.setState((prevState) => ({
+        pendingDeleteWarehouseId: null,
+        editingWarehouseId:
+          prevState.editingWarehouseId === warehouseId
+            ? null
+            : prevState.editingWarehouseId,
+      }));
+    }
+  };
+
+  private isDraftValid(draft: WarehouseDraft): boolean {
+    return CompanyWarehousesPanel.requiredFields.every(
+      (field) => draft[field].trim().length > 0
+    );
+  }
+
+  private normalizeOptionalField(value: string): string | null {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  private buildCreatePayload(
+    draft: WarehouseDraft
+  ): Omit<CreateWarehouseRequest, "companyId"> {
+    return {
+      name: draft.name.trim(),
+      nation: draft.nation.trim(),
+      region: draft.region.trim(),
+      city: draft.city.trim(),
+      address: draft.address.trim(),
+      cap: draft.cap.trim(),
+      sezione: this.normalizeOptionalField(draft.sezione),
+      foglio: this.normalizeOptionalField(draft.foglio),
+      particella: this.normalizeOptionalField(draft.particella),
+      subalterno: this.normalizeOptionalField(draft.subalterno),
+    };
+  }
+
+  private buildUpdatePayload(
+    warehouse: Warehouse,
+    draft: WarehouseDraft
+  ): UpdateWarehouseRequest {
+    const payload: UpdateWarehouseRequest = {};
+
+    const trimmedName = draft.name.trim();
+    if (trimmedName !== warehouse.name) {
+      payload.name = trimmedName;
+    }
+
+    const trimmedNation = draft.nation.trim();
+    if (trimmedNation !== (warehouse.nation ?? "")) {
+      payload.nation = trimmedNation;
+    }
+
+    const trimmedRegion = draft.region.trim();
+    if (trimmedRegion !== (warehouse.region ?? "")) {
+      payload.region = trimmedRegion;
+    }
+
+    const trimmedCity = draft.city.trim();
+    if (trimmedCity !== (warehouse.city ?? "")) {
+      payload.city = trimmedCity;
+    }
+
+    const trimmedAddress = draft.address.trim();
+    if (trimmedAddress !== (warehouse.address ?? "")) {
+      payload.address = trimmedAddress;
+    }
+
+    const trimmedCap = draft.cap.trim();
+    if (trimmedCap !== (warehouse.cap ?? "")) {
+      payload.cap = trimmedCap;
+    }
+
+    const normalizedSezione = this.normalizeOptionalField(draft.sezione);
+    if (normalizedSezione !== (warehouse.sezione ?? null)) {
+      payload.sezione = normalizedSezione;
+    }
+
+    const normalizedFoglio = this.normalizeOptionalField(draft.foglio);
+    if (normalizedFoglio !== (warehouse.foglio ?? null)) {
+      payload.foglio = normalizedFoglio;
+    }
+
+    const normalizedParticella = this.normalizeOptionalField(draft.particella);
+    if (normalizedParticella !== (warehouse.particella ?? null)) {
+      payload.particella = normalizedParticella;
+    }
+
+    const normalizedSubalterno = this.normalizeOptionalField(draft.subalterno);
+    if (normalizedSubalterno !== (warehouse.subalterno ?? null)) {
+      payload.subalterno = normalizedSubalterno;
+    }
+
+    return payload;
+  }
+
+  private getFieldColumnSpan(field: keyof WarehouseDraft): string {
+    if (field === "name" || field === "address") {
+      return "md:col-span-2";
+    }
+    return "md:col-span-1";
+  }
+
+  private getWarehouseFieldValue(
+    warehouse: Warehouse,
+    field: keyof WarehouseDraft
+  ): string | null {
+    const value = warehouse[field as keyof Warehouse];
+    if (typeof value === "string") {
+      return value;
+    }
+    return value ?? null;
+  }
+
+  private renderDetailRow(
+    label: string,
+    value: string | null
+  ): React.ReactNode {
+    return (
+      <div className="flex flex-col gap-1">
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        <p className="text-sm font-semibold text-foreground">{value ?? "-"}</p>
+      </div>
+    );
+  }
+
+  private renderCreateSection(): React.ReactNode {
+    const { isCreating } = this.props;
+    const { createDraft, isCreateExpanded } = this.state;
+    const isSubmitDisabled = isCreating || !this.isDraftValid(createDraft);
+
+    return (
+      <div className="bg-gradient-to-br from-field-50/40 to-agri-green-50/20 rounded-2xl p-5 border border-field-200/60 shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <WarehouseIcon className="h-4 w-4 text-field-600" />
+            <div>
+              <h3 className="text-sm font-semibold text-field-600">
+                Crea un nuovo magazzino
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Inserisci i dettagli del magazzino per {this.props.companyName}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={this.handleToggleCreate}
+            className="h-9 px-3 rounded-full bg-white/70 border border-field-200 text-field-700 hover:bg-field-50 transition-all"
+          >
+            {isCreateExpanded ? (
+              <>
+                <X className="h-4 w-4 mr-1" />
+                Nascondi
+              </>
+            ) : (
+              <>
+                <PlusCircle className="h-4 w-4 mr-1" />
+                Mostra form
+              </>
+            )}
+          </Button>
+        </div>
+
+        {isCreateExpanded && (
+          <form className="space-y-4" onSubmit={this.handleCreateSubmit}>
+            <div className="grid md:grid-cols-2 gap-3">
+              {CompanyWarehousesPanel.fieldDefinitions.map(
+                ({ field, label }) => (
+                  <div
+                    key={`create-${field}`}
+                    className={this.getFieldColumnSpan(field)}
+                  >
+                    <Label
+                      htmlFor={`warehouse-create-${field}-${this.props.companyId}`}
+                    >
+                      {label}
+                    </Label>
+                    <Input
+                      id={`warehouse-create-${field}-${this.props.companyId}`}
+                      value={createDraft[field]}
+                      onChange={this.handleCreateInputChange(field)}
+                      required={CompanyWarehousesPanel.requiredFields.includes(
+                        field
+                      )}
+                      className="mt-1 bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
+                      placeholder={label}
+                    />
+                  </div>
+                )
+              )}
+            </div>
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={isSubmitDisabled}
+                className="rounded-full bg-field-600 hover:bg-field-700 text-white shadow-sm transition-all hover:shadow-md"
+              >
+                {isCreating ? (
+                  <Spinner size={18} ariaLabel="Creazione magazzino" />
+                ) : (
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                )}
+                {isCreating ? "Creazione..." : "Crea magazzino"}
+              </Button>
+            </div>
+          </form>
+        )}
+      </div>
+    );
+  }
+
+  private renderWarehousesSection(): React.ReactNode {
+    const { warehouses, isLoading, isError, error, onRetry, isDeleting } =
+      this.props;
+
+    return (
+      <div className="bg-gradient-to-br from-agri-green-50/40 to-field-50/20 rounded-2xl p-5 border border-agri-green-100/60 shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <WarehouseIcon className="h-4 w-4 text-agri-green-700" />
+            <div>
+              <h3 className="text-sm font-semibold text-agri-green-700">
+                Magazzini registrati
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Gestisci l&apos;inventario dei magazzini aziendali
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void onRetry();
+            }}
+            disabled={isLoading}
+            className="rounded-full border-agri-green-200 text-agri-green-700 hover:bg-agri-green-50/80"
+          >
+            {isLoading ? (
+              <Spinner size={18} ariaLabel="Aggiornamento magazzini" />
+            ) : (
+              <RefreshCcw className="h-4 w-4 mr-2" />
+            )}
+            Aggiorna
+          </Button>
+        </div>
+
+        {isError ? (
+          <div className="flex flex-col items-start gap-3 rounded-xl border border-red-100 bg-red-50/60 p-4 text-red-700">
+            <p className="text-sm font-semibold">
+              Impossibile caricare i magazzini dell&apos;azienda.
+            </p>
+            {error?.message && (
+              <p className="text-xs text-red-600/80">{error.message}</p>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void onRetry();
+              }}
+              className="border-red-200 text-red-700 hover:bg-red-100/60"
+            >
+              Riprova
+            </Button>
+          </div>
+        ) : isLoading ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-10 text-agri-green-700">
+            <Spinner size={28} ariaLabel="Caricamento magazzini" />
+            <p className="text-sm">Caricamento magazzini in corso…</p>
+          </div>
+        ) : warehouses.length > 0 ? (
+          <div className="space-y-4">
+            {warehouses.map((warehouse) =>
+              this.renderWarehouseCard(warehouse, isDeleting)
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col items-start gap-2 rounded-xl border border-dashed border-agri-green-200 bg-white/50 p-6 text-agri-green-700">
+            <p className="text-sm font-semibold">
+              Nessun magazzino registrato per questa azienda.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Crea un magazzino per iniziare a registrare le giacenze.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  private renderWarehouseCard(
+    warehouse: Warehouse,
+    isDeletingGlobal: boolean
+  ): React.ReactNode {
+    const { isUpdating } = this.props;
+    const {
+      editingWarehouseId,
+      editDrafts,
+      pendingUpdateWarehouseId,
+      pendingDeleteWarehouseId,
+    } = this.state;
+
+    const draft =
+      editDrafts[warehouse.id] ??
+      CompanyWarehousesPanel.createDraftFromWarehouse(warehouse);
+
+    const isEditing = editingWarehouseId === warehouse.id;
+    const isSaving = pendingUpdateWarehouseId === warehouse.id && isUpdating;
+    const isDeleting =
+      pendingDeleteWarehouseId === warehouse.id && isDeletingGlobal;
+    const updatePayload = this.buildUpdatePayload(warehouse, draft);
+    const hasChanges = Object.keys(updatePayload).length > 0;
+    const isDraftValidForUpdate = this.isDraftValid(draft);
+    const isSaveDisabled = isSaving || !isDraftValidForUpdate || !hasChanges;
+
+    if (isEditing) {
+      return (
+        <div
+          key={warehouse.id}
+          className="rounded-2xl border border-field-200 bg-white/70 p-4 shadow-sm"
+        >
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              void this.handleEditSubmit(event, warehouse.id);
+            }}
+          >
+            <div className="grid md:grid-cols-2 gap-3">
+              {CompanyWarehousesPanel.fieldDefinitions.map(
+                ({ field, label }) => (
+                  <div
+                    key={`edit-${warehouse.id}-${field}`}
+                    className={this.getFieldColumnSpan(field)}
+                  >
+                    <Label htmlFor={`warehouse-edit-${field}-${warehouse.id}`}>
+                      {label}
+                    </Label>
+                    <Input
+                      id={`warehouse-edit-${field}-${warehouse.id}`}
+                      value={draft[field]}
+                      onChange={this.handleEditInputChange(warehouse.id, field)}
+                      required={CompanyWarehousesPanel.requiredFields.includes(
+                        field
+                      )}
+                      className="mt-1 bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
+                      placeholder={label}
+                    />
+                  </div>
+                )
+              )}
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  void this.handleDeleteWarehouse(warehouse.id);
+                }}
+                disabled={isDeleting}
+                className="rounded-full text-red-600 hover:bg-red-50"
+              >
+                {isDeleting ? (
+                  <Spinner size={18} ariaLabel="Rimozione magazzino" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-1" />
+                )}
+                Elimina
+              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => this.handleCancelEdit(warehouse.id)}
+                  className="h-9 px-3 rounded-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 shadow-sm transition-all"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Annulla
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSaveDisabled}
+                  className="h-9 px-3 rounded-full bg-field-600 hover:bg-field-700 text-white shadow-sm transition-all hover:shadow-md"
+                >
+                  {isSaving ? (
+                    <Spinner size={18} ariaLabel="Salvataggio magazzino" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-1" />
+                  )}
+                  {isSaving ? "Salvataggio..." : "Salva modifiche"}
+                </Button>
+              </div>
+            </div>
+          </form>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        key={warehouse.id}
+        className="rounded-2xl border border-agri-green-200 bg-white/60 p-4 shadow-sm"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <WarehouseIcon className="h-10 w-10 rounded-full bg-agri-green-100/80 p-2 text-agri-green-700" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {warehouse.name}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {warehouse.city ?? "-"}, {warehouse.region ?? "-"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => this.handleStartEdit(warehouse.id)}
+              className="h-9 px-3 rounded-full bg-agri-green-50 hover:bg-agri-green-100 text-agri-green-700 border border-agri-green-200/50 shadow-sm transition-all hover:shadow-md"
+            >
+              <Pencil className="h-4 w-4 mr-1" />
+              Modifica
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                void this.handleDeleteWarehouse(warehouse.id);
+              }}
+              disabled={isDeleting}
+              className="h-9 px-3 rounded-full text-red-600 hover:bg-red-50"
+            >
+              {isDeleting ? (
+                <Spinner size={18} ariaLabel="Rimozione magazzino" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-1" />
+              )}
+              Elimina
+            </Button>
+          </div>
+        </div>
+        <div className="mt-4 grid md:grid-cols-2 gap-4">
+          {CompanyWarehousesPanel.fieldDefinitions.map(({ field, label }) =>
+            this.renderDetailRow(
+              label,
+              this.getWarehouseFieldValue(warehouse, field)
+            )
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  public render(): React.ReactNode {
+    return (
+      <div className="space-y-6">
+        {this.renderCreateSection()}
+        {this.renderWarehousesSection()}
       </div>
     );
   }

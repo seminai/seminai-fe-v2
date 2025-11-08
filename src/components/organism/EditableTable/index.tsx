@@ -12,6 +12,7 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { IoOpenOutline } from "react-icons/io5";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 // EditableTable - Notion-like editable table with bulk add/save
 // The component follows an OOP approach using a React Class.
@@ -33,6 +34,15 @@ export interface EditableColumn {
   placeholder?: string;
   // Optional read-only renderer
   render?: (value: unknown, row: Record<string, unknown>) => React.ReactNode;
+  onValueChange?: (args: {
+    value: unknown;
+    rowData: Record<string, unknown>;
+    columnId: string;
+  }) => Record<string, unknown> | void;
+  enableSearch?: boolean;
+  searchPlaceholder?: string;
+  emptyStateMessage?: string;
+  noneOptionLabel?: string;
 }
 
 export interface EditableTableProps {
@@ -198,20 +208,62 @@ export class EditableTable extends React.Component<
   private setCellValue = (
     rowId: string,
     colId: string,
-    value: unknown
+    value: unknown,
+    extraUpdates?: Record<string, unknown>
   ): void => {
-    this.setState((prev) => ({
-      rows: prev.rows.map((r) =>
-        r.id === rowId
-          ? { ...r, isDirty: true, data: { ...r.data, [colId]: value } }
-          : r
-      ),
-      touched: {
-        ...prev.touched,
-        [rowId]: { ...(prev.touched[rowId] || {}), [colId]: true },
-      },
-    }));
+    this.setState((prev) => {
+      const updatedRows = prev.rows.map((r) => {
+        if (r.id !== rowId) return r;
+        const mergedData = {
+          ...r.data,
+          [colId]: value,
+          ...(extraUpdates ?? {}),
+        };
+        return { ...r, isDirty: true, data: mergedData };
+      });
+
+      const touchedForRow = {
+        ...(prev.touched[rowId] || {}),
+        [colId]: true,
+      };
+
+      if (extraUpdates) {
+        for (const key of Object.keys(extraUpdates)) {
+          touchedForRow[key] = true;
+        }
+      }
+
+      return {
+        rows: updatedRows,
+        touched: {
+          ...prev.touched,
+          [rowId]: touchedForRow,
+        },
+      };
+    });
   };
+
+  private handleCellChange(
+    row: InternalRow,
+    col: EditableColumn,
+    value: unknown
+  ): void {
+    const baseRowData = { ...row.data, [col.id]: value };
+    const computedUpdates = col.onValueChange
+      ? col.onValueChange({
+          value,
+          rowData: baseRowData,
+          columnId: col.id,
+        })
+      : undefined;
+
+    const sanitizedUpdates =
+      computedUpdates && typeof computedUpdates === "object"
+        ? (computedUpdates as Record<string, unknown>)
+        : undefined;
+
+    this.setCellValue(row.id, col.id, value, sanitizedUpdates);
+  }
 
   private toggleRowSelection = (rowId: string, value: boolean): void => {
     this.setState((prev) => ({
@@ -409,6 +461,22 @@ export class EditableTable extends React.Component<
               typeof o === "string" ? { label: o, value: o } : o
             )
           : [];
+
+        if (col.enableSearch) {
+          return (
+            <SearchableSelect
+              value={String(value ?? "")}
+              options={normalized}
+              placeholder={col.placeholder}
+              searchPlaceholder={col.searchPlaceholder}
+              emptyMessage={col.emptyStateMessage}
+              noneOptionLabel={col.noneOptionLabel}
+              onChange={(newValue) => this.handleCellChange(row, col, newValue)}
+              wrapperClassName="w-full"
+            />
+          );
+        }
+
         return (
           <select
             className={cn(
@@ -418,7 +486,7 @@ export class EditableTable extends React.Component<
             )}
             value={String(value ?? "")}
             aria-invalid={Boolean(isTouched && error)}
-            onChange={(e) => this.setCellValue(row.id, col.id, e.target.value)}
+            onChange={(e) => this.handleCellChange(row, col, e.target.value)}
           >
             <option value="">Select...</option>
             {normalized.map((o) => (
@@ -439,7 +507,7 @@ export class EditableTable extends React.Component<
             value={value === undefined || value === null ? "" : String(value)}
             onChange={(e) => {
               const v = e.target.value === "" ? "" : Number(e.target.value);
-              this.setCellValue(row.id, col.id, v);
+              this.handleCellChange(row, col, v);
             }}
             className={cn(
               Boolean(isTouched && error) &&
@@ -454,7 +522,7 @@ export class EditableTable extends React.Component<
             placeholder={col.placeholder}
             aria-invalid={Boolean(isTouched && error)}
             value={value ? String(value) : ""}
-            onChange={(e) => this.setCellValue(row.id, col.id, e.target.value)}
+            onChange={(e) => this.handleCellChange(row, col, e.target.value)}
             className={cn(
               Boolean(isTouched && error) &&
                 "ring-1 ring-red-200/50 border-red-200/60"
@@ -484,7 +552,7 @@ export class EditableTable extends React.Component<
             aria-invalid={Boolean(isTouched && error)}
             value={value ? String(value) : ""}
             onChange={(e) => {
-              this.setCellValue(row.id, col.id, e.target.value);
+              this.handleCellChange(row, col, e.target.value);
               autoResize(e.target);
             }}
             onInput={(e) => autoResize(e.currentTarget)}
