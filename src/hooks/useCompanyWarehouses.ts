@@ -164,4 +164,3 @@ export function useCompanyWarehouses(
     isDeleting: deleteMutation.isPending,
   };
 }
-

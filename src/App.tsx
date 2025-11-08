@@ -13,6 +13,7 @@ import ProductionUnit from "./routes/ProductionUnit";
 import NewProductionUnit from "./routes/ProductionUnit/NewProductionUnit";
 import DosageManager from "./routes/DosageManager";
 import Products from "./routes/Products";
+import Job from "./routes/Job";
 import TermsOfService from "./routes/TermsOfService";
 import PrivacyPolicy from "./routes/PrivacyPolicy";
 
@@ -34,6 +35,7 @@ function App() {
         <Route path="/production-unit" element={<ProductionUnit />} />
         <Route path="/new-production-unit" element={<NewProductionUnit />} />
         <Route path="/dosage-manager" element={<DosageManager />} />
+        <Route path="/job" element={<Job />} />
         <Route path="/products" element={<Products />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
