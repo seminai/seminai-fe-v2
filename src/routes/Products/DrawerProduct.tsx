@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { Product, StockEntry, productsApiService } from "@/api/products";
-import { stocksApiService, CreateStockPayload } from "@/api/stocks";
 import {
   Sheet,
   SheetContent,
@@ -23,13 +22,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
@@ -49,10 +41,10 @@ import {
   TrendingDown,
   TrendingUp,
   Pencil,
-  Plus,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import AddStock from "./AddStock";
 
 interface DrawerProductProps {
   product: Product | null;
@@ -67,6 +59,25 @@ class StockDataProcessor {
     this.stocks = stocks;
   }
 
+  private normalizeQuantity(quantity: number): number {
+    if (!Number.isFinite(quantity)) {
+      return 0;
+    }
+    return Math.abs(quantity);
+  }
+
+  private roundQuantity(quantity: number): number {
+    if (!Number.isFinite(quantity)) {
+      return 0;
+    }
+    return Math.round(quantity * 10) / 10;
+  }
+
+  private getMovementDelta(stock: StockEntry): number {
+    const normalizedQuantity = this.normalizeQuantity(stock.quantity);
+    return stock.type === "IN" ? normalizedQuantity : -normalizedQuantity;
+  }
+
   public processForChart(): Array<{
     index: number;
     stock: number;
@@ -79,9 +90,10 @@ class StockDataProcessor {
     // Calcola lo stock iniziale (prima di tutti i movimenti)
     const finalStock = this.calculateTotalStock();
     const totalMovements = stocksReversed.reduce((sum, stock) => {
-      return stock.type === "IN" ? sum + stock.quantity : sum - stock.quantity;
+      return sum + this.getMovementDelta(stock);
     }, 0);
-    const initialStock = finalStock - totalMovements;
+    const unroundedInitialStock = finalStock - totalMovements;
+    const initialStock = this.roundQuantity(unroundedInitialStock);
 
     // Punto iniziale
     const chartData: Array<{
@@ -99,16 +111,12 @@ class StockDataProcessor {
     ];
 
     // Aggiungi ogni movimento con stock progressivo (in ordine cronologico corretto)
-    let runningStock = initialStock;
+    let runningStock = unroundedInitialStock;
     stocksReversed.forEach((stock, index) => {
-      if (stock.type === "IN") {
-        runningStock += stock.quantity;
-      } else {
-        runningStock -= stock.quantity;
-      }
+      runningStock += this.getMovementDelta(stock);
       chartData.push({
         index: index + 1,
-        stock: runningStock,
+        stock: this.roundQuantity(runningStock),
         label: `Mov. ${index + 1}`,
         type: stock.type,
       });
@@ -119,26 +127,36 @@ class StockDataProcessor {
 
   public calculateTotalStock(): number {
     return this.stocks.reduce((total, stock) => {
-      return stock.type === "IN"
-        ? total + stock.quantity
-        : total - stock.quantity;
+      return total + this.getMovementDelta(stock);
     }, 0);
   }
 
   public getTotalIn(): number {
     return this.stocks
       .filter((s) => s.type === "IN")
-      .reduce((sum, s) => sum + s.quantity, 0);
+      .reduce((sum, s) => sum + this.normalizeQuantity(s.quantity), 0);
   }
 
   public getTotalOut(): number {
     return this.stocks
       .filter((s) => s.type === "OUT")
-      .reduce((sum, s) => sum + s.quantity, 0);
+      .reduce((sum, s) => sum + this.normalizeQuantity(s.quantity), 0);
   }
 
   public getStocksByType(type: "IN" | "OUT"): StockEntry[] {
     return this.stocks.filter((s) => s.type === type);
+  }
+}
+
+class StockFormatter {
+  private constructor() {}
+
+  public static formatQuantity(quantity: number): string {
+    if (!Number.isFinite(quantity)) {
+      return "0.0";
+    }
+    const roundedQuantity = Math.round(quantity * 10) / 10;
+    return roundedQuantity.toFixed(1);
   }
 }
 
@@ -159,36 +177,6 @@ class ProductFormValidator {
   }
 }
 
-class StockFormValidator {
-  public static validateQuantity(quantity: number): string | null {
-    if (isNaN(quantity) || quantity === 0) {
-      return "La quantità deve essere diversa da zero";
-    }
-    return null;
-  }
-
-  public static validateUnitOfMeasure(unit: string): string | null {
-    if (!unit || unit.trim().length === 0) {
-      return "L'unità di misura è obbligatoria";
-    }
-    return null;
-  }
-
-  public static validateForm(data: {
-    quantity: number;
-    unitOfMeasureQuantity: string;
-    type: "IN" | "OUT";
-  }): string | null {
-    const quantityError = this.validateQuantity(data.quantity);
-    if (quantityError) return quantityError;
-
-    const unitError = this.validateUnitOfMeasure(data.unitOfMeasureQuantity);
-    if (unitError) return unitError;
-
-    return null;
-  }
-}
-
 const chartConfig: ChartConfig = {
   stock: {
     label: "Stock Totale",
@@ -199,26 +187,12 @@ const chartConfig: ChartConfig = {
 function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
   const queryClient = useQueryClient();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [stockDialogOpen, setStockDialogOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Edit product form
   const [productName, setProductName] = useState("");
   const [productDescription, setProductDescription] = useState("");
   const [productBarcode, setProductBarcode] = useState("");
-
-  // Add stock form
-  const [stockQuantity, setStockQuantity] = useState<number>(0);
-  const [stockUnit, setStockUnit] = useState("L");
-  const [stockType, setStockType] = useState<"IN" | "OUT">("IN");
-  const [stockPrice, setStockPrice] = useState<number | undefined>(undefined);
-  const [stockPriceUnit, setStockPriceUnit] = useState("EUR");
-  const [stockJobId, setStockJobId] = useState("");
-  const [stockDdtCode, setStockDdtCode] = useState("");
-  const [stockInvoiceCode, setStockInvoiceCode] = useState("");
-  const [stockSupplierName, setStockSupplierName] = useState("");
-  const [stockSupplierAddress, setStockSupplierAddress] = useState("");
-  const [stockSupplierVat, setStockSupplierVat] = useState("");
 
   const processor = useMemo(
     () => (product ? new StockDataProcessor(product.stocks) : null),
@@ -236,22 +210,6 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
     setProductDescription(product.description || "");
     setProductBarcode(product.barcode || "");
     setEditDialogOpen(true);
-  };
-
-  const handleOpenStockDialog = () => {
-    // Reset form
-    setStockQuantity(0);
-    setStockUnit(product?.stocks[0]?.unitOfMeasureQuantity || "L");
-    setStockType("IN");
-    setStockPrice(undefined);
-    setStockPriceUnit("EUR");
-    setStockJobId("");
-    setStockDdtCode("");
-    setStockInvoiceCode("");
-    setStockSupplierName("");
-    setStockSupplierAddress("");
-    setStockSupplierVat("");
-    setStockDialogOpen(true);
   };
 
   const handleUpdateProduct = async () => {
@@ -292,58 +250,8 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
     }
   };
 
-  const handleAddStock = async () => {
-    if (!product) return;
-
-    const validationError = StockFormValidator.validateForm({
-      quantity: stockQuantity,
-      unitOfMeasureQuantity: stockUnit,
-      type: stockType,
-    });
-
-    if (validationError) {
-      toast.error(validationError);
-      return;
-    }
-
-    setIsUpdating(true);
-    try {
-      const payload: CreateStockPayload = {
-        companyId: product.warehouse.company.id,
-        productId: product.id,
-        quantity: Math.abs(stockQuantity),
-        unitOfMeasureQuantity: stockUnit,
-        type: stockType,
-      };
-
-      // Aggiungi campi opzionali solo se valorizzati
-      if (stockPrice !== undefined && stockPrice > 0) {
-        payload.price = stockPrice;
-        payload.unitOfMeasurePrice = stockPriceUnit;
-      }
-      if (stockJobId) payload.jobId = stockJobId;
-      if (stockDdtCode) payload.ddtCode = stockDdtCode;
-      if (stockInvoiceCode) payload.invoiceCode = stockInvoiceCode;
-      if (stockSupplierName) payload.companySupplierName = stockSupplierName;
-      if (stockSupplierAddress) payload.addressSupplier = stockSupplierAddress;
-      if (stockSupplierVat) payload.vatNumberSupplier = stockSupplierVat;
-
-      await stocksApiService.create(payload);
-
-      toast.success("Movimento di stock registrato con successo");
-      setStockDialogOpen(false);
-
-      // Invalida la cache per ricaricare i dati
-      queryClient.invalidateQueries({ queryKey: ["products", "me"] });
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Errore nella registrazione del movimento"
-      );
-    } finally {
-      setIsUpdating(false);
-    }
+  const handleStockCreated = () => {
+    queryClient.invalidateQueries({ queryKey: ["products", "me"] });
   };
 
   if (!product || !processor) {
@@ -354,6 +262,9 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
   const totalIn = processor.getTotalIn();
   const totalOut = processor.getTotalOut();
   const unit = product.stocks[0]?.unitOfMeasureQuantity ?? "unità";
+  const formattedTotalStock = StockFormatter.formatQuantity(totalStock);
+  const formattedTotalIn = StockFormatter.formatQuantity(totalIn);
+  const formattedTotalOut = StockFormatter.formatQuantity(totalOut);
 
   return (
     <>
@@ -376,7 +287,7 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
                         : "destructive"
                     }
                   >
-                    Stock: {totalStock} {unit}
+                    Stock: {formattedTotalStock} {unit}
                   </Badge>
                 </div>
               </div>
@@ -432,14 +343,6 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Riepilogo Movimenti</h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleOpenStockDialog}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Aggiungi Movimento
-                </Button>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="bg-green-50 p-4 rounded-lg">
@@ -448,7 +351,7 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
                     <span className="text-xs font-medium">Carichi</span>
                   </div>
                   <p className="text-2xl font-bold text-green-900">
-                    {totalIn}
+                    {formattedTotalIn}
                     <span className="text-sm font-normal ml-1">{unit}</span>
                   </p>
                 </div>
@@ -458,7 +361,7 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
                     <span className="text-xs font-medium">Scarichi</span>
                   </div>
                   <p className="text-2xl font-bold text-red-900">
-                    {totalOut}
+                    {formattedTotalOut}
                     <span className="text-sm font-normal ml-1">{unit}</span>
                   </p>
                 </div>
@@ -468,7 +371,7 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
                     <span className="text-xs font-medium">Disponibile</span>
                   </div>
                   <p className="text-2xl font-bold text-blue-900">
-                    {totalStock}
+                    {formattedTotalStock}
                     <span className="text-sm font-normal ml-1">{unit}</span>
                   </p>
                 </div>
@@ -536,7 +439,9 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
                           tickLine={false}
                           axisLine={true}
                           style={{ fontSize: "11px", fontWeight: 500 }}
-                          tickFormatter={(value) => `${value}`}
+                          tickFormatter={(value) =>
+                            StockFormatter.formatQuantity(Number(value))
+                          }
                           label={{
                             value: `Stock (${unit})`,
                             angle: -90,
@@ -561,7 +466,8 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
                                       {dataPoint.label}
                                     </span>
                                     <span className="font-bold text-blue-600 text-base">
-                                      {numValue} {unit}
+                                      {StockFormatter.formatQuantity(numValue)}{" "}
+                                      {unit}
                                     </span>
                                     {dataPoint.type === "IN" && (
                                       <span className="text-xs text-green-600">
@@ -625,11 +531,10 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
               )}
             </div>
 
-            <Separator />
-
             {/* Dettaglio movimenti */}
             <div className="space-y-3">
               <h3 className="text-lg font-semibold">Dettaglio Movimenti</h3>
+              <AddStock product={product} onStockCreated={handleStockCreated} />
               <div className="space-y-2">
                 {product.stocks.map((stock) => (
                   <div
@@ -670,7 +575,12 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
                         }`}
                       >
                         {stock.type === "IN" ? "+" : "-"}
-                        {stock.quantity} {stock.unitOfMeasureQuantity}
+                        {StockFormatter.formatQuantity(
+                          Number.isFinite(stock.quantity)
+                            ? Math.abs(stock.quantity)
+                            : 0
+                        )}{" "}
+                        {stock.unitOfMeasureQuantity}
                       </p>
                     </div>
                   </div>
@@ -732,173 +642,6 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
             </Button>
             <Button onClick={handleUpdateProduct} disabled={isUpdating}>
               {isUpdating ? "Salvataggio..." : "Salva"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog per aggiungere movimento stock */}
-      <Dialog open={stockDialogOpen} onOpenChange={setStockDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white">
-          <DialogHeader>
-            <DialogTitle>Aggiungi Movimento di Stock</DialogTitle>
-            <DialogDescription>
-              Registra un nuovo movimento di carico o scarico
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="stock-type">
-                  Tipo <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={stockType}
-                  onValueChange={(value: "IN" | "OUT") => setStockType(value)}
-                >
-                  <SelectTrigger id="stock-type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="IN">Carico (IN)</SelectItem>
-                    <SelectItem value="OUT">Scarico (OUT)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="stock-quantity">
-                  Quantità <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="stock-quantity"
-                  type="number"
-                  step="0.01"
-                  value={stockQuantity}
-                  onChange={(e) => setStockQuantity(parseFloat(e.target.value))}
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="stock-unit">
-                Unità di Misura <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="stock-unit"
-                value={stockUnit}
-                onChange={(e) => setStockUnit(e.target.value)}
-                placeholder="L, kg, pz..."
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="stock-price">Prezzo Unitario</Label>
-                <Input
-                  id="stock-price"
-                  type="number"
-                  step="0.01"
-                  value={stockPrice || ""}
-                  onChange={(e) =>
-                    setStockPrice(
-                      e.target.value ? parseFloat(e.target.value) : undefined
-                    )
-                  }
-                  placeholder="0.00"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="stock-price-unit">Valuta</Label>
-                <Input
-                  id="stock-price-unit"
-                  value={stockPriceUnit}
-                  onChange={(e) => setStockPriceUnit(e.target.value)}
-                  placeholder="EUR"
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium">Informazioni Aggiuntive</h4>
-              <div className="space-y-2">
-                <Label htmlFor="stock-job-id">Job ID</Label>
-                <Input
-                  id="stock-job-id"
-                  value={stockJobId}
-                  onChange={(e) => setStockJobId(e.target.value)}
-                  placeholder="ID del job associato"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="stock-ddt">Codice DDT</Label>
-                  <Input
-                    id="stock-ddt"
-                    value={stockDdtCode}
-                    onChange={(e) => setStockDdtCode(e.target.value)}
-                    placeholder="DDT-001"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="stock-invoice">Codice Fattura</Label>
-                  <Input
-                    id="stock-invoice"
-                    value={stockInvoiceCode}
-                    onChange={(e) => setStockInvoiceCode(e.target.value)}
-                    placeholder="INV-001"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="stock-supplier-name">Nome Fornitore</Label>
-                <Input
-                  id="stock-supplier-name"
-                  value={stockSupplierName}
-                  onChange={(e) => setStockSupplierName(e.target.value)}
-                  placeholder="Nome dell'azienda fornitrice"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="stock-supplier-address">
-                  Indirizzo Fornitore
-                </Label>
-                <Input
-                  id="stock-supplier-address"
-                  value={stockSupplierAddress}
-                  onChange={(e) => setStockSupplierAddress(e.target.value)}
-                  placeholder="Via, Città"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="stock-supplier-vat">
-                  Partita IVA Fornitore
-                </Label>
-                <Input
-                  id="stock-supplier-vat"
-                  value={stockSupplierVat}
-                  onChange={(e) => setStockSupplierVat(e.target.value)}
-                  placeholder="IT00000000000"
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setStockDialogOpen(false)}
-              disabled={isUpdating}
-            >
-              Annulla
-            </Button>
-            <Button onClick={handleAddStock} disabled={isUpdating}>
-              {isUpdating ? "Registrazione..." : "Registra Movimento"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -14,10 +14,82 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { jobsApiService } from "@/api/jobs";
+import {
+  jobsApiService,
+  type JobWithRelations,
+  type Product,
+} from "@/api/jobs";
 import { stocksApiService, type CreateStockPayload } from "@/api/stocks";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+
+class JobProductsFormatter {
+  private readonly products: Product[];
+
+  constructor(products?: Product[]) {
+    this.products = products ?? [];
+  }
+
+  public buildNameLabel(): string {
+    if (this.products.length === 0) {
+      return "-";
+    }
+
+    return this.products.map((product) => product.name).join(", ");
+  }
+
+  public buildRegistrationNumberLabel(): string {
+    if (this.products.length === 0) {
+      return "-";
+    }
+
+    return this.products
+      .map((product) => product.registrationNumber ?? "-")
+      .join(", ");
+  }
+}
+
+class JobTableRowBuilder {
+  private readonly jobWithRelations: JobWithRelations;
+  private readonly productsFormatter: JobProductsFormatter;
+
+  constructor(jobWithRelations: JobWithRelations) {
+    this.jobWithRelations = jobWithRelations;
+    this.productsFormatter = new JobProductsFormatter(
+      this.jobWithRelations.products
+    );
+  }
+
+  public build(): Record<string, unknown> {
+    const { job, productionUnit, company, fields } = this.jobWithRelations;
+
+    return {
+      id: job.id,
+      dateOfOpeation: new Date(job.dateOfOpeation).toLocaleDateString("it-IT"),
+      companyName: company.name,
+      productionUnitName: productionUnit.name,
+      cropName: productionUnit.cropName,
+      cropType: productionUnit.cropType,
+      fields: fields.map((field) => field.name).join(", "),
+      category: job.category,
+      quantity: job.quantity,
+      unitOfMeasureQuantity: job.unitOfMeasureQuantity,
+      productName: this.productsFormatter.buildNameLabel(),
+      productRegistrationNumber:
+        this.productsFormatter.buildRegistrationNumberLabel(),
+      modeOfApplication: job.modeOfApplication ?? "-",
+      treatedSurface: job.treatedSurface,
+      avversity: job.avversity ?? "-",
+      note: job.note,
+      isVerified: job.isVerified ? "Verificato" : "Non Verificato",
+      stock: job.quantity,
+      _isVerifiedBoolean: job.isVerified,
+      _originalStock: job.quantity,
+      _companyId: company.id,
+      _productionUnitId: productionUnit.id,
+    };
+  }
+}
 
 export default function JobPage() {
   const { companies } = useCompanies();
@@ -36,33 +108,9 @@ export default function JobPage() {
 
   // Converte i jobs in formato per la tabella
   const jobsAsRows = useMemo(() => {
-    return jobs.map((jobWithRelations) => ({
-      id: jobWithRelations.job.id,
-      dateOfOpeation: new Date(
-        jobWithRelations.job.dateOfOpeation
-      ).toLocaleDateString("it-IT"),
-      companyName: jobWithRelations.company.name,
-      productionUnitName: jobWithRelations.productionUnit.name,
-      cropName: jobWithRelations.productionUnit.cropName,
-      cropType: jobWithRelations.productionUnit.cropType,
-      fields: jobWithRelations.fields.map((f) => f.name).join(", "),
-      category: jobWithRelations.job.category,
-      quantity: jobWithRelations.job.quantity,
-      unitOfMeasureQuantity: jobWithRelations.job.unitOfMeasureQuantity,
-      modeOfApplication: jobWithRelations.job.modeOfApplication,
-      treatedSurface: jobWithRelations.job.treatedSurface,
-      avversity: jobWithRelations.job.avversity || "-",
-      note: jobWithRelations.job.note,
-      isVerified: jobWithRelations.job.isVerified
-        ? "Verificato"
-        : "Non Verificato",
-      stock: jobWithRelations.job.quantity, // Stock iniziale uguale alla quantità
-      // Campi nascosti per gestione interna
-      _isVerifiedBoolean: jobWithRelations.job.isVerified,
-      _originalStock: jobWithRelations.job.quantity,
-      _companyId: jobWithRelations.company.id,
-      _productionUnitId: jobWithRelations.productionUnit.id,
-    }));
+    return jobs.map((jobWithRelations) =>
+      new JobTableRowBuilder(jobWithRelations).build()
+    );
   }, [jobs]);
 
   // Colonne per la tabella editabile
@@ -121,6 +169,20 @@ export default function JobPage() {
       title: "Unità",
       type: "text",
       width: "100px",
+      readOnly: true,
+    },
+    {
+      id: "productName",
+      title: "Prodotto",
+      type: "text",
+      width: "200px",
+      readOnly: true,
+    },
+    {
+      id: "productRegistrationNumber",
+      title: "Numero Registrazione",
+      type: "text",
+      width: "200px",
       readOnly: true,
     },
     {
@@ -304,10 +366,6 @@ export default function JobPage() {
         <div className="mx-auto space-y-6">
           {/* Jobs Table */}
           <div className="space-y-4">
-            <h2 className="text-xl font-medium text-neutral-900">
-              Elenco Operazioni
-            </h2>
-
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
                 <p className="font-semibold">Errore nel caricamento dei dati</p>
@@ -337,11 +395,9 @@ export default function JobPage() {
                 columns={columns}
                 rows={jobsAsRows}
                 isModify={true}
-                alwaysEdit={true}
                 onSave={handleSave}
                 onDeleteSelected={handleDeleteSelected}
                 getRowId={(row) => row.id as string}
-                className="bg-white rounded-xl border border-neutral-200 shadow-sm"
               />
             )}
           </div>
