@@ -48,11 +48,18 @@ export type Company = {
   name: string;
 };
 
+export type Product = {
+  id: string;
+  name: string;
+  registrationNumber: string | null;
+};
+
 export type JobWithRelations = {
   job: Job;
   productionUnit: ProductionUnit;
   fields: Field[];
   company: Company;
+  products: Product[];
 };
 
 export type GetJobsResponse = {
