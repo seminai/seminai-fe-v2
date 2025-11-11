@@ -54,6 +54,39 @@ export type UpdateProductResponse = {
   data?: unknown;
 };
 
+export type BulkFromDdtEntry = {
+  productName: string;
+  registrationNumber?: string;
+  quantity: number;
+  quantityUnitOfMeasure: string;
+  supplierName?: string;
+  supplierVat?: string;
+};
+
+export type BulkFromDdtFileResult = {
+  fileName?: string;
+  entries: BulkFromDdtEntry[];
+};
+
+export type BulkFromDdtSuggestedProduct = {
+  productName: string;
+  registrationNumber?: string | null;
+  quantity: number;
+  quantityUnitOfMeasure: string;
+  supplierName?: string | null;
+  supplierVat?: string | null;
+};
+
+export type BulkFromDdtToProductListResponse = {
+  status: "success" | string;
+  data?: {
+    totalFiles?: number;
+    totalEntries?: number;
+    results?: BulkFromDdtFileResult[];
+    suggestedProducts?: BulkFromDdtSuggestedProduct[];
+  };
+};
+
 export async function getProducts(
   companyName?: string,
   baseUrl: string = BASE_URL
@@ -105,6 +138,40 @@ export async function updateProduct(
   return (await response.json()) as UpdateProductResponse;
 }
 
+export async function importProductsFromDdt(
+  token: string,
+  files: File[],
+  baseUrl: string = BASE_URL
+): Promise<BulkFromDdtToProductListResponse> {
+  if (!Array.isArray(files) || files.length === 0) {
+    throw new Error("At least one DDT file is required to import products");
+  }
+
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append("files", file);
+  });
+
+  const response = await fetch(
+    `${baseUrl}/products/bulk-from-ddt-to-product-list`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: "include",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Bulk DDT import failed");
+  }
+
+  return (await response.json()) as BulkFromDdtToProductListResponse;
+}
+
 class ProductsApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -120,6 +187,13 @@ class ProductsApiService {
     payload: UpdateProductPayload
   ): Promise<UpdateProductResponse> {
     return await updateProduct(productId, payload, this.baseUrl);
+  }
+
+  public async importFromDdt(
+    token: string,
+    files: File[]
+  ): Promise<BulkFromDdtToProductListResponse> {
+    return await importProductsFromDdt(token, files, this.baseUrl);
   }
 }
 

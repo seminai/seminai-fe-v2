@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useCompanies } from "@/hooks/useCompanies";
 import { ImportProducts } from "./importProducts";
+import { ImportProductsFromDdt } from "./importProductsFromDdt";
 import { PageHeader } from "@/components/organism/Header";
 import {
   EditableTable,
@@ -591,10 +592,16 @@ export default function DosageManager() {
                     </p>
                   )}
                 </div>
-                <ImportProducts
-                  onAddRows={handleAddRows}
-                  onProductsChange={setProducts}
-                />
+                <div className="flex items-center gap-3">
+                  <ImportProducts
+                    onAddRows={handleAddRows}
+                    onProductsChange={setProducts}
+                  />
+                  <ImportProductsFromDdt
+                    onAddRows={handleAddRows}
+                    onProductsChange={setProducts}
+                  />
+                </div>
               </div>
               <EditableTable
                 ref={editableTableRef}
