@@ -9,8 +9,12 @@ import {
   type LoginResponse,
   type RegisterResponse,
   type MeResponse,
+  UserRole,
 } from "@/api/auth";
 import authService from "@/utils/auth";
+
+// Re-export UserRole for convenience
+export { UserRole };
 
 export function useLogin() {
   return useMutation<LoginResponse, Error, LoginRequest>({

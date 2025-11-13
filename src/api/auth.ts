@@ -1,9 +1,16 @@
 const BASE_URL = import.meta.env.VITE_API_URL;
 
+export enum UserRole {
+  ADMIN = "ADMIN",
+  BASIC = "BASIC",
+  LABEL_MANAGER = "LABEL_MANAGER",
+}
+
 export type User = {
   id: string;
   email: string;
   name: string;
+  role?: UserRole;
 };
 
 export type LoginRequest = {
@@ -42,6 +49,7 @@ export type MeResponse = {
   email: string;
   name: string;
   emailVerified: boolean;
+  role: UserRole;
 };
 
 export type UpdatePasswordRequest = {
