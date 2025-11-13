@@ -13,6 +13,21 @@ export default function Auth() {
 
   const { data: meData } = useMe();
 
+  // Wake up backend on component mount
+  useEffect(() => {
+    const wakeUpBackend = async () => {
+      try {
+        const response = await fetch("http://localhost:8081/wake-up");
+        const result = await response.json();
+        console.log("✅ Backend wake-up successful:", result);
+      } catch (error) {
+        console.warn("⚠️ Backend wake-up failed:", error);
+      }
+    };
+
+    wakeUpBackend();
+  }, []);
+
   useEffect(() => {
     if (meData) {
       navigate("/dashboard", { replace: true });

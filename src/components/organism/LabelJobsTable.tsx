@@ -185,8 +185,9 @@ export function LabelJobsTable({
     );
 
     if (successfulExtraction && successfulExtraction.labelId) {
-      // Navigate to label detail page using label ID
-      window.open(`/label/${successfulExtraction.labelId}`, "_blank");
+      // Navigate to label detail page using label ID in a new tab
+      const url = `${window.location.origin}/label/${successfulExtraction.labelId}`;
+      window.open(url, "_blank");
     }
   };
 
