@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import type { ReactElement } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useCompanies } from "@/hooks/useCompanies";
 import { ImportProducts } from "./importProducts";
@@ -32,6 +33,7 @@ import {
   CheckCircle2,
   Clock,
   Activity,
+  Apple,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -44,6 +46,85 @@ import {
   type DosageJob,
 } from "@/utils/dosageJobsIndexDBManager";
 import { JobDetails } from "./JobDetails";
+
+class DosageJobDetailsManager {
+  public async load(job: DosageJob): Promise<DosageJob> {
+    if (job.state === "completed" && job.result) {
+      return job;
+    }
+
+    try {
+      const statusResponse = await dosageAgentApiService.getJobStatus(job.id);
+      const statusData = statusResponse.data;
+
+      try {
+        await dosageJobsIndexDBManager.updateJob(job.id, {
+          state: statusData.state,
+          progress: statusData.progress,
+          result: statusData.result,
+          productsCount: statusData.data?.productsCount ?? job.productsCount,
+          unitsCount: statusData.data?.unitsCount ?? job.unitsCount,
+          error:
+            statusData.state === "failed"
+              ? "The dosage job has failed"
+              : undefined,
+        });
+
+        const refreshedJob = await dosageJobsIndexDBManager.getJob(job.id);
+        if (refreshedJob) {
+          return refreshedJob;
+        }
+      } catch (synchronizationError) {
+        console.error(
+          "Failed to synchronize job details:",
+          synchronizationError
+        );
+      }
+
+      return {
+        ...job,
+        state: statusData.state,
+        progress: statusData.progress,
+        result: statusData.result,
+        productsCount: statusData.data?.productsCount ?? job.productsCount,
+        unitsCount: statusData.data?.unitsCount ?? job.unitsCount,
+        updatedAt: new Date(),
+        error:
+          statusData.state === "failed"
+            ? "The dosage job has failed"
+            : undefined,
+      };
+    } catch (error) {
+      console.error("Failed to load job details:", error);
+      throw error instanceof Error
+        ? error
+        : new Error("Unable to load dosage job details");
+    }
+  }
+}
+
+const dosageJobDetailsManager = new DosageJobDetailsManager();
+
+class DosagePlaceholderRenderer {
+  public renderEmptyProductsPlaceholder(): ReactElement {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 border border-dashed border-neutral-200 rounded-xl bg-white mt-6">
+        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-neutral-100 text-neutral-500 mb-4">
+          <Apple className="h-8 w-8" />
+        </div>
+        <p className="text-base font-medium text-neutral-700">
+          Non ci sono dati, caricali!
+        </p>
+        <p className="text-sm text-neutral-500 mt-2 text-center max-w-md">
+          Importa o aggiungi prodotti per iniziare a calcolare i dosaggi delle
+          tue unità produttive.
+        </p>
+      </div>
+    );
+  }
+}
+
+const dosagePlaceholderRenderer = new DosagePlaceholderRenderer();
 
 export default function DosageManager() {
   const { productionUnits, isLoading: loadingUnits } = useProductionUnit();
@@ -63,6 +144,7 @@ export default function DosageManager() {
   const [jobs, setJobs] = useState<DosageJob[]>([]);
   const [selectedJob, setSelectedJob] = useState<DosageJob | null>(null);
   const [showJobsPanel, setShowJobsPanel] = useState(false);
+  const [isJobDetailsLoading, setIsJobDetailsLoading] = useState(false);
 
   // Colonne per la tabella editabile dei prodotti
   const productColumns: EditableColumn[] = [
@@ -304,6 +386,35 @@ export default function DosageManager() {
       setSelectedUnitIds(filteredUnits.map((u) => u.productionUnit.id));
     }
   };
+
+  const handleShowJobDetails = useCallback(
+    async (job: DosageJob) => {
+      if (isJobDetailsLoading && selectedJob?.id === job.id) {
+        return;
+      }
+
+      setSelectedJob(job);
+      setIsJobDetailsLoading(true);
+
+      try {
+        const detailedJob = await dosageJobDetailsManager.load(job);
+        setSelectedJob(detailedJob);
+        setJobs((prev) =>
+          prev.map((existingJob) =>
+            existingJob.id === detailedJob.id ? detailedJob : existingJob
+          )
+        );
+      } catch (error) {
+        toast.error("Impossibile caricare i dettagli del job", {
+          description:
+            error instanceof Error ? error.message : "Riprova più tardi",
+        });
+      } finally {
+        setIsJobDetailsLoading(false);
+      }
+    },
+    [isJobDetailsLoading, selectedJob]
+  );
 
   const handleCalculateDosages = async () => {
     if (products.length === 0) {
@@ -615,6 +726,8 @@ export default function DosageManager() {
                   `${row.productName}-${row.registrationNumber}`
                 }
               />
+              {products.length === 0 &&
+                dosagePlaceholderRenderer.renderEmptyProductsPlaceholder()}
             </div>
           </div>
         ) : (
@@ -661,7 +774,9 @@ export default function DosageManager() {
                           <TableRow
                             key={job.id}
                             className="hover:bg-neutral-50 cursor-pointer"
-                            onClick={() => setSelectedJob(job)}
+                            onClick={() => {
+                              void handleShowJobDetails(job);
+                            }}
                           >
                             <TableCell className="font-medium">
                               {job.id}
@@ -735,8 +850,12 @@ export default function DosageManager() {
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setSelectedJob(job);
+                                  void handleShowJobDetails(job);
                                 }}
+                                disabled={
+                                  isJobDetailsLoading &&
+                                  selectedJob?.id === job.id
+                                }
                                 className="text-neutral-600 hover:text-neutral-900"
                               >
                                 Dettagli
@@ -759,6 +878,7 @@ export default function DosageManager() {
         activeJobs={activeJobs}
         selectedJob={selectedJob}
         onSelectedJobChange={setSelectedJob}
+        jobDetailsLoading={isJobDetailsLoading}
       />
     </div>
   );

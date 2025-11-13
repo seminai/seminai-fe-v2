@@ -24,20 +24,20 @@ import { NavigationModel, NavigationItem } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  IoHomeOutline,
   IoPersonCircleOutline,
-  IoPricetagOutline,
-  IoGridOutline,
-  IoBusinessOutline,
   IoChevronForwardOutline,
   IoChevronBackOutline,
   IoChevronDownOutline,
-  IoStatsChartOutline,
-  IoLeafOutline,
-  IoCalculatorOutline,
-  IoCubeOutline,
-  IoListOutline,
 } from "react-icons/io5";
+import HomeAgriIcon from "@/components/icons/HomeAgriIcon";
+import TagAgriIcon from "@/components/icons/TagAgriIcon";
+import SprayAgriIcon from "@/components/icons/SprayAgriIcon";
+import TasksAgriIcon from "@/components/icons/TasksAgriIcon";
+import ChartAgriIcon from "@/components/icons/ChartAgriIcon";
+import BarnAgriIcon from "@/components/icons/BarnAgriIcon";
+import FieldAgriIcon from "@/components/icons/FieldAgriIcon";
+import PlantGrowAgriIcon from "@/components/icons/PlantGrowAgriIcon";
+import BottleAgriIcon from "@/components/icons/BottleAgriIcon";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,11 +87,12 @@ function MobileBottomBar({ isMobile, hasCompanies }: MobileBottomBarProps) {
                 labelDashboard && "text-gray-900 font-medium"
               )}
             >
-              <IoHomeOutline
+              <HomeAgriIcon
                 className={cn(
                   "size-5",
                   labelDashboard ? "text-gray-900" : "text-gray-700/90"
                 )}
+                size={20}
               />
               <span className="mt-1">Home</span>
             </Link>
@@ -104,11 +105,12 @@ function MobileBottomBar({ isMobile, hasCompanies }: MobileBottomBarProps) {
                 labelActive && "text-gray-900 font-medium"
               )}
             >
-              <IoPricetagOutline
+              <TagAgriIcon
                 className={cn(
                   "size-5",
                   labelActive ? "text-gray-900" : "text-gray-700/90"
                 )}
+                size={20}
               />
               <span className="mt-1">Etichette</span>
             </Link>
@@ -122,11 +124,12 @@ function MobileBottomBar({ isMobile, hasCompanies }: MobileBottomBarProps) {
                   fieldsActive && "text-gray-900 font-medium"
                 )}
               >
-                <IoGridOutline
+                <FieldAgriIcon
                   className={cn(
                     "size-5",
                     fieldsActive ? "text-gray-900" : "text-gray-700/90"
                   )}
+                  size={20}
                 />
                 <span className="mt-1">Campi</span>
               </Link>
@@ -141,11 +144,12 @@ function MobileBottomBar({ isMobile, hasCompanies }: MobileBottomBarProps) {
                   productionUnitActive && "text-gray-900 font-medium"
                 )}
               >
-                <IoLeafOutline
+                <PlantGrowAgriIcon
                   className={cn(
                     "size-5",
                     productionUnitActive ? "text-gray-900" : "text-gray-700/90"
                   )}
+                  size={20}
                 />
                 <span className="mt-1">Unità Prod.</span>
               </Link>
@@ -160,11 +164,12 @@ function MobileBottomBar({ isMobile, hasCompanies }: MobileBottomBarProps) {
                   dosageManagerActive && "text-gray-900 font-medium"
                 )}
               >
-                <IoCalculatorOutline
+                <SprayAgriIcon
                   className={cn(
                     "size-5",
                     dosageManagerActive ? "text-gray-900" : "text-gray-700/90"
                   )}
+                  size={20}
                 />
                 <span className="mt-1">Dosaggi</span>
               </Link>
@@ -179,11 +184,12 @@ function MobileBottomBar({ isMobile, hasCompanies }: MobileBottomBarProps) {
                   jobActive && "text-gray-900 font-medium"
                 )}
               >
-                <IoListOutline
+                <TasksAgriIcon
                   className={cn(
                     "size-5",
                     jobActive ? "text-gray-900" : "text-gray-700/90"
                   )}
+                  size={20}
                 />
                 <span className="mt-1">Operazioni</span>
               </Link>
@@ -198,11 +204,12 @@ function MobileBottomBar({ isMobile, hasCompanies }: MobileBottomBarProps) {
                   productsActive && "text-gray-900 font-medium"
                 )}
               >
-                <IoCubeOutline
+                <BottleAgriIcon
                   className={cn(
                     "size-5",
                     productsActive ? "text-gray-900" : "text-gray-700/90"
                   )}
+                  size={20}
                 />
                 <span className="mt-1">Prodotti</span>
               </Link>
@@ -349,6 +356,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           <SidebarGroup className="py-2">
             <SidebarGroupContent>
               <SidebarMenu className="gap-1.5">
+                {/* Dashboard - sempre visibile */}
                 <SidebarMenuItem key="dashboard">
                   <SidebarMenuButton
                     asChild
@@ -358,7 +366,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                   >
                     <Link to="/dashboard" className="flex items-center gap-3">
-                      <IoHomeOutline className="size-5" />
+                      <HomeAgriIcon className="size-5" size={20} />
                       <span className="group-data-[collapsible=icon]:hidden">
                         Dashboard
                       </span>
@@ -366,6 +374,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
+                {/* Etichette - sempre visibile */}
                 <SidebarMenuItem key="label">
                   <SidebarMenuButton
                     asChild
@@ -375,7 +384,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                   >
                     <Link to="/label" className="flex items-center gap-3">
-                      <IoPricetagOutline className="size-5" />
+                      <TagAgriIcon className="size-5" size={20} />
                       <span className="group-data-[collapsible=icon]:hidden">
                         Etichette
                       </span>
@@ -383,11 +392,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
-                {hasCompanies && (
-                  <SidebarMenuItem
-                    key="dosage-manager"
-                    className="group-data-[collapsible=icon]:hidden"
-                  >
+                {/* Gestione Dosaggi - solo in modalità espansa */}
+                {hasCompanies && sidebarOpen && (
+                  <SidebarMenuItem key="dosage-manager-expanded">
                     <SidebarMenuButton
                       asChild
                       isActive={dosageManagerActive}
@@ -399,20 +406,16 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                         to="/dosage-manager"
                         className="flex items-center gap-3"
                       >
-                        <IoCalculatorOutline className="size-5" />
-                        <span className="group-data-[collapsible=icon]:hidden">
-                          Gestione Dosaggi
-                        </span>
+                        <SprayAgriIcon className="size-5" size={20} />
+                        <span>Gestione Dosaggi</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
 
-                {hasCompanies && (
-                  <SidebarMenuItem
-                    key="job"
-                    className="group-data-[collapsible=icon]:hidden"
-                  >
+                {/* Operazioni - solo in modalità espansa */}
+                {hasCompanies && sidebarOpen && (
+                  <SidebarMenuItem key="job-expanded">
                     <SidebarMenuButton
                       asChild
                       isActive={jobActive}
@@ -421,21 +424,20 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                     >
                       <Link to="/job" className="flex items-center gap-3">
-                        <IoListOutline className="size-5" />
-                        <span className="group-data-[collapsible=icon]:hidden">
-                          Operazioni
-                        </span>
+                        <TasksAgriIcon className="size-5" size={20} />
+                        <span>Operazioni</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
 
-                {/* Modalità espansa: mostra menu collapsible */}
-                <Collapsible
-                  open={manageMenuOpen}
-                  onOpenChange={setManageMenuOpen}
-                  className="group/collapsible group-data-[collapsible=icon]:hidden"
-                >
+                {/* Menu Gestisci - solo in modalità espansa */}
+                {sidebarOpen && (
+                  <Collapsible
+                    open={manageMenuOpen}
+                    onOpenChange={setManageMenuOpen}
+                    className="group/collapsible"
+                  >
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton
@@ -443,7 +445,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                         size="lg"
                         className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                       >
-                        <IoStatsChartOutline className="size-5" />
+                        <ChartAgriIcon className="size-5" size={20} />
                         <span>Gestisci</span>
                         <IoChevronDownOutline
                           className={cn(
@@ -467,7 +469,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                               to="/company"
                               className="flex items-center gap-3"
                             >
-                              <IoBusinessOutline className="size-5" />
+                              <BarnAgriIcon className="size-5" size={20} />
                               <span>Aziende</span>
                             </Link>
                           </SidebarMenuButton>
@@ -486,7 +488,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 to="/fields"
                                 className="flex items-center gap-3"
                               >
-                                <IoGridOutline className="size-5" />
+                                <FieldAgriIcon className="size-5" size={20} />
                                 <span>Campi</span>
                               </Link>
                             </SidebarMenuButton>
@@ -506,7 +508,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 to="/production-unit"
                                 className="flex items-center gap-3"
                               >
-                                <IoLeafOutline className="size-5" />
+                                <PlantGrowAgriIcon className="size-5" size={20} />
                                 <span>Unità Produttive</span>
                               </Link>
                             </SidebarMenuButton>
@@ -526,7 +528,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 to="/products"
                                 className="flex items-center gap-3"
                               >
-                                <IoCubeOutline className="size-5" />
+                                <BottleAgriIcon className="size-5" size={20} />
                                 <span>Prodotti</span>
                               </Link>
                             </SidebarMenuButton>
@@ -536,71 +538,13 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     </CollapsibleContent>
                   </SidebarMenuItem>
                 </Collapsible>
-
-                {/* Modalità collassata: mostra icone separate */}
-                <SidebarMenuItem
-                  key="company-icon"
-                  className="hidden group-data-[collapsible=icon]:block"
-                >
-                  <SidebarMenuButton
-                    asChild
-                    isActive={companyActive}
-                    tooltip="Aziende"
-                    size="lg"
-                    className="data-[active=true]:bg-neutral-900/5"
-                  >
-                    <Link to="/company" className="flex items-center gap-3">
-                      <IoBusinessOutline className="size-5" />
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
-                {hasCompanies && (
-                  <SidebarMenuItem
-                    key="fields-icon"
-                    className="hidden group-data-[collapsible=icon]:block"
-                  >
-                    <SidebarMenuButton
-                      asChild
-                      isActive={fieldsActive}
-                      tooltip="Campi"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5"
-                    >
-                      <Link to="/fields" className="flex items-center gap-3">
-                        <IoGridOutline className="size-5" />
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
                 )}
 
-                {hasCompanies && (
-                  <SidebarMenuItem
-                    key="production-unit-icon"
-                    className="hidden group-data-[collapsible=icon]:block"
-                  >
-                    <SidebarMenuButton
-                      asChild
-                      isActive={productionUnitActive}
-                      tooltip="Unità Produttive"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5"
-                    >
-                      <Link
-                        to="/production-unit"
-                        className="flex items-center gap-3"
-                      >
-                        <IoLeafOutline className="size-5" />
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-
-                {hasCompanies && (
-                  <SidebarMenuItem
-                    key="dosage-manager-icon"
-                    className="hidden group-data-[collapsible=icon]:block"
-                  >
+                {/* ICONE IN MODALITÀ COLLASSATA - Solo queste si vedono quando la sidebar è chiusa */}
+                
+                {/* Gestione Dosaggi - icona collassata */}
+                {hasCompanies && !sidebarOpen && (
+                  <SidebarMenuItem key="dosage-manager-collapsed">
                     <SidebarMenuButton
                       asChild
                       isActive={dosageManagerActive}
@@ -612,17 +556,15 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                         to="/dosage-manager"
                         className="flex items-center gap-3"
                       >
-                        <IoCalculatorOutline className="size-5" />
+                        <SprayAgriIcon className="size-5" size={20} />
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
 
-                {hasCompanies && (
-                  <SidebarMenuItem
-                    key="job-icon"
-                    className="hidden group-data-[collapsible=icon]:block"
-                  >
+                {/* Operazioni - icona collassata */}
+                {hasCompanies && !sidebarOpen && (
+                  <SidebarMenuItem key="job-collapsed">
                     <SidebarMenuButton
                       asChild
                       isActive={jobActive}
@@ -631,17 +573,69 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       className="data-[active=true]:bg-neutral-900/5"
                     >
                       <Link to="/job" className="flex items-center gap-3">
-                        <IoListOutline className="size-5" />
+                        <TasksAgriIcon className="size-5" size={20} />
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
 
-                {hasCompanies && (
-                  <SidebarMenuItem
-                    key="products-icon"
-                    className="hidden group-data-[collapsible=icon]:block"
-                  >
+                {/* Aziende - icona collassata */}
+                {!sidebarOpen && (
+                  <SidebarMenuItem key="company-collapsed">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={companyActive}
+                      tooltip="Aziende"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link to="/company" className="flex items-center gap-3">
+                        <BarnAgriIcon className="size-5" size={20} />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                {/* Campi - icona collassata */}
+                {hasCompanies && !sidebarOpen && (
+                  <SidebarMenuItem key="fields-collapsed">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={fieldsActive}
+                      tooltip="Campi"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link to="/fields" className="flex items-center gap-3">
+                        <FieldAgriIcon className="size-5" size={20} />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                {/* Unità Produttive - icona collassata */}
+                {hasCompanies && !sidebarOpen && (
+                  <SidebarMenuItem key="production-unit-collapsed">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={productionUnitActive}
+                      tooltip="Unità Produttive"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link
+                        to="/production-unit"
+                        className="flex items-center gap-3"
+                      >
+                        <PlantGrowAgriIcon className="size-5" size={20} />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                {/* Prodotti - icona collassata */}
+                {hasCompanies && !sidebarOpen && (
+                  <SidebarMenuItem key="products-collapsed">
                     <SidebarMenuButton
                       asChild
                       isActive={productsActive}
@@ -650,7 +644,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       className="data-[active=true]:bg-neutral-900/5"
                     >
                       <Link to="/products" className="flex items-center gap-3">
-                        <IoCubeOutline className="size-5" />
+                        <BottleAgriIcon className="size-5" size={20} />
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
