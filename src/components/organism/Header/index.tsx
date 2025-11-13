@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {
   /**
@@ -42,6 +43,11 @@ interface PageHeaderProps {
    * Elemento da mostrare a destra (es. pulsante di import/aggiungi)
    */
   rightElement?: React.ReactNode;
+
+  /**
+   * Classe CSS per il componente
+   */
+  className?: string;
 }
 
 /**
@@ -57,9 +63,10 @@ export function PageHeader({
   filteredItems,
   centerElement,
   rightElement,
+  className,
 }: PageHeaderProps): React.ReactElement {
   return (
-    <div className="flex-shrink-0 p-6 mb-1 mt-1">
+    <div className={cn(className, "flex-shrink-0 p-6 mb-1 mt-1")}>
       <div className="flex justify-between items-center gap-4 mb-4">
         <h1 className="text-3xl text-agri-green-700 font-semibold whitespace-nowrap">
           {title}
@@ -67,9 +74,7 @@ export function PageHeader({
 
         {/* Elemento centrale (toggle o ricerca) */}
         {centerElement ? (
-          <div className="flex-1 flex justify-center">
-            {centerElement}
-          </div>
+          <div className="flex-1 flex justify-center">{centerElement}</div>
         ) : searchPlaceholder && searchValue !== undefined && onSearchChange ? (
           <div className="flex-1 max-w-2xl">
             <div className="relative">
@@ -82,12 +87,14 @@ export function PageHeader({
                 className="pl-10"
               />
             </div>
-            {searchValue && totalItems !== undefined && filteredItems !== undefined && (
-              <p className="text-xs text-gray-500 mt-1">
-                {filteredItems} risultat
-                {filteredItems === 1 ? "o" : "i"} su {totalItems}
-              </p>
-            )}
+            {searchValue &&
+              totalItems !== undefined &&
+              filteredItems !== undefined && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {filteredItems} risultat
+                  {filteredItems === 1 ? "o" : "i"} su {totalItems}
+                </p>
+              )}
           </div>
         ) : (
           <div className="flex-1" />

@@ -9,7 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Clock } from "lucide-react";
+import { Clock, Loader2 } from "lucide-react";
 import { type DosageJob } from "@/utils/dosageJobsIndexDBManager";
 
 interface JobDetailsProps {
@@ -18,6 +18,7 @@ interface JobDetailsProps {
   activeJobs: DosageJob[];
   selectedJob: DosageJob | null;
   onSelectedJobChange: (job: DosageJob | null) => void;
+  jobDetailsLoading: boolean;
 }
 
 export function JobDetails({
@@ -26,6 +27,7 @@ export function JobDetails({
   activeJobs,
   selectedJob,
   onSelectedJobChange,
+  jobDetailsLoading,
 }: JobDetailsProps): React.ReactElement {
   return (
     <>
@@ -102,6 +104,11 @@ export function JobDetails({
             </SheetHeader>
             <ScrollArea className="h-[calc(100vh-120px)]">
               <div className="space-y-6 pr-4">
+                {jobDetailsLoading && (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+                  </div>
+                )}
                 {/* General Info */}
                 <div className="p-6 rounded-xl border border-neutral-200 space-y-3">
                   <h4 className="font-medium text-neutral-900">Informazioni</h4>
