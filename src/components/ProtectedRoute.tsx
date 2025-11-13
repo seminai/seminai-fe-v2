@@ -16,6 +16,7 @@ function canAccessRoute(pathname: string, userRole?: UserRole): boolean {
     // LABEL_MANAGER can ONLY access label routes and dashboard
     return pathname === "/dashboard" || 
            pathname.startsWith("/label") || 
+           pathname === "/new-label" ||
            pathname === "/settings";
   }
   
