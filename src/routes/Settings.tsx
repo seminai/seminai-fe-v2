@@ -161,6 +161,10 @@ export default function Settings() {
           </div>
           <div className="text-gray-600 text-sm">{user.email}</div>
           <div className="text-gray-600 text-sm">{current?.companyName}</div>
+          <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-agri-green-50 text-agri-green-700 rounded-full text-sm font-medium">
+            <span className="text-lg">💰</span>
+            <span>{user.credits} crediti disponibili</span>
+          </div>
         </div>
         <div>
           <InputFile

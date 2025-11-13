@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { ExternalLink, Trash2, RefreshCw } from "lucide-react";
@@ -270,11 +269,18 @@ export function LabelJobsTable({
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Progress value={job.progress} className="w-24" />
-                          <span className="text-xs text-gray-500">
-                            {job.progress}%
-                          </span>
+                        <div className="flex items-center justify-center">
+                          {job.state === "waiting" || job.state === "active" ? (
+                            <Spinner
+                              size={24}
+                              speed="normal"
+                              ariaLabel="Caricamento"
+                            />
+                          ) : (
+                            <span className="text-xs text-gray-500">
+                              {job.progress}%
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="text-sm">

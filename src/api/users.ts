@@ -14,6 +14,7 @@ export type CurrentUser = {
   address: string;
   profilePictureUrl: string;
   emailVerified: boolean;
+  credits: number;
   createdAt: string;
   updatedAt: string;
 };
