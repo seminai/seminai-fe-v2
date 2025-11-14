@@ -25,6 +25,9 @@ COPY . .
 RUN echo "Build timestamp: $(date)" > ./public/build-version.txt && \
     echo "Commit: $COMMIT_SHA" >> ./public/build-version.txt
 
+# Stampa la variabile d'ambiente per debug
+RUN echo "VITE_API_URL is: $VITE_API_URL"
+
 # Costruisci l'applicazione
 RUN npm run build
 

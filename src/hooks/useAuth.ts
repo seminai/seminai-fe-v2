@@ -4,6 +4,7 @@ import {
   register as registerRequest,
   me as meRequest,
   meWithBearer as meWithBearerRequest,
+  wakeUp as wakeUpRequest,
   type LoginRequest,
   type RegisterRequest,
   type LoginResponse,
@@ -48,5 +49,14 @@ export function useMe() {
     },
     retry: 0,
     staleTime: 60 * 1000,
+  });
+}
+
+export function useWakeUp() {
+  return useQuery<void, Error>({
+    queryKey: ["auth", "wakeUp"],
+    queryFn: wakeUpRequest,
+    retry: 1, // Riprova una volta se fallisce
+    staleTime: Infinity, // Non rieseguire automaticamente la query
   });
 }

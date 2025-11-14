@@ -179,3 +179,17 @@ export async function logout(baseUrl: string = BASE_URL): Promise<void> {
     throw new Error(errorText || "Logout failed");
   }
 }
+
+export async function wakeUp(baseUrl: string = BASE_URL): Promise<void> {
+  try {
+    const response = await fetch(`${baseUrl}/wake-up`, { method: "GET" });
+    if (!response.ok) {
+      const errorText = await safeReadText(response);
+      throw new Error(errorText || "Wake-up call failed");
+    }
+    console.log("Backend is awake.");
+  } catch (error) {
+    console.error("Error waking up the backend:", error);
+    // Non rilanciare l'errore per non bloccare l'app se il backend non risponde subito
+  }
+}
