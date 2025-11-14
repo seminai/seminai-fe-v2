@@ -1,35 +1,16 @@
 steps:
-  # Costruisci il container con il Dockerfile
-  - name: "gcr.io/cloud-builders/docker"
+  # Installa le dipendenze
+  - name: "gcr.io/cloud-builders/npm"
+    args: ["ci"]
+  # Crea il file .env per la build
+  - name: "bash"
     args:
-      [
-        "build",
-        "-t",
-        "gcr.io/$PROJECT_ID/seminai-fe-v2:$COMMIT_SHA",
-        "--build-arg",
-        "VITE_API_URL=https://seminai-be-v2-661301438659.europe-west1.run.app",
-        "--build-arg",
-        "COMMIT_SHA=$COMMIT_SHA",
-        ".",
-      ]
-
-  # Push del container su Google Container Registry
-  - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "gcr.io/$PROJECT_ID/seminai-fe-v2:$COMMIT_SHA"]
-
-  # Tag anche come 'latest' per riferimento
-  - name: "gcr.io/cloud-builders/docker"
-    args:
-      [
-        "tag",
-        "gcr.io/$PROJECT_ID/seminai-fe-v2:$COMMIT_SHA",
-        "gcr.io/$PROJECT_ID/seminai-fe-v2:latest",
-      ]
-
-  # Push del tag latest
-  - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "gcr.io/$PROJECT_ID/seminai-fe-v2:latest"]
-
+      - "-c"
+      - |
+        echo "VITE_API_URL=${_API_URL}" > .env.production
+  # Build dell'applicazione
+  - name: "gcr.io/cloud-builders/npm"
+    args: ["run", "build"]
   # Deploy su Cloud Run
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: "gcloud"
