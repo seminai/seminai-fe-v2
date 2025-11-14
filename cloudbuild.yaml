@@ -7,7 +7,7 @@ steps:
         "-t",
         "gcr.io/$PROJECT_ID/seminai-fe:$COMMIT_SHA",
         "--build-arg",
-        "VITE_API_URL=https://seminai-be-661301438659.europe-west3.run.app",
+        "VITE_API_URL=https://seminai-be-v2-661301438659.europe-west1.run.app",
         "--build-arg",
         "COMMIT_SHA=$COMMIT_SHA",
         ".",
