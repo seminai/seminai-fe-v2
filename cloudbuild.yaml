@@ -7,7 +7,7 @@ steps:
     args:
       - "-c"
       - |
-        echo "VITE_API_URL=${_API_URL}" > .env.production
+        echo "VITE_API_URL=${https://seminai-be-v2-661301438659.europe-west1.run.app}" > .env.production
   # Build dell'applicazione
   - name: "gcr.io/cloud-builders/npm"
     args: ["run", "build"]
