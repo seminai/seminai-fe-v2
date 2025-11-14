@@ -55,7 +55,7 @@ export function useMe() {
 export function useWakeUp() {
   return useQuery<void, Error>({
     queryKey: ["auth", "wakeUp"],
-    queryFn: wakeUpRequest,
+    queryFn: () => wakeUpRequest(),
     retry: 1, // Riprova una volta se fallisce
     staleTime: Infinity, // Non rieseguire automaticamente la query
   });
