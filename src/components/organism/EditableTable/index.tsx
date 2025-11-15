@@ -332,9 +332,10 @@ export class EditableTable extends React.Component<
         Object.keys(errors).forEach((key) => {
           newTouched[key] = true;
         });
-        return {
+        const touchedUpdate: Pick<EditableTableState, "createTouched"> = {
           createTouched: newTouched,
         };
+        return touchedUpdate;
       }
 
       const persistedRow: InternalRow = {
@@ -342,7 +343,10 @@ export class EditableTable extends React.Component<
         data: { ...prev.createRow.data },
       };
 
-      return {
+      const successUpdate: Pick<
+        EditableTableState,
+        "rows" | "touched" | "createDrawerOpen" | "createRow" | "createTouched"
+      > = {
         rows: [...prev.rows, persistedRow],
         touched: {
           ...prev.touched,
@@ -352,6 +356,7 @@ export class EditableTable extends React.Component<
         createRow: undefined,
         createTouched: {},
       };
+      return successUpdate;
     });
   };
 
