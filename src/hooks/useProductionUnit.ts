@@ -3,18 +3,12 @@ import {
   productionUnitApiService,
   type ProductionUnitsResponse,
 } from "@/api/production-unit";
-import authService from "@/utils/auth";
-
 export function useProductionUnit() {
   // Query per ottenere tutte le unità produttive
   const productionUnitsQuery = useQuery<ProductionUnitsResponse, Error>({
     queryKey: ["production-units"],
     queryFn: async () => {
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-      return await productionUnitApiService.getAll(token);
+      return await productionUnitApiService.getAll();
     },
   });
 

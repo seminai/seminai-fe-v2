@@ -38,7 +38,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import authService from "@/utils/auth";
 
 type CropPeriod = {
   minDate: string;
@@ -422,14 +421,6 @@ export default function ProductionUnit(): React.ReactElement {
 
   const { productionUnits, isLoading, error, refetch } = useProductionUnit();
 
-  const resolveToken = useCallback((): string => {
-    const token = authService.getAuthToken();
-    if (!token) {
-      throw new Error("Unauthorized");
-    }
-    return token;
-  }, []);
-
   const handleFieldClick = useCallback((field: FieldInfo) => {
     setSelectedField(field);
     setIsFieldDrawerOpen(true);
@@ -525,8 +516,7 @@ export default function ProductionUnit(): React.ReactElement {
       const { productionUnitApiService } = await import(
         "@/api/production-unit"
       );
-      const token = resolveToken();
-      await productionUnitApiService.delete(token, id);
+      await productionUnitApiService.delete(id);
       toast.success("Unità produttiva eliminata con successo");
       refetch();
       setDeletingId(null);
@@ -576,8 +566,7 @@ export default function ProductionUnit(): React.ReactElement {
       const { productionUnitApiService } = await import(
         "@/api/production-unit"
       );
-      const token = resolveToken();
-      await productionUnitApiService.update(token, editingId, editFormData);
+      await productionUnitApiService.update(editingId, editFormData);
       toast.success("Unità produttiva aggiornata con successo");
       refetch();
       setEditingId(null);
@@ -697,7 +686,7 @@ export default function ProductionUnit(): React.ReactElement {
         return updateData;
       });
 
-      await productionUnitApiService.bulkUpdate(token, {
+      await productionUnitApiService.bulkUpdate({
         productionUnits: productionUnitsToUpdate as Array<{
           id: string;
           name?: string;
