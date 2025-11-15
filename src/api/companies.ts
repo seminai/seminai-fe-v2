@@ -52,6 +52,8 @@ export type BulkCompaniesResponse = {
   };
 };
 
+type AuthorizedHeaders = Record<string, string>;
+
 async function safeReadText(response: Response): Promise<string> {
   try {
     return await response.text();
@@ -60,14 +62,29 @@ async function safeReadText(response: Response): Promise<string> {
   }
 }
 
+function buildAuthorizedHeaders(
+  token: string,
+  headers: AuthorizedHeaders = {}
+): AuthorizedHeaders {
+  if (!token) {
+    throw new Error("Missing authentication token");
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+    ...headers,
+  };
+}
+
 export async function getCompanies(
+  token: string,
   baseUrl: string = BASE_URL
 ): Promise<CompaniesResponse> {
   const response = await fetch(`${baseUrl}/companies`, {
     method: "GET",
-    headers: {
+    headers: buildAuthorizedHeaders(token, {
       Accept: "application/json",
-    },
+    }),
     credentials: "include",
   });
 
@@ -80,15 +97,16 @@ export async function getCompanies(
 }
 
 export async function bulkCreateCompanies(
+  token: string,
   request: BulkCompaniesRequest,
   baseUrl: string = BASE_URL
 ): Promise<BulkCompaniesResponse> {
   const response = await fetch(`${baseUrl}/companies/bulk`, {
     method: "POST",
-    headers: {
+    headers: buildAuthorizedHeaders(token, {
       "Content-Type": "application/json",
       Accept: "application/json",
-    },
+    }),
     credentials: "include",
     body: JSON.stringify(request),
   });
@@ -112,15 +130,16 @@ export type BulkCompaniesUpdateRequest = {
 };
 
 export async function bulkUpdateCompanies(
+  token: string,
   request: BulkCompaniesUpdateRequest,
   baseUrl: string = BASE_URL
 ): Promise<BulkCompaniesResponse> {
   const response = await fetch(`${baseUrl}/companies/bulk`, {
     method: "PUT",
-    headers: {
+    headers: buildAuthorizedHeaders(token, {
       "Content-Type": "application/json",
       Accept: "application/json",
-    },
+    }),
     credentials: "include",
     body: JSON.stringify(request),
   });
@@ -141,20 +160,22 @@ class CompaniesApiService {
     this.baseUrl = baseUrl;
   }
 
-  public async getAll(): Promise<CompaniesResponse> {
-    return await getCompanies(this.baseUrl);
+  public async getAll(token: string): Promise<CompaniesResponse> {
+    return await getCompanies(token, this.baseUrl);
   }
 
   public async bulkCreate(
+    token: string,
     request: BulkCompaniesRequest
   ): Promise<BulkCompaniesResponse> {
-    return await bulkCreateCompanies(request, this.baseUrl);
+    return await bulkCreateCompanies(token, request, this.baseUrl);
   }
 
   public async bulkUpdate(
+    token: string,
     request: BulkCompaniesUpdateRequest
   ): Promise<BulkCompaniesResponse> {
-    return await bulkUpdateCompanies(request, this.baseUrl);
+    return await bulkUpdateCompanies(token, request, this.baseUrl);
   }
 }
 
