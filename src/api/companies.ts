@@ -1,3 +1,5 @@
+import { AuthorizedHeadersBuilder } from "./http";
+
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export type Company = {
@@ -52,8 +54,6 @@ export type BulkCompaniesResponse = {
   };
 };
 
-type AuthorizedHeaders = Record<string, string>;
-
 async function safeReadText(response: Response): Promise<string> {
   try {
     return await response.text();
@@ -62,27 +62,15 @@ async function safeReadText(response: Response): Promise<string> {
   }
 }
 
-function buildAuthorizedHeaders(
-  token: string,
-  headers: AuthorizedHeaders = {}
-): AuthorizedHeaders {
-  if (!token) {
-    throw new Error("Missing authentication token");
-  }
-
-  return {
-    Authorization: `Bearer ${token}`,
-    ...headers,
-  };
-}
-
 export async function getCompanies(
   token: string,
   baseUrl: string = BASE_URL
 ): Promise<CompaniesResponse> {
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
+
   const response = await fetch(`${baseUrl}/companies`, {
     method: "GET",
-    headers: buildAuthorizedHeaders(token, {
+    headers: headersBuilder.build({
       Accept: "application/json",
     }),
     credentials: "include",
@@ -101,9 +89,11 @@ export async function bulkCreateCompanies(
   request: BulkCompaniesRequest,
   baseUrl: string = BASE_URL
 ): Promise<BulkCompaniesResponse> {
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
+
   const response = await fetch(`${baseUrl}/companies/bulk`, {
     method: "POST",
-    headers: buildAuthorizedHeaders(token, {
+    headers: headersBuilder.build({
       "Content-Type": "application/json",
       Accept: "application/json",
     }),
@@ -134,9 +124,11 @@ export async function bulkUpdateCompanies(
   request: BulkCompaniesUpdateRequest,
   baseUrl: string = BASE_URL
 ): Promise<BulkCompaniesResponse> {
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
+
   const response = await fetch(`${baseUrl}/companies/bulk`, {
     method: "PUT",
-    headers: buildAuthorizedHeaders(token, {
+    headers: headersBuilder.build({
       "Content-Type": "application/json",
       Accept: "application/json",
     }),

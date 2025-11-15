@@ -1,3 +1,5 @@
+import { AuthorizedHeadersBuilder } from "./http";
+
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 async function safeReadText(response: Response): Promise<string> {
@@ -88,6 +90,7 @@ export type BulkFromDdtToProductListResponse = {
 };
 
 export async function getProducts(
+  token: string,
   companyName?: string,
   baseUrl: string = BASE_URL
 ): Promise<GetProductsResponse> {
@@ -96,11 +99,13 @@ export async function getProducts(
     url.searchParams.set("companyName", companyName);
   }
 
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
+
   const response = await fetch(url.toString(), {
     method: "GET",
-    headers: {
+    headers: headersBuilder.build({
       Accept: "application/json",
-    },
+    }),
     credentials: "include",
   });
 
@@ -113,18 +118,21 @@ export async function getProducts(
 }
 
 export async function updateProduct(
+  token: string,
   productId: string,
   payload: UpdateProductPayload,
   baseUrl: string = BASE_URL
 ): Promise<UpdateProductResponse> {
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
+
   const response = await fetch(
     `${baseUrl}/products/${encodeURIComponent(productId)}`,
     {
       method: "PUT",
-      headers: {
+      headers: headersBuilder.build({
         Accept: "application/json",
         "Content-Type": "application/json",
-      },
+      }),
       credentials: "include",
       body: JSON.stringify(payload),
     }
@@ -152,13 +160,13 @@ export async function importProductsFromDdt(
     formData.append("files", file);
   });
 
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
+
   const response = await fetch(
     `${baseUrl}/products/bulk-from-ddt-to-product-list`,
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: headersBuilder.build(),
       credentials: "include",
       body: formData,
     }
@@ -178,15 +186,19 @@ class ProductsApiService {
     this.baseUrl = baseUrl;
   }
 
-  public async getAll(companyName?: string): Promise<GetProductsResponse> {
-    return await getProducts(companyName, this.baseUrl);
+  public async getAll(
+    token: string,
+    companyName?: string
+  ): Promise<GetProductsResponse> {
+    return await getProducts(token, companyName, this.baseUrl);
   }
 
   public async update(
+    token: string,
     productId: string,
     payload: UpdateProductPayload
   ): Promise<UpdateProductResponse> {
-    return await updateProduct(productId, payload, this.baseUrl);
+    return await updateProduct(token, productId, payload, this.baseUrl);
   }
 
   public async importFromDdt(

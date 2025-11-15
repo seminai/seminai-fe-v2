@@ -6,6 +6,7 @@ import {
   type FieldsResponse,
   type BulkFieldsResponse,
 } from "@/api/fields";
+import authService from "@/utils/auth";
 import { toast } from "sonner";
 
 interface UseFieldsOptions {
@@ -18,16 +19,28 @@ interface UseFieldsOptions {
 export function useFields(options?: UseFieldsOptions) {
   const queryClient = useQueryClient();
 
+  const resolveToken = (): string => {
+    const token = authService.getAuthToken();
+    if (!token) {
+      throw new Error("Unauthorized");
+    }
+    return token;
+  };
+
   // Query per ottenere tutti i campi
   const fieldsQuery = useQuery<FieldsResponse, Error>({
     queryKey: ["fields"],
-    queryFn: async () => fieldsApiService.getAll(),
+    queryFn: async () => {
+      const token = resolveToken();
+      return await fieldsApiService.getAll(token);
+    },
   });
 
   // Mutation per creare campi in bulk
   const createMutation = useMutation({
     mutationFn: async (fields: BulkFieldInput[]) => {
-      return await fieldsApiService.bulkCreate({
+      const token = resolveToken();
+      return await fieldsApiService.bulkCreate(token, {
         fields,
       });
     },
@@ -53,7 +66,8 @@ export function useFields(options?: UseFieldsOptions) {
   // Mutation per aggiornare campi in bulk
   const updateMutation = useMutation({
     mutationFn: async (fields: BulkFieldUpdateInput[]) => {
-      return await fieldsApiService.bulkUpdate({
+      const token = resolveToken();
+      return await fieldsApiService.bulkUpdate(token, {
         fields,
       });
     },

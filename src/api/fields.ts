@@ -1,3 +1,5 @@
+import { AuthorizedHeadersBuilder } from "./http";
+
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export type ProductionUnit = {
@@ -117,13 +119,16 @@ async function safeReadText(response: Response): Promise<string> {
 }
 
 export async function getFields(
+  token: string,
   baseUrl: string = BASE_URL
 ): Promise<FieldsResponse> {
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
+
   const response = await fetch(`${baseUrl}/fields`, {
     method: "GET",
-    headers: {
+    headers: headersBuilder.build({
       Accept: "application/json",
-    },
+    }),
     credentials: "include",
   });
 
@@ -136,15 +141,18 @@ export async function getFields(
 }
 
 export async function bulkCreateFields(
+  token: string,
   request: BulkFieldsRequest,
   baseUrl: string = BASE_URL
 ): Promise<BulkFieldsResponse> {
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
+
   const response = await fetch(`${baseUrl}/fields/bulk`, {
     method: "POST",
-    headers: {
+    headers: headersBuilder.build({
       "Content-Type": "application/json",
       Accept: "application/json",
-    },
+    }),
     credentials: "include",
     body: JSON.stringify(request),
   });
@@ -166,15 +174,18 @@ export type BulkFieldsUpdateRequest = {
 };
 
 export async function bulkUpdateFields(
+  token: string,
   request: BulkFieldsUpdateRequest,
   baseUrl: string = BASE_URL
 ): Promise<BulkFieldsResponse> {
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
+
   const response = await fetch(`${baseUrl}/fields/bulk`, {
     method: "PUT",
-    headers: {
+    headers: headersBuilder.build({
       "Content-Type": "application/json",
       Accept: "application/json",
-    },
+    }),
     credentials: "include",
     body: JSON.stringify(request),
   });
@@ -193,20 +204,22 @@ class FieldsApiService {
     this.baseUrl = baseUrl;
   }
 
-  public async getAll(): Promise<FieldsResponse> {
-    return await getFields(this.baseUrl);
+  public async getAll(token: string): Promise<FieldsResponse> {
+    return await getFields(token, this.baseUrl);
   }
 
   public async bulkCreate(
+    token: string,
     request: BulkFieldsRequest
   ): Promise<BulkFieldsResponse> {
-    return await bulkCreateFields(request, this.baseUrl);
+    return await bulkCreateFields(token, request, this.baseUrl);
   }
 
   public async bulkUpdate(
+    token: string,
     request: BulkFieldsUpdateRequest
   ): Promise<BulkFieldsResponse> {
-    return await bulkUpdateFields(request, this.baseUrl);
+    return await bulkUpdateFields(token, request, this.baseUrl);
   }
 }
 
@@ -262,6 +275,7 @@ export type FieldsAvailabilityResponse = {
 };
 
 export async function getFieldsAvailability(
+  token: string,
   startAt: string,
   endAt: string,
   baseUrl: string = BASE_URL
@@ -271,11 +285,13 @@ export async function getFieldsAvailability(
     endAt,
   });
 
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
+
   const response = await fetch(`${baseUrl}/fields/availability?${params}`, {
     method: "GET",
-    headers: {
+    headers: headersBuilder.build({
       Accept: "application/json",
-    },
+    }),
     credentials: "include",
   });
 
