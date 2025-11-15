@@ -641,29 +641,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                               </SidebarMenuItem>
                             )}
 
-                            {manageVisibility.fields && (
-                              <SidebarMenuItem key="fields">
-                                <SidebarMenuButton
-                                  asChild
-                                  isActive={fieldsActive}
-                                  tooltip="Campi"
-                                  size="lg"
-                                  className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
-                                >
-                                  <Link
-                                    to="/fields"
-                                    className="flex items-center gap-3"
-                                  >
-                                    <FieldAgriIcon
-                                      className="size-5"
-                                      size={20}
-                                    />
-                                    <span>Campi</span>
-                                  </Link>
-                                </SidebarMenuButton>
-                              </SidebarMenuItem>
-                            )}
-
                             {manageVisibility.productionUnit && (
                               <SidebarMenuItem key="production-unit">
                                 <SidebarMenuButton
@@ -682,6 +659,29 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                       size={20}
                                     />
                                     <span>Unità Produttive</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            )}
+
+                            {manageVisibility.fields && (
+                              <SidebarMenuItem key="fields">
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={fieldsActive}
+                                  tooltip="Campi"
+                                  size="lg"
+                                  className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                                >
+                                  <Link
+                                    to="/fields"
+                                    className="flex items-center gap-3"
+                                  >
+                                    <FieldAgriIcon
+                                      className="size-5"
+                                      size={20}
+                                    />
+                                    <span>Campi</span>
                                   </Link>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
@@ -771,23 +771,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   </SidebarMenuItem>
                 )}
 
-                {/* Campi - icona collassata */}
-                {manageVisibility.fields && !sidebarOpen && (
-                  <SidebarMenuItem key="fields-collapsed">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={fieldsActive}
-                      tooltip="Campi"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5"
-                    >
-                      <Link to="/fields" className="flex items-center gap-3">
-                        <FieldAgriIcon className="size-5" size={20} />
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-
                 {/* Unità Produttive - icona collassata */}
                 {manageVisibility.productionUnit && !sidebarOpen && (
                   <SidebarMenuItem key="production-unit-collapsed">
@@ -803,6 +786,23 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                         className="flex items-center gap-3"
                       >
                         <PlantGrowAgriIcon className="size-5" size={20} />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                {/* Campi - icona collassata */}
+                {manageVisibility.fields && !sidebarOpen && (
+                  <SidebarMenuItem key="fields-collapsed">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={fieldsActive}
+                      tooltip="Campi"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link to="/fields" className="flex items-center gap-3">
+                        <FieldAgriIcon className="size-5" size={20} />
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
