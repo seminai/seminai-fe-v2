@@ -1,3 +1,5 @@
+import { AuthorizedHeadersBuilder } from "./http";
+
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 async function safeReadText(response: Response): Promise<string> {
@@ -30,15 +32,18 @@ export type CreateStockResponse = {
 };
 
 export async function createStock(
+  token: string,
   payload: CreateStockPayload,
   baseUrl: string = BASE_URL
 ): Promise<CreateStockResponse> {
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
+
   const response = await fetch(`${baseUrl}/stocks`, {
     method: "POST",
-    headers: {
+    headers: headersBuilder.build({
       Accept: "application/json",
       "Content-Type": "application/json",
-    },
+    }),
     credentials: "include",
     body: JSON.stringify(payload),
   });
@@ -58,10 +63,12 @@ class StocksApiService {
     this.baseUrl = baseUrl;
   }
 
-  public async create(payload: CreateStockPayload): Promise<CreateStockResponse> {
-    return await createStock(payload, this.baseUrl);
+  public async create(
+    token: string,
+    payload: CreateStockPayload
+  ): Promise<CreateStockResponse> {
+    return await createStock(token, payload, this.baseUrl);
   }
 }
 
 export const stocksApiService = new StocksApiService(BASE_URL);
-

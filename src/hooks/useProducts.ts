@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { productsApiService, type Product } from "@/api/products";
+import authService from "@/utils/auth";
 
 export class ProductsQueryManager {
   private readonly companyName?: string;
@@ -9,7 +10,11 @@ export class ProductsQueryManager {
   }
 
   public async fetchProducts(): Promise<Product[]> {
-    const response = await productsApiService.getAll(this.companyName);
+    const token = authService.getAuthToken();
+    if (!token) {
+      throw new Error("Unauthorized");
+    }
+    const response = await productsApiService.getAll(token, this.companyName);
     return response.data.products;
   }
 

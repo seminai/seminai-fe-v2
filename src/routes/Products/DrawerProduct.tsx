@@ -45,6 +45,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import AddStock from "./AddStock";
+import authService from "@/utils/auth";
 
 interface DrawerProductProps {
   product: Product | null;
@@ -228,7 +229,12 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
 
     setIsUpdating(true);
     try {
-      await productsApiService.update(product.id, {
+      const token = authService.getAuthToken();
+      if (!token) {
+        throw new Error("Unauthorized");
+      }
+
+      await productsApiService.update(token, product.id, {
         name: productName,
         description: productDescription || undefined,
         barcode: productBarcode || undefined,
@@ -240,11 +246,11 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
       // Invalida la cache per ricaricare i dati
       queryClient.invalidateQueries({ queryKey: ["products", "me"] });
     } catch (error) {
-      toast.error(
+      const message =
         error instanceof Error
           ? error.message
-          : "Errore nell'aggiornamento del prodotto"
-      );
+          : "Errore nell'aggiornamento del prodotto";
+      toast.error(message);
     } finally {
       setIsUpdating(false);
     }

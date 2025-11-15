@@ -1,3 +1,5 @@
+import { AuthorizedHeadersBuilder } from "./http";
+
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
 
 async function safeReadText(response: Response): Promise<string> {
@@ -88,6 +90,7 @@ export type BulkDeleteJobsResponse = {
 };
 
 export async function getJobs(
+  token: string,
   companyName?: string,
   baseUrl: string = BASE_URL
 ): Promise<GetJobsResponse> {
@@ -98,11 +101,13 @@ export async function getJobs(
 
   console.log("Calling API:", url.toString());
 
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
+
   const response = await fetch(url.toString(), {
     method: "GET",
-    headers: {
+    headers: headersBuilder.build({
       Accept: "application/json",
-    },
+    }),
     credentials: "include",
   });
 
@@ -121,18 +126,21 @@ export async function getJobs(
 }
 
 export async function updateJob(
+  token: string,
   jobId: string,
   payload: UpdateJobPayload,
   baseUrl: string = BASE_URL
 ): Promise<UpdateJobResponse> {
   console.log("Updating job:", jobId, payload);
 
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
+
   const response = await fetch(`${baseUrl}/jobs/${jobId}`, {
     method: "PUT",
-    headers: {
+    headers: headersBuilder.build({
       Accept: "application/json",
       "Content-Type": "application/json",
-    },
+    }),
     credentials: "include",
     body: JSON.stringify(payload),
   });
@@ -152,17 +160,20 @@ export async function updateJob(
 }
 
 export async function bulkDeleteJobs(
+  token: string,
   payload: BulkDeleteJobsPayload,
   baseUrl: string = BASE_URL
 ): Promise<BulkDeleteJobsResponse> {
   console.log("Bulk deleting jobs:", payload);
 
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
+
   const response = await fetch(`${baseUrl}/jobs/bulk`, {
     method: "DELETE",
-    headers: {
+    headers: headersBuilder.build({
       Accept: "application/json",
       "Content-Type": "application/json",
-    },
+    }),
     credentials: "include",
     body: JSON.stringify(payload),
   });
@@ -188,21 +199,26 @@ class JobsApiService {
     this.baseUrl = baseUrl;
   }
 
-  public async getJobs(companyName?: string): Promise<GetJobsResponse> {
-    return await getJobs(companyName, this.baseUrl);
+  public async getJobs(
+    token: string,
+    companyName?: string
+  ): Promise<GetJobsResponse> {
+    return await getJobs(token, companyName, this.baseUrl);
   }
 
   public async updateJob(
+    token: string,
     jobId: string,
     payload: UpdateJobPayload
   ): Promise<UpdateJobResponse> {
-    return await updateJob(jobId, payload, this.baseUrl);
+    return await updateJob(token, jobId, payload, this.baseUrl);
   }
 
   public async bulkDelete(
+    token: string,
     payload: BulkDeleteJobsPayload
   ): Promise<BulkDeleteJobsResponse> {
-    return await bulkDeleteJobs(payload, this.baseUrl);
+    return await bulkDeleteJobs(token, payload, this.baseUrl);
   }
 }
 
