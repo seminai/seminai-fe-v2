@@ -258,7 +258,7 @@ export default function JobPage() {
   ];
 
   const companyFilter = (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 w-full">
       <span className="text-sm font-medium text-neutral-900 whitespace-nowrap">
         Filtra per Azienda
       </span>
@@ -268,7 +268,7 @@ export default function JobPage() {
           setSelectedCompanyName(value === "all" ? "" : value);
         }}
       >
-        <SelectTrigger className="w-64 h-12 bg-neutral-50 border-neutral-200">
+        <SelectTrigger className="w-full md:w-64 h-12 bg-neutral-50 border-neutral-200">
           <SelectValue placeholder="Tutte le aziende" />
         </SelectTrigger>
         <SelectContent>
@@ -371,7 +371,7 @@ export default function JobPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title="Operazioni" rightElement={companyFilter} />
+      <PageHeader title="Operazioni" filterElement={companyFilter} />
 
       <div className="flex-1 overflow-auto px-6 pb-6">
         <div className="mx-auto space-y-6">
