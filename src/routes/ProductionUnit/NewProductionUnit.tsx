@@ -31,6 +31,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Plus,
+  SplitSquareVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -91,6 +92,39 @@ const calculateCropDates = (crop: CropVariety, startDate: Date) => {
     floweringDate: adjustedFloweringDate,
     harvestingDate: adjustedHarvestingDate,
   };
+};
+
+const FIELD_SPLIT_DELIMITER = "__split__";
+
+const isSplitAllocationKey = (allocationKey: string): boolean =>
+  allocationKey.includes(FIELD_SPLIT_DELIMITER);
+
+const getBaseFieldIdFromAllocation = (allocationKey: string): string => {
+  if (!isSplitAllocationKey(allocationKey)) {
+    return allocationKey;
+  }
+  return allocationKey.split(FIELD_SPLIT_DELIMITER)[0]!;
+};
+
+const getSplitIndexFromAllocation = (allocationKey: string): number | null => {
+  if (!isSplitAllocationKey(allocationKey)) {
+    return null;
+  }
+  const parts = allocationKey.split(FIELD_SPLIT_DELIMITER);
+  const lastPart = parts[parts.length - 1];
+  const parsed = Number(lastPart);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const buildSplitAllocationKey = (fieldId: string, index: number): string =>
+  `${fieldId}${FIELD_SPLIT_DELIMITER}${index}`;
+
+const getSplitDisplayLabel = (allocationKey: string): string => {
+  const index = getSplitIndexFromAllocation(allocationKey);
+  if (index === null) {
+    return "Area indipendente";
+  }
+  return `Area ${index}`;
 };
 
 type ProductionUnitInput = {
@@ -522,16 +556,6 @@ const ProductionUnitForm: React.FC<{
     setFormData({ ...formData, allocations: newAllocations });
   };
 
-  const updateFieldAllocation = (fieldId: string, area: number) => {
-    const newAllocations = new Map(formData.allocations);
-    if (area <= 0) {
-      newAllocations.delete(fieldId);
-    } else {
-      newAllocations.set(fieldId, area);
-    }
-    setFormData({ ...formData, allocations: newAllocations });
-  };
-
   return (
     <div className="space-y-6">
       <Card>
@@ -840,7 +864,10 @@ const ProductionUnitForm: React.FC<{
               const alreadyAllocatedByOthers =
                 getTotalAllocatedForField(fieldId) -
                 (isAllocated ? allocatedArea : 0);
-              const availableArea = maxArea - alreadyAllocatedByOthers;
+              const availableArea = Math.max(
+                maxArea - alreadyAllocatedByOthers,
+                0
+              );
 
               return (
                 <Card
@@ -867,28 +894,17 @@ const ProductionUnitForm: React.FC<{
                           {field.companyName}
                         </p>
                         {isAllocated && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <Input
-                              type="number"
-                              min="0"
-                              max={availableArea}
-                              step="0.1"
-                              value={allocatedArea}
-                              onChange={(e) =>
-                                updateFieldAllocation(
-                                  fieldId,
-                                  Math.min(
-                                    parseFloat(e.target.value) || 0,
-                                    availableArea
-                                  )
-                                )
-                              }
-                              className="w-32"
-                            />
-                            <span className="text-sm text-gray-600">
-                              / {availableArea.toFixed(2)} Ha disponibili
+                          <div className="mt-2 rounded-md border border-green-200 bg-green-50 p-2 text-sm text-green-900">
+                            Area assegnata a questa unità:{" "}
+                            <span className="font-semibold">
+                              {allocatedArea.toFixed(2)} Ha
                             </span>
                           </div>
+                        )}
+                        {!isAllocated && (
+                          <p className="text-xs text-gray-500 mt-2">
+                            Disponibili {availableArea.toFixed(2)} Ha
+                          </p>
                         )}
                         {alreadyAllocatedByOthers > 0 && (
                           <p className="text-xs text-orange-600 mt-1">
@@ -1468,11 +1484,34 @@ export default function NewProductionUnit(): React.ReactElement {
     );
   }, [companies]);
 
+  const allFieldsWithSplits = useMemo<typeof allFields>(() => {
+    return allFields.flatMap((field) => {
+      const splits = Array.from(allocatedFields.keys())
+        .filter(
+          (allocationKey) =>
+            isSplitAllocationKey(allocationKey) &&
+            getBaseFieldIdFromAllocation(allocationKey) === field.id
+        )
+        .map((allocationKey) => ({
+          ...field,
+          id: allocationKey,
+          name: `${field.name} • ${getSplitDisplayLabel(allocationKey)}`,
+        }));
+
+      return [field, ...splits];
+    });
+  }, [allFields, allocatedFields]);
+
   // Campi filtrati per azienda
   const fieldsFilteredByCompany = useMemo(() => {
-    if (selectedCompanyId === "all") return allFields;
-    return allFields.filter((field) => field.companyId === selectedCompanyId);
-  }, [allFields, selectedCompanyId]);
+    const dataset =
+      selectedCompanyId === "all"
+        ? allFieldsWithSplits
+        : allFieldsWithSplits.filter(
+            (field) => field.companyId === selectedCompanyId
+          );
+    return dataset;
+  }, [allFieldsWithSplits, selectedCompanyId]);
 
   // Campi filtrati per ricerca
   const filteredFields = useMemo(() => {
@@ -1497,70 +1536,163 @@ export default function NewProductionUnit(): React.ReactElement {
     );
   }, [allocatedFields]);
 
-  // Gestione allocazione superficie per un campo
-  const updateFieldAllocation = useCallback(
-    (fieldId: string, allocatedArea: number) => {
-      setAllocatedFields((prev) => {
-        const newMap = new Map(prev);
-        if (allocatedArea <= 0) {
-          newMap.delete(fieldId);
-          // Rimuovi questo campo da tutte le unità produttive che lo usano
-          setProductionUnits((units) =>
-            units.map((unit) => {
-              const newAllocations = new Map(unit.allocations);
-              newAllocations.delete(fieldId);
-              return { ...unit, allocations: newAllocations };
-            })
-          );
-        } else {
-          newMap.set(fieldId, allocatedArea);
+  const getTotalAllocatedForField = useCallback(
+    (fieldId: string) => {
+      let total = 0;
+      allocatedFields.forEach((area, key) => {
+        if (getBaseFieldIdFromAllocation(key) === fieldId) {
+          total += area;
         }
-        return newMap;
       });
-    },
-    []
-  );
-
-  // Rimozione allocazione per un campo
-  const removeFieldAllocation = useCallback((fieldId: string) => {
-    setAllocatedFields((prev) => {
-      const newMap = new Map(prev);
-      newMap.delete(fieldId);
-      return newMap;
-    });
-    // Rimuovi questo campo da tutte le unità produttive che lo usano
-    setProductionUnits((units) =>
-      units.map((unit) => {
-        const newAllocations = new Map(unit.allocations);
-        newAllocations.delete(fieldId);
-        return { ...unit, allocations: newAllocations };
-      })
-    );
-  }, []);
-
-  // Allocazione massima per un campo
-  const allocateMaxForField = useCallback(
-    (fieldId: string) => {
-      const field = allFields.find((f) => f.id === fieldId);
-      if (field) {
-        updateFieldAllocation(fieldId, field.areaAvailable);
-      }
-    },
-    [allFields, updateFieldAllocation]
-  );
-
-  // Verifica se un campo ha allocazione
-  const isFieldAllocated = useCallback(
-    (fieldId: string) => {
-      return allocatedFields.has(fieldId);
+      return total;
     },
     [allocatedFields]
   );
 
-  // Ottieni l'area allocata per un campo
+  const getAvailableCapacityForAllocation = useCallback(
+    (fieldId: string, allocationKey: string) => {
+      const field = allFields.find((f) => f.id === fieldId);
+      if (!field) {
+        return 0;
+      }
+      let totalOther = 0;
+      allocatedFields.forEach((area, key) => {
+        if (getBaseFieldIdFromAllocation(key) !== fieldId) {
+          return;
+        }
+        if (key === allocationKey) {
+          return;
+        }
+        totalOther += area;
+      });
+      return Math.max(field.areaAvailable - totalOther, 0);
+    },
+    [allFields, allocatedFields]
+  );
+
+  const getNextSplitIndex = useCallback(
+    (fieldId: string) => {
+      const existingSplits = Array.from(allocatedFields.keys()).filter(
+        (key) =>
+          isSplitAllocationKey(key) &&
+          getBaseFieldIdFromAllocation(key) === fieldId
+      );
+      if (existingSplits.length === 0) {
+        return 2;
+      }
+      const maxIndex = existingSplits.reduce((max, key) => {
+        const currentIndex = getSplitIndexFromAllocation(key) ?? 0;
+        return Math.max(max, currentIndex);
+      }, 0);
+      return maxIndex + 1;
+    },
+    [allocatedFields]
+  );
+
+  const removeAllocationEntries = useCallback((allocationKeys: string[]) => {
+    if (allocationKeys.length === 0) {
+      return;
+    }
+    setProductionUnits((units) =>
+      units.map((unit) => {
+        const newAllocations = new Map(unit.allocations);
+        allocationKeys.forEach((key) => newAllocations.delete(key));
+        return { ...unit, allocations: newAllocations };
+      })
+    );
+    setAllocatedFields((prev) => {
+      const newMap = new Map(prev);
+      allocationKeys.forEach((key) => newMap.delete(key));
+      return newMap;
+    });
+  }, []);
+
+  const removeFieldAllocation = useCallback(
+    (allocationKey: string) => {
+      removeAllocationEntries([allocationKey]);
+    },
+    [removeAllocationEntries]
+  );
+
+  const updateFieldAllocation = useCallback(
+    (fieldId: string, allocatedArea: number | null, allocationKey?: string) => {
+      const targetField = allFields.find((f) => f.id === fieldId);
+      if (!targetField) {
+        return;
+      }
+      const key = allocationKey ?? fieldId;
+      if (allocatedArea === null) {
+        removeAllocationEntries([key]);
+        return;
+      }
+
+      const numericValue = Number.isFinite(allocatedArea) ? allocatedArea : 0;
+
+      if (numericValue < 0) {
+        removeAllocationEntries([key]);
+        return;
+      }
+
+      const capacity = getAvailableCapacityForAllocation(fieldId, key);
+      const safeValue = Math.min(numericValue, capacity);
+
+      setAllocatedFields((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(key, safeValue);
+        return newMap;
+      });
+    },
+    [allFields, getAvailableCapacityForAllocation, removeAllocationEntries]
+  );
+
+  const allocateMaxForField = useCallback(
+    (fieldId: string, allocationKey?: string) => {
+      const key = allocationKey ?? fieldId;
+      const capacity = getAvailableCapacityForAllocation(fieldId, key);
+      if (capacity <= 0) {
+        return;
+      }
+      setAllocatedFields((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(key, parseFloat(capacity.toFixed(2)));
+        return newMap;
+      });
+    },
+    [getAvailableCapacityForAllocation]
+  );
+
+  const handleAddIndependentArea = useCallback(
+    (fieldId: string) => {
+      const field = allFields.find((f) => f.id === fieldId);
+      if (!field) {
+        return;
+      }
+      const remainingArea = Math.max(
+        field.areaAvailable - getTotalAllocatedForField(fieldId),
+        0
+      );
+      if (remainingArea <= 0) {
+        toast.error(
+          "Non ci sono superfici disponibili per creare una nuova area."
+        );
+        return;
+      }
+      const nextIndex = getNextSplitIndex(fieldId);
+      const splitKey = buildSplitAllocationKey(fieldId, nextIndex);
+      setAllocatedFields((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(splitKey, 0);
+        return newMap;
+      });
+    },
+    [allFields, getNextSplitIndex, getTotalAllocatedForField]
+  );
+
   const getAllocatedArea = useCallback(
     (fieldId: string) => {
-      return allocatedFields.get(fieldId) || 0;
+      return allocatedFields.has(fieldId)
+        ? allocatedFields.get(fieldId)
+        : undefined;
     },
     [allocatedFields]
   );
@@ -1622,7 +1754,12 @@ export default function NewProductionUnit(): React.ReactElement {
             // Trova il companyId dal primo campo allocato
             // (assumiamo che tutti i campi di un'unità produttiva appartengano alla stessa azienda)
             const firstFieldId = Array.from(unit.allocations.keys())[0];
-            const field = allFields.find((f) => f.id === firstFieldId);
+            const baseFieldId = firstFieldId
+              ? getBaseFieldIdFromAllocation(firstFieldId)
+              : undefined;
+            const field = baseFieldId
+              ? allFields.find((f) => f.id === baseFieldId)
+              : undefined;
 
             if (!field) {
               throw new Error(
@@ -1653,6 +1790,14 @@ export default function NewProductionUnit(): React.ReactElement {
             const finalHarvestingDate =
               unit.customHarvestingDate || cropDates.harvestingDate;
 
+            const allocationsByField = Array.from(
+              unit.allocations.entries()
+            ).reduce<Map<string, number>>((acc, [allocationKey, areaHa]) => {
+              const targetFieldId = getBaseFieldIdFromAllocation(allocationKey);
+              acc.set(targetFieldId, (acc.get(targetFieldId) || 0) + areaHa);
+              return acc;
+            }, new Map());
+
             return {
               name: unit.name,
               companyId: companyId,
@@ -1660,7 +1805,7 @@ export default function NewProductionUnit(): React.ReactElement {
               cropType: crop.cropType,
               variety: crop.code,
               protocoll: "", // TODO: aggiungere se necessario
-              allocations: Array.from(unit.allocations.entries()).map(
+              allocations: Array.from(allocationsByField.entries()).map(
                 ([fieldId, areaHa]) => ({
                   fieldId,
                   areaHa,
@@ -1857,7 +2002,11 @@ export default function NewProductionUnit(): React.ReactElement {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setAllocatedFields(new Map())}
+                      onClick={() =>
+                        removeAllocationEntries(
+                          Array.from(allocatedFields.keys())
+                        )
+                      }
                       className="ml-4"
                     >
                       Rimuovi tutte le allocazioni
@@ -1880,29 +2029,68 @@ export default function NewProductionUnit(): React.ReactElement {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredFields.map((field) => {
-                      const isAllocated = isFieldAllocated(field.id);
-                      const allocatedArea = getAllocatedArea(field.id);
-                      const remainingArea = field.areaAvailable - allocatedArea;
+                      const isSplitField = isSplitAllocationKey(field.id);
+                      const baseFieldId = getBaseFieldIdFromAllocation(
+                        field.id
+                      );
+                      const baseField = allFields.find(
+                        (item) => item.id === baseFieldId
+                      );
+                      if (!baseField) {
+                        return null;
+                      }
+
+                      const allocationKey = field.id;
+                      const allocationValue = getAllocatedArea(allocationKey);
+                      const totalAllocatedForField =
+                        getTotalAllocatedForField(baseFieldId);
+                      const allocationCapacity =
+                        getAvailableCapacityForAllocation(
+                          baseFieldId,
+                          allocationKey
+                        );
+                      const remainingArea = Math.max(
+                        baseField.areaAvailable - totalAllocatedForField,
+                        0
+                      );
+                      const normalizedAllocationValue = allocationValue ?? 0;
+                      const fieldHasAllocations = totalAllocatedForField > 0;
+                      const isCardAllocated = isSplitField
+                        ? normalizedAllocationValue > 0
+                        : fieldHasAllocations;
+                      const canIncreaseAllocation =
+                        allocationCapacity - normalizedAllocationValue > 0.0001;
+                      const areaBadgeLabel = isSplitField
+                        ? getSplitDisplayLabel(allocationKey)
+                        : "Area 1";
+                      const shouldShowRemoveButton =
+                        isSplitField || fieldHasAllocations;
 
                       return (
                         <Card
-                          key={field.id}
+                          key={allocationKey}
                           className={cn(
                             "transition-all hover:shadow-md",
-                            isAllocated && "ring-2 ring-green-500 bg-green-50"
+                            isCardAllocated &&
+                              "ring-2 ring-green-500 bg-green-50"
                           )}
                         >
                           <CardHeader className="pb-3">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <CardTitle className="text-lg">
-                                  {field.name}
-                                </CardTitle>
+                                <div className="flex items-center gap-2">
+                                  <CardTitle className="text-lg">
+                                    {baseField.name}
+                                  </CardTitle>
+                                  <Badge variant="secondary">
+                                    {areaBadgeLabel}
+                                  </Badge>
+                                </div>
                                 <p className="text-sm text-gray-600 mt-1">
-                                  {field.companyName}
+                                  {baseField.companyName}
                                 </p>
                               </div>
-                              {isAllocated && (
+                              {isCardAllocated && (
                                 <Badge
                                   variant="default"
                                   className="bg-green-600"
@@ -1918,14 +2106,15 @@ export default function NewProductionUnit(): React.ReactElement {
                             <div className="flex items-center gap-2 text-sm text-gray-600">
                               <MapPin className="h-4 w-4" />
                               <span>
-                                {field.address}, {field.city}
+                                {baseField.address}, {baseField.city}
                               </span>
                             </div>
 
                             <div className="flex items-center gap-2 text-sm text-gray-600">
                               <Ruler className="h-4 w-4" />
                               <span>
-                                Foglio {field.foglio}, Part. {field.particella}
+                                Foglio {baseField.foglio}, Part.{" "}
+                                {baseField.particella}
                               </span>
                             </div>
 
@@ -1938,15 +2127,24 @@ export default function NewProductionUnit(): React.ReactElement {
                                 <Input
                                   type="number"
                                   min="0"
-                                  max={field.areaAvailable}
+                                  max={allocationCapacity}
                                   step="0.1"
-                                  value={allocatedArea || ""}
+                                  value={allocationValue ?? ""}
                                   onChange={(e) => {
+                                    const rawValue = e.target.value;
+                                    const parsedValue =
+                                      rawValue === ""
+                                        ? null
+                                        : Number.parseFloat(rawValue);
                                     const value =
-                                      parseFloat(e.target.value) || 0;
+                                      parsedValue === null ||
+                                      Number.isNaN(parsedValue)
+                                        ? null
+                                        : parsedValue;
                                     updateFieldAllocation(
-                                      field.id,
-                                      Math.min(value, field.areaAvailable)
+                                      baseFieldId,
+                                      value,
+                                      allocationKey
                                     );
                                   }}
                                   placeholder="0.00"
@@ -1955,27 +2153,45 @@ export default function NewProductionUnit(): React.ReactElement {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => allocateMaxForField(field.id)}
-                                  disabled={
-                                    allocatedArea >= field.areaAvailable
+                                  onClick={() =>
+                                    allocateMaxForField(
+                                      baseFieldId,
+                                      allocationKey
+                                    )
                                   }
+                                  disabled={!canIncreaseAllocation}
                                 >
                                   Max
                                 </Button>
                               </div>
-                              {allocatedArea > 0 && (
+                              {shouldShowRemoveButton && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() =>
-                                    removeFieldAllocation(field.id)
+                                    removeFieldAllocation(allocationKey)
                                   }
                                   className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
                                 >
-                                  Rimuovi allocazione
+                                  Rimuovi area
                                 </Button>
                               )}
                             </div>
+
+                            {!isSplitField && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleAddIndependentArea(baseFieldId)
+                                }
+                                disabled={remainingArea <= 0}
+                                className="mt-1 w-full justify-start gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              >
+                                <SplitSquareVertical className="h-4 w-4" />
+                                Aggiungi area indipendente
+                              </Button>
+                            )}
 
                             {/* Badge con stato disponibilità */}
                             <div className="flex items-center justify-between">
@@ -1992,25 +2208,26 @@ export default function NewProductionUnit(): React.ReactElement {
                                 Disponibili ancora {remainingArea.toFixed(2)} Ha
                               </Badge>
 
-                              {field.areaOccupied > 0 && (
+                              {baseField.areaOccupied > 0 && (
                                 <Badge
                                   variant="outline"
                                   className="text-orange-600 border-orange-200"
                                 >
-                                  {field.areaOccupied.toFixed(2)} Ha occupati
+                                  {baseField.areaOccupied.toFixed(2)} Ha
+                                  occupati
                                 </Badge>
                               )}
                             </div>
 
                             {/* Tipo suolo e uso */}
                             <div className="flex gap-2 text-xs">
-                              {field.soilType && (
+                              {baseField.soilType && (
                                 <Badge variant="outline">
-                                  {field.soilType}
+                                  {baseField.soilType}
                                 </Badge>
                               )}
-                              {field.uso && (
-                                <Badge variant="outline">{field.uso}</Badge>
+                              {baseField.uso && (
+                                <Badge variant="outline">{baseField.uso}</Badge>
                               )}
                             </div>
                           </CardContent>
@@ -2060,7 +2277,7 @@ export default function NewProductionUnit(): React.ReactElement {
             productionUnits={productionUnits}
             onProductionUnitsChange={setProductionUnits}
             allocatedFields={allocatedFields}
-            allFields={allFields}
+            allFields={allFieldsWithSplits}
             dateRange={dateRange}
             onNext={() => setCurrentStep(3)}
             onPrevious={() => setCurrentStep(1)}
@@ -2080,7 +2297,7 @@ export default function NewProductionUnit(): React.ReactElement {
               <ConfirmationStep
                 productionUnits={productionUnits}
                 cropVarieties={cropVarieties}
-                allFields={allFields}
+                allFields={allFieldsWithSplits}
                 dateRange={dateRange}
                 onPrevious={() => setCurrentStep(2)}
                 onConfirm={handleCreateProductionUnits}

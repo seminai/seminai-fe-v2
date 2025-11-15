@@ -261,9 +261,6 @@ export default function Company(): React.ReactElement {
         onSearchChange={setSearchFilter}
         totalItems={companies.length}
         filteredItems={filteredItems.length}
-        rightElement={
-          <ImportCompanyByPdf onImportSuccess={handleImportFromPdf} />
-        }
       />
 
       {/* Area scrollabile - solo la tabella */}
@@ -306,7 +303,9 @@ export default function Company(): React.ReactElement {
             detailsRenderer={renderDetails}
             detailsTitle="Dettagli Azienda"
             className="bg-background"
-          />
+          >
+            <ImportCompanyByPdf onImportSuccess={handleImportFromPdf} />
+          </EditableTable>
         )}
       </div>
     </div>
