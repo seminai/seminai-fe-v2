@@ -4,8 +4,8 @@ FROM node:21-alpine AS build
 # Imposta la directory di lavoro
 WORKDIR /app
 
-# Definisci l'argomento di build per l'URL API
-ARG VITE_API_URL
+# Definisci l'argomento di build per l'URL API (default verso il backend in Cloud Run)
+ARG VITE_API_URL="https://seminai-be-v2-661301438659.europe-west1.run.app"
 ARG COMMIT_SHA
 
 # Imposta la variabile d'ambiente per il build di Vite
