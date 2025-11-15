@@ -514,10 +514,10 @@ export default function DosageManager() {
         totalItems={totalUnits}
         filteredItems={filteredUnits.length}
         centerElement={
-          <div className="inline-flex p-1 bg-gray-100 rounded-lg gap-1">
+          <div className="inline-flex p-1 bg-gray-100 rounded-lg gap-1 w-full md:w-auto">
             <button
               onClick={() => setCurrentPage("manage")}
-              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`flex-1 md:flex-none px-4 md:px-6 py-2 rounded-md text-sm font-medium transition-all ${
                 currentPage === "manage"
                   ? "bg-white shadow-sm text-gray-900"
                   : "text-gray-600 hover:text-gray-900"
@@ -527,7 +527,7 @@ export default function DosageManager() {
             </button>
             <button
               onClick={() => setCurrentPage("history")}
-              className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`flex-1 md:flex-none px-4 md:px-6 py-2 rounded-md text-sm font-medium transition-all ${
                 currentPage === "history"
                   ? "bg-white shadow-sm text-gray-900"
                   : "text-gray-600 hover:text-gray-900"
@@ -538,15 +538,17 @@ export default function DosageManager() {
           </div>
         }
         rightElement={
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 w-full md:w-auto">
             {activeJobs.length > 0 && (
               <Button
                 variant="outline"
                 onClick={() => setShowJobsPanel(true)}
-                className="gap-2"
+                className="gap-2 w-full md:w-auto"
               >
                 <Activity className="h-4 w-4 animate-pulse" />
-                {activeJobs.length} Job attivi
+                <span className="md:inline">
+                  {activeJobs.length} Job attivi
+                </span>
               </Button>
             )}
             <Button
@@ -557,17 +559,17 @@ export default function DosageManager() {
                 products.length === 0 ||
                 selectedUnitIds.length === 0
               }
-              className="gap-2"
+              className="gap-2 w-full md:w-auto"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Calcolo...
+                  <span>Calcolo...</span>
                 </>
               ) : (
                 <>
                   <Calculator className="h-4 w-4" />
-                  Calcola Dosaggi
+                  <span>Calcola Dosaggi</span>
                 </>
               )}
             </Button>
@@ -575,13 +577,13 @@ export default function DosageManager() {
         }
       />
 
-      <div className="flex-1 overflow-auto px-6 pb-6">
+      <div className="flex-1 overflow-auto px-4 md:px-6 pb-6">
         {currentPage === "manage" ? (
-          <div className="mx-auto space-y-12">
+          <div className="mx-auto space-y-8 md:space-y-12">
             {/* Company Filter Section */}
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-medium text-neutral-900">
+                <h2 className="text-lg md:text-xl font-medium text-neutral-900">
                   Seleziona Azienda
                 </h2>
               </div>
@@ -608,10 +610,10 @@ export default function DosageManager() {
 
             {/* Units Section */}
             {selectedCompanyId && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
+              <div className="space-y-4 md:space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                   <div>
-                    <h2 className="text-xl font-medium text-neutral-900">
+                    <h2 className="text-lg md:text-xl font-medium text-neutral-900">
                       Unità Produttive
                     </h2>
                     {selectedUnitIds.length > 0 && (
@@ -625,7 +627,7 @@ export default function DosageManager() {
                       variant="ghost"
                       size="sm"
                       onClick={handleSelectAll}
-                      className="text-neutral-600"
+                      className="text-neutral-600 self-start md:self-auto"
                     >
                       {selectedUnitIds.length === filteredUnits.length
                         ? "Deseleziona tutto"
@@ -691,10 +693,10 @@ export default function DosageManager() {
             )}
 
             {/* Products Section */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
+            <div className="space-y-4 md:space-y-6">
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
                 <div>
-                  <h2 className="text-xl font-medium text-neutral-900">
+                  <h2 className="text-lg md:text-xl font-medium text-neutral-900">
                     Prodotti Fitosanitari
                   </h2>
                   {products.length > 0 && (
@@ -703,7 +705,7 @@ export default function DosageManager() {
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3">
                   <ImportProducts
                     onAddRows={handleAddRows}
                     onProductsChange={setProducts}
@@ -731,10 +733,10 @@ export default function DosageManager() {
             </div>
           </div>
         ) : (
-          <div className="mx-auto space-y-6">
+          <div className="mx-auto space-y-4 md:space-y-6">
             {/* History View */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-medium text-neutral-900">
+            <div className="space-y-4 md:space-y-6">
+              <h2 className="text-lg md:text-xl font-medium text-neutral-900">
                 Storico Calcoli Dosaggi
               </h2>
 

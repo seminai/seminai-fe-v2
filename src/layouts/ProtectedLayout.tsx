@@ -97,11 +97,26 @@ function MobileBottomBar({
   const labelActive = location.pathname.startsWith("/label");
   const labelDashboard = location.pathname.startsWith("/dashboard");
   const fieldsActive = location.pathname.startsWith("/fields");
-  // const companyActive = location.pathname.startsWith("/company");
+  const companyActive = location.pathname.startsWith("/company");
   const productionUnitActive = location.pathname.startsWith("/production-unit");
   const dosageManagerActive = location.pathname.startsWith("/dosage-manager");
   const jobActive = location.pathname.startsWith("/job");
   const productsActive = location.pathname.startsWith("/products");
+
+  // Controlla se almeno una voce del menu "Gestisci" è visibile
+  const hasManageItems =
+    canViewMenuItem("company", userRole) ||
+    (hasCompanies && canViewMenuItem("fields", userRole)) ||
+    (hasCompanies && canViewMenuItem("production-unit", userRole)) ||
+    (hasCompanies && canViewMenuItem("products", userRole)) ||
+    (hasCompanies && canViewMenuItem("job", userRole));
+
+  const isManageActive =
+    companyActive ||
+    fieldsActive ||
+    productionUnitActive ||
+    productsActive ||
+    jobActive;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-20 mx-auto mb-safe w-full max-w-screen-sm">
@@ -147,46 +162,6 @@ function MobileBottomBar({
               </Link>
             </li>
           )}
-          {hasCompanies && canViewMenuItem("fields", userRole) && (
-            <li key="fields">
-              <Link
-                to="/fields"
-                className={cn(
-                  "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
-                  fieldsActive && "text-gray-900 font-medium"
-                )}
-              >
-                <FieldAgriIcon
-                  className={cn(
-                    "size-5",
-                    fieldsActive ? "text-gray-900" : "text-gray-700/90"
-                  )}
-                  size={20}
-                />
-                <span className="mt-1">Campi</span>
-              </Link>
-            </li>
-          )}
-          {hasCompanies && canViewMenuItem("production-unit", userRole) && (
-            <li key="production-unit">
-              <Link
-                to="/production-unit"
-                className={cn(
-                  "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
-                  productionUnitActive && "text-gray-900 font-medium"
-                )}
-              >
-                <PlantGrowAgriIcon
-                  className={cn(
-                    "size-5",
-                    productionUnitActive ? "text-gray-900" : "text-gray-700/90"
-                  )}
-                  size={20}
-                />
-                <span className="mt-1">Unità Prod.</span>
-              </Link>
-            </li>
-          )}
           {hasCompanies && canViewMenuItem("dosage-manager", userRole) && (
             <li key="dosage-manager">
               <Link
@@ -207,50 +182,92 @@ function MobileBottomBar({
               </Link>
             </li>
           )}
-          {hasCompanies && canViewMenuItem("job", userRole) && (
-            <li key="job">
-              <Link
-                to="/job"
-                className={cn(
-                  "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
-                  jobActive && "text-gray-900 font-medium"
-                )}
-              >
-                <TasksAgriIcon
-                  className={cn(
-                    "size-5",
-                    jobActive ? "text-gray-900" : "text-gray-700/90"
-                  )}
-                  size={20}
-                />
-                <span className="mt-1">Operazioni</span>
-              </Link>
-            </li>
-          )}
-          {hasCompanies && canViewMenuItem("products", userRole) && (
-            <li key="products">
-              <Link
-                to="/products"
-                className={cn(
-                  "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
-                  productsActive && "text-gray-900 font-medium"
-                )}
-              >
-                <BottleAgriIcon
-                  className={cn(
-                    "size-5",
-                    productsActive ? "text-gray-900" : "text-gray-700/90"
-                  )}
-                  size={20}
-                />
-                <span className="mt-1">Prodotti</span>
-              </Link>
-            </li>
+          {hasManageItems && (
+            <MobileManageMenu
+              userRole={userRole}
+              hasCompanies={hasCompanies}
+              isActive={isManageActive}
+            />
           )}
           <MobileAccountMenu />
         </ul>
       </div>
     </nav>
+  );
+}
+
+function MobileManageMenu({
+  userRole,
+  hasCompanies,
+  isActive,
+}: {
+  userRole?: UserRole;
+  hasCompanies: boolean;
+  isActive: boolean;
+}) {
+  const navigate = useNavigate();
+
+  return (
+    <li key="manage" className="">
+      <DropdownMenu>
+        <DropdownMenuTrigger className="w-full" asChild>
+          <button
+            type="button"
+            className={cn(
+              "flex w-full flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
+              isActive && "text-gray-900 font-medium"
+            )}
+          >
+            <ChartAgriIcon
+              className={cn(
+                "size-5",
+                isActive ? "text-gray-900" : "text-gray-700/90"
+              )}
+              size={20}
+            />
+            <span className="mt-1">Gestisci</span>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          side="top"
+          align="center"
+          className="min-w-[180px]"
+        >
+          <DropdownMenuLabel>Gestisci</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {hasCompanies && canViewMenuItem("job", userRole) && (
+            <DropdownMenuItem onClick={() => navigate("/job")}>
+              <TasksAgriIcon className="size-4 mr-2" size={16} />
+              Operazioni
+            </DropdownMenuItem>
+          )}
+          {canViewMenuItem("company", userRole) && (
+            <DropdownMenuItem onClick={() => navigate("/company")}>
+              <BarnAgriIcon className="size-4 mr-2" size={16} />
+              Aziende
+            </DropdownMenuItem>
+          )}
+          {hasCompanies && canViewMenuItem("fields", userRole) && (
+            <DropdownMenuItem onClick={() => navigate("/fields")}>
+              <FieldAgriIcon className="size-4 mr-2" size={16} />
+              Campi
+            </DropdownMenuItem>
+          )}
+          {hasCompanies && canViewMenuItem("production-unit", userRole) && (
+            <DropdownMenuItem onClick={() => navigate("/production-unit")}>
+              <PlantGrowAgriIcon className="size-4 mr-2" size={16} />
+              Unità Produttive
+            </DropdownMenuItem>
+          )}
+          {hasCompanies && canViewMenuItem("products", userRole) && (
+            <DropdownMenuItem onClick={() => navigate("/products")}>
+              <BottleAgriIcon className="size-4 mr-2" size={16} />
+              Prodotti
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </li>
   );
 }
 
@@ -265,10 +282,10 @@ function MobileAccountMenu() {
           <button
             type="button"
             className={cn(
-              "flex w-full flex-col items-center justify-center p-3 text-[11px] text-gray-800/80"
+              "flex w-full flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80"
             )}
           >
-            <IoPersonCircleOutline className="size-6 text-gray-700/90" />
+            <IoPersonCircleOutline className="size-5 text-gray-700/90" />
             <span className="mt-1">Account</span>
           </button>
         </DropdownMenuTrigger>
@@ -808,9 +825,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset className="overflow-hidden">
-        <div className="h-svh w-full overflow-hidden flex flex-col">
-          {children}
+      <SidebarInset className="overflow-x-hidden">
+        <div className="min-h-svh w-full flex flex-col overflow-x-hidden pb-24 lg:pb-0">
+          <main className="flex-1 w-full">{children}</main>
           <MobileBottomBar
             items={items}
             isMobile={isMobile}

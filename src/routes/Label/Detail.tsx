@@ -238,7 +238,7 @@ export default function LabelDetailPage(): React.ReactElement {
           Impossibile caricare il dettaglio.
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-4 md:h-[calc(100svh-12rem)]">
+        <div className="grid md:grid-cols-2 gap-4">
           <div className="md:h-full md:overflow-auto">
             {view === "dati" ? (
               viewMode === "table" ? (
