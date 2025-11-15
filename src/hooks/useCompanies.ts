@@ -6,6 +6,7 @@ import {
   type CompaniesResponse,
   type BulkCompaniesResponse,
 } from "@/api/companies";
+import authService from "@/utils/auth";
 import { toast } from "sonner";
 
 interface UseCompaniesOptions {
@@ -21,13 +22,23 @@ export function useCompanies(options?: UseCompaniesOptions) {
   // Query per ottenere tutte le companies
   const companiesQuery = useQuery<CompaniesResponse, Error>({
     queryKey: ["companies"],
-    queryFn: async () => companiesApiService.getAll(),
+    queryFn: async () => {
+      const token = authService.getAuthToken();
+      if (!token) {
+        throw new Error("Unauthorized");
+      }
+      return await companiesApiService.getAll(token);
+    },
   });
 
   // Mutation per creare companies in bulk
   const createMutation = useMutation({
     mutationFn: async (companies: BulkCompanyInput[]) => {
-      return await companiesApiService.bulkCreate({
+      const token = authService.getAuthToken();
+      if (!token) {
+        throw new Error("Unauthorized");
+      }
+      return await companiesApiService.bulkCreate(token, {
         companies,
       });
     },
@@ -58,7 +69,11 @@ export function useCompanies(options?: UseCompaniesOptions) {
   // Mutation per aggiornare companies in bulk
   const updateMutation = useMutation({
     mutationFn: async (companies: BulkCompanyUpdateInput[]) => {
-      return await companiesApiService.bulkUpdate({
+      const token = authService.getAuthToken();
+      if (!token) {
+        throw new Error("Unauthorized");
+      }
+      return await companiesApiService.bulkUpdate(token, {
         companies,
       });
     },
@@ -66,7 +81,7 @@ export function useCompanies(options?: UseCompaniesOptions) {
       // Aggiorna immediatamente la cache con i nuovi dati dalla risposta
       if (response?.data?.companies) {
         const updatedCompanies = response.data.companies;
-        
+
         // Ottieni i dati attuali dalla cache
         const currentData = queryClient.getQueryData<CompaniesResponse>([
           "companies",
@@ -74,9 +89,7 @@ export function useCompanies(options?: UseCompaniesOptions) {
 
         if (currentData) {
           // Crea una mappa delle aziende aggiornate per lookup veloce
-          const updatedMap = new Map(
-            updatedCompanies.map((c) => [c.id, c])
-          );
+          const updatedMap = new Map(updatedCompanies.map((c) => [c.id, c]));
 
           // Aggiorna le aziende nella lista esistente
           const updatedCompaniesList = currentData.data.companies.map(
