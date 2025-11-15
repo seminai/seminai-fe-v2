@@ -48,6 +48,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useCompanies } from "@/hooks/useCompanies";
+import { useFields } from "@/hooks/useFields";
+import { useProductionUnit } from "@/hooks/useProductionUnit";
 import authService from "@/utils/auth";
 import { LuLogOut, LuSettings } from "react-icons/lu";
 import { useMe } from "@/hooks/useAuth";
@@ -60,7 +62,8 @@ type ProtectedLayoutProps = {
 type MobileBottomBarProps = {
   items: NavigationItem[];
   isMobile: boolean;
-  hasCompanies: boolean;
+  menuAvailability: MenuAvailabilityState;
+  manageVisibility: ManageMenuVisibility;
   isActive: (item: NavigationItem) => boolean;
   hrefFor: (item: NavigationItem) => string;
   userRole?: UserRole;
@@ -87,10 +90,92 @@ function canViewMenuItem(menuItem: string, userRole?: UserRole): boolean {
   return false;
 }
 
+type VisibilityCounts = {
+  companiesCount: number;
+  fieldsCount: number;
+  productionUnitsCount: number;
+};
+
+type MenuAvailabilityState = {
+  hasCompanies: boolean;
+  onlyCompanyButton: boolean;
+  allowFieldsMenu: boolean;
+  allowProductionUnitMenu: boolean;
+  allowDosageManagerMenu: boolean;
+  allowProductsMenu: boolean;
+  allowJobsMenu: boolean;
+};
+
+type ManageMenuVisibility = {
+  company: boolean;
+  fields: boolean;
+  productionUnit: boolean;
+  products: boolean;
+  jobs: boolean;
+};
+
+class SidebarVisibilityRules {
+  private readonly role?: UserRole;
+  private readonly counts: VisibilityCounts;
+
+  constructor(role: UserRole | undefined, counts: VisibilityCounts) {
+    this.role = role;
+    this.counts = counts;
+  }
+
+  private isRestrictedRole(): boolean {
+    return this.role === UserRole.ADMIN || this.role === UserRole.BASIC;
+  }
+
+  private hasCompanies(): boolean {
+    return this.counts.companiesCount > 0;
+  }
+
+  private hasFields(): boolean {
+    return this.counts.fieldsCount > 0;
+  }
+
+  private hasProductionUnits(): boolean {
+    return this.counts.productionUnitsCount > 0;
+  }
+
+  public buildAvailability(): MenuAvailabilityState {
+    const hasCompanies = this.hasCompanies();
+    const hasFields = this.hasFields();
+    const hasProductionUnits = this.hasProductionUnits();
+    const restrictedRole = this.isRestrictedRole();
+    const onlyCompanyButton = restrictedRole && !hasCompanies;
+
+    const allowFieldsMenu = hasCompanies && !onlyCompanyButton;
+    const allowProductionUnitMenu =
+      hasCompanies && !onlyCompanyButton && (!restrictedRole || hasFields);
+    const allowDosageManagerMenu =
+      hasCompanies &&
+      !onlyCompanyButton &&
+      (!restrictedRole || (hasFields && hasProductionUnits));
+    const allowProductsMenu = allowDosageManagerMenu;
+    const allowJobsMenu =
+      hasCompanies &&
+      !onlyCompanyButton &&
+      (!restrictedRole || hasProductionUnits);
+
+    return {
+      hasCompanies,
+      onlyCompanyButton,
+      allowFieldsMenu,
+      allowProductionUnitMenu,
+      allowDosageManagerMenu,
+      allowProductsMenu,
+      allowJobsMenu,
+    };
+  }
+}
+
 function MobileBottomBar({
   isMobile,
-  hasCompanies,
   userRole,
+  menuAvailability,
+  manageVisibility,
 }: MobileBottomBarProps) {
   if (!isMobile) return null;
 
@@ -103,13 +188,10 @@ function MobileBottomBar({
   const jobActive = location.pathname.startsWith("/job");
   const productsActive = location.pathname.startsWith("/products");
 
-  // Controlla se almeno una voce del menu "Gestisci" è visibile
-  const hasManageItems =
-    canViewMenuItem("company", userRole) ||
-    (hasCompanies && canViewMenuItem("fields", userRole)) ||
-    (hasCompanies && canViewMenuItem("production-unit", userRole)) ||
-    (hasCompanies && canViewMenuItem("products", userRole)) ||
-    (hasCompanies && canViewMenuItem("job", userRole));
+  const dosageManagerVisible =
+    menuAvailability.allowDosageManagerMenu &&
+    canViewMenuItem("dosage-manager", userRole);
+  const hasManageItems = Object.values(manageVisibility).some(Boolean);
 
   const isManageActive =
     companyActive ||
@@ -162,7 +244,7 @@ function MobileBottomBar({
               </Link>
             </li>
           )}
-          {hasCompanies && canViewMenuItem("dosage-manager", userRole) && (
+          {dosageManagerVisible && (
             <li key="dosage-manager">
               <Link
                 to="/dosage-manager"
@@ -184,9 +266,8 @@ function MobileBottomBar({
           )}
           {hasManageItems && (
             <MobileManageMenu
-              userRole={userRole}
-              hasCompanies={hasCompanies}
               isActive={isManageActive}
+              manageVisibility={manageVisibility}
             />
           )}
           <MobileAccountMenu />
@@ -197,12 +278,10 @@ function MobileBottomBar({
 }
 
 function MobileManageMenu({
-  userRole,
-  hasCompanies,
+  manageVisibility,
   isActive,
 }: {
-  userRole?: UserRole;
-  hasCompanies: boolean;
+  manageVisibility: ManageMenuVisibility;
   isActive: boolean;
 }) {
   const navigate = useNavigate();
@@ -235,31 +314,31 @@ function MobileManageMenu({
         >
           <DropdownMenuLabel>Gestisci</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {hasCompanies && canViewMenuItem("job", userRole) && (
+          {manageVisibility.jobs && (
             <DropdownMenuItem onClick={() => navigate("/job")}>
               <TasksAgriIcon className="size-4 mr-2" size={16} />
               Operazioni
             </DropdownMenuItem>
           )}
-          {canViewMenuItem("company", userRole) && (
+          {manageVisibility.company && (
             <DropdownMenuItem onClick={() => navigate("/company")}>
               <BarnAgriIcon className="size-4 mr-2" size={16} />
               Aziende
             </DropdownMenuItem>
           )}
-          {hasCompanies && canViewMenuItem("fields", userRole) && (
+          {manageVisibility.fields && (
             <DropdownMenuItem onClick={() => navigate("/fields")}>
               <FieldAgriIcon className="size-4 mr-2" size={16} />
               Campi
             </DropdownMenuItem>
           )}
-          {hasCompanies && canViewMenuItem("production-unit", userRole) && (
+          {manageVisibility.productionUnit && (
             <DropdownMenuItem onClick={() => navigate("/production-unit")}>
               <PlantGrowAgriIcon className="size-4 mr-2" size={16} />
               Unità Produttive
             </DropdownMenuItem>
           )}
-          {hasCompanies && canViewMenuItem("products", userRole) && (
+          {manageVisibility.products && (
             <DropdownMenuItem onClick={() => navigate("/products")}>
               <BottleAgriIcon className="size-4 mr-2" size={16} />
               Prodotti
@@ -339,6 +418,8 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const isMobile = useIsMobile();
   const { data } = useCurrentUser();
   const { companies } = useCompanies();
+  const { fields } = useFields();
+  const { productionUnits } = useProductionUnit();
   const queryClient = useQueryClient();
   const { data: meData } = useMe();
   const userRole = meData?.role;
@@ -366,7 +447,28 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const model = new NavigationModel("/dashboard");
   const items = model.getNavigationItems();
 
-  const hasCompanies = companies.length > 0;
+  const visibilityRules = new SidebarVisibilityRules(userRole, {
+    companiesCount: companies.length,
+    fieldsCount: fields.length,
+    productionUnitsCount: productionUnits.length,
+  });
+  const menuAvailability = visibilityRules.buildAvailability();
+  const manageVisibility: ManageMenuVisibility = {
+    company: canViewMenuItem("company", userRole),
+    fields:
+      menuAvailability.allowFieldsMenu && canViewMenuItem("fields", userRole),
+    productionUnit:
+      menuAvailability.allowProductionUnitMenu &&
+      canViewMenuItem("production-unit", userRole),
+    products:
+      menuAvailability.allowProductsMenu &&
+      canViewMenuItem("products", userRole),
+    jobs: menuAvailability.allowJobsMenu && canViewMenuItem("job", userRole),
+  };
+  const dosageManagerVisible =
+    menuAvailability.allowDosageManagerMenu &&
+    canViewMenuItem("dosage-manager", userRole);
+  const jobVisible = manageVisibility.jobs;
 
   const labelActive =
     location.pathname === "/label" || location.pathname.startsWith("/label/");
@@ -448,54 +550,50 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                 )}
 
                 {/* Gestione Dosaggi - solo in modalità espansa */}
-                {hasCompanies &&
-                  sidebarOpen &&
-                  canViewMenuItem("dosage-manager", userRole) && (
-                    <SidebarMenuItem key="dosage-manager-expanded">
-                      <SidebarMenuButton
-                        asChild
-                        isActive={dosageManagerActive}
-                        tooltip="Gestione Dosaggi"
-                        size="lg"
-                        className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
+                {dosageManagerVisible && sidebarOpen && (
+                  <SidebarMenuItem key="dosage-manager-expanded">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={dosageManagerActive}
+                      tooltip="Gestione Dosaggi"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
+                    >
+                      <Link
+                        to="/dosage-manager"
+                        className="flex items-center gap-3"
                       >
-                        <Link
-                          to="/dosage-manager"
-                          className="flex items-center gap-3"
-                        >
-                          <SprayAgriIcon className="size-5" size={20} />
-                          <span>Gestione Dosaggi</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )}
+                        <SprayAgriIcon className="size-5" size={20} />
+                        <span>Gestione Dosaggi</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
 
                 {/* Operazioni - solo in modalità espansa */}
-                {hasCompanies &&
-                  sidebarOpen &&
-                  canViewMenuItem("job", userRole) && (
-                    <SidebarMenuItem key="job-expanded">
-                      <SidebarMenuButton
-                        asChild
-                        isActive={jobActive}
-                        tooltip="Operazioni"
-                        size="lg"
-                        className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
-                      >
-                        <Link to="/job" className="flex items-center gap-3">
-                          <TasksAgriIcon className="size-5" size={20} />
-                          <span>Operazioni</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )}
+                {jobVisible && sidebarOpen && (
+                  <SidebarMenuItem key="job-expanded">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={jobActive}
+                      tooltip="Operazioni"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
+                    >
+                      <Link to="/job" className="flex items-center gap-3">
+                        <TasksAgriIcon className="size-5" size={20} />
+                        <span>Operazioni</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
 
                 {/* Menu Gestisci - solo in modalità espansa */}
                 {sidebarOpen &&
-                  (canViewMenuItem("company", userRole) ||
-                    canViewMenuItem("fields", userRole) ||
-                    canViewMenuItem("production-unit", userRole) ||
-                    canViewMenuItem("products", userRole)) && (
+                  (manageVisibility.company ||
+                    manageVisibility.fields ||
+                    manageVisibility.productionUnit ||
+                    manageVisibility.products) && (
                     <Collapsible
                       open={manageMenuOpen}
                       onOpenChange={setManageMenuOpen}
@@ -520,7 +618,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                           <SidebarMenu className="pl-2 border-l-2 border-neutral-200/50 ml-6 mt-2 gap-1">
-                            {canViewMenuItem("company", userRole) && (
+                            {manageVisibility.company && (
                               <SidebarMenuItem key="company">
                                 <SidebarMenuButton
                                   asChild
@@ -543,77 +641,74 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                               </SidebarMenuItem>
                             )}
 
-                            {hasCompanies &&
-                              canViewMenuItem("fields", userRole) && (
-                                <SidebarMenuItem key="fields">
-                                  <SidebarMenuButton
-                                    asChild
-                                    isActive={fieldsActive}
-                                    tooltip="Campi"
-                                    size="lg"
-                                    className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                            {manageVisibility.fields && (
+                              <SidebarMenuItem key="fields">
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={fieldsActive}
+                                  tooltip="Campi"
+                                  size="lg"
+                                  className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                                >
+                                  <Link
+                                    to="/fields"
+                                    className="flex items-center gap-3"
                                   >
-                                    <Link
-                                      to="/fields"
-                                      className="flex items-center gap-3"
-                                    >
-                                      <FieldAgriIcon
-                                        className="size-5"
-                                        size={20}
-                                      />
-                                      <span>Campi</span>
-                                    </Link>
-                                  </SidebarMenuButton>
-                                </SidebarMenuItem>
-                              )}
+                                    <FieldAgriIcon
+                                      className="size-5"
+                                      size={20}
+                                    />
+                                    <span>Campi</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            )}
 
-                            {hasCompanies &&
-                              canViewMenuItem("production-unit", userRole) && (
-                                <SidebarMenuItem key="production-unit">
-                                  <SidebarMenuButton
-                                    asChild
-                                    isActive={productionUnitActive}
-                                    tooltip="Unità Produttive"
-                                    size="lg"
-                                    className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                            {manageVisibility.productionUnit && (
+                              <SidebarMenuItem key="production-unit">
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={productionUnitActive}
+                                  tooltip="Unità Produttive"
+                                  size="lg"
+                                  className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                                >
+                                  <Link
+                                    to="/production-unit"
+                                    className="flex items-center gap-3"
                                   >
-                                    <Link
-                                      to="/production-unit"
-                                      className="flex items-center gap-3"
-                                    >
-                                      <PlantGrowAgriIcon
-                                        className="size-5"
-                                        size={20}
-                                      />
-                                      <span>Unità Produttive</span>
-                                    </Link>
-                                  </SidebarMenuButton>
-                                </SidebarMenuItem>
-                              )}
+                                    <PlantGrowAgriIcon
+                                      className="size-5"
+                                      size={20}
+                                    />
+                                    <span>Unità Produttive</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            )}
 
-                            {hasCompanies &&
-                              canViewMenuItem("products", userRole) && (
-                                <SidebarMenuItem key="products">
-                                  <SidebarMenuButton
-                                    asChild
-                                    isActive={productsActive}
-                                    tooltip="Prodotti"
-                                    size="lg"
-                                    className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                            {manageVisibility.products && (
+                              <SidebarMenuItem key="products">
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={productsActive}
+                                  tooltip="Prodotti"
+                                  size="lg"
+                                  className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                                >
+                                  <Link
+                                    to="/products"
+                                    className="flex items-center gap-3"
                                   >
-                                    <Link
-                                      to="/products"
-                                      className="flex items-center gap-3"
-                                    >
-                                      <BottleAgriIcon
-                                        className="size-5"
-                                        size={20}
-                                      />
-                                      <span>Prodotti</span>
-                                    </Link>
-                                  </SidebarMenuButton>
-                                </SidebarMenuItem>
-                              )}
+                                    <BottleAgriIcon
+                                      className="size-5"
+                                      size={20}
+                                    />
+                                    <span>Prodotti</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            )}
                           </SidebarMenu>
                         </CollapsibleContent>
                       </SidebarMenuItem>
@@ -623,48 +718,44 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                 {/* ICONE IN MODALITÀ COLLASSATA - Solo queste si vedono quando la sidebar è chiusa */}
 
                 {/* Gestione Dosaggi - icona collassata */}
-                {hasCompanies &&
-                  !sidebarOpen &&
-                  canViewMenuItem("dosage-manager", userRole) && (
-                    <SidebarMenuItem key="dosage-manager-collapsed">
-                      <SidebarMenuButton
-                        asChild
-                        isActive={dosageManagerActive}
-                        tooltip="Gestione Dosaggi"
-                        size="lg"
-                        className="data-[active=true]:bg-neutral-900/5"
+                {dosageManagerVisible && !sidebarOpen && (
+                  <SidebarMenuItem key="dosage-manager-collapsed">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={dosageManagerActive}
+                      tooltip="Gestione Dosaggi"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link
+                        to="/dosage-manager"
+                        className="flex items-center gap-3"
                       >
-                        <Link
-                          to="/dosage-manager"
-                          className="flex items-center gap-3"
-                        >
-                          <SprayAgriIcon className="size-5" size={20} />
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )}
+                        <SprayAgriIcon className="size-5" size={20} />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
 
                 {/* Operazioni - icona collassata */}
-                {hasCompanies &&
-                  !sidebarOpen &&
-                  canViewMenuItem("job", userRole) && (
-                    <SidebarMenuItem key="job-collapsed">
-                      <SidebarMenuButton
-                        asChild
-                        isActive={jobActive}
-                        tooltip="Operazioni"
-                        size="lg"
-                        className="data-[active=true]:bg-neutral-900/5"
-                      >
-                        <Link to="/job" className="flex items-center gap-3">
-                          <TasksAgriIcon className="size-5" size={20} />
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )}
+                {jobVisible && !sidebarOpen && (
+                  <SidebarMenuItem key="job-collapsed">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={jobActive}
+                      tooltip="Operazioni"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link to="/job" className="flex items-center gap-3">
+                        <TasksAgriIcon className="size-5" size={20} />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
 
                 {/* Aziende - icona collassata */}
-                {!sidebarOpen && canViewMenuItem("company", userRole) && (
+                {!sidebarOpen && manageVisibility.company && (
                   <SidebarMenuItem key="company-collapsed">
                     <SidebarMenuButton
                       asChild
@@ -681,67 +772,58 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                 )}
 
                 {/* Campi - icona collassata */}
-                {hasCompanies &&
-                  !sidebarOpen &&
-                  canViewMenuItem("fields", userRole) && (
-                    <SidebarMenuItem key="fields-collapsed">
-                      <SidebarMenuButton
-                        asChild
-                        isActive={fieldsActive}
-                        tooltip="Campi"
-                        size="lg"
-                        className="data-[active=true]:bg-neutral-900/5"
-                      >
-                        <Link to="/fields" className="flex items-center gap-3">
-                          <FieldAgriIcon className="size-5" size={20} />
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )}
+                {manageVisibility.fields && !sidebarOpen && (
+                  <SidebarMenuItem key="fields-collapsed">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={fieldsActive}
+                      tooltip="Campi"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link to="/fields" className="flex items-center gap-3">
+                        <FieldAgriIcon className="size-5" size={20} />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
 
                 {/* Unità Produttive - icona collassata */}
-                {hasCompanies &&
-                  !sidebarOpen &&
-                  canViewMenuItem("production-unit", userRole) && (
-                    <SidebarMenuItem key="production-unit-collapsed">
-                      <SidebarMenuButton
-                        asChild
-                        isActive={productionUnitActive}
-                        tooltip="Unità Produttive"
-                        size="lg"
-                        className="data-[active=true]:bg-neutral-900/5"
+                {manageVisibility.productionUnit && !sidebarOpen && (
+                  <SidebarMenuItem key="production-unit-collapsed">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={productionUnitActive}
+                      tooltip="Unità Produttive"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link
+                        to="/production-unit"
+                        className="flex items-center gap-3"
                       >
-                        <Link
-                          to="/production-unit"
-                          className="flex items-center gap-3"
-                        >
-                          <PlantGrowAgriIcon className="size-5" size={20} />
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )}
+                        <PlantGrowAgriIcon className="size-5" size={20} />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
 
                 {/* Prodotti - icona collassata */}
-                {hasCompanies &&
-                  !sidebarOpen &&
-                  canViewMenuItem("products", userRole) && (
-                    <SidebarMenuItem key="products-collapsed">
-                      <SidebarMenuButton
-                        asChild
-                        isActive={productsActive}
-                        tooltip="Prodotti"
-                        size="lg"
-                        className="data-[active=true]:bg-neutral-900/5"
-                      >
-                        <Link
-                          to="/products"
-                          className="flex items-center gap-3"
-                        >
-                          <BottleAgriIcon className="size-5" size={20} />
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )}
+                {manageVisibility.products && !sidebarOpen && (
+                  <SidebarMenuItem key="products-collapsed">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={productsActive}
+                      tooltip="Prodotti"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link to="/products" className="flex items-center gap-3">
+                        <BottleAgriIcon className="size-5" size={20} />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -831,7 +913,8 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           <MobileBottomBar
             items={items}
             isMobile={isMobile}
-            hasCompanies={hasCompanies}
+            menuAvailability={menuAvailability}
+            manageVisibility={manageVisibility}
             isActive={(i) =>
               model.isActive(location.pathname, location.search, i)
             }

@@ -37,7 +37,6 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { toast } from "sonner";
 import type { ParsedBulkImport } from "@/utils/csvProductionUnitParser";
-import authService from "@/utils/auth";
 
 // Tipi TypeScript
 type CropVariety = {
@@ -1592,16 +1591,12 @@ export default function NewProductionUnit(): React.ReactElement {
       const { productionUnitApiService } = await import(
         "@/api/production-unit"
       );
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
 
       // Se i dati provengono da un import CSV, usa il bulk-import
       if (importedData) {
         // Chiama bulk-import per ogni azienda
         for (const companyData of importedData) {
-          await productionUnitApiService.bulkImport(token, companyData);
+          await productionUnitApiService.bulkImport(companyData);
         }
 
         toast.success(
@@ -1683,7 +1678,7 @@ export default function NewProductionUnit(): React.ReactElement {
           }),
         };
 
-        await productionUnitApiService.bulkCreate(token, request);
+        await productionUnitApiService.bulkCreate(request);
 
         toast.success(
           `${productionUnits.length} unità ${

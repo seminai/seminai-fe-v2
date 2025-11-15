@@ -1,3 +1,4 @@
+import authService from "@/utils/auth";
 import { AuthorizedHeadersBuilder } from "./http";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -262,44 +263,57 @@ export async function bulkUpdateProductionUnits(
 
 class ProductionUnitApiService {
   private readonly baseUrl: string;
+
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
 
-  public async getAll(token: string): Promise<ProductionUnitsResponse> {
+  private resolveToken(): string {
+    const token = authService.getAuthToken();
+
+    if (!token) {
+      throw new Error("Unauthorized");
+    }
+
+    return token;
+  }
+
+  public async getAll(): Promise<ProductionUnitsResponse> {
+    const token = this.resolveToken();
     return await getProductionUnits(token, this.baseUrl);
   }
 
   public async bulkCreate(
-    token: string,
     request: BulkCreateProductionUnitsRequest
   ): Promise<BulkCreateProductionUnitsResponse> {
+    const token = this.resolveToken();
     return await bulkCreateProductionUnits(token, request, this.baseUrl);
   }
 
   public async bulkImport(
-    token: string,
     request: BulkImportRequest
   ): Promise<BulkImportResponse> {
+    const token = this.resolveToken();
     return await bulkImportProductionUnits(token, request, this.baseUrl);
   }
 
-  public async delete(token: string, id: string): Promise<void> {
+  public async delete(id: string): Promise<void> {
+    const token = this.resolveToken();
     return await deleteProductionUnit(token, id, this.baseUrl);
   }
 
   public async update(
-    token: string,
     id: string,
     data: ProductionUnitUpdateInput
   ): Promise<ProductionUnitUpdateResponse> {
+    const token = this.resolveToken();
     return await updateProductionUnit(token, id, data, this.baseUrl);
   }
 
   public async bulkUpdate(
-    token: string,
     request: BulkUpdateProductionUnitsRequest
   ): Promise<BulkUpdateProductionUnitsResponse> {
+    const token = this.resolveToken();
     return await bulkUpdateProductionUnits(token, request, this.baseUrl);
   }
 }
