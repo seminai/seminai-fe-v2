@@ -286,12 +286,6 @@ export default function Fields(): React.ReactElement {
         onSearchChange={setSearchFilter}
         totalItems={fields.length}
         filteredItems={filteredItems.length}
-        rightElement={
-          <ImportFieldByCsv
-            companies={companies}
-            onImportSuccess={handleImportFromCsv}
-          />
-        }
       />
 
       {/* Area scrollabile - solo la tabella */}
@@ -340,7 +334,12 @@ export default function Fields(): React.ReactElement {
             detailsRenderer={renderDetails}
             detailsTitle="Dettagli Campo"
             className="bg-background"
-          />
+          >
+            <ImportFieldByCsv
+              companies={companies}
+              onImportSuccess={handleImportFromCsv}
+            />
+          </EditableTable>
         )}
       </div>
     </div>

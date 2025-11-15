@@ -71,6 +71,16 @@ export function PageHeader({
   filterElement,
   className,
 }: PageHeaderProps): React.ReactElement {
+  const canShowResults =
+    Boolean(searchValue) &&
+    totalItems !== undefined &&
+    filteredItems !== undefined;
+  const resultsLabel = canShowResults
+    ? `${filteredItems} risultat${
+        filteredItems === 1 ? "o" : "i"
+      } su ${totalItems}`
+    : "\u00A0";
+
   return (
     <div className={cn(className, "flex-shrink-0 p-6 mb-1 mt-1")}>
       {/* Layout desktop - tutto in una riga */}
@@ -94,14 +104,9 @@ export function PageHeader({
                 className="pl-10"
               />
             </div>
-            {searchValue &&
-              totalItems !== undefined &&
-              filteredItems !== undefined && (
-                <p className="text-xs text-gray-500 mt-1">
-                  {filteredItems} risultat
-                  {filteredItems === 1 ? "o" : "i"} su {totalItems}
-                </p>
-              )}
+            <p className="text-xs text-gray-500 mt-1 min-h-[18px] leading-none transition-opacity duration-150">
+              {resultsLabel}
+            </p>
           </div>
         ) : (
           <div className="flex-1" />
@@ -144,14 +149,9 @@ export function PageHeader({
                 className="pl-10 w-full"
               />
             </div>
-            {searchValue &&
-              totalItems !== undefined &&
-              filteredItems !== undefined && (
-                <p className="text-xs text-gray-500 mt-1">
-                  {filteredItems} risultat
-                  {filteredItems === 1 ? "o" : "i"} su {totalItems}
-                </p>
-              )}
+            <p className="text-xs text-gray-500 mt-1 min-h-[18px] leading-none transition-opacity duration-150">
+              {resultsLabel}
+            </p>
           </div>
         ) : null}
       </div>

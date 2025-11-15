@@ -3,12 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { useJobs } from "@/hooks/useJobs";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useProducts } from "@/hooks/useProducts";
+import { useLabelsSummary } from "@/hooks/useLabelsSummary";
+import { useMe, UserRole } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/organism/Header";
 import TasksAgriIcon from "@/components/icons/TasksAgriIcon";
 import BarnAgriIcon from "@/components/icons/BarnAgriIcon";
 import BottleAgriIcon from "@/components/icons/BottleAgriIcon";
+import TagAgriIcon from "@/components/icons/TagAgriIcon";
 import { IoChevronForwardOutline } from "react-icons/io5";
 import { cn } from "@/lib/utils";
+import type { LabelSummary } from "@/api/labels";
 
 type DashboardCardProps = {
   title: string;
@@ -90,12 +94,18 @@ function DashboardCard({
   );
 }
 
-function DashboardSkeleton(): React.ReactElement {
+type DashboardSkeletonProps = {
+  cards?: number;
+};
+
+function DashboardSkeleton({
+  cards = 3,
+}: DashboardSkeletonProps): React.ReactElement {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {[1, 2, 3].map((i) => (
+      {Array.from({ length: cards }).map((_, index) => (
         <div
-          key={i}
+          key={index}
           className="rounded-3xl p-6 backdrop-blur-xl bg-white/70 border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.06)]"
         >
           <div className="flex items-center gap-3 mb-4">
@@ -110,7 +120,35 @@ function DashboardSkeleton(): React.ReactElement {
   );
 }
 
-export default function Dashboard(): React.ReactElement {
+class LabelDashboardMetrics {
+  private readonly verified: number;
+  private readonly pending: number;
+  private readonly total: number;
+
+  constructor(labels: LabelSummary[]) {
+    this.verified = labels.filter((label) => label.isVerified).length;
+    this.total = labels.length;
+    this.pending = this.total - this.verified;
+  }
+
+  public getVerifiedCount(): number {
+    return this.verified;
+  }
+
+  public getPendingCount(): number {
+    return this.pending;
+  }
+
+  public getTotalCount(): number {
+    return this.total;
+  }
+
+  public hasPending(): boolean {
+    return this.pending > 0;
+  }
+}
+
+function GeneralDashboard(): React.ReactElement {
   const navigate = useNavigate();
   const { jobs, isLoading: isLoadingJobs } = useJobs();
   const { companies, isLoading: isLoadingCompanies } = useCompanies();
@@ -300,4 +338,144 @@ export default function Dashboard(): React.ReactElement {
       </div>
     </div>
   );
+}
+
+function LabelManagerDashboard(): React.ReactElement {
+  const navigate = useNavigate();
+  const { labels, isLoading } = useLabelsSummary();
+
+  const metrics = React.useMemo(() => {
+    return new LabelDashboardMetrics(labels);
+  }, [labels]);
+
+  const verifiedCount = metrics.getVerifiedCount();
+  const pendingCount = metrics.getPendingCount();
+  const totalCount = metrics.getTotalCount();
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full overflow-hidden">
+        <PageHeader title="Dashboard" />
+
+        <div className="flex-1 overflow-auto p-6 ">
+          <div className="max-w-4xl mx-auto">
+            <DashboardSkeleton cards={2} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      <PageHeader title="Dashboard" />
+
+      <div className="flex-1 overflow-auto p-6 ">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <DashboardCard
+              title="Etichette Verificate"
+              value={verifiedCount}
+              subtitle={
+                verifiedCount === 1
+                  ? "etichetta confermata"
+                  : "etichette confermate"
+              }
+              icon={<TagAgriIcon size={24} />}
+              gradient="from-emerald-400 to-green-600"
+              onClick={() => navigate("/label")}
+              isLoading={isLoading}
+            />
+
+            <DashboardCard
+              title="Etichette da Verificare"
+              value={pendingCount}
+              subtitle={
+                pendingCount === 1
+                  ? "etichetta richiede verifica"
+                  : "etichette richiedono verifica"
+              }
+              icon={<TagAgriIcon size={24} />}
+              gradient="from-amber-400 to-orange-500"
+              onClick={() => navigate("/label")}
+              isLoading={isLoading}
+            />
+          </div>
+
+          {(pendingCount > 0 || totalCount === 0) && (
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {pendingCount > 0 && (
+                <div className="rounded-2xl p-5 bg-amber-50/50 border border-amber-100">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                      <span className="text-lg">⚠️</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-semibold text-amber-900 mb-1">
+                        Verifiche in sospeso
+                      </h4>
+                      <p className="text-sm text-amber-700">
+                        Ci sono etichette in attesa di conferma. Accedi alla
+                        lista per completare la revisione.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {totalCount === 0 && (
+                <div className="rounded-2xl p-5 bg-neutral-50 border border-neutral-100">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center">
+                      <span className="text-lg">📄</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-semibold text-neutral-900 mb-1">
+                        Nessuna etichetta caricata
+                      </h4>
+                      <p className="text-sm text-neutral-700 mb-4">
+                        Carica o estrai le prime etichette per iniziare la fase
+                        di verifica.
+                      </p>
+                      <button
+                        onClick={() => navigate("/label")}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors"
+                      >
+                        <TagAgriIcon size={18} />
+                        Vai alle etichette
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Dashboard(): React.ReactElement {
+  const { data: meData, isLoading: isLoadingMe } = useMe();
+
+  if (isLoadingMe) {
+    return (
+      <div className="flex flex-col h-full overflow-hidden">
+        <PageHeader title="Dashboard" />
+
+        <div className="flex-1 overflow-auto p-6 ">
+          <div className="max-w-7xl mx-auto">
+            <DashboardSkeleton />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (meData?.role === UserRole.LABEL_MANAGER) {
+    return <LabelManagerDashboard />;
+  }
+
+  return <GeneralDashboard />;
 }

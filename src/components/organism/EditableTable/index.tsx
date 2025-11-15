@@ -11,8 +11,9 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
-import { IoOpenOutline } from "react-icons/io5";
+import { IoOpenOutline, IoDownloadOutline } from "react-icons/io5";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import Papa from "papaparse";
 
 // EditableTable - Notion-like editable table with bulk add/save
 // The component follows an OOP approach using a React Class.
@@ -67,6 +68,7 @@ export interface EditableTableProps {
   detailsTitle?: string;
   onOpenDetails?: (row: Record<string, unknown>) => void; // Callback per gestire l'apertura dei dettagli
   className?: string;
+  children?: React.ReactNode;
 }
 
 interface InternalRow {
@@ -85,6 +87,9 @@ interface EditableTableState {
   drawerRow?: InternalRow;
   sortColumn?: string; // Colonna ordinata
   sortDirection: "asc" | "desc"; // Direzione ordinamento
+  createDrawerOpen: boolean;
+  createRow?: InternalRow;
+  createTouched: Record<string, boolean>;
 }
 
 export class EditableTable extends React.Component<
@@ -118,6 +123,9 @@ export class EditableTable extends React.Component<
       drawerRow: undefined,
       sortColumn: undefined,
       sortDirection: "asc",
+      createDrawerOpen: false,
+      createRow: undefined,
+      createTouched: {},
     };
   }
 
@@ -184,26 +192,167 @@ export class EditableTable extends React.Component<
     });
   };
 
-  private addNewRow = (): void => {
+  private createEmptyRow(): InternalRow {
     const empty: Record<string, unknown> = {};
     for (const col of this.props.columns) {
       empty[col.id] = (this.props.newRowDefaults || {})[col.id] ?? "";
     }
-    const newRow: InternalRow = {
+    return {
       id: this.generateTempId(),
       data: empty,
       isNew: true,
       isDirty: true,
     };
-    this.setState((prev) => ({
-      rows: [...prev.rows, newRow],
-      touched: {
-        ...prev.touched,
-        [newRow.id]: Object.fromEntries(
-          this.props.columns.map((c) => [c.id, true]) // required highlight immediately
-        ),
-      },
-    }));
+  }
+
+  private handleExportCsv = (): void => {
+    if (this.props.columns.length === 0) {
+      return;
+    }
+
+    const headers = this.props.columns.map(
+      (column) => column.title || column.id
+    );
+    const data = this.state.rows.map((row) =>
+      this.props.columns.map((column) => {
+        const value = row.data[column.id];
+        if (value === undefined || value === null) {
+          return "";
+        }
+        return String(value);
+      })
+    );
+
+    const csvContent = Papa.unparse({
+      fields: headers,
+      data,
+    });
+
+    this.downloadCsv(csvContent);
+  };
+
+  private downloadCsv(content: string): void {
+    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `editable-table-${new Date().toISOString().replace(/[:.]/g, "-")}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  private openCreateDrawer = (): void => {
+    const draftRow = this.createEmptyRow();
+    this.setState({
+      createDrawerOpen: true,
+      createRow: draftRow,
+      createTouched: {},
+    });
+  };
+
+  private handleCreateDrawerChange = (open: boolean): void => {
+    if (!open) {
+      this.handleCreateCancel();
+    }
+  };
+
+  private handleCreateCellChange = (
+    row: InternalRow,
+    col: EditableColumn,
+    value: unknown
+  ): void => {
+    this.setState((prev) => {
+      if (!prev.createRow || prev.createRow.id !== row.id) {
+        return null;
+      }
+
+      const baseRowData = { ...prev.createRow.data, [col.id]: value };
+      const computedUpdates = col.onValueChange
+        ? col.onValueChange({
+            value,
+            rowData: baseRowData,
+            columnId: col.id,
+          })
+        : undefined;
+
+      const sanitizedUpdates =
+        computedUpdates && typeof computedUpdates === "object"
+          ? (computedUpdates as Record<string, unknown>)
+          : undefined;
+
+      const updatedRow: InternalRow = {
+        ...prev.createRow,
+        data: {
+          ...prev.createRow.data,
+          [col.id]: value,
+          ...(sanitizedUpdates ?? {}),
+        },
+      };
+
+      const updatedTouched: Record<string, boolean> = {
+        ...prev.createTouched,
+        [col.id]: true,
+      };
+
+      if (sanitizedUpdates) {
+        for (const key of Object.keys(sanitizedUpdates)) {
+          updatedTouched[key] = true;
+        }
+      }
+
+      return {
+        createRow: updatedRow,
+        createTouched: updatedTouched,
+      };
+    });
+  };
+
+  private handleCreateCancel = (): void => {
+    this.setState({
+      createDrawerOpen: false,
+      createRow: undefined,
+      createTouched: {},
+    });
+  };
+
+  private handleCreateSave = (): void => {
+    this.setState((prev) => {
+      if (!prev.createRow) {
+        return null;
+      }
+
+      const errors = this.validateRow(prev.createRow);
+      if (Object.keys(errors).length > 0) {
+        const newTouched = { ...prev.createTouched };
+        Object.keys(errors).forEach((key) => {
+          newTouched[key] = true;
+        });
+        return {
+          createTouched: newTouched,
+        };
+      }
+
+      const persistedRow: InternalRow = {
+        ...prev.createRow,
+        data: { ...prev.createRow.data },
+      };
+
+      return {
+        rows: [...prev.rows, persistedRow],
+        touched: {
+          ...prev.touched,
+          [persistedRow.id]: { ...prev.createTouched },
+        },
+        createDrawerOpen: false,
+        createRow: undefined,
+        createTouched: {},
+      };
+    });
   };
 
   private setCellValue = (
@@ -244,11 +393,11 @@ export class EditableTable extends React.Component<
     });
   };
 
-  private handleCellChange(
+  private handleCellChange = (
     row: InternalRow,
     col: EditableColumn,
     value: unknown
-  ): void {
+  ): void => {
     const baseRowData = { ...row.data, [col.id]: value };
     const computedUpdates = col.onValueChange
       ? col.onValueChange({
@@ -264,7 +413,7 @@ export class EditableTable extends React.Component<
         : undefined;
 
     this.setCellValue(row.id, col.id, value, sanitizedUpdates);
-  }
+  };
 
   private toggleRowSelection = (rowId: string, value: boolean): void => {
     this.setState((prev) => ({
@@ -471,10 +620,24 @@ export class EditableTable extends React.Component<
     return String(value ?? "");
   }
 
-  private renderInput(row: InternalRow, col: EditableColumn) {
+  private renderInput(
+    row: InternalRow,
+    col: EditableColumn,
+    config?: {
+      onChange?: (
+        targetRow: InternalRow,
+        targetColumn: EditableColumn,
+        value: unknown
+      ) => void;
+      touchedOverride?: Record<string, boolean>;
+    }
+  ) {
     const value = row.data[col.id] as unknown;
-    const isTouched = this.state.touched[row.id]?.[col.id];
+    const touchedSource =
+      config?.touchedOverride ?? this.state.touched[row.id] ?? {};
+    const isTouched = touchedSource?.[col.id];
     const error = this.validateRow(row)[col.id];
+    const handleChange = config?.onChange ?? this.handleCellChange;
     const baseSelectClass = cn(
       // Apple-like input styling
       "w-full file:text-foreground placeholder:text-foreground/40 dark:placeholder:text-foreground/50 selection:bg-primary selection:text-primary-foreground flex h-10 min-w-0 rounded-xl bg-white/70 dark:bg-input/30 backdrop-blur supports-[backdrop-filter]:bg-white/60 px-3 py-2 text-base inset-shadow-xs transition-[background-color,border-color,box-shadow] outline-none md:text-sm",
@@ -507,7 +670,7 @@ export class EditableTable extends React.Component<
               searchPlaceholder={col.searchPlaceholder}
               emptyMessage={col.emptyStateMessage}
               noneOptionLabel={col.noneOptionLabel}
-              onChange={(newValue) => this.handleCellChange(row, col, newValue)}
+              onChange={(newValue) => handleChange(row, col, newValue)}
               wrapperClassName="w-full"
             />
           );
@@ -522,7 +685,7 @@ export class EditableTable extends React.Component<
             )}
             value={String(value ?? "")}
             aria-invalid={Boolean(isTouched && error)}
-            onChange={(e) => this.handleCellChange(row, col, e.target.value)}
+            onChange={(e) => handleChange(row, col, e.target.value)}
           >
             <option value="">Select...</option>
             {normalized.map((o) => (
@@ -543,7 +706,7 @@ export class EditableTable extends React.Component<
             value={value === undefined || value === null ? "" : String(value)}
             onChange={(e) => {
               const v = e.target.value === "" ? "" : Number(e.target.value);
-              this.handleCellChange(row, col, v);
+              handleChange(row, col, v);
             }}
             className={cn(
               Boolean(isTouched && error) &&
@@ -558,7 +721,7 @@ export class EditableTable extends React.Component<
             placeholder={col.placeholder}
             aria-invalid={Boolean(isTouched && error)}
             value={value ? String(value) : ""}
-            onChange={(e) => this.handleCellChange(row, col, e.target.value)}
+            onChange={(e) => handleChange(row, col, e.target.value)}
             className={cn(
               Boolean(isTouched && error) &&
                 "ring-1 ring-red-200/50 border-red-200/60"
@@ -588,7 +751,7 @@ export class EditableTable extends React.Component<
             aria-invalid={Boolean(isTouched && error)}
             value={value ? String(value) : ""}
             onChange={(e) => {
-              this.handleCellChange(row, col, e.target.value);
+              handleChange(row, col, e.target.value);
               autoResize(e.target);
             }}
             onInput={(e) => autoResize(e.currentTarget)}
@@ -617,6 +780,63 @@ export class EditableTable extends React.Component<
     }
   }
 
+  private renderCreateDrawer(): React.ReactNode {
+    if (!this.props.addButton) {
+      return null;
+    }
+
+    const pendingRow = this.state.createRow;
+    const pendingErrors = pendingRow ? this.validateRow(pendingRow) : {};
+    const disableSave =
+      !pendingRow || Object.keys(pendingErrors).length > 0;
+
+    return (
+      <Drawer
+        open={this.state.createDrawerOpen}
+        onOpenChange={this.handleCreateDrawerChange}
+      >
+        <DrawerContent data-vaul-drawer-direction="right">
+          <DrawerHeader>
+            <DrawerTitle>Nuovo elemento</DrawerTitle>
+            <DrawerDescription>
+              Compila i campi per aggiungere un nuovo elemento alla tabella
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="p-6 space-y-5 overflow-y-auto max-h-[calc(100vh-180px)]">
+            {pendingRow ? (
+              this.props.columns.map((column) => (
+                <div key={column.id} className="space-y-2">
+                  <div className="text-sm font-semibold text-muted-foreground flex items-center gap-1">
+                    <span>{column.title}</span>
+                    {column.required ? (
+                      <span className="text-red-500">*</span>
+                    ) : null}
+                  </div>
+                  {this.renderInput(pendingRow, column, {
+                    onChange: this.handleCreateCellChange,
+                    touchedOverride: this.state.createTouched,
+                  })}
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nessun campo disponibile
+              </p>
+            )}
+          </div>
+          <div className="flex items-center justify-end gap-2 border-t border-border/50 px-6 py-4">
+            <Button variant="ghost" onClick={this.handleCreateCancel}>
+              Annulla
+            </Button>
+            <Button onClick={this.handleCreateSave} disabled={disableSave}>
+              Salva
+            </Button>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   private renderVertical(): React.ReactNode {
     const { columns, isModify, className } = this.props;
     const { rows } = this.state;
@@ -624,13 +844,26 @@ export class EditableTable extends React.Component<
     const hasLast = Boolean(this.props.lastComponent);
 
     return (
-      <div
-        data-slot="table-container"
-        className={cn("relative w-full rounded-lg bg-background", className)}
-      >
-        {/* Top action bar per modalità verticale */}
-        {showSave && (
-          <div className="flex items-center justify-end px-4 py-3 border-b border-agri-green-50 bg-blue-50/50">
+      <React.Fragment>
+        <div
+          data-slot="table-container"
+          className={cn("relative w-full rounded-lg bg-background", className)}
+        >
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-agri-green-50 bg-agri-green-50 rounded-t-lg">
+          <div className="flex flex-wrap items-center gap-2">
+            {this.props.children}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground cursor-pointer"
+              onClick={this.handleExportCsv}
+              disabled={this.props.columns.length === 0}
+            >
+              <IoDownloadOutline className="mr-2 h-4 w-4" />
+              Esporta CSV
+            </Button>
+          </div>
+          {showSave && (
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
@@ -643,8 +876,8 @@ export class EditableTable extends React.Component<
                 Salva
               </Button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
         <table
           data-slot="table"
           className={cn("w-full caption-bottom text-sm")}
@@ -771,14 +1004,16 @@ export class EditableTable extends React.Component<
               <Button
                 variant="ghost"
                 className="text-muted-foreground"
-                onClick={this.addNewRow}
+                onClick={this.openCreateDrawer}
               >
-                + Aggiungi
+                Aggiungi
               </Button>
             </div>
           </div>
         )}
-      </div>
+        </div>
+        {this.renderCreateDrawer()}
+      </React.Fragment>
     );
   }
 
@@ -803,110 +1038,103 @@ export class EditableTable extends React.Component<
         data-slot="table-wrapper"
         className={cn("relative w-full rounded-lg bg-background", className)}
       >
-        {/* Top action bar - Pulsanti azione in alto a destra - FISSO */}
-        {anySelected || isModify || this.props.addButton || showSave ? (
-          <div className="flex items-center justify-between px-4 py-3 border-b border-agri-green-50 bg-agri-green-50 rounded-t-lg sticky top-0 left-0 right-0 z-10">
+        {/* Top action bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-agri-green-50 bg-agri-green-50 rounded-t-lg sticky top-0 left-0 right-0 z-10">
+          <div className="flex flex-wrap items-center gap-2">
+            {this.props.children}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground cursor-pointer"
+              onClick={this.handleExportCsv}
+              disabled={this.props.columns.length === 0}
+            >
+              <IoDownloadOutline className="mr-2 h-4 w-4" />
+              Esporta CSV
+            </Button>
             <span className="text-sm text-gray-600">
               {anySelected
                 ? `${this.selectedIds.length} element${
                     this.selectedIds.length === 1 ? "o" : "i"
                   } selezionat${this.selectedIds.length === 1 ? "o" : "i"}`
-                : " "}
+                : ""}
             </span>
-            <div className="flex items-center gap-2">
-              {isModify && !anySelected && !this.props.alwaysEdit && (
-                <Button
-                  onClick={this.toggleEditMode}
-                  className={cn(
-                    "border cursor-pointer",
-                    this.state.isEditMode
-                      ? "border-none text-gray-500 hover:bg-gray-50"
-                      : "border-none bg-blue-200 text-blue-700 hover:bg-blue-50"
-                  )}
-                  variant="ghost"
-                >
-                  {this.state.isEditMode ? (
-                    <>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="h-4 w-4 mr-2"
-                      >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                      Annulla
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="h-4 w-4"
-                      >
-                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-                      </svg>
-                    </>
-                  )}
-                </Button>
-              )}
-              {this.props.addButton && (
-                <Button
-                  variant="ghost"
-                  className="text-muted-foreground bg-agri-green-200 text-agri-green-700 cursor-pointer"
-                  onClick={this.addNewRow}
-                >
-                  +
-                </Button>
-              )}
-              {anySelected && (
-                <Button
-                  onClick={this.handleDelete}
-                  className={cn(
-                    "border border-red-200 text-red-400 hover:bg-red-50"
-                  )}
-                  variant="ghost"
-                  size="sm"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="h-4 w-4 mr-2"
-                  >
-                    <path d="M3 6h18" />
-                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                    <path d="M10 11v6M14 11v6" />
-                  </svg>
-                  Elimina
-                </Button>
-              )}
-              {showSave && (
-                <>
-                  <Button
-                    variant="ghost"
-                    onClick={this.handleCancel}
-                    className="text-gray-600 hover:text-gray-900"
-                  >
-                    Annulla
-                  </Button>
-                  <Button onClick={this.handleSave} disabled={hasErrors}>
-                    Salva
-                  </Button>
-                </>
-              )}
-            </div>
           </div>
-        ) : null}
+          <div className="flex flex-wrap items-center gap-2">
+            {isModify && !anySelected && !this.props.alwaysEdit && (
+              <Button
+                onClick={this.toggleEditMode}
+                className={cn(
+                  "border cursor-pointer",
+                  this.state.isEditMode
+                    ? "border-none text-gray-500 hover:bg-gray-50"
+                    : "border-none bg-blue-200 text-blue-700 hover:bg-blue-50"
+                )}
+                variant="ghost"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="h-4 w-4 mr-2"
+                >
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                </svg>
+                {this.state.isEditMode ? "Chiudi Modifica" : "Modifica"}
+              </Button>
+            )}
+            {this.props.addButton && (
+              <Button
+                variant="ghost"
+                className="text-muted-foreground bg-agri-green-200 text-agri-green-700 cursor-pointer"
+                onClick={this.openCreateDrawer}
+              >
+                Aggiungi
+              </Button>
+            )}
+            {anySelected && (
+              <Button
+                onClick={this.handleDelete}
+                className={cn(
+                  "border border-red-200 text-red-400 hover:bg-red-50"
+                )}
+                variant="ghost"
+                size="sm"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="h-4 w-4 mr-2"
+                >
+                  <path d="M3 6h18" />
+                  <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  <path d="M10 11v6M14 11v6" />
+                </svg>
+                Elimina
+              </Button>
+            )}
+            {showSave && (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={this.handleCancel}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Annulla
+                </Button>
+                <Button onClick={this.handleSave} disabled={hasErrors}>
+                  Salva
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
 
         <div className="w-full overflow-auto max-h-[calc(100vh-300px)]">
           <table
@@ -1119,6 +1347,7 @@ export class EditableTable extends React.Component<
             </DrawerContent>
           </Drawer>
         ) : null}
+        {this.renderCreateDrawer()}
       </div>
     );
   }
