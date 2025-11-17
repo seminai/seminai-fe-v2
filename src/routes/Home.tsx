@@ -53,8 +53,8 @@ export default function Home() {
             <MorphingText texts={["L'agricoltura", "Semina"]} />
             <MorphingText texts={["intelligente", "oggi"]} />
             <p className="text-xl md:text-2xl text-gray-600 leading-relaxed">
-              Il quaderno di campagna digitale che rivoluziona la gestione dei
-              campi con l'intelligenza artificiale.
+              Il quaderno di campagna digitale personalizzabile che rivoluziona
+              la gestione delle operazioni con l'intelligenza artificiale.
             </p>
             <div className="flex gap-4 pt-6">
               <Link
@@ -171,13 +171,14 @@ export default function Home() {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-3">Tracciabilità</h3>
+              <h3 className="text-xl font-semibold mb-3">
+                White label personalizzabile
+              </h3>
               <p className="text-gray-600">
-                Tracciabilità{" "}
                 <span className="text-agri-green-600 font-bold">
-                  automatica
+                  Branding dedicato
                 </span>{" "}
-                di tutte le operazioni di campo.
+                e configurazione per utenti, studi, consorzi e cooperative.
               </p>
             </div>
           </div>
@@ -348,7 +349,7 @@ export default function Home() {
           </h2>
           <Link
             to="/auth"
-            className="py-4 px-8 bg-green-700 text-white cursor-pointer hover:bg-green-600 transition-colors rounded-xl text-lg font-medium hover:scale-105 flex items-center mx-auto inline-flex"
+            className="py-4 px-8 bg-green-700 text-white cursor-pointer hover:bg-green-600 transition-colors rounded-xl text-lg font-medium hover:scale-105 inline-flex items-center mx-auto"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

@@ -14,6 +14,7 @@ import {
 import { IoOpenOutline, IoDownloadOutline } from "react-icons/io5";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import Papa from "papaparse";
+import { Plus } from "lucide-react";
 
 // EditableTable - Notion-like editable table with bulk add/save
 // The component follows an OOP approach using a React Class.
@@ -828,8 +829,7 @@ export class EditableTable extends React.Component<
 
     const pendingRow = this.state.createRow;
     const pendingErrors = pendingRow ? this.validateRow(pendingRow) : {};
-    const disableSave =
-      !pendingRow || Object.keys(pendingErrors).length > 0;
+    const disableSave = !pendingRow || Object.keys(pendingErrors).length > 0;
 
     return (
       <Drawer
@@ -891,86 +891,128 @@ export class EditableTable extends React.Component<
           data-slot="table-container"
           className={cn("relative w-full rounded-lg bg-background", className)}
         >
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-agri-green-50 bg-agri-green-50 rounded-t-lg">
-          <div className="flex flex-wrap items-center gap-2">
-            {leftActions}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground cursor-pointer"
-              onClick={this.handleExportCsv}
-              disabled={this.props.columns.length === 0}
-            >
-              <IoDownloadOutline className="mr-2 h-4 w-4" />
-              Esporta CSV
-            </Button>
-          </div>
-          <div className="flex items-center gap-2">
-            {rightActions}
-            {showSave && (
-              <>
-                <Button
-                  variant="ghost"
-                  onClick={this.handleCancel}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  Annulla
-                </Button>
-                <Button onClick={this.handleSave} disabled={false}>
-                  Salva
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-        <table
-          data-slot="table"
-          className={cn("w-full caption-bottom text-sm")}
-        >
-          <thead
-            data-slot="table-header"
-            className={cn("border-b border-agri-green-50 ")}
-          >
-            <tr data-slot="table-row" className={cn("transition-colors")}>
-              <th
-                data-slot="table-head"
-                className={cn(
-                  "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px] text-left w-[250px] min-w-[200px]"
-                )}
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-agri-green-50 bg-agri-green-50 rounded-t-lg">
+            <div className="flex flex-wrap items-center gap-2">
+              {leftActions}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground cursor-pointer"
+                onClick={this.handleExportCsv}
+                disabled={this.props.columns.length === 0}
               >
-                Field
-              </th>
-              {rows.map((row, idx) => (
+                <IoDownloadOutline className="mr-2 h-4 w-4" />
+                Esporta CSV
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              {rightActions}
+              {showSave && (
+                <>
+                  <Button
+                    variant="ghost"
+                    onClick={this.handleCancel}
+                    className="text-gray-600 hover:text-gray-900"
+                  >
+                    Annulla
+                  </Button>
+                  <Button onClick={this.handleSave} disabled={false}>
+                    Salva
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+          <table
+            data-slot="table"
+            className={cn("w-full caption-bottom text-sm")}
+          >
+            <thead
+              data-slot="table-header"
+              className={cn("border-b border-agri-green-50 ")}
+            >
+              <tr data-slot="table-row" className={cn("transition-colors")}>
                 <th
-                  key={row.id}
                   data-slot="table-head"
                   className={cn(
-                    "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px]",
-                    "text-left min-w-[250px]"
+                    "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px] text-left w-[250px] min-w-[200px]"
                   )}
                 >
-                  {this.getRowHeaderLabel(row, idx)}
+                  Field
                 </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody
-            data-slot="table-body"
-            className={cn("divide-y divide-border/15 ")}
-          >
-            {columns.map((c) => {
-              const colHasRequiredMissing = rows.some((r) => {
-                if (!c.required) return false;
-                const v = r.data[c.id];
-                return v === undefined || v === null || String(v).trim() === "";
-              });
-              return (
+                {rows.map((row, idx) => (
+                  <th
+                    key={row.id}
+                    data-slot="table-head"
+                    className={cn(
+                      "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px]",
+                      "text-left min-w-[250px]"
+                    )}
+                  >
+                    {this.getRowHeaderLabel(row, idx)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody
+              data-slot="table-body"
+              className={cn("divide-y divide-border/15 ")}
+            >
+              {columns.map((c) => {
+                const colHasRequiredMissing = rows.some((r) => {
+                  if (!c.required) return false;
+                  const v = r.data[c.id];
+                  return (
+                    v === undefined || v === null || String(v).trim() === ""
+                  );
+                });
+                return (
+                  <tr
+                    key={c.id}
+                    data-slot="table-row"
+                    className={cn(
+                      "transition-colors hover:bg-muted/10 border-agri-green-50",
+                      colHasRequiredMissing && "bg-red-50/30"
+                    )}
+                  >
+                    <td
+                      data-slot="table-cell"
+                      className={cn(
+                        "p-3 align-top text-left w-[250px] min-w-[200px]"
+                      )}
+                    >
+                      <div className="text-muted-foreground font-semibold text-[14px] break-words">
+                        <span>
+                          {c.title}
+                          {c.required ? (
+                            <span className="text-red-500 ml-1">*</span>
+                          ) : null}
+                        </span>
+                      </div>
+                    </td>
+                    {rows.map((row) => (
+                      <td
+                        key={row.id}
+                        data-slot="table-cell"
+                        className={cn(
+                          "p-3 align-top text-left break-words min-w-[250px]"
+                        )}
+                      >
+                        {isModify &&
+                        (this.state.isEditMode || this.props.alwaysEdit) &&
+                        !c.readOnly
+                          ? this.renderInput(row, c)
+                          : this.renderReadOnlyCell(c, row.data[c.id], row)}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+              {hasLast ? (
                 <tr
-                  key={c.id}
                   data-slot="table-row"
                   className={cn(
-                    "transition-colors hover:bg-muted/10 border-agri-green-50",
-                    colHasRequiredMissing && "bg-red-50/30"
+                    "transition-colors hover:bg-muted/10 border-agri-green-50"
                   )}
                 >
                   <td
@@ -979,83 +1021,44 @@ export class EditableTable extends React.Component<
                       "p-3 align-top text-left w-[250px] min-w-[200px]"
                     )}
                   >
-                    <div className="text-muted-foreground font-semibold text-[14px] break-words">
-                      <span>
-                        {c.title}
-                        {c.required ? (
-                          <span className="text-red-500 ml-1">*</span>
-                        ) : null}
-                      </span>
+                    <div className="text-muted-foreground font-semibold text-[14px]">
+                      Actions
                     </div>
                   </td>
                   {rows.map((row) => (
                     <td
                       key={row.id}
                       data-slot="table-cell"
-                      className={cn(
-                        "p-3 align-top text-left break-words min-w-[250px]"
-                      )}
+                      className={cn("p-3 align-top text-left min-w-[250px]")}
                     >
-                      {isModify &&
-                      (this.state.isEditMode || this.props.alwaysEdit) &&
-                      !c.readOnly
-                        ? this.renderInput(row, c)
-                        : this.renderReadOnlyCell(c, row.data[c.id], row)}
+                      {typeof this.props.lastComponent === "function"
+                        ? (
+                            this.props.lastComponent as (
+                              r: Record<string, unknown>
+                            ) => React.ReactNode
+                          )(row.data)
+                        : this.props.lastComponent}
                     </td>
                   ))}
                 </tr>
-              );
-            })}
-            {hasLast ? (
-              <tr
-                data-slot="table-row"
-                className={cn(
-                  "transition-colors hover:bg-muted/10 border-agri-green-50"
-                )}
-              >
-                <td
-                  data-slot="table-cell"
-                  className={cn(
-                    "p-3 align-top text-left w-[250px] min-w-[200px]"
-                  )}
-                >
-                  <div className="text-muted-foreground font-semibold text-[14px]">
-                    Actions
-                  </div>
-                </td>
-                {rows.map((row) => (
-                  <td
-                    key={row.id}
-                    data-slot="table-cell"
-                    className={cn("p-3 align-top text-left min-w-[250px]")}
-                  >
-                    {typeof this.props.lastComponent === "function"
-                      ? (
-                          this.props.lastComponent as (
-                            r: Record<string, unknown>
-                          ) => React.ReactNode
-                        )(row.data)
-                      : this.props.lastComponent}
-                  </td>
-                ))}
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
+              ) : null}
+            </tbody>
+          </table>
 
-        {this.props.addButton && (
-          <div className="sticky left-0 bottom-0 w-full border-t border-agri-green-50 inset-shadow-xs border-border/30 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex items-center justify-between px-2 py-2">
-              <Button
-                variant="ghost"
-                className="text-muted-foreground"
-                onClick={this.openCreateDrawer}
-              >
-                Aggiungi
-              </Button>
+          {this.props.addButton && (
+            <div className="sticky left-0 bottom-0 w-full border-t border-agri-green-50 inset-shadow-xs border-border/30 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="flex items-center justify-between px-2 py-2">
+                <Button
+                  variant="ghost"
+                  className="text-muted-foreground"
+                  onClick={this.openCreateDrawer}
+                >
+                  <Plus className="w-4 h-4" />
+                  Aggiungi
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
         {this.renderCreateDrawer()}
       </React.Fragment>
@@ -1138,6 +1141,7 @@ export class EditableTable extends React.Component<
                 className="text-muted-foreground bg-agri-green-200 text-agri-green-700 cursor-pointer"
                 onClick={this.openCreateDrawer}
               >
+                <Plus className="w-4 h-4" />
                 Aggiungi
               </Button>
             )}

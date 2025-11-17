@@ -1,4 +1,19 @@
+import { AuthorizedHeadersBuilder } from "./http";
+import authService from "@/utils/auth";
+
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
+const AUTH_TOKEN_ERROR_MESSAGE =
+  "Token di autenticazione mancante. Effettua nuovamente l'accesso.";
+
+type AuthTokenProvider = () => string | null;
+
+function getAuthTokenOrThrow(provider: AuthTokenProvider): string {
+  const token = provider();
+  if (!token) {
+    throw new Error(AUTH_TOKEN_ERROR_MESSAGE);
+  }
+  return token;
+}
 
 // Types for starting a dosage job
 export type DosageProduct = {
@@ -132,14 +147,17 @@ async function safeReadText(response: Response): Promise<string> {
 // Start a new dosage calculation job
 export async function startDosageJob(
   request: StartDosageJobRequest,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
+  tokenProvider: AuthTokenProvider = authService.getAuthToken.bind(authService)
 ): Promise<StartDosageJobResponse> {
+  const token = getAuthTokenOrThrow(tokenProvider);
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
   const response = await fetch(`${baseUrl}/dosage-agent/start-job`, {
     method: "POST",
-    headers: {
+    headers: headersBuilder.build({
       Accept: "application/json",
       "Content-Type": "application/json",
-    },
+    }),
     credentials: "include",
     body: JSON.stringify(request),
   });
@@ -155,14 +173,17 @@ export async function startDosageJob(
 // Get status of a dosage job
 export async function getDosageJobStatus(
   jobId: string,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
+  tokenProvider: AuthTokenProvider = authService.getAuthToken.bind(authService)
 ): Promise<DosageJobStatusResponse> {
+  const token = getAuthTokenOrThrow(tokenProvider);
+  const headersBuilder = new AuthorizedHeadersBuilder(token);
   const response = await fetch(`${baseUrl}/dosage-agent/job-status/${jobId}`, {
     method: "GET",
-    headers: {
+    headers: headersBuilder.build({
       Accept: "application/json",
       "Content-Type": "application/json",
-    },
+    }),
     credentials: "include",
   });
 
@@ -176,19 +197,26 @@ export async function getDosageJobStatus(
 
 class DosageAgentApiService {
   private readonly baseUrl: string;
+  private readonly tokenProvider: AuthTokenProvider;
 
-  constructor(baseUrl: string) {
+  constructor(
+    baseUrl: string,
+    tokenProvider: AuthTokenProvider = authService.getAuthToken.bind(
+      authService
+    )
+  ) {
     this.baseUrl = baseUrl;
+    this.tokenProvider = tokenProvider;
   }
 
   public async startJob(
     request: StartDosageJobRequest
   ): Promise<StartDosageJobResponse> {
-    return await startDosageJob(request, this.baseUrl);
+    return await startDosageJob(request, this.baseUrl, this.tokenProvider);
   }
 
   public async getJobStatus(jobId: string): Promise<DosageJobStatusResponse> {
-    return await getDosageJobStatus(jobId, this.baseUrl);
+    return await getDosageJobStatus(jobId, this.baseUrl, this.tokenProvider);
   }
 }
 

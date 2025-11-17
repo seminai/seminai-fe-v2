@@ -46,7 +46,6 @@ import {
   type DosageJob,
 } from "@/utils/dosageJobsIndexDBManager";
 import { JobDetails } from "./JobDetails";
-
 class DosageJobDetailsManager {
   public async load(job: DosageJob): Promise<DosageJob> {
     if (job.state === "completed" && job.result) {
@@ -538,42 +537,16 @@ export default function DosageManager() {
           </div>
         }
         rightElement={
-          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 w-full md:w-auto">
-            {activeJobs.length > 0 && (
-              <Button
-                variant="outline"
-                onClick={() => setShowJobsPanel(true)}
-                className="gap-2 w-full md:w-auto"
-              >
-                <Activity className="h-4 w-4 animate-pulse" />
-                <span className="md:inline">
-                  {activeJobs.length} Job attivi
-                </span>
-              </Button>
-            )}
+          activeJobs.length > 0 && (
             <Button
-              size="lg"
-              onClick={handleCalculateDosages}
-              disabled={
-                isSubmitting ||
-                products.length === 0 ||
-                selectedUnitIds.length === 0
-              }
+              variant="outline"
+              onClick={() => setShowJobsPanel(true)}
               className="gap-2 w-full md:w-auto"
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Calcolo...</span>
-                </>
-              ) : (
-                <>
-                  <Calculator className="h-4 w-4" />
-                  <span>Calcola Dosaggi</span>
-                </>
-              )}
+              <Activity className="h-4 w-4 animate-pulse" />
+              <span className="md:inline">{activeJobs.length} Job attivi</span>
             </Button>
-          </div>
+          )
         }
       />
 
@@ -582,10 +555,32 @@ export default function DosageManager() {
           <div className="mx-auto space-y-8 md:space-y-12">
             {/* Company Filter Section */}
             <div className="space-y-3 md:space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <h2 className="text-lg md:text-xl font-medium text-neutral-900">
                   Seleziona Azienda
                 </h2>
+                <Button
+                  size="lg"
+                  onClick={handleCalculateDosages}
+                  disabled={
+                    isSubmitting ||
+                    products.length === 0 ||
+                    selectedUnitIds.length === 0
+                  }
+                  className="gap-2 w-full md:w-auto md:self-end"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Calcolo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Calculator className="h-4 w-4" />
+                      <span>Calcola Dosaggi</span>
+                    </>
+                  )}
+                </Button>
               </div>
               <Select
                 value={selectedCompanyId}
@@ -694,27 +689,15 @@ export default function DosageManager() {
 
             {/* Products Section */}
             <div className="space-y-4 md:space-y-6">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
-                <div>
-                  <h2 className="text-lg md:text-xl font-medium text-neutral-900">
-                    Prodotti Fitosanitari
-                  </h2>
-                  {products.length > 0 && (
-                    <p className="text-sm text-neutral-500 mt-1">
-                      {products.length} prodotti caricati
-                    </p>
-                  )}
-                </div>
-                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3">
-                  <ImportProducts
-                    onAddRows={handleAddRows}
-                    onProductsChange={setProducts}
-                  />
-                  <ImportProductsFromDdt
-                    onAddRows={handleAddRows}
-                    onProductsChange={setProducts}
-                  />
-                </div>
+              <div>
+                <h2 className="text-lg md:text-xl font-medium text-neutral-900">
+                  Prodotti Fitosanitari
+                </h2>
+                {products.length > 0 && (
+                  <p className="text-sm text-neutral-500 mt-1">
+                    {products.length} prodotti caricati
+                  </p>
+                )}
               </div>
               <EditableTable
                 ref={editableTableRef}
@@ -727,7 +710,18 @@ export default function DosageManager() {
                 getRowId={(row) =>
                   `${row.productName}-${row.registrationNumber}`
                 }
-              />
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <ImportProducts
+                    onAddRows={handleAddRows}
+                    onProductsChange={setProducts}
+                  />
+                  <ImportProductsFromDdt
+                    onAddRows={handleAddRows}
+                    onProductsChange={setProducts}
+                  />
+                </div>
+              </EditableTable>
               {products.length === 0 &&
                 dosagePlaceholderRenderer.renderEmptyProductsPlaceholder()}
             </div>
