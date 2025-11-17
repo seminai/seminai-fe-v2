@@ -230,7 +230,7 @@ const ProductionUnitsManagementStep: React.FC<
 
           <Button onClick={addNewUnit} className="w-full">
             <Plus className="mr-2 h-4 w-4" />
-            Aggiungi Unità Produttiva
+            Aggiungi
           </Button>
         </>
       )}

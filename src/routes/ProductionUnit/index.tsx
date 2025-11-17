@@ -1217,13 +1217,13 @@ export default function ProductionUnit(): React.ReactElement {
           >
             <Button
               data-table-slot="right"
-              variant="outline"
+              variant="ghost"
+              className="order-last gap-2 text-muted-foreground bg-agri-green-200 text-agri-green-700 cursor-pointer"
               asChild
-              className="gap-2"
             >
               <Link to="/new-production-unit">
                 <Plus className="w-4 h-4" />
-                Aggiungi unità produttiva
+                Aggiungi
               </Link>
             </Button>
           </EditableTable>
