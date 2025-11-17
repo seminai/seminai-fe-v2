@@ -81,40 +81,60 @@ export function PageHeader({
       } su ${totalItems}`
     : "\u00A0";
 
+  const renderSearchArea = (): React.ReactNode => {
+    if (centerElement) {
+      return (
+        <div className="flex justify-center w-full max-w-xl">
+          {centerElement}
+        </div>
+      );
+    }
+
+    if (searchPlaceholder && searchValue !== undefined && onSearchChange) {
+      return (
+        <div className="w-full max-w-xl">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder={searchPlaceholder}
+              value={searchValue}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-10 w-full"
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-1 min-h-[18px] leading-none transition-opacity duration-150 text-right">
+            {resultsLabel}
+          </p>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className={cn(className, "flex-shrink-0 p-6 mb-1 mt-1")}>
-      {/* Layout desktop - tutto in una riga */}
-      <div className="hidden md:flex justify-between items-center gap-4 mb-4">
-        <h1 className="text-3xl text-agri-green-700 font-semibold whitespace-nowrap">
-          {title}
-        </h1>
+      {/* Layout desktop/tablet */}
+      <div className="hidden md:flex flex-col gap-3 mb-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <h1 className="text-3xl text-agri-green-700 font-semibold whitespace-nowrap">
+            {title}
+          </h1>
 
-        {/* Elemento centrale (toggle o ricerca) */}
-        {centerElement ? (
-          <div className="flex-1 flex justify-center">{centerElement}</div>
-        ) : searchPlaceholder && searchValue !== undefined && onSearchChange ? (
-          <div className="flex-1 max-w-2xl">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                type="text"
-                placeholder={searchPlaceholder}
-                value={searchValue}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1 min-h-[18px] leading-none transition-opacity duration-150">
-              {resultsLabel}
-            </p>
+          <div className="flex flex-wrap items-start justify-end gap-3 flex-1">
+            {renderSearchArea()}
+            {filterElement && (
+              <div className="min-w-[200px] flex-1 sm:flex-none">
+                {filterElement}
+              </div>
+            )}
+            {rightElement && (
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                {rightElement}
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="flex-1" />
-        )}
-
-        <div className="flex items-center gap-3">
-          {filterElement && <div>{filterElement}</div>}
-          {rightElement && <div>{rightElement}</div>}
         </div>
       </div>
 
