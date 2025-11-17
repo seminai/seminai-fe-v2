@@ -1174,14 +1174,6 @@ export default function ProductionUnit(): React.ReactElement {
         onSearchChange={setSearchFilter}
         totalItems={productionUnits.length}
         filteredItems={filteredItems.length}
-        rightElement={
-          <Button variant="outline" asChild>
-            <Link to="/new-production-unit">
-              <Plus className="w-4 h-4 mr-2" />
-              Aggiungi unità produttiva
-            </Link>
-          </Button>
-        }
       />
 
       {/* Area scrollabile - solo la tabella */}
@@ -1222,7 +1214,19 @@ export default function ProductionUnit(): React.ReactElement {
             detailsRenderer={renderDetails}
             detailsTitle="Dettagli Unità Produttiva"
             className="bg-background"
-          />
+          >
+            <Button
+              data-table-slot="right"
+              variant="outline"
+              asChild
+              className="gap-2"
+            >
+              <Link to="/new-production-unit">
+                <Plus className="w-4 h-4" />
+                Aggiungi unità produttiva
+              </Link>
+            </Button>
+          </EditableTable>
         )}
       </div>
 
@@ -1254,7 +1258,7 @@ export default function ProductionUnit(): React.ReactElement {
 
       {/* Drawer dettagli campo */}
       <Sheet open={isFieldDrawerOpen} onOpenChange={setIsFieldDrawerOpen}>
-        <SheetContent className="w-[400px] sm:w-[540px]">
+        <SheetContent className="w-[400px] sm:w-[540px] bg-white p-2">
           <SheetHeader>
             <SheetTitle>Dettagli Campo</SheetTitle>
             <SheetDescription>

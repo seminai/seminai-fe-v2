@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import type { ComponentType } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -29,6 +30,7 @@ import {
   IoChevronBackOutline,
   IoChevronDownOutline,
 } from "react-icons/io5";
+import type { IconType } from "react-icons";
 import HomeAgriIcon from "@/components/icons/HomeAgriIcon";
 import TagAgriIcon from "@/components/icons/TagAgriIcon";
 import SprayAgriIcon from "@/components/icons/SprayAgriIcon";
@@ -114,6 +116,14 @@ type ManageMenuVisibility = {
   jobs: boolean;
 };
 
+type ManageMenuKey = Exclude<keyof ManageMenuVisibility, "jobs">;
+
+type SidebarToggleButtonProps = {
+  isOpen: boolean;
+  onToggle: () => void;
+  className?: string;
+};
+
 class SidebarVisibilityRules {
   private readonly role?: UserRole;
   private readonly counts: VisibilityCounts;
@@ -168,6 +178,74 @@ class SidebarVisibilityRules {
       allowProductsMenu,
       allowJobsMenu,
     };
+  }
+}
+
+type ManageMenuIconProps = {
+  className?: string;
+  size?: number;
+};
+
+type ManageMenuIcon = ComponentType<ManageMenuIconProps>;
+
+type ManageMenuItemConfig = {
+  key: ManageMenuKey;
+  label: string;
+  path: string;
+  icon: ManageMenuIcon;
+};
+
+class ManageMenuController {
+  private readonly visibility: ManageMenuVisibility;
+  private readonly items: ManageMenuItemConfig[] = [
+    {
+      key: "company",
+      label: "Aziende",
+      path: "/company",
+      icon: BarnAgriIcon,
+    },
+    {
+      key: "fields",
+      label: "Campi",
+      path: "/fields",
+      icon: FieldAgriIcon,
+    },
+    {
+      key: "productionUnit",
+      label: "Unità Produttive",
+      path: "/production-unit",
+      icon: PlantGrowAgriIcon,
+    },
+    {
+      key: "products",
+      label: "Prodotti",
+      path: "/products",
+      icon: BottleAgriIcon,
+    },
+  ];
+
+  constructor(visibility: ManageMenuVisibility) {
+    this.visibility = visibility;
+  }
+
+  public getVisibleItems(): ManageMenuItemConfig[] {
+    return this.items.filter(({ key }) => this.visibility[key]);
+  }
+}
+
+class SidebarToggleController {
+  private readonly isOpen: boolean;
+
+  constructor(isOpen: boolean) {
+    this.isOpen = isOpen;
+  }
+
+  public getIcon(): IconType {
+    return this.isOpen ? IoChevronBackOutline : IoChevronForwardOutline;
+  }
+
+  public getAriaLabel(): string {
+    return this.isOpen ? "Collapse sidebar" : "Expand sidebar";
   }
 }
 
@@ -409,6 +487,32 @@ function MobileAccountMenu() {
   );
 }
 
+function SidebarToggleButton({
+  isOpen,
+  onToggle,
+  className,
+}: SidebarToggleButtonProps) {
+  const controller = new SidebarToggleController(isOpen);
+  const Icon = controller.getIcon();
+
+  return (
+    <button
+      type="button"
+      aria-label={controller.getAriaLabel()}
+      aria-pressed={isOpen}
+      title={controller.getAriaLabel()}
+      onClick={onToggle}
+      className={cn(
+        "absolute right-0 top-1/2 flex h-9 w-9 -translate-y-1/2 translate-x-0 items-center justify-center rounded-xl border border-neutral-200/60 bg-white text-neutral-600 shadow-sm transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300",
+        "group-data-[collapsible=icon]:translate-x-1/2",
+        className
+      )}
+    >
+      <Icon className="size-4" />
+    </button>
+  );
+}
+
 const SIDEBAR_STATE_KEY = "sidebar-open-state";
 const MANAGE_MENU_STATE_KEY = "manage-menu-open-state";
 
@@ -435,7 +539,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     const stored = localStorage.getItem(MANAGE_MENU_STATE_KEY);
     return stored ? JSON.parse(stored) : true; // aperto di default
   });
-
   useEffect(() => {
     localStorage.setItem(SIDEBAR_STATE_KEY, JSON.stringify(sidebarOpen));
   }, [sidebarOpen]);
@@ -444,6 +547,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     localStorage.setItem(MANAGE_MENU_STATE_KEY, JSON.stringify(manageMenuOpen));
   }, [manageMenuOpen]);
 
+  const handleSidebarToggle = useCallback(() => {
+    setSidebarOpen((prev) => !prev);
+  }, [setSidebarOpen]);
   const model = new NavigationModel("/dashboard");
   const items = model.getNavigationItems();
 
@@ -453,22 +559,37 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     productionUnitsCount: productionUnits.length,
   });
   const menuAvailability = visibilityRules.buildAvailability();
-  const manageVisibility: ManageMenuVisibility = {
-    company: canViewMenuItem("company", userRole),
-    fields:
-      menuAvailability.allowFieldsMenu && canViewMenuItem("fields", userRole),
-    productionUnit:
-      menuAvailability.allowProductionUnitMenu &&
-      canViewMenuItem("production-unit", userRole),
-    products:
-      menuAvailability.allowProductsMenu &&
-      canViewMenuItem("products", userRole),
-    jobs: menuAvailability.allowJobsMenu && canViewMenuItem("job", userRole),
-  };
+  const manageVisibility = useMemo<ManageMenuVisibility>(
+    () => ({
+      company: canViewMenuItem("company", userRole),
+      fields:
+        menuAvailability.allowFieldsMenu && canViewMenuItem("fields", userRole),
+      productionUnit:
+        menuAvailability.allowProductionUnitMenu &&
+        canViewMenuItem("production-unit", userRole),
+      products:
+        menuAvailability.allowProductsMenu &&
+        canViewMenuItem("products", userRole),
+      jobs: menuAvailability.allowJobsMenu && canViewMenuItem("job", userRole),
+    }),
+    [
+      userRole,
+      menuAvailability.allowFieldsMenu,
+      menuAvailability.allowProductionUnitMenu,
+      menuAvailability.allowProductsMenu,
+      menuAvailability.allowJobsMenu,
+    ]
+  );
   const dosageManagerVisible =
     menuAvailability.allowDosageManagerMenu &&
     canViewMenuItem("dosage-manager", userRole);
   const jobVisible = manageVisibility.jobs;
+  const manageMenuController = useMemo(
+    () => new ManageMenuController(manageVisibility),
+    [manageVisibility]
+  );
+  const manageMenuItems = manageMenuController.getVisibleItems();
+  const hasManageItems = manageMenuItems.length > 0;
 
   const labelActive =
     location.pathname === "/label" || location.pathname.startsWith("/label/");
@@ -501,8 +622,14 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         innerClassName="backdrop-blur-lg bg-white/0 border border-neutral-200/50 shadow-sm"
       >
         <SidebarHeader className="px-4 pt-4 pb-2">
-          <div className="flex items-center justify-center group-data-[collapsible=icon]:justify-center">
+          <div className="relative flex w-full items-center justify-center py-1">
             <img src="/logo.png" alt="logo" className="h-8 w-8" />
+            {!isMobile && (
+              <SidebarToggleButton
+                isOpen={sidebarOpen}
+                onToggle={handleSidebarToggle}
+              />
+            )}
           </div>
         </SidebarHeader>
         <SidebarContent className="px-2">
@@ -754,74 +881,40 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   </SidebarMenuItem>
                 )}
 
-                {/* Aziende - icona collassata */}
-                {!sidebarOpen && manageVisibility.company && (
-                  <SidebarMenuItem key="company-collapsed">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={companyActive}
-                      tooltip="Aziende"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5"
-                    >
-                      <Link to="/company" className="flex items-center gap-3">
-                        <BarnAgriIcon className="size-5" size={20} />
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-
-                {/* Unità Produttive - icona collassata */}
-                {manageVisibility.productionUnit && !sidebarOpen && (
-                  <SidebarMenuItem key="production-unit-collapsed">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={productionUnitActive}
-                      tooltip="Unità Produttive"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5"
-                    >
-                      <Link
-                        to="/production-unit"
-                        className="flex items-center gap-3"
+                {/* Gestisci - icona collassata */}
+                {!sidebarOpen && hasManageItems && (
+                  <SidebarMenuItem key="manage-collapsed">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton
+                          type="button"
+                          tooltip="Gestisci"
+                          size="lg"
+                          className="data-[state=open]:bg-neutral-900/5"
+                        >
+                          <ChartAgriIcon className="size-5" size={20} />
+                        </SidebarMenuButton>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        side="right"
+                        align="start"
+                        className="min-w-[220px]"
                       >
-                        <PlantGrowAgriIcon className="size-5" size={20} />
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-
-                {/* Campi - icona collassata */}
-                {manageVisibility.fields && !sidebarOpen && (
-                  <SidebarMenuItem key="fields-collapsed">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={fieldsActive}
-                      tooltip="Campi"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5"
-                    >
-                      <Link to="/fields" className="flex items-center gap-3">
-                        <FieldAgriIcon className="size-5" size={20} />
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-
-                {/* Prodotti - icona collassata */}
-                {manageVisibility.products && !sidebarOpen && (
-                  <SidebarMenuItem key="products-collapsed">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={productsActive}
-                      tooltip="Prodotti"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5"
-                    >
-                      <Link to="/products" className="flex items-center gap-3">
-                        <BottleAgriIcon className="size-5" size={20} />
-                      </Link>
-                    </SidebarMenuButton>
+                        <DropdownMenuLabel>Gestisci</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {manageMenuItems.map(
+                          ({ key, label, icon: Icon, path }) => (
+                            <DropdownMenuItem
+                              key={key}
+                              onClick={() => navigate(path)}
+                            >
+                              <Icon className="size-4 mr-2" size={16} />
+                              {label}
+                            </DropdownMenuItem>
+                          )
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </SidebarMenuItem>
                 )}
               </SidebarMenu>
@@ -829,18 +922,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           </SidebarGroup>
         </SidebarContent>
 
-        <div className="px-4 pb-20">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex h-10 w-full items-center justify-center rounded-lg hover:bg-neutral-100/50 transition-colors"
-          >
-            {sidebarOpen ? (
-              <IoChevronBackOutline className="size-5 text-neutral-700" />
-            ) : (
-              <IoChevronForwardOutline className="size-5 text-neutral-700" />
-            )}
-          </button>
-        </div>
         <SidebarFooter className="pb-4 px-4">
           <div>
             <DropdownMenu>
@@ -906,7 +987,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           </div>
         </SidebarFooter>
       </Sidebar>
-
       <SidebarInset className="overflow-x-hidden">
         <div className="min-h-svh w-full flex flex-col overflow-x-hidden pb-24 lg:pb-0">
           <main className="flex-1 w-full">{children}</main>

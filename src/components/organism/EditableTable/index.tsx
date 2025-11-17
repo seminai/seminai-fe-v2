@@ -473,6 +473,42 @@ export class EditableTable extends React.Component<
     });
   };
 
+  private getActionChildren(): {
+    left: React.ReactNode[];
+    right: React.ReactNode[];
+  } {
+    const left: React.ReactNode[] = [];
+    const right: React.ReactNode[] = [];
+
+    React.Children.forEach(this.props.children, (child) => {
+      if (child === null || child === undefined) {
+        return;
+      }
+
+      if (
+        React.isValidElement<{
+          ["data-table-slot"]?: string;
+          ["data-editable-table-slot"]?: string;
+          slot?: string;
+        }>(child)
+      ) {
+        const slot =
+          child.props?.["data-table-slot"] ??
+          child.props?.["data-editable-table-slot"] ??
+          child.props?.slot;
+
+        if (slot === "right") {
+          right.push(child);
+          return;
+        }
+      }
+
+      left.push(child);
+    });
+
+    return { left, right };
+  }
+
   private get selectedIds(): string[] {
     return Object.entries(this.state.selected)
       .filter(([, v]) => Boolean(v))
@@ -847,6 +883,7 @@ export class EditableTable extends React.Component<
     const { rows } = this.state;
     const showSave = this.hasDirtyRows;
     const hasLast = Boolean(this.props.lastComponent);
+    const { left: leftActions, right: rightActions } = this.getActionChildren();
 
     return (
       <React.Fragment>
@@ -856,7 +893,7 @@ export class EditableTable extends React.Component<
         >
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-agri-green-50 bg-agri-green-50 rounded-t-lg">
           <div className="flex flex-wrap items-center gap-2">
-            {this.props.children}
+            {leftActions}
             <Button
               variant="ghost"
               size="sm"
@@ -868,20 +905,23 @@ export class EditableTable extends React.Component<
               Esporta CSV
             </Button>
           </div>
-          {showSave && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                onClick={this.handleCancel}
-                className="text-gray-600 hover:text-gray-900"
-              >
-                Annulla
-              </Button>
-              <Button onClick={this.handleSave} disabled={false}>
-                Salva
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {rightActions}
+            {showSave && (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={this.handleCancel}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Annulla
+                </Button>
+                <Button onClick={this.handleSave} disabled={false}>
+                  Salva
+                </Button>
+              </>
+            )}
+          </div>
         </div>
         <table
           data-slot="table"
@@ -1037,6 +1077,7 @@ export class EditableTable extends React.Component<
       this.props.detailsRenderer || this.props.onOpenDetails
     );
     const hasLast = Boolean(this.props.lastComponent);
+    const { left: leftActions, right: rightActions } = this.getActionChildren();
 
     return (
       <div
@@ -1046,7 +1087,7 @@ export class EditableTable extends React.Component<
         {/* Top action bar */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-agri-green-50 bg-agri-green-50 rounded-t-lg sticky top-0 left-0 right-0 z-10">
           <div className="flex flex-wrap items-center gap-2">
-            {this.props.children}
+            {leftActions}
             <Button
               variant="ghost"
               size="sm"
@@ -1066,6 +1107,7 @@ export class EditableTable extends React.Component<
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {rightActions}
             {isModify && !anySelected && !this.props.alwaysEdit && (
               <Button
                 onClick={this.toggleEditMode}
