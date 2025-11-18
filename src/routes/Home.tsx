@@ -1,12 +1,32 @@
 import { ChangeEvent, Component, FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { MorphingText } from "@/components/magicui/morphing-text";
-import { VideoText } from "@/components/magicui/video-text";
-import { BorderBeam } from "@/components/magicui/border-beam";
-import { Card } from "@/components/ui/card";
-import { feedbacks } from "@/utils/feedback";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { emailApiService } from "@/api/email";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
+
+class CalendlyWidgetManager {
+  private static readonly scriptId = "calendly-widget-script";
+  private static readonly scriptSrc =
+    "https://assets.calendly.com/assets/external/widget.js";
+
+  public static ensureScriptLoaded(): void {
+    if (document.getElementById(CalendlyWidgetManager.scriptId)) {
+      return;
+    }
+
+    const scriptElement = document.createElement("script");
+    scriptElement.id = CalendlyWidgetManager.scriptId;
+    scriptElement.src = CalendlyWidgetManager.scriptSrc;
+    scriptElement.async = true;
+    document.body.appendChild(scriptElement);
+  }
+}
 
 interface ContactRequestFormProps {
   className?: string;
@@ -161,11 +181,111 @@ class ContactRequestForm extends Component<
   }
 }
 
-export default function Home() {
-  const isMobile = useIsMobile();
-  return (
-    <div className="min-h-screen bg-white text-black">
-      {/* Header */}
+interface HighlightCard {
+  title: string;
+  description: string;
+}
+
+interface AdvantageCard {
+  title: string;
+  description: string;
+  image: string;
+}
+
+interface HomeState {
+  isCalendlyDialogOpen: boolean;
+  isCalendlyLoading: boolean;
+}
+
+export default class Home extends Component<Record<string, never>, HomeState> {
+  private readonly audienceHighlights: HighlightCard[] = [
+    {
+      title: "Per Agricoltori",
+      description: "Inizia anche tu a redigere i quaderni di campagna.",
+    },
+    {
+      title: "Per Tecnici agronomi",
+      description: "Aumenta le aziende di cui seguire i quaderni di campagna.",
+    },
+    {
+      title: "Per Associazioni di categoria o fornitori di servizi associabili",
+      description:
+        "Fornisci anche tu un servizio di consulenza sui quaderni di campagna e aumenta la soddisfazione dei tuoi clienti.",
+    },
+  ];
+
+  private readonly advantageHighlights: AdvantageCard[] = [
+    {
+      title: "Conforme alle normative",
+      description:
+        "Il sistema verifica automaticamente la conformità delle tue attività con le normative vigenti, proteggendoti da sanzioni e garantendo la tracciabilità completa di tutte le operazioni.",
+      image: "/image/conforme_alle_normative .png",
+    },
+    {
+      title: "Riduzione di tempo e costi",
+      description:
+        "Interfaccia chiara e semplice per permettere a tutti l'utilizzo con automazioni che permettono la redazione delle operazioni di trattamento in modo veloce.",
+      image: "/image/riduzione_tempo.png",
+    },
+    {
+      title: "Integrabile con sistemi terzi",
+      description:
+        "Integrazioni con piattaforme terze per permettere l'unificazione di informazioni in una piattaforma.",
+      image: "/image/integrabile.png",
+    },
+    {
+      title: "White label personalizzato",
+      description:
+        "Il software può essere personalizzato tramite branding dedicato e configurazioni specifiche per i tuoi bisogni.",
+      image: "/image/white_label.png",
+    },
+  ];
+
+  private calendlyIframePollId: number | null = null;
+  private calendlyIframe?: HTMLIFrameElement;
+
+  public constructor(props: Record<string, never>) {
+    super(props);
+    this.state = {
+      isCalendlyDialogOpen: false,
+      isCalendlyLoading: false,
+    };
+  }
+
+  public componentDidUpdate(
+    _: Record<string, never>,
+    prevState: HomeState
+  ): void {
+    if (!prevState.isCalendlyDialogOpen && this.state.isCalendlyDialogOpen) {
+      CalendlyWidgetManager.ensureScriptLoaded();
+      this.startCalendlyWatcher();
+    }
+
+    if (prevState.isCalendlyDialogOpen && !this.state.isCalendlyDialogOpen) {
+      this.stopCalendlyWatcher();
+    }
+  }
+
+  public componentWillUnmount(): void {
+    this.stopCalendlyWatcher();
+  }
+
+  public render() {
+    return (
+      <div className="min-h-screen bg-white text-black">
+        {this.renderHeader()}
+        {this.renderHeroSection()}
+        {this.renderAudienceSection()}
+        {this.renderAdvantagesSection()}
+        {this.renderContactSection()}
+        {this.renderFooter()}
+        {this.renderCalendlyDialog()}
+      </div>
+    );
+  }
+
+  private renderHeader() {
+    return (
       <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 px-6 py-4 flex justify-between items-center border-b border-gray-100">
         <div className="flex items-center gap-2">
           <img src="/logo.png" alt="Seminai Logo" className="h-10 w-auto" />
@@ -175,16 +295,16 @@ export default function Home() {
         </div>
         <nav className="hidden md:flex items-center gap-6">
           <a
+            href="#audience"
+            className="text-sm font-medium hover:text-agri-green-600 transition-colors"
+          >
+            Per chi è?
+          </a>
+          <a
             href="#advantages"
             className="text-sm font-medium hover:text-agri-green-600 transition-colors"
           >
             Vantaggi
-          </a>
-          <a
-            href="#compliance"
-            className="text-sm font-medium hover:text-agri-green-600 transition-colors"
-          >
-            Normative
           </a>
         </nav>
         <div className="flex items-center gap-4">
@@ -196,31 +316,35 @@ export default function Home() {
           </Link>
         </div>
       </header>
+    );
+  }
 
-      {/* Hero Section */}
-      <section className="min-h-screen pt-32 flex items-center px-6 md:px-20 max-w-7xl mx-auto">
+  private renderHeroSection() {
+    return (
+      <section
+        className="min-h-screen pt-32 flex items-center px-6 md:px-20 max-w-7xl mx-auto"
+        id="hero"
+      >
         <div className="flex flex-col md:flex-row items-center gap-12 py-20">
           <div className="md:w-1/2 space-y-8">
-            {/* <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-gray-900">
-              L'agricoltura{" "}
-              <span className="text-agri-green-500">intelligente</span> oggi.
-            </h1> */}
-            <MorphingText texts={["L'agricoltura", "Semina"]} />
-            <MorphingText texts={["intelligente", "oggi"]} />
-            <p className="text-xl md:text-2xl text-gray-600 leading-relaxed">
+            <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-gray-900">
+              Fare quaderni di campagna non è mai stato così semplice
+            </h1>
+            <h2 className="text-xl md:text-2xl text-gray-600 leading-relaxed">
               Il quaderno di campagna digitale personalizzabile che rivoluziona
-              la gestione delle operazioni con l'intelligenza artificiale.
-            </p>
-            <div className="flex gap-4 pt-6">
-              <Link
-                to="/auth"
-                className="py-3 px-8 rounded-full bg-green-700 text-white font-medium hover:bg-green-600 cursor-pointer hover:scale-105 transition-colors"
+              la gestione delle operazioni con l&apos;intelligenza artificiale.
+            </h2>
+            <div className="flex flex-col sm:flex-row gap-4 pt-6">
+              <button
+                type="button"
+                onClick={this.openCalendlyDialog}
+                className="py-3 px-8 rounded-full bg-green-700 text-white font-medium hover:bg-green-600 transition-colors"
               >
-                Inizia ora
-              </Link>
+                Prenota un meeting gratuito
+              </button>
               <a
-                href="#advantages"
-                className="py-3 px-8 rounded-full border border-gray-300 font-medium hover:bg-gray-50 transition-colors"
+                href="#audience"
+                className="py-3 px-8 rounded-full border border-gray-300 font-medium hover:bg-gray-50 transition-colors text-center"
               >
                 Scopri di più
               </a>
@@ -235,270 +359,70 @@ export default function Home() {
           </div>
         </div>
       </section>
+    );
+  }
 
-      {/* Advantages Section */}
-      <section
-        id="advantages"
-        className="pt-20 pb-30 bg-harvest-100 px-6 md:px-20"
-      >
-        <div className="max-w-7xl mx-auto">
-          {/*  className="text-4xl font-bold text-center mb-16 text-gray-900">
-           
-        */}
-
-          <div
-            className={`relative ${
-              isMobile ? "h-[180px]" : "h-[340px]"
-            } w-full overflow-hidden`}
-          >
-            <VideoText
-              fontSize={isMobile ? 24 : 14}
-              fontFamily="Inter, system-ui, sans-serif"
-              src="https://videos.pexels.com/video-files/1649831/1649831-uhd_2560_1440_30fps.mp4"
-            >
-              Vantaggi
-            </VideoText>
+  private renderAudienceSection() {
+    return (
+      <section id="audience" className="py-20 px-6 md:px-20 bg-harvest-100">
+        <div className="max-w-7xl mx-auto text-center space-y-10">
+          <div className="space-y-4">
+            <h2 className="text-4xl font-bold text-gray-900">Per chi è?</h2>
           </div>
-
-          <div className="grid md:grid-cols-3 gap-10">
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-              <div className="h-12 w-12 rounded-full bg-agri-green-100 flex items-center justify-center mb-6">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-agri-green-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Risparmio di tempo</h3>
-              <p className="text-gray-600">
-                <span className="text-agri-green-600 font-bold">80%</span> del
-                tempo risparmiato rispetto alla gestione tradizionale.
-              </p>
-            </div>
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-              <div className="h-12 w-12 rounded-full bg-agri-green-100 flex items-center justify-center mb-6">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-agri-green-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-3">
-                Riduzione dei costi
-              </h3>
-              <p className="text-gray-600">
-                <span className="text-agri-green-600 font-bold">30 ore</span> a
-                settimana in meno per la gestione amministrativa.
-              </p>
-            </div>
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-              <div className="h-12 w-12 rounded-full bg-agri-green-100 flex items-center justify-center mb-6">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-agri-green-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-3">
-                White label personalizzabile
-              </h3>
-              <p className="text-gray-600">
-                <span className="text-agri-green-600 font-bold">
-                  Branding dedicato
-                </span>{" "}
-                e configurazione per utenti, studi, consorzi e cooperative.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Reviews Section */}
-      <section id="reviews" className="py-20 px-6 md:px-20 bg-harvest-100">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-16 text-gray-900">
-            Cosa dicono i{" "}
-            <span className="text-agri-green-500">nostri clienti</span>
-          </h2>
-          <div className="flex flex-row overflow-x-auto gap-x-4">
-            {feedbacks.map((feedback) => (
-              <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm  min-w-[300px]">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                    <span className="text-blue-600 font-semibold">
-                      {feedback.initials}
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold">{feedback.name}</h4>
-                    <p className="text-sm text-gray-500">{feedback.role}</p>
-                  </div>
-                </div>
-                <p className="text-gray-700">
-                  {feedback.text}
-                  <span className="text-blue-500 font-semibold">
-                    {feedback.highlight}
-                  </span>{" "}
-                  {feedback.highlight}
-                </p>
+          <div className="grid gap-8 md:grid-cols-3">
+            {this.audienceHighlights.map((highlight) => (
+              <div
+                key={highlight.title}
+                className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-left h-full"
+              >
+                <h3 className="text-xl font-semibold mb-4 text-gray-900">
+                  {highlight.title}
+                </h3>
+                <p className="text-gray-600">{highlight.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
+    );
+  }
 
-      {/* Compliance Section */}
-      <section id="compliance" className="py-20 px-6 md:px-20">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-16 text-gray-900">
-            Conforme alle <span className="text-agri-green-500">normative</span>
-          </h2>
-          <div className="bg-white p-10 rounded-3xl shadow-xl border border-gray-100">
-            <div className="grid md:grid-cols-2 gap-12">
-              <div className="space-y-6">
-                <h3 className="text-2xl font-semibold text-gray-900">
-                  Un click per la conformità
-                </h3>
-                <p className="text-gray-600 text-lg leading-relaxed">
-                  Con Seminai puoi gestire con un solo click i piani dei
-                  fertilizzanti e la gestione dei fitofarmaci secondo:
-                </p>
-                <ul className="space-y-4">
-                  <li className="flex items-start gap-3">
-                    <div className="h-6 w-6 rounded-full bg-agri-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4 text-agri-green-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                    <span className="text-gray-700">
-                      Direttive EU sul Green Deal
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="h-6 w-6 rounded-full bg-agri-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4 text-agri-green-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                    <span className="text-gray-700">
-                      Disciplinari biologici
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="h-6 w-6 rounded-full bg-agri-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4 text-agri-green-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                    <span className="text-gray-700">
-                      Disciplinari di filiera agricola
-                    </span>
-                  </li>
-                </ul>
-              </div>
-              <Card className="relative overflow-hidden p-8">
-                <div className="h-20 w-20 mb-6">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-full w-full text-agri-green-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                    />
-                  </svg>
+  private renderAdvantagesSection() {
+    return (
+      <section id="advantages" className="py-20 px-6 md:px-20 bg-white">
+        <div className="max-w-7xl mx-auto text-center space-y-10">
+          <div className="space-y-4">
+            <h2 className="text-4xl font-bold text-gray-900">Vantaggi</h2>
+          </div>
+          <div className="grid gap-8 md:grid-cols-2">
+            {this.advantageHighlights.map((highlight) => (
+              <div
+                key={highlight.title}
+                className="bg-harvest-50 p-8 rounded-2xl border border-harvest-200 text-left h-full flex flex-col"
+              >
+                <div className="mb-6 flex justify-center">
+                  <img
+                    src={highlight.image}
+                    alt={highlight.title}
+                    className="h-40 w-auto object-contain"
+                  />
                 </div>
-                <h4 className="text-xl font-medium mb-4 text-gray-900">
-                  Protezione totale
-                </h4>
-                <p className="text-gray-600">
-                  Il sistema verifica automaticamente la conformità delle tue
-                  attività con le normative vigenti, proteggendoti da sanzioni e
-                  garantendo la tracciabilità completa di tutte le operazioni.
-                </p>
-                <BorderBeam
-                  duration={4}
-                  size={300}
-                  reverse
-                  className="from-transparent via-green-500 to-transparent"
-                />
-              </Card>
-            </div>
+                <h3 className="text-2xl font-semibold mb-4 text-gray-900">
+                  {highlight.title}
+                </h3>
+                <p className="text-gray-700">{highlight.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
+    );
+  }
 
-      {/* Contact Form Section */}
+  private renderContactSection() {
+    return (
       <section id="contact-request" className="py-20 px-6 md:px-20 bg-white">
         <div className="max-w-4xl mx-auto text-center space-y-8">
-          <p className="uppercase text-green-700/90 font-medium tracking-wider">
-            Richiedi informazioni
-          </p>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900">
             Contattaci
           </h2>
@@ -508,111 +432,27 @@ export default function Home() {
           <ContactRequestForm />
         </div>
       </section>
+    );
+  }
 
-      {/* CTA Section */}
-      <section className="py-40 px-6 md:px-20 bg-harvest-100 transition-colors">
-        <div className="max-w-5xl mx-auto text-center">
-          <p className="uppercase text-green-700/90 font-medium tracking-wider mb-4">
-            PRONTO A INIZIARE?
-          </p>
-          <h2 className="text-5xl font-bold mb-10 text-gray-900">
-            Inizia la tua prova gratuita oggi.
-          </h2>
-          <Link
-            to="/auth"
-            className="py-4 px-8 bg-green-700 text-white cursor-pointer hover:bg-green-600 transition-colors rounded-xl text-lg font-medium hover:scale-105 inline-flex items-center mx-auto"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 mr-2"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm11 1H6v8l4-2 4 2V6z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Inizia gratuitamente
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
+  private renderFooter() {
+    return (
       <footer
         id="contact"
         className="py-12 px-6 md:px-20 bg-gray-900 text-white"
       >
-        <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-10">
+        <div className="max-w-7xl mx-auto flex justify-between">
           <div>
             <div className="flex items-center gap-2 mb-6">
               <img src="/logo.png" alt="Seminai Logo" className="h-8 w-auto" />
               <span className="text-xl font-semibold text-white">Seminai</span>
             </div>
             <p className="text-gray-300">
-              Rivoluziona la gestione dei tuoi campi con l'intelligenza
+              Rivoluziona la gestione dei tuoi campi con l&apos;intelligenza
               artificiale.
             </p>
           </div>
-          <div>
-            <h3 className="text-lg font-medium mb-4 text-white">Piattaforma</h3>
-            <ul className="space-y-2">
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  Funzionalità
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  Piani
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  Sicurezza
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-lg font-medium mb-4 text-white">Azienda</h3>
-            <ul className="space-y-2">
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  Chi siamo
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  Blog
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  Contatti
-                </a>
-              </li>
-            </ul>
-          </div>
+
           <div>
             <h3 className="text-lg font-medium mb-4 text-white">Contattaci</h3>
             <p className="text-gray-400 mb-4">
@@ -630,6 +470,103 @@ export default function Home() {
           &copy; {new Date().getFullYear()} Seminai. Tutti i diritti riservati.
         </div>
       </footer>
-    </div>
-  );
+    );
+  }
+
+  private renderCalendlyDialog() {
+    return (
+      <Dialog
+        open={this.state.isCalendlyDialogOpen}
+        onOpenChange={this.handleCalendlyDialogToggle}
+      >
+        <DialogContent className="sm:max-w-3xl max-w-3xl bg-white">
+          <DialogHeader>
+            <DialogTitle>Fissa un incontro con il team SeminAI</DialogTitle>
+            <DialogDescription>
+              Scegli il giorno e l&apos;orario che preferisci per una demo
+              guidata di 30 minuti.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="w-full relative min-h-[320px]">
+            {this.state.isCalendlyLoading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white">
+                <Spinner
+                  size={64}
+                  speed="fast"
+                  ariaLabel="Caricamento Calendly"
+                  className="text-agri-green-600"
+                />
+              </div>
+            )}
+            <div
+              className={`calendly-inline-widget transition-opacity duration-300 ${
+                this.state.isCalendlyLoading ? "opacity-0" : "opacity-100"
+              }`}
+              data-url="https://calendly.com/get-seminai/30min"
+              style={{ minWidth: "320px", height: "700px" }}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  private openCalendlyDialog = (): void => {
+    this.setState({ isCalendlyDialogOpen: true, isCalendlyLoading: true });
+  };
+
+  private handleCalendlyDialogToggle = (isOpen: boolean): void => {
+    if (!isOpen) {
+      this.setState({ isCalendlyDialogOpen: false, isCalendlyLoading: false });
+    }
+  };
+
+  private startCalendlyWatcher(): void {
+    if (this.calendlyIframePollId !== null) {
+      return;
+    }
+
+    this.calendlyIframePollId = window.setInterval(() => {
+      const iframe = document.querySelector<HTMLIFrameElement>(
+        ".calendly-inline-widget iframe"
+      );
+
+      if (!iframe) {
+        return;
+      }
+
+      if (iframe.dataset.spinnerReady === "true") {
+        this.setState({ isCalendlyLoading: false });
+        this.stopCalendlyWatcher();
+        return;
+      }
+
+      this.calendlyIframe = iframe;
+      iframe.addEventListener("load", this.handleCalendlyLoaded);
+      if (this.calendlyIframePollId !== null) {
+        window.clearInterval(this.calendlyIframePollId);
+        this.calendlyIframePollId = null;
+      }
+    }, 150);
+  }
+
+  private stopCalendlyWatcher(): void {
+    if (this.calendlyIframePollId !== null) {
+      window.clearInterval(this.calendlyIframePollId);
+      this.calendlyIframePollId = null;
+    }
+
+    if (this.calendlyIframe) {
+      this.calendlyIframe.removeEventListener("load", this.handleCalendlyLoaded);
+      this.calendlyIframe = undefined;
+    }
+  }
+
+  private handleCalendlyLoaded = (): void => {
+    if (this.calendlyIframe) {
+      this.calendlyIframe.dataset.spinnerReady = "true";
+    }
+    this.setState({ isCalendlyLoading: false });
+    this.stopCalendlyWatcher();
+  };
 }
