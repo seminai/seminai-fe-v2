@@ -74,7 +74,7 @@ const buildCompaniesEditColumns = (): EditableColumn[] => {
       id: "email",
       title: "Email",
       type: "text",
-      placeholder: "es. info@azienda.it",
+      placeholder: "es. get.seminai@gmail.com",
     },
     {
       id: "phoneNumber",
@@ -160,30 +160,28 @@ export default function Company(): React.ReactElement {
       return;
     }
 
-    // Converti le aziende in formato row per la tabella
-    const rowsToAdd = companiesToImport.map((company) => ({
-      name: company.name || "",
-      vatNumber: company.vatNumber || "",
-      fiscalCode: company.fiscalCode || "",
-      cuaa: company.cuaa || "",
-      nation: company.nation || "",
-      city: company.city || "",
-      address: company.address || "",
-      cap: company.cap || "",
-      email: company.email || "",
-      phoneNumber: company.phoneNumber || "",
-      website: company.website || "",
-      logoUrl: company.logoUrl || "",
-    }));
+    const firstCompany = companiesToImport[0];
+    if (!firstCompany) {
+      toast.error("Nessun dato importato dal PDF");
+      return;
+    }
 
-    // Aggiungi le righe alla tabella
-    tableRef.current.addRows(rowsToAdd);
+    tableRef.current.prefillCreateRow({
+      name: firstCompany.name || "",
+      vatNumber: firstCompany.vatNumber || "",
+      fiscalCode: firstCompany.fiscalCode || "",
+      cuaa: firstCompany.cuaa || "",
+      nation: firstCompany.nation || "",
+      city: firstCompany.city || "",
+      address: firstCompany.address || "",
+      cap: firstCompany.cap || "",
+      email: firstCompany.email || "",
+      phoneNumber: firstCompany.phoneNumber || "",
+      website: firstCompany.website || "",
+      logoUrl: firstCompany.logoUrl || "",
+    });
 
-    toast.success(
-      `${companiesToImport.length} aziend${
-        companiesToImport.length === 1 ? "a aggiunta" : "e aggiunte"
-      } alla tabella. Completa i dati e salva.`
-    );
+    toast.success("Dati importati nel form. Verifica e salva l'azienda.");
   };
 
   const handleSave = (payload: {
@@ -304,7 +302,9 @@ export default function Company(): React.ReactElement {
             detailsTitle="Dettagli Azienda"
             className="bg-background"
           >
-            <ImportCompanyByPdf onImportSuccess={handleImportFromPdf} />
+            <div data-editable-table-slot="create-drawer">
+              <ImportCompanyByPdf onImportSuccess={handleImportFromPdf} />
+            </div>
           </EditableTable>
         )}
       </div>

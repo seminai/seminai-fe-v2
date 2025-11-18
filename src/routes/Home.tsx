@@ -1,3 +1,4 @@
+import { ChangeEvent, Component, FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { MorphingText } from "@/components/magicui/morphing-text";
 import { VideoText } from "@/components/magicui/video-text";
@@ -5,6 +6,160 @@ import { BorderBeam } from "@/components/magicui/border-beam";
 import { Card } from "@/components/ui/card";
 import { feedbacks } from "@/utils/feedback";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { emailApiService } from "@/api/email";
+
+interface ContactRequestFormProps {
+  className?: string;
+}
+
+interface ContactRequestFormState {
+  name: string;
+  email: string;
+  message: string;
+  isSubmitting: boolean;
+  errorMessage: string;
+  successMessage: string;
+}
+
+class ContactRequestForm extends Component<
+  ContactRequestFormProps,
+  ContactRequestFormState
+> {
+  public constructor(props: ContactRequestFormProps) {
+    super(props);
+    this.state = {
+      name: "",
+      email: "",
+      message: "",
+      isSubmitting: false,
+      errorMessage: "",
+      successMessage: "",
+    };
+  }
+
+  private handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
+    this.setState({
+      name: event.target.value,
+      errorMessage: "",
+      successMessage: "",
+    });
+  };
+
+  private handleEmailChange = (event: ChangeEvent<HTMLInputElement>) => {
+    this.setState({
+      email: event.target.value,
+      errorMessage: "",
+      successMessage: "",
+    });
+  };
+
+  private handleMessageChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    this.setState({
+      message: event.target.value,
+      errorMessage: "",
+      successMessage: "",
+    });
+  };
+
+  private handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmedName = this.state.name.trim();
+    const trimmedEmail = this.state.email.trim();
+    const trimmedMessage = this.state.message.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!trimmedName || !trimmedEmail || !trimmedMessage) {
+      this.setState({ errorMessage: "Please fill out every field." });
+      return;
+    }
+
+    if (!emailRegex.test(trimmedEmail)) {
+      this.setState({ errorMessage: "Please provide a valid email address." });
+      return;
+    }
+
+    this.setState({ isSubmitting: true, errorMessage: "" });
+
+    try {
+      const response = await emailApiService.sendContactEmail({
+        name: trimmedName,
+        email: trimmedEmail,
+        body: trimmedMessage,
+      });
+
+      this.setState({
+        name: "",
+        email: "",
+        message: "",
+        isSubmitting: false,
+        successMessage: response.message ?? "Richiesta inviata correttamente.",
+      });
+    } catch {
+      this.setState({
+        isSubmitting: false,
+        errorMessage:
+          "Si è verificato un errore durante l'invio della richiesta.",
+      });
+    }
+  };
+
+  public render() {
+    const { className } = this.props;
+    const { name, email, message, isSubmitting, errorMessage, successMessage } =
+      this.state;
+
+    return (
+      <form
+        className={`bg-white p-8 rounded-3xl shadow-xl border border-gray-100 space-y-6 ${
+          className ?? ""
+        }`}
+        onSubmit={this.handleSubmit}
+      >
+        <label className="block text-left">
+          <span className="text-gray-700 font-medium">Nome e cognome</span>
+          <input
+            className="mt-3 w-full rounded-2xl border border-gray-200 p-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-agri-green-500 focus:border-transparent transition"
+            placeholder="Mario Rossi"
+            value={name}
+            onChange={this.handleNameChange}
+          />
+        </label>
+        <label className="block text-left">
+          <span className="text-gray-700 font-medium">Email</span>
+          <input
+            type="email"
+            className="mt-3 w-full rounded-2xl border border-gray-200 p-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-agri-green-500 focus:border-transparent transition"
+            placeholder="mario.rossi@example.com"
+            value={email}
+            onChange={this.handleEmailChange}
+          />
+        </label>
+        <label className="block text-left">
+          <span className="text-gray-700 font-medium">
+            Raccontaci la tua richiesta
+          </span>
+          <textarea
+            className="mt-3 w-full min-h-[180px] rounded-2xl border border-gray-200 p-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-agri-green-500 focus:border-transparent transition"
+            placeholder="Descrivi come possiamo aiutarti..."
+            value={message}
+            onChange={this.handleMessageChange}
+          />
+        </label>
+        {errorMessage && <p className="text-sm text-red-500">{errorMessage}</p>}
+        {successMessage && (
+          <p className="text-sm text-agri-green-600">{successMessage}</p>
+        )}
+        <button
+          type="submit"
+          className="w-full py-4 px-6 rounded-2xl bg-green-700 text-white font-semibold hover:bg-green-600 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Invio in corso..." : "Invia"}
+        </button>
+      </form>
+    );
+  }
+}
 
 export default function Home() {
   const isMobile = useIsMobile();
@@ -338,6 +493,22 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Contact Form Section */}
+      <section id="contact-request" className="py-20 px-6 md:px-20 bg-white">
+        <div className="max-w-4xl mx-auto text-center space-y-8">
+          <p className="uppercase text-green-700/90 font-medium tracking-wider">
+            Richiedi informazioni
+          </p>
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900">
+            Contattaci
+          </h2>
+          <p className="text-lg text-gray-600">
+            Compila il messaggio e ti risponderemo al più presto
+          </p>
+          <ContactRequestForm />
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-40 px-6 md:px-20 bg-harvest-100 transition-colors">
         <div className="max-w-5xl mx-auto text-center">
@@ -448,10 +619,10 @@ export default function Home() {
               Hai domande? Siamo qui per aiutarti.
             </p>
             <a
-              href="mailto:info@seminai.it"
+              href="mailto:get.seminai@gmail.com.it"
               className="text-green-400 hover:text-green-300 transition-colors"
             >
-              info@seminai.it
+              get.seminai@gmail.com
             </a>
           </div>
         </div>

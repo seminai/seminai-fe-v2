@@ -4,13 +4,13 @@ import { type BulkFieldInput } from "@/api/fields";
 import { type Company } from "@/api/companies";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Upload, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
@@ -21,6 +21,7 @@ import { CsvFieldMapper } from "@/utils/csvFieldMapper";
 interface ImportFieldByCsvProps {
   companies: Company[];
   onImportSuccess: (fields: BulkFieldInput[]) => void;
+  onCloseParentDrawer?: () => void;
 }
 
 /**
@@ -30,8 +31,9 @@ interface ImportFieldByCsvProps {
 export function ImportFieldByCsv({
   companies,
   onImportSuccess,
+  onCloseParentDrawer,
 }: ImportFieldByCsvProps): React.ReactElement {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
@@ -72,9 +74,10 @@ export function ImportFieldByCsv({
       onImportSuccess(result.fields);
 
       // Chiudi il dialog e resetta lo stato
-      setIsDialogOpen(false);
+      setIsDrawerOpen(false);
       setImportErrors([]);
       setImportWarnings([]);
+      onCloseParentDrawer?.();
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Errore sconosciuto";
@@ -88,8 +91,8 @@ export function ImportFieldByCsv({
   /**
    * Resetta lo stato quando il dialog viene chiuso
    */
-  const handleDialogOpenChange = (open: boolean): void => {
-    setIsDialogOpen(open);
+  const handleDrawerOpenChange = (open: boolean): void => {
+    setIsDrawerOpen(open);
     if (!open) {
       setImportErrors([]);
       setImportWarnings([]);
@@ -97,21 +100,24 @@ export function ImportFieldByCsv({
   };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-      <DialogTrigger asChild>
+    <Drawer open={isDrawerOpen} onOpenChange={handleDrawerOpenChange}>
+      <DrawerTrigger asChild>
         <Button variant="outline" className="gap-2">
           <Upload className="h-4 w-4" />
           Importa CSV
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white">
-        <DialogHeader>
-          <DialogTitle>Importa Campi da CSV</DialogTitle>
-          <DialogDescription>
+      </DrawerTrigger>
+      <DrawerContent
+        data-vaul-drawer-direction="right"
+        className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white p-2"
+      >
+        <DrawerHeader>
+          <DrawerTitle>Importa Campi da CSV</DrawerTitle>
+          <DrawerDescription>
             Carica un file CSV con i dati dei campi. Il nome dell'azienda deve
             corrispondere esattamente a quello presente nel sistema.
-          </DialogDescription>
-        </DialogHeader>
+          </DrawerDescription>
+        </DrawerHeader>
 
         <div className="space-y-4">
           <CsvFieldImporter
@@ -191,7 +197,7 @@ export function ImportFieldByCsv({
             </a>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 }

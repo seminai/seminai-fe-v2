@@ -215,7 +215,7 @@ export default function TermsOfService() {
             </p>
             <div className="bg-agri-green-50 p-4 rounded-lg">
               <p className="text-gray-700">
-                <strong>Email:</strong> info@seminai.it
+                <strong>Email:</strong> get.seminai@gmail.com
                 <br />
                 <strong>Indirizzo:</strong> Italia
               </p>
