@@ -3,13 +3,13 @@ import { useState } from "react";
 import { type BulkCompanyInput } from "@/api/companies";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Upload, AlertCircle, FileText, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
@@ -26,7 +26,7 @@ interface ImportCompanyByPdfProps {
 export function ImportCompanyByPdf({
   onImportSuccess,
 }: ImportCompanyByPdfProps): React.ReactElement {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
@@ -141,7 +141,7 @@ export function ImportCompanyByPdf({
       toast.success("Dati estratti con successo dal PDF");
 
       // Chiudi il dialog e resetta lo stato
-      setIsDialogOpen(false);
+      setIsDrawerOpen(false);
       setImportErrors([]);
       setImportWarnings([]);
       setExtractedText("");
@@ -187,10 +187,10 @@ export function ImportCompanyByPdf({
   };
 
   /**
-   * Resetta lo stato quando il dialog viene chiuso
+   * Resetta lo stato quando la drawer viene chiusa
    */
-  const handleDialogOpenChange = (open: boolean): void => {
-    setIsDialogOpen(open);
+  const handleDrawerOpenChange = (open: boolean): void => {
+    setIsDrawerOpen(open);
     if (!open) {
       setImportErrors([]);
       setImportWarnings([]);
@@ -200,21 +200,24 @@ export function ImportCompanyByPdf({
   };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-      <DialogTrigger asChild>
+    <Drawer open={isDrawerOpen} onOpenChange={handleDrawerOpenChange}>
+      <DrawerTrigger asChild>
         <Button variant="outline" className="gap-2">
           <FileText className="h-4 w-4" />
           Importa da PDF
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white">
-        <DialogHeader>
-          <DialogTitle>Importa Azienda da Visura Camerale</DialogTitle>
-          <DialogDescription>
+      </DrawerTrigger>
+      <DrawerContent
+        data-vaul-drawer-direction="right"
+        className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white p-2"
+      >
+        <DrawerHeader>
+          <DrawerTitle>Importa Azienda da Visura Camerale</DrawerTitle>
+          <DrawerDescription>
             Carica un file PDF della visura camerale. I dati dell'azienda
             verranno estratti automaticamente.
-          </DialogDescription>
-        </DialogHeader>
+          </DrawerDescription>
+        </DrawerHeader>
 
         <div className="space-y-4">
           {/* Area Drag & Drop */}
@@ -335,7 +338,7 @@ export function ImportCompanyByPdf({
             </div>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 }

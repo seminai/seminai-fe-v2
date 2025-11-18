@@ -711,15 +711,29 @@ export default function DosageManager() {
                   `${row.productName}-${row.registrationNumber}`
                 }
               >
-                <div className="flex flex-wrap items-center gap-2">
-                  <ImportProducts
-                    onAddRows={handleAddRows}
-                    onProductsChange={setProducts}
-                  />
-                  <ImportProductsFromDdt
-                    onAddRows={handleAddRows}
-                    onProductsChange={setProducts}
-                  />
+                <div
+                  data-editable-table-slot="create-drawer"
+                  className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 space-y-4"
+                >
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-neutral-900">
+                      Importa prodotti
+                    </p>
+                    <p className="text-sm text-neutral-500">
+                      Carica rapidamente i prodotti tramite CSV oppure leggi i
+                      DDT in formato PDF.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <ImportProducts
+                      onAddRows={handleAddRows}
+                      onProductsChange={setProducts}
+                    />
+                    <ImportProductsFromDdt
+                      onAddRows={handleAddRows}
+                      onProductsChange={setProducts}
+                    />
+                  </div>
                 </div>
               </EditableTable>
               {products.length === 0 &&

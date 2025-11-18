@@ -206,6 +206,26 @@ export class EditableTable extends React.Component<
     };
   }
 
+  public prefillCreateRow = (data: Record<string, unknown>): void => {
+    const freshRow = this.createEmptyRow();
+    const mergedData = { ...freshRow.data };
+    const updatedTouched: Record<string, boolean> = {};
+
+    for (const column of this.props.columns) {
+      const value = data[column.id];
+      if (value !== undefined) {
+        mergedData[column.id] = value;
+        updatedTouched[column.id] = true;
+      }
+    }
+
+    this.setState({
+      createDrawerOpen: true,
+      createRow: { ...freshRow, data: mergedData },
+      createTouched: updatedTouched,
+    });
+  };
+
   private handleExportCsv = (): void => {
     if (this.props.columns.length === 0) {
       return;
@@ -502,12 +522,42 @@ export class EditableTable extends React.Component<
           right.push(child);
           return;
         }
+        if (slot && slot !== "left") {
+          return;
+        }
       }
 
       left.push(child);
     });
 
     return { left, right };
+  }
+
+  private getChildrenForSlot(slotName: string): React.ReactNode[] {
+    const nodes: React.ReactNode[] = [];
+    React.Children.forEach(this.props.children, (child) => {
+      if (child === null || child === undefined) {
+        return;
+      }
+
+      if (
+        React.isValidElement<{
+          ["data-table-slot"]?: string;
+          ["data-editable-table-slot"]?: string;
+          slot?: string;
+        }>(child)
+      ) {
+        const slot =
+          child.props?.["data-table-slot"] ??
+          child.props?.["data-editable-table-slot"] ??
+          child.props?.slot;
+
+        if (slot === slotName) {
+          nodes.push(child);
+        }
+      }
+    });
+    return nodes;
   }
 
   private get selectedIds(): string[] {
@@ -601,6 +651,10 @@ export class EditableTable extends React.Component<
 
   private get hasDirtyRows(): boolean {
     return this.state.rows.some((r) => r.isDirty);
+  }
+
+  private get shouldShowEditActions(): boolean {
+    return this.props.alwaysEdit || this.state.isEditMode || this.hasDirtyRows;
   }
 
   private validateRow(row: InternalRow): Record<string, string> {
@@ -830,6 +884,28 @@ export class EditableTable extends React.Component<
     const pendingRow = this.state.createRow;
     const pendingErrors = pendingRow ? this.validateRow(pendingRow) : {};
     const disableSave = !pendingRow || Object.keys(pendingErrors).length > 0;
+    const drawerChildren = this.getChildrenForSlot("create-drawer");
+    const enhancedDrawerChildren = drawerChildren.map((child, index) => {
+      if (React.isValidElement(child)) {
+        const element = child as React.ReactElement<{
+          onCloseParentDrawer?: () => void;
+          onOpenParentDrawer?: () => void;
+        }>;
+        return (
+          <React.Fragment key={child.key ?? `create-drawer-child-${index}`}>
+            {React.cloneElement(element, {
+              onCloseParentDrawer: this.handleCreateCancel,
+              onOpenParentDrawer: this.openCreateDrawer,
+            })}
+          </React.Fragment>
+        );
+      }
+      return (
+        <React.Fragment key={`create-drawer-child-${index}`}>
+          {child}
+        </React.Fragment>
+      );
+    });
 
     return (
       <Drawer
@@ -844,6 +920,9 @@ export class EditableTable extends React.Component<
             </DrawerDescription>
           </DrawerHeader>
           <div className="p-6 space-y-5 overflow-y-auto max-h-[calc(100vh-180px)]">
+            {enhancedDrawerChildren.length > 0 && (
+              <div className="space-y-4">{enhancedDrawerChildren}</div>
+            )}
             {pendingRow ? (
               this.props.columns.map((column) => (
                 <div key={column.id} className="space-y-2">
@@ -881,7 +960,8 @@ export class EditableTable extends React.Component<
   private renderVertical(): React.ReactNode {
     const { columns, isModify, className } = this.props;
     const { rows } = this.state;
-    const showSave = this.hasDirtyRows;
+    const showEditActions = this.shouldShowEditActions;
+    const showAddButton = Boolean(this.props.addButton) && !showEditActions;
     const hasLast = Boolean(this.props.lastComponent);
     const { left: leftActions, right: rightActions } = this.getActionChildren();
 
@@ -907,7 +987,7 @@ export class EditableTable extends React.Component<
             </div>
             <div className="flex items-center gap-2">
               {rightActions}
-              {showSave && (
+              {showEditActions && (
                 <>
                   <Button
                     variant="ghost"
@@ -1045,7 +1125,7 @@ export class EditableTable extends React.Component<
             </tbody>
           </table>
 
-          {this.props.addButton && (
+          {showAddButton && (
             <div className="sticky left-0 bottom-0 w-full border-t border-agri-green-50 inset-shadow-xs border-border/30 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <div className="flex items-center justify-between px-2 py-2">
                 <Button
@@ -1071,7 +1151,7 @@ export class EditableTable extends React.Component<
     }
     const { columns, isModify, className } = this.props;
     const { rows } = this.state;
-    const showSave = this.hasDirtyRows;
+    const showEditActions = this.shouldShowEditActions;
     const hasErrors = this.hasErrors;
     const anySelected = this.selectedIds.length > 0;
     const allSelected =
@@ -1081,6 +1161,7 @@ export class EditableTable extends React.Component<
     );
     const hasLast = Boolean(this.props.lastComponent);
     const { left: leftActions, right: rightActions } = this.getActionChildren();
+    const showAddButton = Boolean(this.props.addButton) && !showEditActions;
 
     return (
       <div
@@ -1111,31 +1192,34 @@ export class EditableTable extends React.Component<
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {rightActions}
-            {isModify && !anySelected && !this.props.alwaysEdit && (
-              <Button
-                onClick={this.toggleEditMode}
-                className={cn(
-                  "border cursor-pointer",
-                  this.state.isEditMode
-                    ? "border-none text-gray-500 hover:bg-gray-50"
-                    : "border-none bg-blue-200 text-blue-700 hover:bg-blue-50"
-                )}
-                variant="ghost"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="h-4 w-4 mr-2"
+            {isModify &&
+              !anySelected &&
+              !this.props.alwaysEdit &&
+              !this.state.isEditMode && (
+                <Button
+                  onClick={this.toggleEditMode}
+                  className={cn(
+                    "border cursor-pointer",
+                    this.state.isEditMode
+                      ? "border-none text-gray-500 hover:bg-gray-50"
+                      : "border-none bg-blue-200 text-blue-700 hover:bg-blue-50"
+                  )}
+                  variant="ghost"
                 >
-                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-                </svg>
-                {this.state.isEditMode ? "Chiudi Modifica" : "Modifica"}
-              </Button>
-            )}
-            {this.props.addButton && (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="h-4 w-4 mr-2"
+                  >
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                  </svg>
+                  Modifica
+                </Button>
+              )}
+            {showAddButton && (
               <Button
                 variant="ghost"
                 className="text-muted-foreground bg-agri-green-200 text-agri-green-700 cursor-pointer"
@@ -1170,7 +1254,7 @@ export class EditableTable extends React.Component<
                 Elimina
               </Button>
             )}
-            {showSave && (
+            {showEditActions && (
               <>
                 <Button
                   variant="ghost"

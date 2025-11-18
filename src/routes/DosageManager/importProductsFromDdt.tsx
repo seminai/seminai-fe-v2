@@ -2,13 +2,12 @@ import { useMemo, useRef, useState } from "react";
 import type { ChangeEvent, ReactElement } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -32,6 +31,8 @@ import type { DosageProduct } from "@/api/dosage-agent";
 interface ImportProductsFromDdtProps {
   onAddRows?: (rows: Array<Record<string, unknown>>) => void;
   onProductsChange?: (products: DosageProduct[]) => void;
+  onCloseParentDrawer?: () => void;
+  onOpenParentDrawer?: () => void;
 }
 
 interface ProductsImporterService {
@@ -312,8 +313,10 @@ class DdtProductImportManager {
 export function ImportProductsFromDdt({
   onAddRows,
   onProductsChange,
+  onCloseParentDrawer,
+  onOpenParentDrawer,
 }: ImportProductsFromDdtProps): ReactElement {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -331,10 +334,17 @@ export function ImportProductsFromDdt({
     []
   );
 
-  const handleDialogOpenChange = (open: boolean): void => {
-    setIsDialogOpen(open);
+  const [shouldRestoreParentDrawer, setShouldRestoreParentDrawer] =
+    useState(false);
+
+  const handleDrawerOpenChange = (open: boolean): void => {
+    setIsDrawerOpen(open);
     if (!open) {
       resetState();
+      if (shouldRestoreParentDrawer) {
+        onOpenParentDrawer?.();
+        setShouldRestoreParentDrawer(false);
+      }
     }
   };
 
@@ -405,6 +415,7 @@ export function ImportProductsFromDdt({
       });
 
       setSelectedFiles([]);
+      setIsDrawerOpen(false);
     } catch (error) {
       const message =
         error instanceof Error
@@ -420,6 +431,12 @@ export function ImportProductsFromDdt({
         fileInputRef.current.value = "";
       }
     }
+  };
+
+  const handleOpenDrawer = (): void => {
+    onCloseParentDrawer?.();
+    setShouldRestoreParentDrawer(true);
+    setIsDrawerOpen(true);
   };
 
   const handleConfirmImport = async (): Promise<void> => {
@@ -464,184 +481,187 @@ export function ImportProductsFromDdt({
   };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <UploadCloud className="h-4 w-4" />
-          Importa prodotti da DDT
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white">
-        <DialogHeader>
-          <DialogTitle>Importa Prodotti da DDT PDF</DialogTitle>
-          <DialogDescription>
-            Carica uno o più file PDF di DDT per estrarre automaticamente i
-            prodotti fitosanitari e aggiungerli all'elenco.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Button variant="outline" className="gap-2" onClick={handleOpenDrawer}>
+        <UploadCloud className="h-4 w-4" />
+        Importa prodotti da DDT
+      </Button>
+      <Drawer open={isDrawerOpen} onOpenChange={handleDrawerOpenChange}>
+        <DrawerContent
+          data-vaul-drawer-direction="right"
+          className="max-w-[700px] bg-white"
+        >
+          <DrawerHeader className="border-b border-neutral-100 px-6 py-5">
+            <DrawerTitle>Importa Prodotti da DDT PDF</DrawerTitle>
+            <DrawerDescription>
+              Carica uno o più file PDF di DDT per estrarre automaticamente i
+              prodotti fitosanitari e aggiungerli all&apos;elenco.
+            </DrawerDescription>
+          </DrawerHeader>
 
-        <div className="space-y-4">
-          <div className="relative">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/pdf"
-              multiple
-              onChange={handleFileInputChange}
-              disabled={isProcessing}
-              className="hidden"
-              id="ddt-products-upload"
-            />
-            <label
-              htmlFor="ddt-products-upload"
-              className={`flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-xl cursor-pointer transition-all ${
-                isProcessing
-                  ? "border-neutral-200 bg-neutral-50 cursor-not-allowed"
-                  : "border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50"
-              }`}
-            >
-              <UploadCloud
-                className={`h-12 w-12 mb-4 ${
-                  isProcessing ? "text-neutral-300" : "text-neutral-400"
-                }`}
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+            <div className="relative">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf"
+                multiple
+                onChange={handleFileInputChange}
+                disabled={isProcessing}
+                className="hidden"
+                id="ddt-products-upload"
               />
-              <p className="text-base font-medium text-neutral-900 mb-2">
-                {selectedFiles.length > 0
-                  ? `${selectedFiles.length} file selezionati`
-                  : "Carica file PDF di DDT"}
-              </p>
-              <p className="text-sm text-neutral-500 max-w-md">
-                Seleziona uno o più file PDF oppure trascinali qui per avviare
-                l'importazione.
-              </p>
-            </label>
-          </div>
+              <label
+                htmlFor="ddt-products-upload"
+                className={`flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                  isProcessing
+                    ? "border-neutral-200 bg-neutral-50 cursor-not-allowed"
+                    : "border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50"
+                }`}
+              >
+                <UploadCloud
+                  className={`h-12 w-12 mb-4 ${
+                    isProcessing ? "text-neutral-300" : "text-neutral-400"
+                  }`}
+                />
+                <p className="text-base font-medium text-neutral-900 mb-2">
+                  {selectedFiles.length > 0
+                    ? `${selectedFiles.length} file selezionati`
+                    : "Carica file PDF di DDT"}
+                </p>
+                <p className="text-sm text-neutral-500 max-w-md">
+                  Seleziona uno o più file PDF oppure trascinali qui per avviare
+                  l&apos;importazione.
+                </p>
+              </label>
+            </div>
 
-          {selectedFiles.length > 0 && (
-            <div className="space-y-3">
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                {selectedFiles.map((file) => (
-                  <div
-                    key={`${file.name}-${file.lastModified}`}
-                    className="flex items-center justify-between gap-3 border border-neutral-200 rounded-lg px-3 py-2 bg-white"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <FileText className="h-4 w-4 text-neutral-500 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-neutral-900 truncate">
-                          {file.name}
-                        </p>
-                        <p className="text-xs text-neutral-500">
-                          {formatFileSize(file.size)}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveFile(file)}
-                      disabled={isProcessing}
-                      className="h-8 w-8 text-neutral-500 hover:text-neutral-900"
+            {selectedFiles.length > 0 && (
+              <div className="space-y-3">
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {selectedFiles.map((file) => (
+                    <div
+                      key={`${file.name}-${file.lastModified}`}
+                      className="flex items-center justify-between gap-3 border border-neutral-200 rounded-lg px-3 py-2 bg-white"
                     >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  variant="ghost"
-                  onClick={handleClearAll}
-                  disabled={isProcessing}
-                  className="text-neutral-600 hover:text-neutral-900"
-                >
-                  Svuota elenco
-                </Button>
-                <Button
-                  onClick={handleConfirmImport}
-                  disabled={isProcessing || selectedFiles.length === 0}
-                  className="gap-2"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Spinner size={16} ariaLabel="Elaborazione file DDT" />
-                      Importazione in corso...
-                    </>
-                  ) : (
-                    <>
-                      <UploadCloud className="h-4 w-4" />
-                      Importa selezione
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {isProcessing && (
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Spinner size={20} ariaLabel="Elaborazione file DDT" />
-              <span>Analisi dei file in corso...</span>
-            </div>
-          )}
-
-          {importError && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="space-y-2">
-                <div className="font-medium">Importazione non riuscita</div>
-                <p className="text-xs text-muted-foreground">{importError}</p>
-                {selectedFiles.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRetryImport}
-                    disabled={isProcessing}
-                  >
-                    Riprova importazione
-                  </Button>
-                )}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {importSummary && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-neutral-700">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                <span>
-                  {importSummary.totalEntries} prodotti trovati in{" "}
-                  {importSummary.totalFiles} file.
-                </span>
-              </div>
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                {importResults.map((result) => (
-                  <div
-                    key={result.fileName}
-                    className="border border-neutral-200 rounded-lg p-3 bg-white shadow-sm"
-                  >
-                    <div className="flex items-center gap-2 text-sm font-medium text-neutral-900">
-                      <FileText className="h-4 w-4 text-neutral-500" />
-                      <span>{result.fileName}</span>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <FileText className="h-4 w-4 text-neutral-500 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-neutral-900 truncate">
+                            {file.name}
+                          </p>
+                          <p className="text-xs text-neutral-500">
+                            {formatFileSize(file.size)}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveFile(file)}
+                        disabled={isProcessing}
+                        className="h-8 w-8 text-neutral-500 hover:text-neutral-900"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <ul className="mt-2 space-y-1 text-xs text-neutral-600">
-                      {result.entries.map((entry, index) => (
-                        <li key={`${result.fileName}-${index}`}>
-                          <span className="font-medium">
-                            {entry.productName}
-                          </span>{" "}
-                          • {entry.quantity} {entry.quantityUnitOfMeasure} •
-                          Registro {entry.registrationNumber}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={handleClearAll}
+                    disabled={isProcessing}
+                    className="text-neutral-600 hover:text-neutral-900"
+                  >
+                    Svuota elenco
+                  </Button>
+                  <Button
+                    onClick={handleConfirmImport}
+                    disabled={isProcessing || selectedFiles.length === 0}
+                    className="gap-2"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Spinner size={16} ariaLabel="Elaborazione file DDT" />
+                        Importazione in corso...
+                      </>
+                    ) : (
+                      <>
+                        <UploadCloud className="h-4 w-4" />
+                        Importa selezione
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+            )}
+
+            {isProcessing && (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Spinner size={20} ariaLabel="Elaborazione file DDT" />
+                <span>Analisi dei file in corso...</span>
+              </div>
+            )}
+
+            {importError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="space-y-2">
+                  <div className="font-medium">Importazione non riuscita</div>
+                  <p className="text-xs text-muted-foreground">{importError}</p>
+                  {selectedFiles.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRetryImport}
+                      disabled={isProcessing}
+                    >
+                      Riprova importazione
+                    </Button>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {importSummary && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-neutral-700">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <span>
+                    {importSummary.totalEntries} prodotti trovati in{" "}
+                    {importSummary.totalFiles} file.
+                  </span>
+                </div>
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {importResults.map((result) => (
+                    <div
+                      key={result.fileName}
+                      className="border border-neutral-200 rounded-lg p-3 bg-white shadow-sm"
+                    >
+                      <div className="flex items-center gap-2 text-sm font-medium text-neutral-900">
+                        <FileText className="h-4 w-4 text-neutral-500" />
+                        <span>{result.fileName}</span>
+                      </div>
+                      <ul className="mt-2 space-y-1 text-xs text-neutral-600">
+                        {result.entries.map((entry, index) => (
+                          <li key={`${result.fileName}-${index}`}>
+                            <span className="font-medium">
+                              {entry.productName}
+                            </span>{" "}
+                            • {entry.quantity} {entry.quantityUnitOfMeasure} •
+                            Registro {entry.registrationNumber}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </>
   );
 }

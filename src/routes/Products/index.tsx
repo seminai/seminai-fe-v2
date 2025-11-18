@@ -1,29 +1,18 @@
 import { useState, useMemo } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { PageHeader } from "@/components/organism/Header";
 import { useProducts } from "@/hooks/useProducts";
 import { useCompanies } from "@/hooks/useCompanies";
 import { Product } from "@/api/products";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  EditableTable,
+  EditableColumn,
+} from "@/components/organism/EditableTable";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  AlertCircle,
-  Package,
-  Warehouse,
-  LayoutGrid,
-  List,
-  Barcode,
-  Box,
-  Building2,
-  Eye,
-} from "lucide-react";
+import { AlertCircle, Package, Eye } from "lucide-react";
 import DrawerProduct from "./DrawerProduct";
 import {
   Select,
@@ -33,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 class ProductStockCalculator {
   private readonly stocks: Product["stocks"];
@@ -99,6 +87,9 @@ class ProductFilter {
 type SortField = "name" | "sku" | "stock" | "warehouse" | "company";
 type SortDirection = "asc" | "desc";
 
+const DEFAULT_SORT_FIELD: SortField = "name";
+const DEFAULT_SORT_DIRECTION: SortDirection = "asc";
+
 class ProductSorter {
   private readonly products: Product[];
   private readonly sortField: SortField;
@@ -152,7 +143,146 @@ class ProductSorter {
   }
 }
 
-type ViewMode = "grid" | "table";
+interface ProductTableRow extends Record<string, unknown> {
+  id: string;
+  name: string;
+  description?: string | null;
+  sku: string;
+  stockTotal: number;
+  stockUnit: string;
+  stockBadgeVariant: ComponentProps<typeof Badge>["variant"];
+  warehouseName: string;
+  companyName: string;
+  movementsCount: number;
+  product: Product;
+}
+
+class ProductTableRowBuilder {
+  private readonly products: Product[];
+
+  constructor(products: Product[]) {
+    this.products = products;
+  }
+
+  public build(): ProductTableRow[] {
+    return this.products.map((product) => {
+      const calculator = new ProductStockCalculator(product.stocks);
+      const stockTotal = calculator.calculateTotalStock();
+      const stockBadgeVariant = calculator.getStockBadgeVariant();
+      const stockUnit = product.stocks[0]?.unitOfMeasureQuantity ?? "unità";
+
+      return {
+        id: String(product.id),
+        name: product.name,
+        description: product.description,
+        sku: product.sku,
+        stockTotal,
+        stockUnit,
+        stockBadgeVariant,
+        warehouseName: product.warehouse.name,
+        companyName: product.warehouse.company.name,
+        movementsCount: product.stocks.length,
+        product,
+      };
+    });
+  }
+}
+
+class ProductTableColumnsFactory {
+  public static create(): EditableColumn[] {
+    return [
+      {
+        id: "name",
+        title: "Nome Prodotto",
+        width: "280px",
+        render: ProductTableColumnsFactory.renderName,
+      },
+      {
+        id: "sku",
+        title: "SKU",
+        width: "200px",
+        render: ProductTableColumnsFactory.renderSku,
+      },
+      {
+        id: "stockTotal",
+        title: "Stock",
+        width: "200px",
+        type: "number",
+        render: ProductTableColumnsFactory.renderStock,
+      },
+      {
+        id: "warehouseName",
+        title: "Magazzino",
+        width: "220px",
+        render: ProductTableColumnsFactory.renderWarehouse,
+      },
+      {
+        id: "companyName",
+        title: "Azienda",
+        width: "220px",
+        render: ProductTableColumnsFactory.renderCompany,
+      },
+    ];
+  }
+
+  private static asRow(row: Record<string, unknown>): ProductTableRow {
+    return row as ProductTableRow;
+  }
+
+  private static renderName(
+    _value: unknown,
+    row: Record<string, unknown>
+  ): ReactNode {
+    const data = ProductTableColumnsFactory.asRow(row);
+
+    return (
+      <div>
+        <div className="font-semibold">{data.name}</div>
+        {data.description ? (
+          <div className="text-xs text-muted-foreground mt-1">
+            {data.description}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  private static renderSku(
+    _value: unknown,
+    row: Record<string, unknown>
+  ): ReactNode {
+    const data = ProductTableColumnsFactory.asRow(row);
+    return <span className="font-mono text-sm">{data.sku}</span>;
+  }
+
+  private static renderStock(
+    _value: unknown,
+    row: Record<string, unknown>
+  ): ReactNode {
+    const data = ProductTableColumnsFactory.asRow(row);
+    return (
+      <Badge variant={data.stockBadgeVariant}>
+        {data.stockTotal} {data.stockUnit}
+      </Badge>
+    );
+  }
+
+  private static renderWarehouse(
+    _value: unknown,
+    row: Record<string, unknown>
+  ): ReactNode {
+    const data = ProductTableColumnsFactory.asRow(row);
+    return <span>{data.warehouseName}</span>;
+  }
+
+  private static renderCompany(
+    _value: unknown,
+    row: Record<string, unknown>
+  ): ReactNode {
+    const data = ProductTableColumnsFactory.asRow(row);
+    return <span>{data.companyName}</span>;
+  }
+}
 
 function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -161,9 +291,6 @@ function ProductsPage() {
   );
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>("table");
-  const [sortField, setSortField] = useState<SortField>("name");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   const { companies } = useCompanies();
   const { products, isLoading, isError, error } = useProducts(selectedCompany);
@@ -176,44 +303,23 @@ function ProductsPage() {
   const sortedProducts = useMemo(() => {
     const sorter = new ProductSorter(
       filteredProducts,
-      sortField,
-      sortDirection
+      DEFAULT_SORT_FIELD,
+      DEFAULT_SORT_DIRECTION
     );
     return sorter.sort();
-  }, [filteredProducts, sortField, sortDirection]);
+  }, [filteredProducts]);
+
+  const tableColumns = useMemo(() => ProductTableColumnsFactory.create(), []);
+
+  const tableRows = useMemo<ProductTableRow[]>(() => {
+    const builder = new ProductTableRowBuilder(sortedProducts);
+    return builder.build();
+  }, [sortedProducts]);
 
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
     setDrawerOpen(true);
   };
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
-  };
-
-  const SortIcon = ({ field }: { field: SortField }) => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      className={cn(
-        "h-4 w-4 transition-all flex-shrink-0 ml-1",
-        sortField === field
-          ? "opacity-100 text-blue-600"
-          : "opacity-40 group-hover:opacity-80",
-        sortField === field && sortDirection === "desc" ? "rotate-180" : ""
-      )}
-    >
-      <polyline points="18 15 12 9 6 15" />
-    </svg>
-  );
 
   if (isLoading) {
     return (
@@ -272,49 +378,26 @@ function ProductsPage() {
         totalItems={products.length}
         filteredItems={filteredProducts.length}
         rightElement={
-          <div className="flex items-center gap-2">
-            {/* Toggle vista */}
-            <div className="flex items-center gap-1 border border-agri-green-100 rounded-lg p-1">
-              <Button
-                variant={viewMode === "grid" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("grid")}
-                className="h-8"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "table" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("table")}
-                className="h-8"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Filtro aziende */}
-            {companies.length > 0 && (
-              <Select
-                value={selectedCompany ?? "all"}
-                onValueChange={(value) =>
-                  setSelectedCompany(value === "all" ? undefined : value)
-                }
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Tutte le aziende" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte le aziende</SelectItem>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.name}>
-                      {company.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+          companies.length > 0 ? (
+            <Select
+              value={selectedCompany ?? "all"}
+              onValueChange={(value) =>
+                setSelectedCompany(value === "all" ? undefined : value)
+              }
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Tutte le aziende" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte le aziende</SelectItem>
+                {companies.map((company) => (
+                  <SelectItem key={company.id} value={company.name}>
+                    {company.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null
         }
       />
 
@@ -333,247 +416,32 @@ function ProductsPage() {
               </p>
             </div>
           </div>
-        ) : viewMode === "grid" ? (
-          // Vista Card
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sortedProducts.map((product) => {
-              const calculator = new ProductStockCalculator(product.stocks);
-              const totalStock = calculator.calculateTotalStock();
-              const unit = product.stocks[0]?.unitOfMeasureQuantity ?? "unità";
-
-              return (
-                <Card
-                  key={product.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => handleProductClick(product)}
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg">
-                          {product.name}
-                        </CardTitle>
-                        <CardDescription className="mt-1">
-                          SKU: {product.sku}
-                        </CardDescription>
-                      </div>
-                      <Badge variant={calculator.getStockBadgeVariant()}>
-                        {totalStock} {unit}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Warehouse className="h-4 w-4" />
-                        <span>{product.warehouse.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Package className="h-4 w-4" />
-                        <span>{product.warehouse.company.name}</span>
-                      </div>
-                      <div className="mt-3 text-xs text-gray-500">
-                        {product.stocks.length} moviment
-                        {product.stocks.length === 1 ? "o" : "i"} registrat
-                        {product.stocks.length === 1 ? "o" : "i"}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
         ) : (
-          // Vista Tabella
-          <div className="w-full overflow-auto max-h-[calc(100vh-300px)]">
-            <table
-              data-slot="table"
-              className={cn("w-full caption-bottom text-sm relative")}
-            >
-              <thead
-                data-slot="table-header"
-                className={cn("border-b-2 border-agri-green-100")}
-              >
-                <tr data-slot="table-row" className={cn("transition-colors")}>
-                  <th
-                    data-slot="table-head"
-                    className={cn(
-                      "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap cursor-pointer hover:bg-muted/10 transition-colors text-left",
-                      "sticky top-0 bg-white dark:bg-background z-10"
-                    )}
-                    onClick={() => handleSort("name")}
+          <EditableTable
+            columns={tableColumns}
+            rows={tableRows}
+            isModify={false}
+            getRowId={(row) => (row as ProductTableRow).id}
+            lastComponent={(row) => {
+              const data = row as ProductTableRow;
+              return (
+                <div className="bg-white flex justify-end px-2 py-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 hover:bg-blue-50 hover:border-blue-400 transition-colors"
+                    onClick={() => handleProductClick(data.product)}
                   >
-                    <div className="flex items-center gap-1.5">
-                      <Box className="h-4 w-4 text-muted-foreground" />
-                      <span>Nome Prodotto</span>
-                      <SortIcon field="name" />
-                    </div>
-                  </th>
-                  <th
-                    data-slot="table-head"
-                    className={cn(
-                      "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap cursor-pointer hover:bg-muted/10 transition-colors text-left",
-                      "sticky top-0 bg-white dark:bg-background z-10"
-                    )}
-                    onClick={() => handleSort("sku")}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <Barcode className="h-4 w-4 text-muted-foreground" />
-                      <span>SKU</span>
-                      <SortIcon field="sku" />
-                    </div>
-                  </th>
-                  <th
-                    data-slot="table-head"
-                    className={cn(
-                      "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap cursor-pointer hover:bg-muted/10 transition-colors text-left",
-                      "sticky top-0 bg-white dark:bg-background z-10"
-                    )}
-                    onClick={() => handleSort("stock")}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <Package className="h-4 w-4 text-muted-foreground" />
-                      <span>Stock</span>
-                      <SortIcon field="stock" />
-                    </div>
-                  </th>
-                  <th
-                    data-slot="table-head"
-                    className={cn(
-                      "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap cursor-pointer hover:bg-muted/10 transition-colors text-left",
-                      "sticky top-0 bg-white dark:bg-background z-10"
-                    )}
-                    onClick={() => handleSort("warehouse")}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <Warehouse className="h-4 w-4 text-muted-foreground" />
-                      <span>Magazzino</span>
-                      <SortIcon field="warehouse" />
-                    </div>
-                  </th>
-                  <th
-                    data-slot="table-head"
-                    className={cn(
-                      "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap cursor-pointer hover:bg-muted/10 transition-colors text-left",
-                      "sticky top-0 bg-white dark:bg-background z-10"
-                    )}
-                    onClick={() => handleSort("company")}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
-                      <span>Azienda</span>
-                      <SortIcon field="company" />
-                    </div>
-                  </th>
-                  <th
-                    data-slot="table-head"
-                    className={cn(
-                      "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap text-center",
-                      "sticky top-0 bg-white dark:bg-background z-10"
-                    )}
-                  >
-                    <span>Azioni</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody
-                data-slot="table-body"
-                className={cn("divide-y divide-border/15")}
-              >
-                {sortedProducts.map((product) => {
-                  const calculator = new ProductStockCalculator(product.stocks);
-                  const totalStock = calculator.calculateTotalStock();
-                  const unit =
-                    product.stocks[0]?.unitOfMeasureQuantity ?? "unità";
-
-                  return (
-                    <tr
-                      key={product.id}
-                      data-slot="table-row"
-                      className={cn(
-                        "transition-colors hover:bg-muted/10 border-agri-green-50 cursor-pointer"
-                      )}
-                      onClick={() => handleProductClick(product)}
-                    >
-                      <td
-                        data-slot="table-cell"
-                        className={cn("p-3 align-top text-left")}
-                      >
-                        <div>
-                          <div className="font-semibold">{product.name}</div>
-                          {product.description && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {product.description}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td
-                        data-slot="table-cell"
-                        className={cn(
-                          "p-3 align-top text-left whitespace-nowrap"
-                        )}
-                      >
-                        <span className="font-mono text-sm">{product.sku}</span>
-                      </td>
-                      <td
-                        data-slot="table-cell"
-                        className={cn(
-                          "p-3 align-top text-left whitespace-nowrap"
-                        )}
-                      >
-                        <Badge variant={calculator.getStockBadgeVariant()}>
-                          {totalStock} {unit}
-                        </Badge>
-                      </td>
-                      <td
-                        data-slot="table-cell"
-                        className={cn(
-                          "p-3 align-top text-left whitespace-nowrap"
-                        )}
-                      >
-                        {product.warehouse.name}
-                      </td>
-                      <td
-                        data-slot="table-cell"
-                        className={cn(
-                          "p-3 align-top text-left whitespace-nowrap"
-                        )}
-                      >
-                        {product.warehouse.company.name}
-                      </td>
-                      <td
-                        data-slot="table-cell"
-                        className={cn(
-                          "p-3 align-middle text-center whitespace-nowrap"
-                        )}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleProductClick(product);
-                        }}
-                      >
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-2 hover:bg-blue-50 hover:border-blue-400 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleProductClick(product);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span>
-                            {product.stocks.length} moviment
-                            {product.stocks.length === 1 ? "o" : "i"}
-                          </span>
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    <Eye className="h-4 w-4" />
+                    <span>
+                      {data.movementsCount} moviment
+                      {data.movementsCount === 1 ? "o" : "i"}
+                    </span>
+                  </Button>
+                </div>
+              );
+            }}
+          />
         )}
       </div>
 

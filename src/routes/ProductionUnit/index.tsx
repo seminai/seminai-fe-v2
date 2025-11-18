@@ -1192,41 +1192,44 @@ export default function ProductionUnit(): React.ReactElement {
               Al momento non ci sono unità produttive da visualizzare
             </p>
           </div>
-        ) : productionUnits.length === 0 ? (
-          <div className="text-center py-8 text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-sm font-medium">
-              Nessuna unità produttiva disponibile
-            </p>
-            <p className="text-xs mt-1 text-gray-500">
-              Al momento non ci sono unità produttive da visualizzare
-            </p>
-          </div>
         ) : (
-          <EditableTable
-            columns={columns}
-            rows={filteredItems}
-            isModify={true}
-            addButton={false}
-            getRowId={(row, index) =>
-              (typeof row.id === "string" && row.id) || index
-            }
-            onSave={handleBulkSave}
-            detailsRenderer={renderDetails}
-            detailsTitle="Dettagli Unità Produttiva"
-            className="bg-background"
-          >
-            <Button
-              data-table-slot="right"
-              variant="ghost"
-              className="order-last gap-2 text-muted-foreground bg-agri-green-200 text-agri-green-700 cursor-pointer"
-              asChild
+          <>
+            <EditableTable
+              columns={columns}
+              rows={filteredItems}
+              isModify={true}
+              addButton={false}
+              getRowId={(row, index) =>
+                (typeof row.id === "string" && row.id) || index
+              }
+              onSave={handleBulkSave}
+              detailsRenderer={renderDetails}
+              detailsTitle="Dettagli Unità Produttiva"
+              className="bg-background"
             >
-              <Link to="/new-production-unit">
-                <Plus className="w-4 h-4" />
-                Aggiungi
-              </Link>
-            </Button>
-          </EditableTable>
+              <Button
+                data-table-slot="right"
+                variant="ghost"
+                className="order-last gap-2 text-muted-foreground bg-agri-green-200 text-agri-green-700 cursor-pointer"
+                asChild
+              >
+                <Link to="/new-production-unit">
+                  <Plus className="w-4 h-4" />
+                  Aggiungi
+                </Link>
+              </Button>
+            </EditableTable>
+            {productionUnits.length === 0 && (
+              <div className="mt-4 text-center py-8 text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-sm font-medium">
+                  Nessuna unità produttiva disponibile
+                </p>
+                <p className="text-xs mt-1 text-gray-500">
+                  Al momento non ci sono unità produttive da visualizzare
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
