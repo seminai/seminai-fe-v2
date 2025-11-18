@@ -980,9 +980,10 @@ export class EditableTable extends React.Component<
                 className="text-muted-foreground cursor-pointer"
                 onClick={this.handleExportCsv}
                 disabled={this.props.columns.length === 0}
+                aria-label="Esporta CSV"
               >
-                <IoDownloadOutline className="mr-2 h-4 w-4" />
-                Esporta CSV
+                <IoDownloadOutline className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Esporta CSV</span>
               </Button>
             </div>
             <div className="flex items-center gap-2">
@@ -1132,9 +1133,10 @@ export class EditableTable extends React.Component<
                   variant="ghost"
                   className="text-muted-foreground"
                   onClick={this.openCreateDrawer}
+                  aria-label="Aggiungi"
                 >
-                  <Plus className="w-4 h-4" />
-                  Aggiungi
+                  <Plus className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Aggiungi</span>
                 </Button>
               </div>
             </div>
@@ -1178,9 +1180,10 @@ export class EditableTable extends React.Component<
               className="text-muted-foreground cursor-pointer"
               onClick={this.handleExportCsv}
               disabled={this.props.columns.length === 0}
+              aria-label="Esporta CSV"
             >
-              <IoDownloadOutline className="mr-2 h-4 w-4" />
-              Esporta CSV
+              <IoDownloadOutline className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Esporta CSV</span>
             </Button>
             <span className="text-sm text-gray-600">
               {anySelected
@@ -1205,6 +1208,7 @@ export class EditableTable extends React.Component<
                       : "border-none bg-blue-200 text-blue-700 hover:bg-blue-50"
                   )}
                   variant="ghost"
+                  aria-label="Modifica"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -1212,11 +1216,11 @@ export class EditableTable extends React.Component<
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
-                    className="h-4 w-4 mr-2"
+                    className="h-4 w-4 sm:mr-2"
                   >
                     <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
                   </svg>
-                  Modifica
+                  <span className="hidden sm:inline">Modifica</span>
                 </Button>
               )}
             {showAddButton && (
@@ -1224,9 +1228,10 @@ export class EditableTable extends React.Component<
                 variant="ghost"
                 className="text-muted-foreground bg-agri-green-200 text-agri-green-700 cursor-pointer"
                 onClick={this.openCreateDrawer}
+                aria-label="Aggiungi"
               >
-                <Plus className="w-4 h-4" />
-                Aggiungi
+                <Plus className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Aggiungi</span>
               </Button>
             )}
             {anySelected && (
@@ -1237,6 +1242,7 @@ export class EditableTable extends React.Component<
                 )}
                 variant="ghost"
                 size="sm"
+                aria-label="Elimina"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1244,14 +1250,14 @@ export class EditableTable extends React.Component<
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
-                  className="h-4 w-4 mr-2"
+                  className="h-4 w-4 sm:mr-2"
                 >
                   <path d="M3 6h18" />
                   <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                   <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                   <path d="M10 11v6M14 11v6" />
                 </svg>
-                Elimina
+                <span className="hidden sm:inline">Elimina</span>
               </Button>
             )}
             {showEditActions && (
@@ -1444,8 +1450,9 @@ export class EditableTable extends React.Component<
                           size="sm"
                           className="h-7 px-2 text-xs whitespace-nowrap cursor-pointer"
                           onClick={() => this.openDetails(row)}
+                          aria-label="Apri dettagli"
                         >
-                          <span className="mr-1">Apri</span>
+                          <span className="hidden sm:inline sm:mr-1">Apri</span>
                           <IoOpenOutline className="h-3 w-3" />
                         </Button>
                       </td>
