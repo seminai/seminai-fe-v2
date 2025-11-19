@@ -5,33 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
-
-class CalendlyWidgetManager {
-  private static readonly scriptId = "calendly-widget-script";
-  private static readonly scriptSrc =
-    "https://assets.calendly.com/assets/external/widget.js";
-
-  public static ensureScriptLoaded(): void {
-    if (document.getElementById(CalendlyWidgetManager.scriptId)) {
-      return;
-    }
-
-    const scriptElement = document.createElement("script");
-    scriptElement.id = CalendlyWidgetManager.scriptId;
-    scriptElement.src = CalendlyWidgetManager.scriptSrc;
-    scriptElement.async = true;
-    document.body.appendChild(scriptElement);
-  }
-}
+import CalendlyBookingDialog from "@/components/organism/CalendlyBookingDialog";
 
 class RegistrationUnlockService {
   private static readonly envCode =
@@ -77,16 +52,8 @@ export default function Auth() {
   const [fiscalCode, setFiscalCode] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
-  const [isCalendlyDialogOpen, setIsCalendlyDialogOpen] = useState(false);
   const [isRegistrationDisabled, setIsRegistrationDisabled] = useState(true);
   const [unlockCode, setUnlockCode] = useState("");
-
-  useEffect(() => {
-    if (!isCalendlyDialogOpen) {
-      return;
-    }
-    CalendlyWidgetManager.ensureScriptLoaded();
-  }, [isCalendlyDialogOpen]);
 
   async function handleLoginSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -245,20 +212,17 @@ export default function Auth() {
             </TabsContent>
 
             <TabsContent value="register" className="space-y-6">
-              <Dialog
-                open={isCalendlyDialogOpen}
-                onOpenChange={setIsCalendlyDialogOpen}
-              >
-                <Alert className="border-agri-green-200 bg-agri-green-50">
-                  <AlertTitle>Registrazione su invito</AlertTitle>
-                  <AlertDescription className="space-y-3 text-slate-600">
-                    <p>
-                      Per provare SeminAI e creare un nuovo account devi prima
-                      fissare un incontro con il nostro team dedicato.
-                      Organizziamo insieme una breve call per guidarti nella
-                      fase di onboarding.
-                    </p>
-                    <DialogTrigger asChild>
+              <Alert className="border-agri-green-200 bg-agri-green-50">
+                <AlertTitle>Registrazione su invito</AlertTitle>
+                <AlertDescription className="space-y-3 text-slate-600">
+                  <p>
+                    Per provare SeminAI e creare un nuovo account devi prima
+                    fissare un incontro con il nostro team dedicato.
+                    Organizziamo insieme una breve call per guidarti nella fase
+                    di onboarding.
+                  </p>
+                  <CalendlyBookingDialog
+                    trigger={
                       <Button
                         type="button"
                         variant="outline"
@@ -266,29 +230,10 @@ export default function Auth() {
                       >
                         Prenota una call con SeminAI
                       </Button>
-                    </DialogTrigger>
-                  </AlertDescription>
-                </Alert>
-
-                <DialogContent className="sm:max-w-3xl max-w-3xl bg-white">
-                  <DialogHeader>
-                    <DialogTitle>
-                      Fissa un incontro con il team SeminAI
-                    </DialogTitle>
-                    <DialogDescription>
-                      Scegli il giorno e l&apos;orario che preferisci per una
-                      demo guidata di 30 minuti.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="w-full">
-                    <div
-                      className="calendly-inline-widget"
-                      data-url="https://calendly.com/get-seminai/30min"
-                      style={{ minWidth: "320px", height: "700px" }}
-                    />
-                  </div>
-                </DialogContent>
-              </Dialog>
+                    }
+                  />
+                </AlertDescription>
+              </Alert>
               {isRegistrationDisabled ? (
                 <section className="pt-4 border-t border-slate-200 space-y-3">
                   <p className="text-sm font-semibold text-slate-700 text-center uppercase tracking-wide">

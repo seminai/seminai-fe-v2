@@ -1,32 +1,7 @@
 import { ChangeEvent, Component, FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { emailApiService } from "@/api/email";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Spinner } from "@/components/ui/spinner";
-
-class CalendlyWidgetManager {
-  private static readonly scriptId = "calendly-widget-script";
-  private static readonly scriptSrc =
-    "https://assets.calendly.com/assets/external/widget.js";
-
-  public static ensureScriptLoaded(): void {
-    if (document.getElementById(CalendlyWidgetManager.scriptId)) {
-      return;
-    }
-
-    const scriptElement = document.createElement("script");
-    scriptElement.id = CalendlyWidgetManager.scriptId;
-    scriptElement.src = CalendlyWidgetManager.scriptSrc;
-    scriptElement.async = true;
-    document.body.appendChild(scriptElement);
-  }
-}
+import CalendlyBookingDialog from "@/components/organism/CalendlyBookingDialog";
 
 interface ContactRequestFormProps {
   className?: string;
@@ -192,12 +167,7 @@ interface AdvantageCard {
   image: string;
 }
 
-interface HomeState {
-  isCalendlyDialogOpen: boolean;
-  isCalendlyLoading: boolean;
-}
-
-export default class Home extends Component<Record<string, never>, HomeState> {
+export default class Home extends Component<Record<string, never>> {
   private readonly audienceHighlights: HighlightCard[] = [
     {
       title: "Per Agricoltori",
@@ -241,35 +211,6 @@ export default class Home extends Component<Record<string, never>, HomeState> {
     },
   ];
 
-  private calendlyIframePollId: number | null = null;
-  private calendlyIframe?: HTMLIFrameElement;
-
-  public constructor(props: Record<string, never>) {
-    super(props);
-    this.state = {
-      isCalendlyDialogOpen: false,
-      isCalendlyLoading: false,
-    };
-  }
-
-  public componentDidUpdate(
-    _: Record<string, never>,
-    prevState: HomeState
-  ): void {
-    if (!prevState.isCalendlyDialogOpen && this.state.isCalendlyDialogOpen) {
-      CalendlyWidgetManager.ensureScriptLoaded();
-      this.startCalendlyWatcher();
-    }
-
-    if (prevState.isCalendlyDialogOpen && !this.state.isCalendlyDialogOpen) {
-      this.stopCalendlyWatcher();
-    }
-  }
-
-  public componentWillUnmount(): void {
-    this.stopCalendlyWatcher();
-  }
-
   public render() {
     return (
       <div className="min-h-screen bg-white text-black">
@@ -279,7 +220,6 @@ export default class Home extends Component<Record<string, never>, HomeState> {
         {this.renderAdvantagesSection()}
         {this.renderContactSection()}
         {this.renderFooter()}
-        {this.renderCalendlyDialog()}
       </div>
     );
   }
@@ -335,13 +275,16 @@ export default class Home extends Component<Record<string, never>, HomeState> {
               la gestione delle operazioni con l&apos;intelligenza artificiale.
             </h2>
             <div className="flex flex-col sm:flex-row gap-4 pt-6">
-              <button
-                type="button"
-                onClick={this.openCalendlyDialog}
-                className="py-3 px-8 rounded-full bg-green-700 text-white font-medium hover:bg-green-600 transition-colors"
-              >
-                Prenota un meeting gratuito
-              </button>
+              <CalendlyBookingDialog
+                trigger={
+                  <button
+                    type="button"
+                    className="py-3 px-8 rounded-full bg-green-700 text-white font-medium hover:bg-green-600 transition-colors"
+                  >
+                    Prenota un meeting gratuito
+                  </button>
+                }
+              />
               <a
                 href="#audience"
                 className="py-3 px-8 rounded-full border border-gray-300 font-medium hover:bg-gray-50 transition-colors text-center"
@@ -473,100 +416,4 @@ export default class Home extends Component<Record<string, never>, HomeState> {
     );
   }
 
-  private renderCalendlyDialog() {
-    return (
-      <Dialog
-        open={this.state.isCalendlyDialogOpen}
-        onOpenChange={this.handleCalendlyDialogToggle}
-      >
-        <DialogContent className="sm:max-w-3xl max-w-3xl bg-white">
-          <DialogHeader>
-            <DialogTitle>Fissa un incontro con il team SeminAI</DialogTitle>
-            <DialogDescription>
-              Scegli il giorno e l&apos;orario che preferisci per una demo
-              guidata di 30 minuti.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="w-full relative min-h-[320px]">
-            {this.state.isCalendlyLoading && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white">
-                <Spinner
-                  size={64}
-                  speed="fast"
-                  ariaLabel="Caricamento Calendly"
-                  className="text-agri-green-600"
-                />
-              </div>
-            )}
-            <div
-              className={`calendly-inline-widget transition-opacity duration-300 ${
-                this.state.isCalendlyLoading ? "opacity-0" : "opacity-100"
-              }`}
-              data-url="https://calendly.com/get-seminai/30min"
-              style={{ minWidth: "320px", height: "700px" }}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  private openCalendlyDialog = (): void => {
-    this.setState({ isCalendlyDialogOpen: true, isCalendlyLoading: true });
-  };
-
-  private handleCalendlyDialogToggle = (isOpen: boolean): void => {
-    if (!isOpen) {
-      this.setState({ isCalendlyDialogOpen: false, isCalendlyLoading: false });
-    }
-  };
-
-  private startCalendlyWatcher(): void {
-    if (this.calendlyIframePollId !== null) {
-      return;
-    }
-
-    this.calendlyIframePollId = window.setInterval(() => {
-      const iframe = document.querySelector<HTMLIFrameElement>(
-        ".calendly-inline-widget iframe"
-      );
-
-      if (!iframe) {
-        return;
-      }
-
-      if (iframe.dataset.spinnerReady === "true") {
-        this.setState({ isCalendlyLoading: false });
-        this.stopCalendlyWatcher();
-        return;
-      }
-
-      this.calendlyIframe = iframe;
-      iframe.addEventListener("load", this.handleCalendlyLoaded);
-      if (this.calendlyIframePollId !== null) {
-        window.clearInterval(this.calendlyIframePollId);
-        this.calendlyIframePollId = null;
-      }
-    }, 150);
-  }
-
-  private stopCalendlyWatcher(): void {
-    if (this.calendlyIframePollId !== null) {
-      window.clearInterval(this.calendlyIframePollId);
-      this.calendlyIframePollId = null;
-    }
-
-    if (this.calendlyIframe) {
-      this.calendlyIframe.removeEventListener("load", this.handleCalendlyLoaded);
-      this.calendlyIframe = undefined;
-    }
-  }
-
-  private handleCalendlyLoaded = (): void => {
-    if (this.calendlyIframe) {
-      this.calendlyIframe.dataset.spinnerReady = "true";
-    }
-    this.setState({ isCalendlyLoading: false });
-    this.stopCalendlyWatcher();
-  };
 }
