@@ -8,16 +8,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  CheckCircle2,
-  Clock,
-  Database,
-  FileCheck,
-  LayoutTemplate,
-  Palette,
-  ShieldCheck,
-  Zap,
-} from "lucide-react";
 
 declare global {
   interface Window {
@@ -611,20 +601,11 @@ export default class Home extends Component<Record<string, never>, HomeState> {
           <div className="flex flex-col md:flex-row items-center gap-12 md:gap-24">
             <div className="w-full md:w-1/2 order-2 md:order-1 flex justify-center">
               <div className="relative w-full max-w-md aspect-square bg-agri-green-50 rounded-3xl flex items-center justify-center p-12">
-                <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className="bg-white p-6 rounded-2xl shadow-lg mb-6">
-                    <ShieldCheck className="w-24 h-24 text-agri-green-600" />
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="bg-white p-4 rounded-xl shadow-md">
-                      <FileCheck className="w-12 h-12 text-agri-green-500" />
-                    </div>
-                    <div className="bg-white p-4 rounded-xl shadow-md">
-                      <CheckCircle2 className="w-12 h-12 text-agri-green-500" />
-                    </div>
-                  </div>
-                </div>
+                <img
+                  src="/image/conforme_alle_normative.png"
+                  alt="Conforme alle normative"
+                  className="w-full h-full object-contain"
+                />
               </div>
             </div>
             <div className="w-full md:w-1/2 order-1 md:order-2 space-y-6">
@@ -656,14 +637,11 @@ export default class Home extends Component<Record<string, never>, HomeState> {
             </div>
             <div className="w-full md:w-1/2 flex justify-center">
               <div className="relative w-full max-w-md aspect-square bg-blue-50 rounded-3xl flex items-center justify-center p-12">
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className="bg-white p-6 rounded-full shadow-xl mb-8">
-                    <Clock className="w-24 h-24 text-blue-600" />
-                  </div>
-                  <div className="absolute top-1/2 right-10 bg-white p-4 rounded-2xl shadow-lg animate-bounce">
-                    <Zap className="w-10 h-10 text-yellow-500" />
-                  </div>
-                </div>
+                <img
+                  src="/image/riduzione_costi_tempo.png"
+                  alt="Riduzione di tempo e costi"
+                  className="w-full h-full object-contain"
+                />
               </div>
             </div>
           </div>
@@ -672,14 +650,11 @@ export default class Home extends Component<Record<string, never>, HomeState> {
           <div className="flex flex-col md:flex-row items-center gap-12 md:gap-24">
             <div className="w-full md:w-1/2 order-2 md:order-1 flex justify-center">
               <div className="relative w-full max-w-md aspect-square bg-purple-50 rounded-3xl flex items-center justify-center p-12">
-                <div className="relative z-10">
-                  <div className="bg-white p-8 rounded-3xl shadow-xl border-2 border-purple-100">
-                    <LayoutTemplate className="w-32 h-32 text-purple-600" />
-                  </div>
-                  <div className="absolute -bottom-6 -right-6 bg-white p-4 rounded-full shadow-lg">
-                    <Palette className="w-12 h-12 text-pink-500" />
-                  </div>
-                </div>
+                <img
+                  src="/image/white_label.png"
+                  alt="White label personalizzato"
+                  className="w-full h-full object-contain"
+                />
               </div>
             </div>
             <div className="w-full md:w-1/2 order-1 md:order-2 space-y-6">
@@ -710,19 +685,11 @@ export default class Home extends Component<Record<string, never>, HomeState> {
             </div>
             <div className="w-full md:w-1/2 flex justify-center">
               <div className="relative w-full max-w-md aspect-square bg-orange-50 rounded-3xl flex items-center justify-center p-12">
-                <div className="relative z-10 flex items-center justify-center">
-                  <div className="bg-white p-8 rounded-full shadow-xl z-20">
-                    <Database className="w-20 h-20 text-orange-600" />
-                  </div>
-                  {/* Connection nodes */}
-                  <div className="absolute -top-16 -right-12 bg-white p-3 rounded-xl shadow-md">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full" />
-                  </div>
-                  <div className="absolute -bottom-12 -left-10 bg-white p-3 rounded-xl shadow-md">
-                    <div className="w-8 h-8 bg-green-500 rounded-full" />
-                  </div>
-                  {/* Connecting lines would be complex in pure CSS/Tailwind without SVG paths, simulating with borders/positioning if needed, but icons are enough for "mini component" */}
-                </div>
+                <img
+                  src="/image/integrabile.png"
+                  alt="Integrabile con sistemi terzi"
+                  className="w-full h-full object-contain"
+                />
               </div>
             </div>
           </div>
