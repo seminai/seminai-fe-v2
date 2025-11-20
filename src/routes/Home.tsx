@@ -1,7 +1,6 @@
 import { ChangeEvent, Component, FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { emailApiService } from "@/api/email";
-import CalendlyInlineWidget from "@/components/organism/CalendlyInlineWidget";
 import {
   Accordion,
   AccordionContent,
@@ -19,6 +18,14 @@ import {
   ShieldCheck,
   Zap,
 } from "lucide-react";
+
+declare global {
+  interface Window {
+    Calendly?: {
+      initInlineWidgets?: () => void;
+    };
+  }
+}
 
 interface ContactRequestFormProps {
   className?: string;
@@ -122,7 +129,7 @@ class ContactRequestForm extends Component<
 
     return (
       <form
-        className={`bg-white p-8 rounded-3xl shadow-xl border border-gray-100 space-y-6 ${
+        className={`bg-white p-8  border border-gray-100 space-y-6 ${
           className ?? ""
         }`}
         onSubmit={this.handleSubmit}
@@ -302,6 +309,35 @@ export default class Home extends Component<Record<string, never>, HomeState> {
     this.state = {
       mobileTab: "message",
     };
+  }
+
+  public componentDidMount(): void {
+    this.loadCalendlyScript();
+  }
+
+  private loadCalendlyScript(): void {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const scriptId = "calendly-widget-script";
+    if (document.getElementById(scriptId)) {
+      if (window.Calendly?.initInlineWidgets) {
+        window.Calendly.initInlineWidgets();
+      }
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = scriptId;
+    script.src = "https://assets.calendly.com/assets/external/widget.js";
+    script.async = true;
+    script.onload = () => {
+      if (window.Calendly?.initInlineWidgets) {
+        window.Calendly.initInlineWidgets();
+      }
+    };
+    document.body.appendChild(script);
   }
 
   private scrollToContactAndSelectTab = () => {
@@ -702,7 +738,10 @@ export default class Home extends Component<Record<string, never>, HomeState> {
               <ContactRequestForm className="shadow-none border-none bg-transparent p-0" />
             </div>
 
-            <div className="bg-white p-8 rounded-3xl border border-agri-green-100 text-left h-full overflow-hidden shadow-lg shadow-agri-green-50">
+            <div
+              className="p-8 rounded-3xl border border-agri-green-100 text-left h-full overflow-hidden shadow-lg shadow-agri-green-50"
+              style={{ backgroundColor: "#fdf6e3" }}
+            >
               <h3 className="text-2xl font-bold mb-6 text-gray-900">
                 Prenota una demo
               </h3>
@@ -710,7 +749,11 @@ export default class Home extends Component<Record<string, never>, HomeState> {
                 Scegli il giorno e l'orario che preferisci per una videochiamata
                 con il nostro team.
               </p>
-              <CalendlyInlineWidget height={650} />
+              <div
+                className="calendly-inline-widget"
+                data-url="https://calendly.com/get-seminai/30min?background_color=fdf6e3&primary_color=2e782e"
+                style={{ minWidth: "320px", height: "700px" }}
+              />
             </div>
           </div>
 
@@ -743,8 +786,15 @@ export default class Home extends Component<Record<string, never>, HomeState> {
                 </div>
               </TabsContent>
               <TabsContent value="meeting" className="mt-0">
-                <div className="bg-white p-2 rounded-3xl border border-agri-green-100 overflow-hidden shadow-lg shadow-agri-green-50">
-                  <CalendlyInlineWidget height={650} />
+                <div
+                  className="p-2 rounded-3xl border border-agri-green-100 overflow-hidden shadow-lg shadow-agri-green-50"
+                  style={{ backgroundColor: "#fdf6e3" }}
+                >
+                  <div
+                    className="calendly-inline-widget"
+                    data-url="https://calendly.com/get-seminai/30min?background_color=fdf6e3&primary_color=2e782e"
+                    style={{ minWidth: "320px", height: "700px" }}
+                  />
                 </div>
               </TabsContent>
             </Tabs>
