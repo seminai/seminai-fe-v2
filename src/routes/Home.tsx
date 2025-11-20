@@ -278,7 +278,7 @@ export default class Home extends Component<Record<string, never>, HomeState> {
   private renderHeader() {
     return (
       <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 md:px-20 py-4 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="Seminai Logo" className="h-10 w-auto" />
             <span className="text-xl font-semibold text-agri-green-600">
@@ -345,6 +345,25 @@ export default class Home extends Component<Record<string, never>, HomeState> {
       const contactSection = document.getElementById("contact-request");
       if (contactSection) {
         contactSection.scrollIntoView({ behavior: "smooth" });
+      }
+      // Reinitialize Calendly widgets after tab change
+      setTimeout(() => {
+        if (window.Calendly?.initInlineWidgets) {
+          window.Calendly.initInlineWidgets();
+        }
+      }, 100);
+    });
+  };
+
+  private handleTabChange = (value: string) => {
+    this.setState({ mobileTab: value as "message" | "meeting" }, () => {
+      if (value === "meeting") {
+        // Reinitialize Calendly widgets when switching to meeting tab
+        setTimeout(() => {
+          if (window.Calendly?.initInlineWidgets) {
+            window.Calendly.initInlineWidgets();
+          }
+        }, 100);
       }
     });
   };
@@ -761,9 +780,7 @@ export default class Home extends Component<Record<string, never>, HomeState> {
           <div className="md:hidden">
             <Tabs
               value={this.state.mobileTab}
-              onValueChange={(value) =>
-                this.setState({ mobileTab: value as "message" | "meeting" })
-              }
+              onValueChange={this.handleTabChange}
               className="w-full"
             >
               <TabsList className="grid w-full grid-cols-2 mb-8 bg-agri-green-50">
@@ -792,7 +809,7 @@ export default class Home extends Component<Record<string, never>, HomeState> {
                 >
                   <div
                     className="calendly-inline-widget"
-                    data-url="https://calendly.com/get-seminai/30min?background_color=fdf6e3&primary_color=2e782e"
+                    data-url="https://calendly.com/get-seminai/30min?hide_event_type_details=1&hide_gdpr_banner=1&background_color=fdf6e3&primary_color=2e782e"
                     style={{ minWidth: "320px", height: "700px" }}
                   />
                 </div>
