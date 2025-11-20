@@ -588,6 +588,17 @@ export default class Home extends Component<Record<string, never>, HomeState> {
               ))}
             </Accordion>
           </div>
+
+          {/* Call to Action */}
+          <div className="text-center mt-12">
+            <button
+              type="button"
+              onClick={this.scrollToContactAndSelectTab}
+              className="py-4 px-10 rounded-full bg-white text-agri-green-600 font-semibold hover:bg-gray-50 transition-colors shadow-lg hover:shadow-xl"
+            >
+              Fissa un incontro gratuito
+            </button>
+          </div>
         </div>
       </section>
     );
@@ -619,6 +630,13 @@ export default class Home extends Component<Record<string, never>, HomeState> {
                 correttamente e la documentazione è sempre pronta per eventuali
                 controlli.
               </p>
+              <button
+                type="button"
+                onClick={this.scrollToContactAndSelectTab}
+                className="text-agri-green-600 font-semibold hover:text-agri-green-700 transition-colors underline decoration-2 underline-offset-4"
+              >
+                Prenota gratis
+              </button>
             </div>
           </div>
 
@@ -634,6 +652,13 @@ export default class Home extends Component<Record<string, never>, HomeState> {
                 automazioni intelligenti che calcolano dosi, suggeriscono
                 prodotti e salvano i tuoi trattamenti ricorrenti.
               </p>
+              <button
+                type="button"
+                onClick={this.scrollToContactAndSelectTab}
+                className="text-agri-green-600 font-semibold hover:text-agri-green-700 transition-colors underline decoration-2 underline-offset-4"
+              >
+                Prenota gratis
+              </button>
             </div>
             <div className="w-full md:w-1/2 flex justify-center">
               <div className="relative w-full max-w-md aspect-square bg-blue-50 rounded-3xl flex items-center justify-center p-12">
@@ -667,6 +692,13 @@ export default class Home extends Component<Record<string, never>, HomeState> {
                 funzionalità per adattare il sistema esattamente al tuo modo di
                 lavorare.
               </p>
+              <button
+                type="button"
+                onClick={this.scrollToContactAndSelectTab}
+                className="text-agri-green-600 font-semibold hover:text-agri-green-700 transition-colors underline decoration-2 underline-offset-4"
+              >
+                Prenota gratis
+              </button>
             </div>
           </div>
 
@@ -682,6 +714,13 @@ export default class Home extends Component<Record<string, never>, HomeState> {
                 informazioni aziendali in un&apos;unica piattaforma e lascia che
                 i dati fluiscano liberamente tra i sistemi.
               </p>
+              <button
+                type="button"
+                onClick={this.scrollToContactAndSelectTab}
+                className="text-agri-green-600 font-semibold hover:text-agri-green-700 transition-colors underline decoration-2 underline-offset-4"
+              >
+                Prenota gratis
+              </button>
             </div>
             <div className="w-full md:w-1/2 flex justify-center">
               <div className="relative w-full max-w-md aspect-square bg-orange-50 rounded-3xl flex items-center justify-center p-12">
