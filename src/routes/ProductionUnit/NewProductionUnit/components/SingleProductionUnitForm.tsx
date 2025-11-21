@@ -67,6 +67,7 @@ type SingleProductionUnitFormProps = {
   onCancel: () => void;
   onEditUnit: (unitId: string) => void;
   onDeleteUnit: (unitId: string) => void;
+  isCreating: boolean;
 };
 
 export const SingleProductionUnitForm: React.FC<
@@ -86,6 +87,7 @@ export const SingleProductionUnitForm: React.FC<
   onCancel,
   onEditUnit,
   onDeleteUnit,
+  isCreating,
 }) => {
   const [formData, setFormData] = useState<ProductionUnitInput>(() => {
     if (editingUnitId) {
@@ -366,10 +368,25 @@ export const SingleProductionUnitForm: React.FC<
           <Button
             onClick={handleProceedToConfirmation}
             size="lg"
-            disabled={productionUnits.length === 0}
+            disabled={productionUnits.length === 0 || isCreating}
+            className="min-w-64 bg-green-600 hover:bg-green-700"
           >
-            Avanti - Conferma Unità Produttive
-            <ChevronRight className="ml-2 h-4 w-4" />
+            {isCreating ? (
+              <>
+                <Spinner
+                  size={16}
+                  ariaLabel="Creazione in corso"
+                  className="mr-2"
+                />
+                Creazione in corso...
+              </>
+            ) : (
+              <>
+                Crea {productionUnits.length} Unità{" "}
+                {productionUnits.length === 1 ? "Produttiva" : "Produttive"}
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </>
+            )}
           </Button>
         </div>
       </div>

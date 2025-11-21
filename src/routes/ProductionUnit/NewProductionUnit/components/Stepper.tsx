@@ -61,11 +61,6 @@ class StepCollection {
         title: "Abbina la coltura",
         description: "Scegli la varietà da coltivare",
       }),
-      new StepDescriptor({
-        number: 3,
-        title: "Conferma",
-        description: "Riepilogo e creazione unità produttiva",
-      }),
     ]);
   }
 
@@ -81,8 +76,8 @@ const Stepper: React.FC<StepperProps> = ({ currentStep }) => {
   );
 
   return (
-    <div className="mb-8">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-4">
+    <div className="mb-4 md:mb-8">
+      <div className="flex items-center gap-2 md:gap-4">
         {stepCollection.getDescriptors().map((step, index, array) => {
           const isActive = step.isActive(currentStep);
           const isCompleted = step.isCompleted(currentStep);
@@ -90,10 +85,10 @@ const Stepper: React.FC<StepperProps> = ({ currentStep }) => {
 
           return (
             <React.Fragment key={step.getNumber()}>
-              <div className="flex flex-col items-center text-center lg:flex-1 lg:flex-row lg:items-center lg:text-left">
+              <div className="flex flex-col items-center text-center">
                 <div
                   className={cn(
-                    "flex h-12 w-12 items-center justify-center rounded-full border-2 text-base font-semibold transition-colors",
+                    "flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full border-2 text-sm md:text-base font-semibold transition-colors",
                     isCompleted
                       ? "border-green-500 bg-green-500 text-white"
                       : isActive
@@ -102,15 +97,15 @@ const Stepper: React.FC<StepperProps> = ({ currentStep }) => {
                   )}
                 >
                   {isCompleted ? (
-                    <CheckCircle className="h-5 w-5" />
+                    <CheckCircle className="h-4 w-4 md:h-5 md:w-5" />
                   ) : (
                     step.getNumber()
                   )}
                 </div>
-                <div className="mt-3 lg:mt-0 lg:ml-3 max-w-[12rem]">
+                <div className="mt-2 max-w-[8rem] md:max-w-[12rem]">
                   <p
                     className={cn(
-                      "text-sm font-medium",
+                      "text-xs md:text-sm font-medium",
                       isActive
                         ? "text-blue-600"
                         : isCompleted
@@ -120,33 +115,20 @@ const Stepper: React.FC<StepperProps> = ({ currentStep }) => {
                   >
                     {step.getTitle()}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-[10px] md:text-xs text-gray-500 mt-1 hidden md:block">
                     {step.getDescription()}
                   </p>
                 </div>
               </div>
 
               {shouldRenderConnector && (
-                <>
-                  <div
-                    className={cn(
-                      "hidden lg:flex flex-1 h-0.5",
-                      isCompleted ? "bg-green-500" : "bg-gray-300"
-                    )}
-                    aria-hidden="true"
-                  />
-                  <div
-                    className="lg:hidden flex justify-center"
-                    aria-hidden="true"
-                  >
-                    <span
-                      className={cn(
-                        "w-0.5 h-6",
-                        isCompleted ? "bg-green-500" : "bg-gray-300"
-                      )}
-                    />
-                  </div>
-                </>
+                <div
+                  className={cn(
+                    "flex flex-1 h-0.5 min-w-[1rem] md:min-w-[2rem]",
+                    isCompleted ? "bg-green-500" : "bg-gray-300"
+                  )}
+                  aria-hidden="true"
+                />
               )}
             </React.Fragment>
           );
