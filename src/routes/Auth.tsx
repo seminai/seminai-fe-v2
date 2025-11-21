@@ -6,7 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-import CalendlyBookingDialog from "@/components/organism/CalendlyBookingDialog";
+import { ContactRequestForm } from "@/components/organism/ContactRequestForm";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 class RegistrationUnlockService {
   private static readonly envCode =
@@ -221,8 +229,8 @@ export default function Auth() {
                     Organizziamo insieme una breve call per guidarti nella fase
                     di onboarding.
                   </p>
-                  <CalendlyBookingDialog
-                    trigger={
+                  <Dialog>
+                    <DialogTrigger asChild>
                       <Button
                         type="button"
                         variant="outline"
@@ -230,8 +238,20 @@ export default function Auth() {
                       >
                         Prenota una call con SeminAI
                       </Button>
-                    }
-                  />
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-3xl max-w-3xl bg-white max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>
+                          Fissa un incontro con il team SeminAI
+                        </DialogTitle>
+                        <DialogDescription>
+                          Compila il form qui sotto per richiedere una demo o un
+                          incontro.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <ContactRequestForm className="shadow-none border-none p-0" />
+                    </DialogContent>
+                  </Dialog>
                 </AlertDescription>
               </Alert>
               {isRegistrationDisabled ? (

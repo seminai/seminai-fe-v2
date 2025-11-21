@@ -1,174 +1,12 @@
-import { ChangeEvent, Component, FormEvent } from "react";
+import { Component } from "react";
 import { Link } from "react-router-dom";
-import { emailApiService } from "@/api/email";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-declare global {
-  interface Window {
-    Calendly?: {
-      initInlineWidgets?: () => void;
-    };
-  }
-}
-
-interface ContactRequestFormProps {
-  className?: string;
-}
-
-interface ContactRequestFormState {
-  name: string;
-  email: string;
-  message: string;
-  isSubmitting: boolean;
-  errorMessage: string;
-  successMessage: string;
-}
-
-class ContactRequestForm extends Component<
-  ContactRequestFormProps,
-  ContactRequestFormState
-> {
-  public constructor(props: ContactRequestFormProps) {
-    super(props);
-    this.state = {
-      name: "",
-      email: "",
-      message: "",
-      isSubmitting: false,
-      errorMessage: "",
-      successMessage: "",
-    };
-  }
-
-  private handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    this.setState({
-      name: event.target.value,
-      errorMessage: "",
-      successMessage: "",
-    });
-  };
-
-  private handleEmailChange = (event: ChangeEvent<HTMLInputElement>) => {
-    this.setState({
-      email: event.target.value,
-      errorMessage: "",
-      successMessage: "",
-    });
-  };
-
-  private handleMessageChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    this.setState({
-      message: event.target.value,
-      errorMessage: "",
-      successMessage: "",
-    });
-  };
-
-  private handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const trimmedName = this.state.name.trim();
-    const trimmedEmail = this.state.email.trim();
-    const trimmedMessage = this.state.message.trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!trimmedName || !trimmedEmail || !trimmedMessage) {
-      this.setState({ errorMessage: "Please fill out every field." });
-      return;
-    }
-
-    if (!emailRegex.test(trimmedEmail)) {
-      this.setState({ errorMessage: "Please provide a valid email address." });
-      return;
-    }
-
-    this.setState({ isSubmitting: true, errorMessage: "" });
-
-    try {
-      const response = await emailApiService.sendContactEmail({
-        name: trimmedName,
-        email: trimmedEmail,
-        body: trimmedMessage,
-      });
-
-      this.setState({
-        name: "",
-        email: "",
-        message: "",
-        isSubmitting: false,
-        successMessage: response.message ?? "Richiesta inviata correttamente.",
-      });
-    } catch {
-      this.setState({
-        isSubmitting: false,
-        errorMessage:
-          "Si è verificato un errore durante l'invio della richiesta.",
-      });
-    }
-  };
-
-  public render() {
-    const { className } = this.props;
-    const { name, email, message, isSubmitting, errorMessage, successMessage } =
-      this.state;
-
-    return (
-      <form
-        className={`bg-white p-8  border border-gray-100 space-y-6 ${
-          className ?? ""
-        }`}
-        onSubmit={this.handleSubmit}
-      >
-        <label className="block text-left">
-          <span className="text-gray-700 font-medium">Nome e cognome</span>
-          <input
-            className="mt-3 w-full rounded-2xl border border-gray-200 p-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-agri-green-500 focus:border-transparent transition"
-            placeholder="Mario Rossi"
-            value={name}
-            onChange={this.handleNameChange}
-          />
-        </label>
-        <label className="block text-left">
-          <span className="text-gray-700 font-medium">Email</span>
-          <input
-            type="email"
-            className="mt-3 w-full rounded-2xl border border-gray-200 p-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-agri-green-500 focus:border-transparent transition"
-            placeholder="mario.rossi@example.com"
-            value={email}
-            onChange={this.handleEmailChange}
-          />
-        </label>
-        <label className="block text-left">
-          <span className="text-gray-700 font-medium">
-            Raccontaci la tua richiesta
-          </span>
-          <textarea
-            className="mt-3 w-full min-h-[180px] rounded-2xl border border-gray-200 p-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-agri-green-500 focus:border-transparent transition"
-            placeholder="Descrivi come possiamo aiutarti..."
-            value={message}
-            onChange={this.handleMessageChange}
-          />
-        </label>
-        {errorMessage && <p className="text-sm text-red-500">{errorMessage}</p>}
-        {successMessage && (
-          <p className="text-sm text-agri-green-600">{successMessage}</p>
-        )}
-        <button
-          type="submit"
-          className="w-full py-4 px-6 rounded-2xl bg-green-700 text-white font-semibold hover:bg-green-600 transition disabled:opacity-60 disabled:cursor-not-allowed"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Invio in corso..." : "Invia"}
-        </button>
-      </form>
-    );
-  }
-}
+import { ContactRequestForm } from "@/components/organism/ContactRequestForm";
 
 interface HighlightCard {
   title: string;
@@ -180,11 +18,10 @@ interface AdvantageSection {
   features: string[];
 }
 
-interface HomeState {
-  mobileTab: "message" | "meeting";
-}
-
-export default class Home extends Component<Record<string, never>, HomeState> {
+export default class Home extends Component<
+  Record<string, never>,
+  Record<string, never>
+> {
   private readonly audienceHighlights: HighlightCard[] = [
     {
       title: "Per Agricoltori",
@@ -296,66 +133,18 @@ export default class Home extends Component<Record<string, never>, HomeState> {
 
   public constructor(props: Record<string, never>) {
     super(props);
-    this.state = {
-      mobileTab: "message",
-    };
+    this.state = {};
   }
 
   public componentDidMount(): void {
-    this.loadCalendlyScript();
-  }
-
-  private loadCalendlyScript(): void {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const scriptId = "calendly-widget-script";
-    if (document.getElementById(scriptId)) {
-      if (window.Calendly?.initInlineWidgets) {
-        window.Calendly.initInlineWidgets();
-      }
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.id = scriptId;
-    script.src = "https://assets.calendly.com/assets/external/widget.js";
-    script.async = true;
-    script.onload = () => {
-      if (window.Calendly?.initInlineWidgets) {
-        window.Calendly.initInlineWidgets();
-      }
-    };
-    document.body.appendChild(script);
+    // removed calendly script loading
   }
 
   private scrollToContactAndSelectTab = () => {
-    this.setState({ mobileTab: "meeting" }, () => {
-      const contactSection = document.getElementById("contact-request");
-      if (contactSection) {
-        contactSection.scrollIntoView({ behavior: "smooth" });
-      }
-      // Reinitialize Calendly widgets after tab change
-      setTimeout(() => {
-        if (window.Calendly?.initInlineWidgets) {
-          window.Calendly.initInlineWidgets();
-        }
-      }, 100);
-    });
-  };
-
-  private handleTabChange = (value: string) => {
-    this.setState({ mobileTab: value as "message" | "meeting" }, () => {
-      if (value === "meeting") {
-        // Reinitialize Calendly widgets when switching to meeting tab
-        setTimeout(() => {
-          if (window.Calendly?.initInlineWidgets) {
-            window.Calendly.initInlineWidgets();
-          }
-        }, 100);
-      }
-    });
+    const contactSection = document.getElementById("contact-request");
+    if (contactSection) {
+      contactSection.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   private renderHeroSection() {
@@ -740,87 +529,19 @@ export default class Home extends Component<Record<string, never>, HomeState> {
   private renderContactSection() {
     return (
       <section id="contact-request" className="py-20 px-6 md:px-20 bg-white">
-        <div className="max-w-7xl mx-auto text-center space-y-12">
+        <div className="max-w-3xl mx-auto text-center space-y-12">
           <div className="space-y-4">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900">
-              Contattaci
+              Organizzo un incontro gratuito
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Hai bisogno di informazioni o vuoi vedere Seminai in azione?
-              Scegli come preferisci metterti in contatto con noi.
+              Compila il form qui sotto e ti risponderemo al più presto.
             </p>
           </div>
 
-          {/* Desktop Layout: Side-by-side */}
-          <div className="hidden md:grid md:grid-cols-2 gap-12 items-start">
-            <div className="bg-white p-8 rounded-3xl border border-agri-green-100 text-left h-full shadow-lg shadow-agri-green-50">
-              <h3 className="text-2xl font-bold mb-6 text-gray-900">
-                Scrivici un messaggio
-              </h3>
-              <p className="text-gray-600 mb-8">
-                Compila il form e ti risponderemo al più presto via email.
-              </p>
-              <ContactRequestForm className="shadow-none border-none bg-transparent p-0" />
-            </div>
-
-            <div
-              className="p-8 rounded-3xl border border-agri-green-100 text-left h-full overflow-hidden shadow-lg shadow-agri-green-50"
-              style={{ backgroundColor: "#fdf6e3" }}
-            >
-              <h3 className="text-2xl font-bold mb-6 text-gray-900">
-                Prenota una demo
-              </h3>
-              <p className="text-gray-600 mb-8">
-                Scegli il giorno e l'orario che preferisci per una videochiamata
-                con il nostro team.
-              </p>
-              <div
-                className="calendly-inline-widget"
-                data-url="https://calendly.com/get-seminai/30min?background_color=fdf6e3&primary_color=2e782e"
-                style={{ minWidth: "320px", height: "700px" }}
-              />
-            </div>
-          </div>
-
-          {/* Mobile Layout: Tabs */}
-          <div className="md:hidden">
-            <Tabs
-              value={this.state.mobileTab}
-              onValueChange={this.handleTabChange}
-              className="w-full"
-            >
-              <TabsList className="grid w-full grid-cols-2 mb-8 bg-agri-green-50">
-                <TabsTrigger
-                  value="message"
-                  className="data-[state=active]:bg-agri-green-600 data-[state=active]:text-white rounded-full py-3"
-                >
-                  Scrivici
-                </TabsTrigger>
-                <TabsTrigger
-                  value="meeting"
-                  className="data-[state=active]:bg-agri-green-600 data-[state=active]:text-white rounded-full py-3"
-                >
-                  Pianifica incontro
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="message" className="mt-0">
-                <div className="bg-white p-6 rounded-3xl border border-agri-green-100 text-left shadow-lg shadow-agri-green-50">
-                  <ContactRequestForm className="shadow-none border-none bg-transparent p-0" />
-                </div>
-              </TabsContent>
-              <TabsContent value="meeting" className="mt-0">
-                <div
-                  className="p-2 rounded-3xl border border-agri-green-100 overflow-hidden shadow-lg shadow-agri-green-50"
-                  style={{ backgroundColor: "#fdf6e3" }}
-                >
-                  <div
-                    className="calendly-inline-widget"
-                    data-url="https://calendly.com/get-seminai/30min?hide_event_type_details=1&hide_gdpr_banner=1&background_color=fdf6e3&primary_color=2e782e"
-                    style={{ minWidth: "320px", height: "700px" }}
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
+          <div className="bg-white p-8 rounded-3xl border border-agri-green-100 text-left shadow-lg shadow-agri-green-50">
+            <ContactRequestForm className="shadow-none border-none bg-transparent p-0" />
           </div>
         </div>
       </section>
