@@ -342,42 +342,44 @@ export class EditableTable extends React.Component<
   };
 
   private handleCreateSave = (): void => {
-    this.setState((prev) => {
-      if (!prev.createRow) {
-        return null;
-      }
+    const { createRow, createTouched, rows } = this.state;
 
-      const errors = this.validateRow(prev.createRow);
-      if (Object.keys(errors).length > 0) {
-        const newTouched = { ...prev.createTouched };
-        Object.keys(errors).forEach((key) => {
-          newTouched[key] = true;
-        });
-        const touchedUpdate: Pick<EditableTableState, "createTouched"> = {
-          createTouched: newTouched,
-        };
-        return touchedUpdate;
-      }
+    if (!createRow) {
+      return;
+    }
 
-      const persistedRow: InternalRow = {
-        ...prev.createRow,
-        data: { ...prev.createRow.data },
-      };
+    const errors = this.validateRow(createRow);
+    if (Object.keys(errors).length > 0) {
+      const newTouched = { ...createTouched };
+      Object.keys(errors).forEach((key) => {
+        newTouched[key] = true;
+      });
+      this.setState({ createTouched: newTouched });
+      return;
+    }
 
-      const successUpdate: Pick<
-        EditableTableState,
-        "rows" | "touched" | "createDrawerOpen" | "createRow" | "createTouched"
-      > = {
-        rows: [...prev.rows, persistedRow],
-        touched: {
-          ...prev.touched,
-          [persistedRow.id]: { ...prev.createTouched },
-        },
-        createDrawerOpen: false,
-        createRow: undefined,
-        createTouched: {},
-      };
-      return successUpdate;
+    // Save immediately if handler provided
+    if (this.props.onSave) {
+      this.props.onSave({
+        created: [createRow.data],
+        updated: [],
+      });
+    }
+
+    // Add to rows as clean (optimistic update)
+    // We treat the row as saved, so isNew and isDirty are false.
+    const persistedRow: InternalRow = {
+      ...createRow,
+      isNew: false,
+      isDirty: false,
+      data: { ...createRow.data },
+    };
+
+    this.setState({
+      rows: [...rows, persistedRow],
+      createDrawerOpen: false,
+      createRow: undefined,
+      createTouched: {},
     });
   };
 

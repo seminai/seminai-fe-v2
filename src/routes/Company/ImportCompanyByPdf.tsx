@@ -204,7 +204,7 @@ export function ImportCompanyByPdf({
       <DrawerTrigger asChild>
         <Button variant="outline" className="gap-2">
           <FileText className="h-4 w-4" />
-          Importa da PDF
+          Importa da file
         </Button>
       </DrawerTrigger>
       <DrawerContent
