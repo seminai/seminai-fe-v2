@@ -76,8 +76,8 @@ const Stepper: React.FC<StepperProps> = ({ currentStep }) => {
   );
 
   return (
-    <div className="mb-4 md:mb-8">
-      <div className="flex items-center gap-2 md:gap-4">
+    <div className="mb-4 md:mb-8 w-full flex justify-center">
+      <div className="flex items-center w-full max-w-3xl justify-between">
         {stepCollection.getDescriptors().map((step, index, array) => {
           const isActive = step.isActive(currentStep);
           const isCompleted = step.isCompleted(currentStep);
@@ -85,7 +85,7 @@ const Stepper: React.FC<StepperProps> = ({ currentStep }) => {
 
           return (
             <React.Fragment key={step.getNumber()}>
-              <div className="flex flex-col items-center text-center">
+              <div className="flex flex-col items-center text-center relative z-10 bg-transparent px-2">
                 <div
                   className={cn(
                     "flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full border-2 text-sm md:text-base font-semibold transition-colors",
@@ -124,7 +124,7 @@ const Stepper: React.FC<StepperProps> = ({ currentStep }) => {
               {shouldRenderConnector && (
                 <div
                   className={cn(
-                    "flex flex-1 h-0.5 min-w-[1rem] md:min-w-[2rem]",
+                    "flex-1 h-0.5 mx-2 relative top-[-14px] md:top-[-20px] z-0",
                     isCompleted ? "bg-green-500" : "bg-gray-300"
                   )}
                   aria-hidden="true"
