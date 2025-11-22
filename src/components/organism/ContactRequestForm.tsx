@@ -26,6 +26,7 @@ export function ContactRequestForm({
   const [message, setMessage] = useState("");
   const [date, setDate] = useState<Date>();
   const [time, setTime] = useState("");
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -143,7 +144,7 @@ export function ContactRequestForm({
           <span className="text-gray-700 font-medium text-left">
             Data incontro
           </span>
-          <Popover>
+          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant={"outline"}
@@ -164,7 +165,10 @@ export function ContactRequestForm({
               <Calendar
                 mode="single"
                 selected={date}
-                onSelect={setDate}
+                onSelect={(d) => {
+                  setDate(d);
+                  setIsCalendarOpen(false);
+                }}
                 initialFocus
                 locale={it}
               />
