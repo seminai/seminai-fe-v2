@@ -28,6 +28,8 @@ import {
   Search,
   SplitSquareVertical,
   RefreshCcw,
+  Filter,
+  X,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -83,6 +85,8 @@ export default function NewProductionUnit(): React.ReactElement {
     setTempDateRange(defaultRange);
     setDateRange(defaultRange);
   };
+
+  const [showSearch, setShowSearch] = useState(false);
 
   // Stepper state
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
@@ -556,9 +560,7 @@ export default function NewProductionUnit(): React.ReactElement {
       <div className="flex-shrink-0 bg-gray-50/50 backdrop-blur-sm z-10">
         <PageHeader
           title="Nuova Unità Produttiva"
-          searchPlaceholder="Cerca per nome campo, indirizzo, città o azienda..."
-          searchValue={searchValue}
-          onSearchChange={setSearchValue}
+          centerElement={<Stepper currentStep={currentStep} />}
           totalItems={filteredFields.length}
           filteredItems={filteredFields.length}
           rightElement={
@@ -605,10 +607,6 @@ export default function NewProductionUnit(): React.ReactElement {
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-shrink-0 px-6 pt-6">
-          <Stepper currentStep={currentStep} />
-        </div>
-
         <div className="flex-1 overflow-auto px-6 pb-6">
           {currentStep === 1 && (
             <>
@@ -811,67 +809,108 @@ export default function NewProductionUnit(): React.ReactElement {
                   )}
 
                   {/* Header con azioni bulk - solo su desktop */}
-                  {(selectedFieldIds.size > 0 || allocatedFields.size > 0) && (
-                    <div className="hidden md:flex flex-row items-center justify-end bg-green-50 border border-green-200 rounded-lg p-4 gap-2">
-                      {selectedFieldIds.size > 0 && (
-                        <>
-                          <Badge variant="secondary" className="text-sm">
-                            {selectedFieldIds.size}{" "}
-                            {selectedFieldIds.size === 1
-                              ? "campo selezionato"
-                              : "campi selezionati"}
-                          </Badge>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              selectedFieldIds.forEach((fieldId) => {
-                                const baseFieldId =
-                                  getBaseFieldIdFromAllocation(fieldId);
-                                allocateMaxForField(baseFieldId, fieldId);
-                              });
-                            }}
-                          >
-                            Alloca Max su selezionati
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              selectedFieldIds.forEach((fieldId) => {
-                                removeFieldAllocation(fieldId);
-                              });
-                              setSelectedFieldIds(new Set());
-                            }}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            Rimuovi selezionati
-                          </Button>
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4 gap-4">
+                    {/* Ricerca Toggle */}
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                      {showSearch ? (
+                        <div className="relative flex-1 min-w-[250px]">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                          <Input
+                            type="text"
+                            placeholder="Cerca campi..."
+                            value={searchValue}
+                            onChange={(e) => setSearchValue(e.target.value)}
+                            className="pl-10 pr-10 w-full h-9 bg-white"
+                            autoFocus
+                          />
                           <Button
                             variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedFieldIds(new Set())}
+                            size="icon"
+                            className="absolute right-0 top-0 h-9 w-9 hover:bg-transparent"
+                            onClick={() => {
+                              setSearchValue("");
+                              setShowSearch(false);
+                            }}
                           >
-                            Deseleziona tutto
+                            <X className="h-4 w-4 text-gray-500" />
                           </Button>
-                        </>
-                      )}
-                      {allocatedFields.size > 0 && (
+                        </div>
+                      ) : (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            removeAllocationEntries(
-                              Array.from(allocatedFields.keys())
-                            );
-                            setSelectedFieldIds(new Set());
-                          }}
+                          onClick={() => setShowSearch(true)}
+                          className="bg-white hover:bg-green-50 text-green-700 border-green-200"
                         >
-                          Rimuovi tutte le allocazioni
+                          <Filter className="mr-2 h-4 w-4" />
+                          Filtra Campi
                         </Button>
                       )}
                     </div>
-                  )}
+
+                    {(selectedFieldIds.size > 0 ||
+                      allocatedFields.size > 0) && (
+                      <div className="flex flex-wrap items-center justify-end gap-2 w-full md:w-auto">
+                        {selectedFieldIds.size > 0 && (
+                          <>
+                            <Badge variant="secondary" className="text-sm">
+                              {selectedFieldIds.size}{" "}
+                              {selectedFieldIds.size === 1
+                                ? "campo selezionato"
+                                : "campi selezionati"}
+                            </Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                selectedFieldIds.forEach((fieldId) => {
+                                  const baseFieldId =
+                                    getBaseFieldIdFromAllocation(fieldId);
+                                  allocateMaxForField(baseFieldId, fieldId);
+                                });
+                              }}
+                            >
+                              Alloca Max su selezionati
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                selectedFieldIds.forEach((fieldId) => {
+                                  removeFieldAllocation(fieldId);
+                                });
+                                setSelectedFieldIds(new Set());
+                              }}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              Rimuovi selezionati
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedFieldIds(new Set())}
+                            >
+                              Deseleziona tutto
+                            </Button>
+                          </>
+                        )}
+                        {allocatedFields.size > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              removeAllocationEntries(
+                                Array.from(allocatedFields.keys())
+                              );
+                              setSelectedFieldIds(new Set());
+                            }}
+                          >
+                            Rimuovi tutte le allocazioni
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Lista campi */}
                   {filteredFields.length === 0 ? (
