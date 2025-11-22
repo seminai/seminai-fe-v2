@@ -6,10 +6,12 @@ WORKDIR /app
 
 # Definisci l'argomento di build per l'URL API (default verso il backend in Cloud Run)
 ARG VITE_API_URL="https://seminai-be-v2-661301438659.europe-west1.run.app"
+ARG VITE_REGISTRATION_CODE="benvenutodaclariceefrancescoteamseminai2025"
 ARG COMMIT_SHA
 
 # Imposta la variabile d'ambiente per il build di Vite
 ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_REGISTRATION_CODE=${VITE_REGISTRATION_CODE}
 ENV COMMIT_SHA=${COMMIT_SHA}
 
 # Copia i file di configurazione per installare le dipendenze
@@ -27,6 +29,7 @@ RUN echo "Build timestamp: $(date)" > ./public/build-version.txt && \
 
 # Stampa la variabile d'ambiente per debug
 RUN echo "VITE_API_URL is: $VITE_API_URL"
+RUN echo "VITE_REGISTRATION_CODE is: $VITE_REGISTRATION_CODE"
 
 # Costruisci l'applicazione
 RUN npm run build

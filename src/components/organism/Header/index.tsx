@@ -45,6 +45,10 @@ interface PageHeaderProps {
   rightElement?: React.ReactNode;
 
   /**
+   * Elementi mostrati accanto al titolo principale
+   */
+  children?: React.ReactNode;
+  /**
    * Elementi di filtro (es. dropdown per azienda) - su mobile vanno sempre nella riga sotto
    */
   filterElement?: React.ReactNode;
@@ -70,6 +74,7 @@ export function PageHeader({
   rightElement,
   filterElement,
   className,
+  children,
 }: PageHeaderProps): React.ReactElement {
   const canShowResults =
     Boolean(searchValue) &&
@@ -82,14 +87,6 @@ export function PageHeader({
     : "\u00A0";
 
   const renderSearchArea = (): React.ReactNode => {
-    if (centerElement) {
-      return (
-        <div className="flex justify-center w-full max-w-xl">
-          {centerElement}
-        </div>
-      );
-    }
-
     if (searchPlaceholder && searchValue !== undefined && onSearchChange) {
       return (
         <div className="w-full max-w-xl">
@@ -113,29 +110,48 @@ export function PageHeader({
     return null;
   };
 
+  const searchContent = renderSearchArea();
+
   return (
     <div className={cn(className, "flex-shrink-0 p-6 mb-1 mt-1")}>
       {/* Layout desktop/tablet */}
-      <div className="hidden md:flex flex-col gap-3 mb-4">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <h1 className="text-3xl text-agri-green-700 font-semibold whitespace-nowrap">
-            {title}
-          </h1>
+      <div className="hidden md:flex flex-col gap-4 mb-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-3 flex-1 min-w-[200px]">
+            <h1 className="text-3xl text-agri-green-700 font-semibold whitespace-nowrap">
+              {title}
+            </h1>
+            {children && (
+              <div className="ml-auto flex items-center gap-2">{children}</div>
+            )}
+          </div>
+          {searchContent && (
+            <div className="flex-1 min-w-[280px] flex justify-end ml-auto">
+              {searchContent}
+            </div>
+          )}
+        </div>
 
-          <div className="flex flex-wrap items-start justify-end gap-3 flex-1">
-            {renderSearchArea()}
+        {centerElement && (
+          <div className="w-full flex justify-center px-4">
+            <div className="w-full max-w-3xl">{centerElement}</div>
+          </div>
+        )}
+
+        {(filterElement || rightElement) && (
+          <div className="flex flex-wrap items-center justify-end gap-3">
             {filterElement && (
               <div className="min-w-[200px] flex-1 sm:flex-none">
                 {filterElement}
               </div>
             )}
             {rightElement && (
-              <div className="flex flex-wrap items-center justify-end gap-3">
+              <div className="flex items-center justify-end gap-3">
                 {rightElement}
               </div>
             )}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Layout mobile - elementi su righe separate */}
@@ -144,6 +160,9 @@ export function PageHeader({
           <h1 className="text-2xl text-agri-green-700 font-semibold flex-shrink-0">
             {title}
           </h1>
+          {children && (
+            <div className="flex items-center gap-2">{children}</div>
+          )}
         </div>
 
         {/* Bottoni d'azione - sempre sulla seconda riga su mobile per avere più spazio */}

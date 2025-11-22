@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import type { ComponentProps, ReactNode } from "react";
 import { PageHeader } from "@/components/organism/Header";
 import { useProducts } from "@/hooks/useProducts";
-import { useCompanies } from "@/hooks/useCompanies";
 import { Product } from "@/api/products";
 import {
   EditableTable,
@@ -14,13 +13,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Package, Eye } from "lucide-react";
 import DrawerProduct from "./DrawerProduct";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
 class ProductStockCalculator {
@@ -286,14 +278,10 @@ class ProductTableColumnsFactory {
 
 function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCompany, setSelectedCompany] = useState<string | undefined>(
-    undefined
-  );
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const { companies } = useCompanies();
-  const { products, isLoading, isError, error } = useProducts(selectedCompany);
+  const { products, isLoading, isError, error } = useProducts();
 
   const filteredProducts = useMemo(() => {
     const filter = new ProductFilter(products, searchTerm);
@@ -377,28 +365,6 @@ function ProductsPage() {
         onSearchChange={setSearchTerm}
         totalItems={products.length}
         filteredItems={filteredProducts.length}
-        rightElement={
-          companies.length > 0 ? (
-            <Select
-              value={selectedCompany ?? "all"}
-              onValueChange={(value) =>
-                setSelectedCompany(value === "all" ? undefined : value)
-              }
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Tutte le aziende" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutte le aziende</SelectItem>
-                {companies.map((company) => (
-                  <SelectItem key={company.id} value={company.name}>
-                    {company.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null
-        }
       />
 
       <div className="flex-1 overflow-auto px-6 pb-24">

@@ -105,7 +105,7 @@ export function ImportFieldByCsv({
       <DrawerTrigger asChild>
         <Button variant="outline" className="gap-2">
           <Upload className="h-4 w-4" />
-          Importa da file
+          Importa file
         </Button>
       </DrawerTrigger>
       <DrawerContent

@@ -4,6 +4,7 @@ import {
   type Field,
   type BulkFieldInput,
   type BulkFieldUpdateInput,
+  type ProductionUnit,
 } from "@/api/fields";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -18,6 +19,55 @@ import { useCompanies } from "@/hooks/useCompanies";
 import { toast } from "sonner";
 import { type Company } from "@/api/companies";
 import { PageHeader } from "@/components/organism/Header";
+
+class FieldProductionUnitInspector {
+  private readonly units: ProductionUnit[];
+
+  constructor(units: ProductionUnit[] | undefined) {
+    this.units = Array.isArray(units) ? units : [];
+  }
+
+  public static fromField(field: Partial<Field>): FieldProductionUnitInspector {
+    const units = field.productionUnits as ProductionUnit[] | undefined;
+    return new FieldProductionUnitInspector(units);
+  }
+
+  public static fromRow(
+    row: Record<string, unknown>
+  ): FieldProductionUnitInspector {
+    return FieldProductionUnitInspector.fromField(row as Partial<Field>);
+  }
+
+  public getActiveUnits(referenceDate: Date = new Date()): ProductionUnit[] {
+    return this.units.filter((unit) => this.isActive(unit, referenceDate));
+  }
+
+  public getActiveUnitsLabel(referenceDate: Date = new Date()): string {
+    const names = this.getActiveUnits(referenceDate)
+      .map((unit) => unit.name)
+      .filter((name): name is string =>
+        Boolean(name && name.trim().length > 0)
+      );
+
+    return names.length === 0 ? "-" : names.join(", ");
+  }
+
+  private isActive(unit: ProductionUnit, referenceDate: Date): boolean {
+    if (!unit) return false;
+
+    const start = unit.startDate ? new Date(unit.startDate) : null;
+    const end = unit.endDate ? new Date(unit.endDate) : null;
+    const referenceTime = referenceDate.getTime();
+
+    if (start && Number.isNaN(start.getTime())) return false;
+    if (end && Number.isNaN(end.getTime())) return false;
+
+    const afterStart = start ? referenceTime >= start.getTime() : false;
+    const beforeEnd = end ? referenceTime <= end.getTime() : true;
+
+    return afterStart && beforeEnd;
+  }
+}
 
 const buildFieldsEditColumns = (companies: Company[]): EditableColumn[] => {
   return [
@@ -94,6 +144,22 @@ const buildFieldsEditColumns = (companies: Company[]): EditableColumn[] => {
       placeholder: "es. Seminativo",
     },
     {
+      id: "currentProductionUnitLabel",
+      title: "Unità attiva",
+      type: "text",
+      readOnly: true,
+      render: (value) => {
+        const label =
+          typeof value === "string" && value.trim().length > 0 ? value : "-";
+        const textClass =
+          label === "-"
+            ? "text-sm text-muted-foreground"
+            : "text-sm font-medium text-foreground";
+
+        return <span className={textClass}>{label}</span>;
+      },
+    },
+    {
       id: "soilType",
       title: "Tipo Suolo",
       type: "select",
@@ -115,14 +181,8 @@ export default function Fields(): React.ReactElement {
   const [searchFilter, setSearchFilter] = useState<string>("");
   const tableRef = useRef<EditableTable>(null);
 
-  const {
-    fields,
-    isLoading,
-    error,
-    createFields,
-    updateFields,
-    isUpdating,
-  } = useFields();
+  const { fields, isLoading, error, createFields, updateFields, isUpdating } =
+    useFields();
   const { companies, isLoading: isLoadingCompanies } = useCompanies();
 
   const textSearch = useMemo(
@@ -140,6 +200,14 @@ export default function Fields(): React.ReactElement {
   const filteredItems = useMemo(() => {
     return textSearch.setSearchTerm(searchFilter).filter(fields);
   }, [fields, searchFilter, textSearch]);
+
+  const rowsWithActiveUnits = useMemo(() => {
+    return filteredItems.map((field) => ({
+      ...field,
+      currentProductionUnitLabel:
+        FieldProductionUnitInspector.fromField(field).getActiveUnitsLabel(),
+    }));
+  }, [filteredItems]);
 
   const renderDetails = (row: Record<string, unknown>): React.ReactNode => {
     const fieldId = typeof row.id === "string" ? row.id : String(row.id);
@@ -188,6 +256,7 @@ export default function Fields(): React.ReactElement {
       sauHa: field.sauHa || "",
       uso: field.uso || "",
       soilType: field.soilType || "",
+      currentProductionUnitLabel: "-",
     }));
 
     // Aggiungi le righe alla tabella
@@ -311,7 +380,7 @@ export default function Fields(): React.ReactElement {
           <EditableTable
             ref={tableRef}
             columns={columns}
-            rows={filteredItems}
+            rows={rowsWithActiveUnits}
             isModify={true}
             addButton={true}
             getRowId={(row, index) =>
@@ -330,6 +399,7 @@ export default function Fields(): React.ReactElement {
               sauHa: "",
               uso: "",
               soilType: "",
+              currentProductionUnitLabel: "-",
             }}
             detailsRenderer={renderDetails}
             detailsTitle="Dettagli Campo"
