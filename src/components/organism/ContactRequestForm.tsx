@@ -160,7 +160,7 @@ export function ContactRequestForm({
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
+            <PopoverContent className="w-auto p-0 bg-white">
               <Calendar
                 mode="single"
                 selected={date}
@@ -172,12 +172,12 @@ export function ContactRequestForm({
           </Popover>
         </div>
 
-        <div className="space-y-2 flex flex-col">
-          <label className="block text-left flex flex-col space-y-2">
+        <div className="space-y-2">
+          <label className="block text-left">
             <span className="text-gray-700 font-medium">Orario</span>
             <input
               type="time"
-              className="w-full h-[58px] rounded-2xl border border-gray-200 p-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-agri-green-500 focus:border-transparent transition"
+              className="mt-2 w-full h-[58px] rounded-2xl border border-gray-200 p-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-agri-green-500 focus:border-transparent transition"
               value={time}
               onChange={(e) => setTime(e.target.value)}
             />

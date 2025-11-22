@@ -335,12 +335,11 @@ export default function Fields(): React.ReactElement {
             detailsTitle="Dettagli Campo"
             className="bg-background"
           >
-            <div data-editable-table-slot="create-drawer">
-              <ImportFieldByCsv
-                companies={companies}
-                onImportSuccess={handleImportFromCsv}
-              />
-            </div>
+            <ImportFieldByCsv
+              slot="create-drawer"
+              companies={companies}
+              onImportSuccess={handleImportFromCsv}
+            />
           </EditableTable>
         )}
       </div>

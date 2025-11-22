@@ -22,6 +22,7 @@ interface ImportFieldByCsvProps {
   companies: Company[];
   onImportSuccess: (fields: BulkFieldInput[]) => void;
   onCloseParentDrawer?: () => void;
+  slot?: string;
 }
 
 /**
