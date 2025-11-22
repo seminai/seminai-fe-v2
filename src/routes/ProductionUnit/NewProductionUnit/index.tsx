@@ -45,7 +45,6 @@ import {
 
 import type { ParsedBulkImport } from "@/utils/csvProductionUnitParser";
 
-import { Stepper } from "./components/Stepper";
 import { SingleProductionUnitForm } from "./components/SingleProductionUnitForm";
 import { useCropVarieties } from "./hooks/useCropVarieties";
 import {
@@ -582,26 +581,8 @@ export default function NewProductionUnit(): React.ReactElement {
       <div className="flex-shrink-0 bg-gray-50/50 backdrop-blur-sm z-10">
         <PageHeader
           title="Nuova Unità Produttiva"
-          centerElement={<Stepper currentStep={currentStep} />}
           totalItems={filteredFields.length}
           filteredItems={filteredFields.length}
-          rightElement={
-            <div className="flex flex-wrap items-center gap-3 justify-end w-full md:w-auto">
-              {/* Import CSV/Excel */}
-              <ProductionUnitCsvImporter onImportSuccess={handleCsvImport} />
-
-              {/* Indicatore periodo selezionato */}
-              {currentStep === 1 && dateRange?.start && dateRange?.end && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md">
-                  <CalendarIcon className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">
-                    {format(dateRange.start, "dd/MM/yyyy", { locale: it })} -{" "}
-                    {format(dateRange.end, "dd/MM/yyyy", { locale: it })}
-                  </span>
-                </div>
-              )}
-            </div>
-          }
         >
           <Button
             variant="outline"
@@ -817,7 +798,7 @@ export default function NewProductionUnit(): React.ReactElement {
 
                   {/* Header con azioni bulk - solo su desktop */}
                   <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4 gap-4">
-                    {/* Ricerca Toggle + Filtro aziende */}
+                    {/* Ricerca Toggle */}
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
                       <div className="flex items-center gap-2 w-full sm:w-auto">
                         {showSearch ? (
@@ -855,8 +836,13 @@ export default function NewProductionUnit(): React.ReactElement {
                           </Button>
                         )}
                       </div>
+                    </div>
 
-                      <div className="w-full sm:w-[220px]">
+                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto md:ml-auto">
+                      <ProductionUnitCsvImporter
+                        onImportSuccess={handleCsvImport}
+                      />
+                      <div className="w-full sm:w-[240px]">
                         <Select
                           value={selectedCompanyId}
                           onValueChange={setSelectedCompanyId}

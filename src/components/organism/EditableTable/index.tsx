@@ -1672,7 +1672,7 @@ export class EditableTable extends React.Component<
                   aria-label="Esporta CSV"
                 >
                   <IoDownloadOutline className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Esporta CSV</span>
+                  <span className="hidden sm:inline">Esporta File</span>
                 </Button>
               )}
               {this.renderFilterActivator()}
