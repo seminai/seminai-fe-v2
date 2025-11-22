@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import authService from "@/utils/auth";
 
 interface AddStockProps {
@@ -260,12 +260,21 @@ class AddStock extends Component<AddStockProps, AddStockState> {
     return (
       <div className="space-y-3">
         <Button
-          variant={this.state.isFormVisible ? "secondary" : "outline"}
+          variant={this.state.isFormVisible ? "destructive" : "outline"}
           size="sm"
           onClick={this.toggleFormVisibility}
         >
-          <Plus className="h-4 w-4 mr-2" />
-          {this.state.isFormVisible ? "Chiudi Form" : "Aggiungi Movimento"}
+          {this.state.isFormVisible ? (
+            <>
+              <X className="h-4 w-4 mr-2" />
+              Chiudi Form
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4 mr-2" />
+              Aggiungi Movimento
+            </>
+          )}
         </Button>
 
         {this.state.isFormVisible && (

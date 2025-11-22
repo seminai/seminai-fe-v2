@@ -76,7 +76,7 @@ const Stepper: React.FC<StepperProps> = ({ currentStep }) => {
   );
 
   return (
-    <div className="mb-4 md:mb-8 w-full flex justify-center">
+    <div className="w-full flex justify-center">
       <div className="flex items-center w-full max-w-3xl justify-between">
         {stepCollection.getDescriptors().map((step, index, array) => {
           const isActive = step.isActive(currentStep);

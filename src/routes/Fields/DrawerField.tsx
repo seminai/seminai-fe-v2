@@ -1,6 +1,10 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { type Field, type BulkFieldUpdateInput } from "@/api/fields";
+import {
+  type Field,
+  type BulkFieldUpdateInput,
+  type ProductionUnit,
+} from "@/api/fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,6 +32,114 @@ const SOIL_TYPE_OPTIONS = [
   { label: "Franco-Argilloso", value: "FRANCO-ARGILLOSO" },
   { label: "Franco-Limoso", value: "FRANCO-LIMOSO" },
 ];
+
+type ProductionUnitInfoEntry = {
+  label: string;
+  value: string;
+};
+
+type ProductionUnitInfoSection = {
+  title: string;
+  items: ProductionUnitInfoEntry[];
+};
+
+class ProductionUnitPresenter {
+  private readonly unit: ProductionUnit;
+
+  constructor(unit: ProductionUnit) {
+    this.unit = unit;
+  }
+
+  public getTitle(): string {
+    return this.unit.name || "Unità senza nome";
+  }
+
+  public getSections(): ProductionUnitInfoSection[] {
+    return [
+      {
+        title: "Informazioni colturali",
+        items: [
+          { label: "Coltura", value: this.unit.cropName || "-" },
+          {
+            label: "Categoria",
+            value: this.unit.cropType || this.unit.cropCategory || "-",
+          },
+          {
+            label: "Varietà",
+            value:
+              this.unit.variety ||
+              this.unit.cropVariety ||
+              this.unit.cropName ||
+              "-",
+          },
+          { label: "Protocollo", value: this.unit.protocoll || "-" },
+        ],
+      },
+      {
+        title: "Struttura e superfici",
+        items: [
+          {
+            label: "Superficie (Ha)",
+            value: this.formatNumber(this.unit.areaHa ?? this.unit.sauHa),
+          },
+          {
+            label: "Struttura protettiva",
+            value: this.unit.protectionStructure || "-",
+          },
+          { label: "Occupazione", value: this.unit.occupazione || "-" },
+          {
+            label: "Destinazione d'uso",
+            value: this.unit.destinazioneDiUso || "-",
+          },
+          {
+            label: "Acqua totale (L)",
+            value: this.formatNumber(this.unit.acquaTotalePeridoL, 0),
+          },
+        ],
+      },
+      {
+        title: "Cronologia",
+        items: [
+          { label: "Inizio", value: this.formatDate(this.unit.startDate) },
+          {
+            label: "Fioritura",
+            value: this.formatDate(this.unit.floweringDate),
+          },
+          {
+            label: "Raccolta",
+            value: this.formatDate(this.unit.harvestingDate),
+          },
+          { label: "Fine", value: this.formatDate(this.unit.endDate) },
+        ],
+      },
+    ];
+  }
+
+  private formatNumber(
+    value: number | null | undefined,
+    maximumFractionDigits: number = 2
+  ): string {
+    if (value === null || value === undefined || Number.isNaN(value)) {
+      return "-";
+    }
+
+    return value.toLocaleString("it-IT", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits,
+    });
+  }
+
+  private formatDate(value: string | null | undefined): string {
+    if (!value) {
+      return "-";
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return "-";
+    }
+    return date.toLocaleDateString("it-IT");
+  }
+}
 
 /**
  * DrawerFieldContent - Componente funzionale per visualizzare i dettagli completi di un campo
@@ -698,36 +810,40 @@ export function DrawerFieldContent({
           Unità Produttive ({field.productionUnits.length})
         </h3>
         <div className="space-y-3">
-          {field.productionUnits.map((unit) => (
-            <div
-              key={unit.id}
-              className="p-3 bg-white/60 rounded-lg border border-nature-200/50 shadow-sm"
-            >
-              <p className="text-sm font-semibold mb-2">{unit.name}</p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="text-nature-600 font-medium">Coltura: </span>
-                  <span>{unit.cropName || "-"}</span>
-                </div>
-                <div>
-                  <span className="text-nature-600 font-medium">Varietà: </span>
-                  <span>{unit.cropVariety || "-"}</span>
-                </div>
-                <div>
-                  <span className="text-nature-600 font-medium">
-                    Categoria:{" "}
-                  </span>
-                  <span>{unit.cropCategory || "-"}</span>
-                </div>
-                <div>
-                  <span className="text-nature-600 font-medium">
-                    SAU (Ha):{" "}
-                  </span>
-                  <span>{unit.sauHa ? unit.sauHa.toFixed(2) : "-"}</span>
+          {field.productionUnits.map((unit) => {
+            const presenter = new ProductionUnitPresenter(unit);
+            const sections = presenter.getSections();
+
+            return (
+              <div
+                key={unit.id}
+                className="p-4 bg-white/70 rounded-xl border border-nature-200/60 shadow-sm"
+              >
+                <p className="text-sm font-semibold text-foreground mb-3">
+                  {presenter.getTitle()}
+                </p>
+                <div className="space-y-3">
+                  {sections.map((section) => (
+                    <div key={`${unit.id}-${section.title}`}>
+                      <p className="text-[11px] uppercase tracking-wide text-nature-500 font-semibold mb-1.5">
+                        {section.title}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        {section.items.map((item) => (
+                          <div key={`${unit.id}-${section.title}-${item.label}`}>
+                            <span className="text-nature-600 font-medium">
+                              {item.label}:{" "}
+                            </span>
+                            <span className="text-foreground">{item.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );

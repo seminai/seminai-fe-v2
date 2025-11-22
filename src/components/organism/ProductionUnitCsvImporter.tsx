@@ -119,7 +119,7 @@ export const ProductionUnitCsvImporter: React.FC<
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
           <Upload className="h-4 w-4" />
-          Importa CSV/Excel
+          Importa file
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white">

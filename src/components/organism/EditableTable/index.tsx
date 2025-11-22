@@ -5,6 +5,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import {
   Drawer,
   DrawerContent,
   DrawerHeader,
@@ -14,7 +20,10 @@ import {
 import { IoOpenOutline, IoDownloadOutline } from "react-icons/io5";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import Papa from "papaparse";
-import { Plus } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Filter } from "lucide-react";
+import { format } from "date-fns";
+import { DateRange } from "react-day-picker";
+import { EditableTableFilterDrawer } from "./EditableTableFilterDrawer";
 
 // EditableTable - Notion-like editable table with bulk add/save
 // The component follows an OOP approach using a React Class.
@@ -72,6 +81,71 @@ export interface EditableTableProps {
   children?: React.ReactNode;
 }
 
+export type FilterInputType = "text" | "number" | "date";
+
+export interface FilterOperatorConfig {
+  value: string;
+  label: string;
+  inputType: FilterInputType;
+  requiresSecondValue?: boolean;
+}
+
+export interface TableFilterRule {
+  id: string;
+  columnId: string;
+  operator: string;
+  value: string;
+  secondaryValue?: string;
+}
+
+export interface FilterDraft {
+  columnId?: string;
+  operator?: string;
+  value?: string;
+  secondaryValue?: string;
+}
+
+export interface NormalizedSelectOption {
+  label: string;
+  value: string;
+}
+
+const TEXT_FILTER_OPERATORS: FilterOperatorConfig[] = [
+  { value: "contains", label: "Contiene", inputType: "text" },
+  { value: "equals", label: "Uguale a", inputType: "text" },
+  { value: "startsWith", label: "Inizia con", inputType: "text" },
+  { value: "endsWith", label: "Termina con", inputType: "text" },
+];
+
+const NUMBER_FILTER_OPERATORS: FilterOperatorConfig[] = [
+  { value: "equals", label: "Uguale a", inputType: "number" },
+  { value: "greaterThan", label: "Maggiore di", inputType: "number" },
+  { value: "lessThan", label: "Minore di", inputType: "number" },
+  {
+    value: "between",
+    label: "Compreso tra",
+    inputType: "number",
+    requiresSecondValue: true,
+  },
+];
+
+const DATE_FILTER_OPERATORS: FilterOperatorConfig[] = [
+  { value: "on", label: "In data", inputType: "date" },
+  { value: "before", label: "Prima di", inputType: "date" },
+  { value: "after", label: "Dopo il", inputType: "date" },
+  {
+    value: "between",
+    label: "Intervallo",
+    inputType: "date",
+    requiresSecondValue: true,
+  },
+];
+
+const SYSTEM_DATE_COLUMNS: EditableColumn[] = [
+  { id: "createdAt", title: "Creato il", type: "date" },
+  { id: "updatedAt", title: "Aggiornato il", type: "date" },
+];
+
 interface InternalRow {
   id: string;
   data: Record<string, unknown>;
@@ -91,6 +165,10 @@ interface EditableTableState {
   createDrawerOpen: boolean;
   createRow?: InternalRow;
   createTouched: Record<string, boolean>;
+  filterDrawerOpen: boolean;
+  activeFilters: TableFilterRule[];
+  filterDraft: FilterDraft;
+  systemDateRanges: Record<string, DateRange | undefined>;
 }
 
 export class EditableTable extends React.Component<
@@ -127,6 +205,10 @@ export class EditableTable extends React.Component<
       createDrawerOpen: false,
       createRow: undefined,
       createTouched: {},
+      filterDrawerOpen: false,
+      activeFilters: [],
+      filterDraft: this.createEmptyFilterDraft(),
+      systemDateRanges: this.createInitialSystemRanges(),
     };
   }
 
@@ -161,6 +243,592 @@ export class EditableTable extends React.Component<
         drawerRow: updatedDrawerRow,
       });
     }
+  }
+
+  private createEmptyFilterDraft(): FilterDraft {
+    return {
+      columnId: undefined,
+      operator: undefined,
+      value: "",
+      secondaryValue: "",
+    };
+  }
+
+  private createInitialSystemRanges(): Record<string, DateRange | undefined> {
+    return SYSTEM_DATE_COLUMNS.reduce((acc, column) => {
+      acc[column.id] = undefined;
+      return acc;
+    }, {} as Record<string, DateRange | undefined>);
+  }
+
+  private getColumnOptions(column?: EditableColumn): NormalizedSelectOption[] {
+    if (!column || !column.options) {
+      return [];
+    }
+    const rawOptions = column.options as Array<
+      { label: string; value: string } | string
+    >;
+    return rawOptions.map((option) =>
+      typeof option === "string" ? { label: option, value: option } : option
+    );
+  }
+
+  private buildUniqueValueOptions(columnId?: string): NormalizedSelectOption[] {
+    if (!columnId) {
+      return [];
+    }
+    const uniqueValues = new Set<string>();
+    this.state.rows.forEach((row) => {
+      const rawValue = row.data[columnId];
+      if (rawValue === undefined || rawValue === null) {
+        return;
+      }
+      const parsedValue = String(rawValue).trim();
+      if (parsedValue) {
+        uniqueValues.add(parsedValue);
+      }
+    });
+    return Array.from(uniqueValues)
+      .sort((first, second) =>
+        first.localeCompare(second, "it", { sensitivity: "base" })
+      )
+      .map((value) => ({ label: value, value }));
+  }
+
+  private isCompanyColumn(column?: EditableColumn): boolean {
+    if (!column) {
+      return false;
+    }
+    const normalizedId = column.id.toLowerCase();
+    const normalizedTitle = (column.title || "").toLowerCase();
+    return (
+      normalizedId === "company" ||
+      normalizedId === "companyname" ||
+      normalizedId === "companies" ||
+      normalizedId === "azienda" ||
+      normalizedId === "aziende" ||
+      normalizedTitle === "azienda" ||
+      normalizedTitle === "aziende"
+    );
+  }
+
+  private shouldShowSearchableValueSelect(column?: EditableColumn): boolean {
+    return this.isCompanyColumn(column);
+  }
+
+  private getSearchableValueOptions(
+    column?: EditableColumn
+  ): NormalizedSelectOption[] {
+    if (!column || !this.shouldShowSearchableValueSelect(column)) {
+      return [];
+    }
+    return this.buildUniqueValueOptions(column.id);
+  }
+
+  private hasColumnData(columnId: string): boolean {
+    return this.state.rows.some((row) => {
+      const value = row.data[columnId];
+      if (value === undefined || value === null) {
+        return false;
+      }
+      if (typeof value === "string") {
+        return value.trim() !== "";
+      }
+      return true;
+    });
+  }
+
+  private isSystemDateColumn(columnId: string): boolean {
+    return SYSTEM_DATE_COLUMNS.some((column) => column.id === columnId);
+  }
+
+  private getAvailableSystemDateColumns(): EditableColumn[] {
+    return SYSTEM_DATE_COLUMNS.filter((column) =>
+      this.hasColumnData(column.id)
+    );
+  }
+
+  private getColumnById(columnId?: string): EditableColumn | undefined {
+    if (!columnId) {
+      return undefined;
+    }
+    const column =
+      this.props.columns.find((item) => item.id === columnId) ??
+      SYSTEM_DATE_COLUMNS.find((item) => item.id === columnId);
+    if (
+      column &&
+      this.isSystemDateColumn(column.id) &&
+      !this.hasColumnData(column.id)
+    ) {
+      return undefined;
+    }
+    return column;
+  }
+
+  private getOperatorsForColumn(
+    column?: EditableColumn
+  ): FilterOperatorConfig[] {
+    if (!column) {
+      return TEXT_FILTER_OPERATORS;
+    }
+    switch (column.type) {
+      case "number":
+      case "currency":
+        return NUMBER_FILTER_OPERATORS;
+      case "date":
+        return DATE_FILTER_OPERATORS;
+      default:
+        return TEXT_FILTER_OPERATORS;
+    }
+  }
+
+  private toDateValue(value: unknown): number | null {
+    if (value === undefined || value === null || value === "") {
+      return null;
+    }
+    const timestamp = new Date(String(value)).getTime();
+    return Number.isNaN(timestamp) ? null : timestamp;
+  }
+
+  private applyTextFilter(value: unknown, filter: TableFilterRule): boolean {
+    const source = String(value ?? "").toLowerCase();
+    const target = (filter.value ?? "").toLowerCase();
+    if (!target) {
+      return true;
+    }
+    switch (filter.operator) {
+      case "equals":
+        return source === target;
+      case "startsWith":
+        return source.startsWith(target);
+      case "endsWith":
+        return source.endsWith(target);
+      case "contains":
+      default:
+        return source.includes(target);
+    }
+  }
+
+  private applyNumericFilter(value: unknown, filter: TableFilterRule): boolean {
+    const numericValue = Number(value);
+    if (Number.isNaN(numericValue)) {
+      return false;
+    }
+
+    const first = Number(filter.value);
+    if (filter.operator !== "between" && Number.isNaN(first)) {
+      return false;
+    }
+
+    switch (filter.operator) {
+      case "equals":
+        return numericValue === first;
+      case "greaterThan":
+        return numericValue > first;
+      case "lessThan":
+        return numericValue < first;
+      case "between": {
+        const second = Number(filter.secondaryValue);
+        if (Number.isNaN(first) || Number.isNaN(second)) {
+          return false;
+        }
+        const min = Math.min(first, second);
+        const max = Math.max(first, second);
+        return numericValue >= min && numericValue <= max;
+      }
+      default:
+        return false;
+    }
+  }
+
+  private applyDateFilter(value: unknown, filter: TableFilterRule): boolean {
+    const cellDate = this.toDateValue(value);
+    if (cellDate === null) {
+      return false;
+    }
+    const first = this.toDateValue(filter.value);
+
+    switch (filter.operator) {
+      case "on":
+        return first !== null && cellDate === first;
+      case "before":
+        return first !== null && cellDate < first;
+      case "after":
+        return first !== null && cellDate > first;
+      case "between": {
+        const second = this.toDateValue(filter.secondaryValue);
+        if (first === null || second === null) {
+          return false;
+        }
+        const min = Math.min(first, second);
+        const max = Math.max(first, second);
+        return cellDate >= min && cellDate <= max;
+      }
+      default:
+        return false;
+    }
+  }
+
+  private doesRowMatchFilter(
+    row: InternalRow,
+    filter: TableFilterRule
+  ): boolean {
+    const column = this.getColumnById(filter.columnId);
+    const columnType = column?.type ?? "text";
+    const value = row.data[filter.columnId];
+
+    if (value === undefined || value === null || value === "") {
+      return false;
+    }
+
+    switch (columnType) {
+      case "number":
+      case "currency":
+        return this.applyNumericFilter(value, filter);
+      case "date":
+        return this.applyDateFilter(value, filter);
+      default:
+        return this.applyTextFilter(value, filter);
+    }
+  }
+
+  private matchesFilters(
+    row: InternalRow,
+    filters: TableFilterRule[]
+  ): boolean {
+    if (filters.length === 0) {
+      return true;
+    }
+    return filters.every((filter) => this.doesRowMatchFilter(row, filter));
+  }
+
+  private getFilteredRows(): InternalRow[] {
+    const { rows, activeFilters } = this.state;
+    if (activeFilters.length === 0) {
+      return rows;
+    }
+    return rows.filter((row) => this.matchesFilters(row, activeFilters));
+  }
+
+  private formatFilterLabel(filter: TableFilterRule): string {
+    const column = this.getColumnById(filter.columnId);
+    const columnLabel = column?.title ?? filter.columnId;
+    const operatorLabel =
+      this.getOperatorsForColumn(column).find(
+        (operator) => operator.value === filter.operator
+      )?.label ?? filter.operator;
+
+    if (filter.secondaryValue) {
+      return `${columnLabel} ${operatorLabel} ${filter.value} - ${filter.secondaryValue}`;
+    }
+    return `${columnLabel} ${operatorLabel} ${filter.value}`;
+  }
+
+  private handleFilterDraftChange = (
+    field: keyof FilterDraft,
+    value?: string
+  ): void => {
+    this.setState((prev) => {
+      const nextDraft: FilterDraft = { ...prev.filterDraft };
+      switch (field) {
+        case "columnId":
+          nextDraft.columnId = value;
+          nextDraft.operator = undefined;
+          nextDraft.value = "";
+          nextDraft.secondaryValue = "";
+          break;
+        case "operator":
+          nextDraft.operator = value;
+          nextDraft.value = "";
+          nextDraft.secondaryValue = "";
+          break;
+        case "value":
+          nextDraft.value = value ?? "";
+          break;
+        case "secondaryValue":
+          nextDraft.secondaryValue = value ?? "";
+          break;
+        default:
+          break;
+      }
+      return { filterDraft: nextDraft };
+    });
+  };
+
+  private openFilterDrawer = (): void => {
+    if (this.props.columns.length === 0) {
+      return;
+    }
+    this.setState({ filterDrawerOpen: true });
+  };
+
+  private handleFilterDrawerChange = (open: boolean): void => {
+    this.setState((prev) => ({
+      filterDrawerOpen: open,
+      filterDraft: open ? prev.filterDraft : this.createEmptyFilterDraft(),
+    }));
+  };
+
+  private addFilter = (): void => {
+    const { filterDraft } = this.state;
+    if (!filterDraft.columnId || !filterDraft.operator) {
+      return;
+    }
+    const trimmedValue = (filterDraft.value ?? "").trim();
+    if (!trimmedValue) {
+      return;
+    }
+
+    const column = this.getColumnById(filterDraft.columnId);
+    const operatorConfig = this.getOperatorsForColumn(column).find(
+      (operator) => operator.value === filterDraft.operator
+    );
+
+    if (
+      operatorConfig?.requiresSecondValue &&
+      !(filterDraft.secondaryValue && filterDraft.secondaryValue.trim())
+    ) {
+      return;
+    }
+
+    const newFilter: TableFilterRule = {
+      id: this.generateTempId(),
+      columnId: filterDraft.columnId,
+      operator: filterDraft.operator,
+      value: trimmedValue,
+      secondaryValue: operatorConfig?.requiresSecondValue
+        ? filterDraft.secondaryValue?.trim()
+        : undefined,
+    };
+
+    this.setState((prev) => ({
+      activeFilters: [...prev.activeFilters, newFilter],
+      filterDraft: this.createEmptyFilterDraft(),
+    }));
+  };
+
+  private removeFilter = (filterId: string): void => {
+    this.setState((prev) => {
+      const target = prev.activeFilters.find(
+        (filter) => filter.id === filterId
+      );
+      const remaining = prev.activeFilters.filter(
+        (filter) => filter.id !== filterId
+      );
+      const nextState: Pick<
+        EditableTableState,
+        "activeFilters" | "systemDateRanges"
+      > = {
+        activeFilters: remaining,
+        systemDateRanges: prev.systemDateRanges,
+      };
+
+      if (target && this.isSystemDateColumn(target.columnId)) {
+        nextState.systemDateRanges = {
+          ...prev.systemDateRanges,
+          [target.columnId]: undefined,
+        };
+      }
+
+      return nextState;
+    });
+  };
+
+  private clearFilters = (): void => {
+    this.setState({
+      activeFilters: [],
+      systemDateRanges: this.createInitialSystemRanges(),
+    });
+  };
+
+  private handleSystemDateRangeChange = (
+    columnId: string,
+    range?: DateRange
+  ): void => {
+    this.setState((prev) => {
+      const nextRanges = {
+        ...prev.systemDateRanges,
+        [columnId]: range,
+      };
+      const withoutCurrentColumn = prev.activeFilters.filter(
+        (filter) => filter.columnId !== columnId
+      );
+      if (range?.from && range?.to) {
+        const newFilter: TableFilterRule = {
+          id: this.generateTempId(),
+          columnId,
+          operator: "between",
+          value: format(range.from, "yyyy-MM-dd"),
+          secondaryValue: format(range.to, "yyyy-MM-dd"),
+        };
+        return {
+          systemDateRanges: nextRanges,
+          activeFilters: [...withoutCurrentColumn, newFilter],
+        };
+      }
+      return {
+        systemDateRanges: nextRanges,
+        activeFilters: withoutCurrentColumn,
+      };
+    });
+  };
+
+  private renderSystemDatePicker(column: EditableColumn): React.ReactNode {
+    const range = this.state.systemDateRanges[column.id];
+    const hasRange = Boolean(range?.from && range?.to);
+    const fromLabel = range?.from ? format(range.from, "dd/MM/yyyy") : "";
+    const toLabel = range?.to ? format(range.to, "dd/MM/yyyy") : "";
+    const label = hasRange
+      ? `${fromLabel} → ${toLabel}`
+      : "Seleziona intervallo";
+
+    return (
+      <div key={`system-filter-${column.id}`} className="space-y-1.5">
+        <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+          <CalendarIcon className="h-4 w-4" />
+          {column.title}
+        </label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal h-10 rounded-xl border border-black/5 dark:border-white/10 bg-white/70 hover:bg-white",
+                !hasRange && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {label}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-auto p-0 border border-border/40 rounded-2xl shadow-xl bg-white"
+            align="end"
+          >
+            <Calendar
+              mode="range"
+              selected={range}
+              onSelect={(selectedRange) =>
+                this.handleSystemDateRangeChange(
+                  column.id,
+                  selectedRange ?? undefined
+                )
+              }
+              numberOfMonths={1}
+              initialFocus
+            />
+            <div className="flex items-center justify-end gap-2 border-t border-border/40 px-3 py-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  this.handleSystemDateRangeChange(column.id, undefined)
+                }
+              >
+                Pulisci
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
+  }
+
+  private renderSystemDateSection(): React.ReactNode {
+    const systemColumns = this.getAvailableSystemDateColumns();
+    if (systemColumns.length === 0) {
+      return null;
+    }
+    return (
+      <div className="space-y-3">
+        <h4 className="text-sm font-semibold text-muted-foreground">
+          Date di sistema
+        </h4>
+        <div className="space-y-3">
+          {systemColumns.map((column) => this.renderSystemDatePicker(column))}
+        </div>
+      </div>
+    );
+  }
+
+  private renderFilterActivator(): React.ReactNode {
+    const hasFilters = this.state.activeFilters.length > 0;
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={this.props.columns.length === 0}
+        onClick={this.openFilterDrawer}
+        aria-label="Apri filtri"
+        className={cn(
+          "text-muted-foreground cursor-pointer",
+          hasFilters &&
+            "bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100"
+        )}
+      >
+        <Filter className="h-4 w-4 sm:mr-2" />
+        <span className="hidden sm:inline">
+          Filtri{hasFilters ? ` (${this.state.activeFilters.length})` : ""}
+        </span>
+      </Button>
+    );
+  }
+
+  private renderFilterDrawer(): React.ReactNode {
+    const { filterDrawerOpen, activeFilters, filterDraft } = this.state;
+    const selectedColumn = this.getColumnById(filterDraft.columnId);
+    const operatorOptions = this.getOperatorsForColumn(selectedColumn);
+    const selectedOperator = operatorOptions.find(
+      (operator) => operator.value === filterDraft.operator
+    );
+    const columnOptions = this.getColumnOptions(selectedColumn);
+    const shouldUseSelect = columnOptions.length > 0;
+    const disableAdd =
+      !filterDraft.columnId ||
+      !filterDraft.operator ||
+      !(filterDraft.value && filterDraft.value.trim()) ||
+      (Boolean(selectedOperator?.requiresSecondValue) &&
+        !(filterDraft.secondaryValue && filterDraft.secondaryValue.trim()));
+
+    const inputType =
+      selectedOperator?.inputType === "number"
+        ? "number"
+        : selectedOperator?.inputType === "date"
+        ? "date"
+        : "text";
+    const operatorOptionItems = operatorOptions.map(({ value, label }) => ({
+      value,
+      label,
+    }));
+    const showSearchableValueSelect =
+      this.shouldShowSearchableValueSelect(selectedColumn);
+    const searchableValueOptions =
+      this.getSearchableValueOptions(selectedColumn);
+
+    return (
+      <EditableTableFilterDrawer
+        open={filterDrawerOpen}
+        columns={this.props.columns}
+        activeFilters={activeFilters}
+        filterDraft={filterDraft}
+        operatorOptions={operatorOptionItems}
+        selectedOperatorValue={filterDraft.operator ?? ""}
+        showSecondaryValueInput={Boolean(selectedOperator?.requiresSecondValue)}
+        disableAdd={disableAdd}
+        inputType={inputType}
+        useValueSelect={shouldUseSelect}
+        valueOptions={columnOptions}
+        systemDateSection={this.renderSystemDateSection()}
+        searchableValueOptions={searchableValueOptions}
+        showSearchableValueSelect={showSearchableValueSelect}
+        onDrawerOpenChange={this.handleFilterDrawerChange}
+        onFilterDraftChange={this.handleFilterDraftChange}
+        onAddFilter={this.addFilter}
+        onRemoveFilter={this.removeFilter}
+        onClearFilters={this.clearFilters}
+        formatFilterLabel={this.formatFilterLabel}
+      />
+    );
   }
 
   private generateTempId(): string {
@@ -450,9 +1118,14 @@ export class EditableTable extends React.Component<
   };
 
   private toggleSelectAll = (value: boolean): void => {
-    this.setState((prev) => ({
-      selected: Object.fromEntries(prev.rows.map((r) => [r.id, value])),
-    }));
+    const visibleRows = this.getFilteredRows();
+    this.setState((prev) => {
+      const updatedSelection = { ...prev.selected };
+      visibleRows.forEach((row) => {
+        updatedSelection[row.id] = value;
+      });
+      return { selected: updatedSelection };
+    });
   };
 
   private toggleEditMode = (): void => {
@@ -568,9 +1241,22 @@ export class EditableTable extends React.Component<
       .map(([k]) => k);
   }
 
+  private confirmDeletion(): boolean {
+    const selectionCount = this.selectedIds.length;
+    if (selectionCount === 0) {
+      return false;
+    }
+    const entityLabel =
+      selectionCount === 1
+        ? "questo elemento selezionato"
+        : `${selectionCount} elementi selezionati`;
+    return window.confirm(`Confermi di voler eliminare ${entityLabel}?`);
+  }
+
   private handleDelete = (): void => {
     const ids = new Set(this.selectedIds);
     if (ids.size === 0) return;
+    if (!this.confirmDeletion()) return;
     const removed: InternalRow[] = this.state.rows.filter((r) => ids.has(r.id));
     if (this.props.onDeleteSelected) {
       this.props.onDeleteSelected(removed.map((r) => r.data));
@@ -961,7 +1647,7 @@ export class EditableTable extends React.Component<
 
   private renderVertical(): React.ReactNode {
     const { columns, isModify, className } = this.props;
-    const { rows } = this.state;
+    const rows = this.getFilteredRows();
     const showEditActions = this.shouldShowEditActions;
     const showAddButton = Boolean(this.props.addButton) && !showEditActions;
     const hasLast = Boolean(this.props.lastComponent);
@@ -975,21 +1661,24 @@ export class EditableTable extends React.Component<
         >
           <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-agri-green-50 bg-agri-green-50 rounded-t-lg">
             <div className="flex flex-wrap items-center gap-2">
-              {leftActions}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground cursor-pointer"
-                onClick={this.handleExportCsv}
-                disabled={this.props.columns.length === 0}
-                aria-label="Esporta CSV"
-              >
-                <IoDownloadOutline className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Esporta CSV</span>
-              </Button>
+              {!showEditActions && leftActions}
+              {!showEditActions && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground cursor-pointer"
+                  onClick={this.handleExportCsv}
+                  disabled={this.props.columns.length === 0}
+                  aria-label="Esporta CSV"
+                >
+                  <IoDownloadOutline className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Esporta CSV</span>
+                </Button>
+              )}
+              {this.renderFilterActivator()}
             </div>
             <div className="flex items-center gap-2">
-              {rightActions}
+              {!showEditActions && rightActions}
               {showEditActions && (
                 <>
                   <Button
@@ -1144,6 +1833,7 @@ export class EditableTable extends React.Component<
             </div>
           )}
         </div>
+        {this.renderFilterDrawer()}
         {this.renderCreateDrawer()}
       </React.Fragment>
     );
@@ -1154,12 +1844,13 @@ export class EditableTable extends React.Component<
       return this.renderVertical();
     }
     const { columns, isModify, className } = this.props;
-    const { rows } = this.state;
+    const rows = this.getFilteredRows();
     const showEditActions = this.shouldShowEditActions;
     const hasErrors = this.hasErrors;
     const anySelected = this.selectedIds.length > 0;
     const allSelected =
-      rows.length > 0 && this.selectedIds.length === rows.length;
+      rows.length > 0 &&
+      rows.every((row) => Boolean(this.state.selected[row.id]));
     const hasDetails = Boolean(
       this.props.detailsRenderer || this.props.onOpenDetails
     );
@@ -1175,28 +1866,33 @@ export class EditableTable extends React.Component<
         {/* Top action bar */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-agri-green-50 bg-agri-green-50 rounded-t-lg sticky top-0 left-0 right-0 z-10">
           <div className="flex flex-wrap items-center gap-2">
-            {leftActions}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground cursor-pointer"
-              onClick={this.handleExportCsv}
-              disabled={this.props.columns.length === 0}
-              aria-label="Esporta CSV"
-            >
-              <IoDownloadOutline className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Esporta CSV</span>
-            </Button>
-            <span className="text-sm text-gray-600">
-              {anySelected
-                ? `${this.selectedIds.length} element${
-                    this.selectedIds.length === 1 ? "o" : "i"
-                  } selezionat${this.selectedIds.length === 1 ? "o" : "i"}`
-                : ""}
-            </span>
+            {!showEditActions && !anySelected && leftActions}
+            {!showEditActions && !anySelected && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground cursor-pointer"
+                onClick={this.handleExportCsv}
+                disabled={this.props.columns.length === 0}
+                aria-label="Esporta CSV"
+              >
+                <IoDownloadOutline className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Esporta File</span>
+              </Button>
+            )}
+            {!showEditActions && (
+              <span className="text-sm text-gray-600">
+                {anySelected
+                  ? `${this.selectedIds.length} element${
+                      this.selectedIds.length === 1 ? "o" : "i"
+                    } selezionat${this.selectedIds.length === 1 ? "o" : "i"}`
+                  : ""}
+              </span>
+            )}
+            {this.renderFilterActivator()}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {rightActions}
+            {!showEditActions && !anySelected && rightActions}
             {isModify &&
               !anySelected &&
               !this.props.alwaysEdit &&
@@ -1225,7 +1921,7 @@ export class EditableTable extends React.Component<
                   <span className="hidden sm:inline">Modifica</span>
                 </Button>
               )}
-            {showAddButton && (
+            {showAddButton && !anySelected && (
               <Button
                 variant="ghost"
                 className="text-muted-foreground bg-agri-green-200 text-agri-green-700 cursor-pointer"
@@ -1236,7 +1932,7 @@ export class EditableTable extends React.Component<
                 <span className="hidden sm:inline">Aggiungi</span>
               </Button>
             )}
-            {anySelected && (
+            {anySelected && !showEditActions && (
               <Button
                 onClick={this.handleDelete}
                 className={cn(
@@ -1491,6 +2187,7 @@ export class EditableTable extends React.Component<
             </DrawerContent>
           </Drawer>
         ) : null}
+        {this.renderFilterDrawer()}
         {this.renderCreateDrawer()}
       </div>
     );

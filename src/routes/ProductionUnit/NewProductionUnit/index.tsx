@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { useNavigate, type NavigateFunction } from "react-router-dom";
 
 import {
   CalendarIcon,
@@ -58,6 +59,18 @@ import {
 } from "./utils";
 import type { DateRange, FieldWithCompany, ProductionUnitInput } from "./types";
 
+class NavigationManager {
+  private readonly navigateFn: NavigateFunction;
+
+  constructor(navigateFn: NavigateFunction) {
+    this.navigateFn = navigateFn;
+  }
+
+  public goBack(): void {
+    this.navigateFn(-1);
+  }
+}
+
 export default function NewProductionUnit(): React.ReactElement {
   const [searchValue, setSearchValue] = useState<string>("");
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("all");
@@ -75,6 +88,15 @@ export default function NewProductionUnit(): React.ReactElement {
   const [tempDateRange, setTempDateRange] = useState<DateRange>(
     getCurrentYearRange()
   );
+
+  const navigate = useNavigate();
+  const navigationManager = useMemo(
+    () => new NavigationManager(navigate),
+    [navigate]
+  );
+  const handleCancelNavigation = useCallback(() => {
+    navigationManager.goBack();
+  }, [navigationManager]);
 
   const handleSearch = () => {
     setDateRange(tempDateRange);
@@ -580,30 +602,15 @@ export default function NewProductionUnit(): React.ReactElement {
               )}
             </div>
           }
-          filterElement={
-            <div className="w-full md:w-[220px]">
-              <Select
-                value={selectedCompanyId}
-                onValueChange={setSelectedCompanyId}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Tutte le aziende" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte le aziende</SelectItem>
-                  {companies.map((company) => (
-                    <SelectItem
-                      key={company.companyId}
-                      value={company.companyId}
-                    >
-                      {company.companyName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          }
-        />
+        >
+          <Button
+            variant="outline"
+            onClick={handleCancelNavigation}
+            className="border-red-200 text-red-600 hover:bg-red-50"
+          >
+            Annulla
+          </Button>
+        </PageHeader>
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -810,42 +817,68 @@ export default function NewProductionUnit(): React.ReactElement {
 
                   {/* Header con azioni bulk - solo su desktop */}
                   <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4 gap-4">
-                    {/* Ricerca Toggle */}
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                      {showSearch ? (
-                        <div className="relative flex-1 min-w-[250px]">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                          <Input
-                            type="text"
-                            placeholder="Cerca campi..."
-                            value={searchValue}
-                            onChange={(e) => setSearchValue(e.target.value)}
-                            className="pl-10 pr-10 w-full h-9 bg-white"
-                            autoFocus
-                          />
+                    {/* Ricerca Toggle + Filtro aziende */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        {showSearch ? (
+                          <div className="relative flex-1 min-w-[250px]">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                              type="text"
+                              placeholder="Cerca campi..."
+                              value={searchValue}
+                              onChange={(e) => setSearchValue(e.target.value)}
+                              className="pl-10 pr-10 w-full h-9 bg-white"
+                              autoFocus
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-0 top-0 h-9 w-9 hover:bg-transparent"
+                              onClick={() => {
+                                setSearchValue("");
+                                setShowSearch(false);
+                              }}
+                            >
+                              <X className="h-4 w-4 text-gray-500" />
+                            </Button>
+                          </div>
+                        ) : (
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-0 top-0 h-9 w-9 hover:bg-transparent"
-                            onClick={() => {
-                              setSearchValue("");
-                              setShowSearch(false);
-                            }}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowSearch(true)}
+                            className="bg-white hover:bg-green-50 text-green-700 border-green-200"
                           >
-                            <X className="h-4 w-4 text-gray-500" />
+                            <Filter className="mr-2 h-4 w-4" />
+                            Filtra Campi
                           </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowSearch(true)}
-                          className="bg-white hover:bg-green-50 text-green-700 border-green-200"
+                        )}
+                      </div>
+
+                      <div className="w-full sm:w-[220px]">
+                        <Select
+                          value={selectedCompanyId}
+                          onValueChange={setSelectedCompanyId}
                         >
-                          <Filter className="mr-2 h-4 w-4" />
-                          Filtra Campi
-                        </Button>
-                      )}
+                          <SelectTrigger className="w-full bg-white">
+                            <SelectValue placeholder="Tutte le aziende" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">
+                              Tutte le aziende
+                            </SelectItem>
+                            {companies.map((company) => (
+                              <SelectItem
+                                key={company.companyId}
+                                value={company.companyId}
+                              >
+                                {company.companyName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
                     {(selectedFieldIds.size > 0 ||

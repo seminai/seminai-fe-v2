@@ -1639,7 +1639,7 @@ class CompanyWarehousesPanel extends React.Component<
             ) : (
               <>
                 <PlusCircle className="h-4 w-4 mr-1" />
-                Mostra form
+                Aggiungi
               </>
             )}
           </Button>
@@ -1711,22 +1711,6 @@ class CompanyWarehousesPanel extends React.Component<
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              void onRetry();
-            }}
-            disabled={isLoading}
-            className="rounded-full border-agri-green-200 text-agri-green-700 hover:bg-agri-green-50/80"
-          >
-            {isLoading ? (
-              <Spinner size={18} ariaLabel="Aggiornamento magazzini" />
-            ) : (
-              <RefreshCcw className="h-4 w-4 mr-2" />
-            )}
-            Aggiorna
-          </Button>
         </div>
 
         {isError ? (
