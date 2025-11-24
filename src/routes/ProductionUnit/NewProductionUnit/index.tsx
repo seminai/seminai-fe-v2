@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/organism/Header";
 import { ProductionUnitCsvImporter } from "@/components/organism/ProductionUnitCsvImporter";
 import { useFieldsAvailability } from "@/hooks/useFieldsAvailability";
 import { Spinner } from "@/components/ui/spinner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -618,22 +618,24 @@ export default function NewProductionUnit(): React.ReactElement {
                 <div className="space-y-6">
                   {/* Calendario per periodo di disponibilità */}
                   <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
-                    <CardHeader className="flex flex-row items-start justify-between pb-2">
-                      <div className="space-y-1">
-                        <CardTitle className="text-xl font-semibold text-blue-900 flex items-center gap-2">
+                    <CardContent className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
+                      <div className="flex flex-col gap-2 text-blue-900 w-full lg:max-w-lg">
+                        <div className="flex items-center gap-3">
                           <CalendarIcon className="h-6 w-6" />
-                          Periodo di disponibilità dei campi
-                        </CardTitle>
-                        <p className="text-sm text-blue-700">
-                          Seleziona il periodo per visualizzare i campi
-                          disponibili
-                        </p>
-                      </div>
-                      {dateRange?.start && dateRange?.end && (
-                        <div className="hidden md:block px-3 py-2 bg-white/60 rounded-md border border-blue-100 shadow-sm">
-                          <p className="text-sm font-medium text-blue-900">
+                          <div className="flex flex-col">
+                            <span className="text-base font-semibold">
+                              Periodo di disponibilità dei campi
+                            </span>
+                            <span className="text-sm text-blue-700">
+                              Seleziona il periodo per visualizzare i campi
+                              disponibili
+                            </span>
+                          </div>
+                        </div>
+                        {dateRange?.start && dateRange?.end && (
+                          <p className="text-xs font-medium text-blue-900">
                             Periodo selezionato:{" "}
-                            <span className="font-bold">
+                            <span className="font-semibold">
                               {format(dateRange.start, "dd MMMM yyyy", {
                                 locale: it,
                               })}{" "}
@@ -643,12 +645,10 @@ export default function NewProductionUnit(): React.ReactElement {
                               })}
                             </span>
                           </p>
-                        </div>
-                      )}
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-col md:flex-row items-end gap-4">
-                        <div className="flex flex-col gap-2 w-full md:w-auto">
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-4 w-full lg:w-auto lg:flex-row lg:items-end">
+                        <div className="flex flex-col gap-2 w-full lg:w-[220px]">
                           <label className="text-sm font-medium text-blue-900">
                             Data Inizio
                           </label>
@@ -657,7 +657,7 @@ export default function NewProductionUnit(): React.ReactElement {
                               <Button
                                 variant={"outline"}
                                 className={cn(
-                                  "w-full md:w-[240px] justify-start text-left font-normal",
+                                  "w-full justify-start text-left font-normal",
                                   !tempDateRange.start &&
                                     "text-muted-foreground"
                                 )}
@@ -692,7 +692,7 @@ export default function NewProductionUnit(): React.ReactElement {
                           </Popover>
                         </div>
 
-                        <div className="flex flex-col gap-2 w-full md:w-auto">
+                        <div className="flex flex-col gap-2 w-full lg:w-[220px]">
                           <label className="text-sm font-medium text-blue-900">
                             Data Fine
                           </label>
@@ -701,7 +701,7 @@ export default function NewProductionUnit(): React.ReactElement {
                               <Button
                                 variant={"outline"}
                                 className={cn(
-                                  "w-full md:w-[240px] justify-start text-left font-normal",
+                                  "w-full justify-start text-left font-normal",
                                   !tempDateRange.end && "text-muted-foreground"
                                 )}
                               >
@@ -735,7 +735,7 @@ export default function NewProductionUnit(): React.ReactElement {
                           </Popover>
                         </div>
 
-                        <div className="flex gap-2 w-full md:w-auto pb-0.5">
+                        <div className="flex gap-2 w-full lg:w-auto lg:justify-end">
                           <Button
                             onClick={handleSearch}
                             className="bg-blue-600 hover:bg-blue-700"
@@ -1024,10 +1024,10 @@ export default function NewProductionUnit(): React.ReactElement {
                             }}
                           >
                             <CardContent className="p-4">
-                              <div className="flex items-center gap-4">
+                              <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
                                 {/* Checkbox per multiselect */}
                                 <div
-                                  className="flex-shrink-0"
+                                  className="flex-shrink-0 self-start lg:self-center"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <Checkbox
@@ -1049,7 +1049,7 @@ export default function NewProductionUnit(): React.ReactElement {
                                 </div>
 
                                 {/* Info campo */}
-                                <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                                <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
                                   {/* Nome e azienda */}
                                   <div className="md:col-span-3">
                                     <div className="flex items-center gap-2 flex-wrap">
@@ -1163,7 +1163,7 @@ export default function NewProductionUnit(): React.ReactElement {
 
                                   {/* Controlli allocazione */}
                                   <div
-                                    className="md:col-span-2 flex items-center justify-end gap-2"
+                                    className="md:col-span-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:justify-end"
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <Input
@@ -1191,7 +1191,7 @@ export default function NewProductionUnit(): React.ReactElement {
                                         );
                                       }}
                                       placeholder="0.00"
-                                      className="text-right w-24"
+                                      className="text-right w-full sm:w-24"
                                       disabled={isDisabled}
                                     />
                                     <Button
@@ -1214,7 +1214,7 @@ export default function NewProductionUnit(): React.ReactElement {
 
                                 {/* Azioni */}
                                 <div
-                                  className="flex-shrink-0 flex gap-2 w-[180px] justify-end"
+                                  className="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full lg:w-[180px] items-stretch sm:items-center lg:justify-end"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {!isSplitField && (

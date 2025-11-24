@@ -11,8 +11,9 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Package, Eye } from "lucide-react";
+import { AlertCircle, Package, Eye, Plus } from "lucide-react";
 import DrawerProduct from "./DrawerProduct";
+import DrawerProductBulkImport from "./DrawerProductBulkImport";
 import { Button } from "@/components/ui/button";
 
 class ProductStockCalculator {
@@ -255,10 +256,15 @@ class ProductTableColumnsFactory {
 }
 
 function ProductsPage() {
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(
+    null
+  );
+  const [selectedProductPreview, setSelectedProductPreview] =
+    useState<Product | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const { products, isLoading, isError, error } = useProducts();
+  const { products, isLoading, isError, error, refetch } = useProducts();
+  const [importDrawerOpen, setImportDrawerOpen] = useState(false);
 
   const sortedProducts = useMemo(() => {
     const sorter = new ProductSorter(
@@ -277,8 +283,17 @@ function ProductsPage() {
   }, [sortedProducts]);
 
   const handleProductClick = (product: Product) => {
-    setSelectedProduct(product);
+    setSelectedProductId(product.id);
+    setSelectedProductPreview(product);
     setDrawerOpen(true);
+  };
+
+  const handleDrawerOpenChange = (open: boolean) => {
+    setDrawerOpen(open);
+    if (!open) {
+      setSelectedProductId(null);
+      setSelectedProductPreview(null);
+    }
   };
 
   if (isLoading) {
@@ -325,7 +340,19 @@ function ProductsPage() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <PageHeader title="Prodotti" />
+      <PageHeader
+        title="Prodotti"
+        rightElement={
+          <Button
+            type="button"
+            className="gap-2"
+            onClick={() => setImportDrawerOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Aggiungi
+          </Button>
+        }
+      />
 
       <div className="flex-1 overflow-auto px-6 pb-24">
         {sortedProducts.length === 0 ? (
@@ -370,9 +397,15 @@ function ProductsPage() {
       </div>
 
       <DrawerProduct
-        product={selectedProduct}
+        productId={selectedProductId}
+        previewProduct={selectedProductPreview}
         open={drawerOpen}
-        onOpenChange={setDrawerOpen}
+        onOpenChange={handleDrawerOpenChange}
+      />
+      <DrawerProductBulkImport
+        open={importDrawerOpen}
+        onOpenChange={setImportDrawerOpen}
+        onImportCompleted={refetch}
       />
     </div>
   );
