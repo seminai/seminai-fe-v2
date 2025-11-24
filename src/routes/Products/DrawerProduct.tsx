@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Product, StockEntry, productsApiService } from "@/api/products";
 import {
   Sheet,
@@ -13,6 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   ChartContainer,
   ChartTooltip,
@@ -41,16 +50,209 @@ import {
   TrendingDown,
   TrendingUp,
   Pencil,
+  Info,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import AddStock from "./AddStock";
 import authService from "@/utils/auth";
+import { useProductDetail } from "@/hooks/useProductDetail";
+import { Spinner } from "@/components/ui/spinner";
 
 interface DrawerProductProps {
-  product: Product | null;
+  productId: string | null;
+  previewProduct: Product | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+class StockFormatter {
+  private constructor() {}
+
+  public static formatQuantity(quantity: number): string {
+    if (!Number.isFinite(quantity)) {
+      return "0.0";
+    }
+    const roundedQuantity = Math.round(quantity * 10) / 10;
+    return roundedQuantity.toFixed(1);
+  }
+}
+
+class DateFormatter {
+  private readonly locale: string;
+
+  constructor(locale: string = "it-IT") {
+    this.locale = locale;
+  }
+
+  public format(dateInput?: string | null): string | null {
+    if (!dateInput) {
+      return null;
+    }
+    const date = new Date(dateInput);
+    if (Number.isNaN(date.getTime())) {
+      return null;
+    }
+    return new Intl.DateTimeFormat(this.locale, {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).format(date);
+  }
+}
+
+class JobDetailsPresenter {
+  private readonly job: StockEntry["job"] | null;
+  private readonly dateFormatter = new DateFormatter();
+
+  constructor(job: StockEntry["job"] | null) {
+    this.job = job;
+  }
+
+  public hasJob(): boolean {
+    return Boolean(this.job);
+  }
+
+  public getOperationName(): string {
+    if (!this.job) {
+      return "Movimento manuale";
+    }
+    if (this.job.note) {
+      return this.job.note.length > 90
+        ? `${this.job.note.slice(0, 87)}...`
+        : this.job.note;
+    }
+    if (this.job.category) {
+      return this.formatCategory(this.job.category);
+    }
+    return "Operazione collegata";
+  }
+
+  public getOperationDate(): string | null {
+    const date = this.job?.dateOfOpeation ?? this.job?.dateOfOperation ?? null;
+    return this.dateFormatter.format(date);
+  }
+
+  public getDetails(): Array<{ label: string; value: string }> {
+    if (!this.job) {
+      return [];
+    }
+    const details: Array<{ label: string; value: string }> = [];
+    const date = this.getOperationDate();
+    if (date) {
+      details.push({ label: "Data operazione", value: date });
+    }
+    if (this.job.category) {
+      details.push({
+        label: "Categoria",
+        value: this.formatCategory(this.job.category),
+      });
+    }
+    if (
+      typeof this.job.quantity === "number" &&
+      this.job.unitOfMeasureQuantity
+    ) {
+      details.push({
+        label: "Prodotto distribuito",
+        value: `${StockFormatter.formatQuantity(Math.abs(this.job.quantity))} ${
+          this.job.unitOfMeasureQuantity
+        }`,
+      });
+    }
+    if (
+      typeof this.job.productQuantityTreated === "number" &&
+      this.job.unitOfMeasureProductQuantityTreated
+    ) {
+      details.push({
+        label: "Dose trattata",
+        value: `${StockFormatter.formatQuantity(
+          this.job.productQuantityTreated
+        )} ${this.job.unitOfMeasureProductQuantityTreated}`,
+      });
+    }
+    if (typeof this.job.treatedSurface === "number") {
+      details.push({
+        label: "Superficie trattata",
+        value: `${StockFormatter.formatQuantity(this.job.treatedSurface)} ha`,
+      });
+    }
+    const productionUnitName = this.job.productionUnit?.name;
+    if (productionUnitName) {
+      details.push({ label: "Unità produttiva", value: productionUnitName });
+    }
+    const fields = this.getFieldsList();
+    if (fields) {
+      details.push({ label: "Appezzamenti", value: fields });
+    }
+    if (this.job.note) {
+      details.push({ label: "Note", value: this.job.note });
+    }
+    return details;
+  }
+
+  private getFieldsList(): string | null {
+    if (!this.job?.productionUnit?.productionUnitsOnFields) {
+      return null;
+    }
+    const names = this.job.productionUnit.productionUnitsOnFields
+      .map((item) => item.field?.name)
+      .filter((name): name is string => Boolean(name));
+    if (names.length === 0) {
+      return null;
+    }
+    return names.join(", ");
+  }
+
+  private formatCategory(category: string): string {
+    return category
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+}
+
+class StockUnitAnalyzer {
+  private readonly stocks: StockEntry[];
+
+  constructor(stocks: StockEntry[]) {
+    this.stocks = stocks;
+  }
+
+  public getPreferredUnit(): string {
+    if (this.stocks.length === 0) {
+      return "unità";
+    }
+    const counters = new Map<string, number>();
+    this.stocks.forEach((stock) => {
+      const unit = stock.unitOfMeasureQuantity || "unità";
+      counters.set(unit, (counters.get(unit) ?? 0) + 1);
+    });
+    let preferred = "unità";
+    let max = 0;
+    counters.forEach((value, unit) => {
+      if (value > max) {
+        preferred = unit;
+        max = value;
+      }
+    });
+    return preferred;
+  }
+
+  public hasMixedUnits(): boolean {
+    return this.getDistinctUnits().length > 1;
+  }
+
+  public getSecondaryUnits(preferredUnit: string): string[] {
+    return this.getDistinctUnits().filter((unit) => unit !== preferredUnit);
+  }
+
+  private getDistinctUnits(): string[] {
+    const set = new Set<string>();
+    this.stocks.forEach((stock) => {
+      set.add(stock.unitOfMeasureQuantity || "unità");
+    });
+    return Array.from(set);
+  }
 }
 
 class StockDataProcessor {
@@ -79,51 +281,74 @@ class StockDataProcessor {
     return stock.type === "IN" ? normalizedQuantity : -normalizedQuantity;
   }
 
-  public processForChart(): Array<{
+  private getTimestamp(stock: StockEntry): number {
+    const dateReference =
+      stock.createdAt ??
+      stock.job?.dateOfOpeation ??
+      stock.job?.dateOfOperation ??
+      null;
+    if (!dateReference) {
+      return 0;
+    }
+    const timestamp = new Date(dateReference).getTime();
+    return Number.isNaN(timestamp) ? 0 : timestamp;
+  }
+
+  private formatMovementLabel(stock: StockEntry, index: number): string {
+    const formatter = new DateFormatter();
+    const formatted =
+      formatter.format(
+        stock.createdAt ??
+          stock.job?.dateOfOpeation ??
+          stock.job?.dateOfOperation ??
+          null
+      ) ?? null;
+    return formatted ?? `Mov. ${index + 1}`;
+  }
+
+  private getOrderedStocks(preferredUnit?: string): StockEntry[] {
+    return [...this.stocks]
+      .filter((stock) => {
+        if (!preferredUnit) {
+          return true;
+        }
+        if (!stock.unitOfMeasureQuantity) {
+          return true;
+        }
+        return stock.unitOfMeasureQuantity === preferredUnit;
+      })
+      .sort((a, b) => this.getTimestamp(a) - this.getTimestamp(b));
+  }
+
+  public processForChart(preferredUnit?: string): Array<{
     index: number;
     stock: number;
     label: string;
-    type: "IN" | "OUT" | "INITIAL";
+    type: "IN" | "OUT";
+    timestamp: string | null;
+    operationName: string;
   }> {
-    // Inverti l'ordine dei movimenti per mostrare cronologicamente dal più vecchio al più recente
-    const stocksReversed = [...this.stocks].reverse();
-
-    // Calcola lo stock iniziale (prima di tutti i movimenti)
-    const finalStock = this.calculateTotalStock();
-    const totalMovements = stocksReversed.reduce((sum, stock) => {
-      return sum + this.getMovementDelta(stock);
-    }, 0);
-    const unroundedInitialStock = finalStock - totalMovements;
-    const initialStock = this.roundQuantity(unroundedInitialStock);
-
-    // Punto iniziale
-    const chartData: Array<{
-      index: number;
-      stock: number;
-      label: string;
-      type: "IN" | "OUT" | "INITIAL";
-    }> = [
-      {
-        index: 0,
-        stock: initialStock,
-        label: "Iniziale",
-        type: "INITIAL",
-      },
-    ];
-
-    // Aggiungi ogni movimento con stock progressivo (in ordine cronologico corretto)
-    let runningStock = unroundedInitialStock;
-    stocksReversed.forEach((stock, index) => {
+    const orderedStocks = this.getOrderedStocks(preferredUnit);
+    if (orderedStocks.length === 0) {
+      return [];
+    }
+    let runningStock = 0;
+    return orderedStocks.map((stock, index) => {
       runningStock += this.getMovementDelta(stock);
-      chartData.push({
-        index: index + 1,
+      const presenter = new JobDetailsPresenter(stock.job);
+      return {
+        index,
         stock: this.roundQuantity(runningStock),
-        label: `Mov. ${index + 1}`,
+        label: this.formatMovementLabel(stock, index),
         type: stock.type,
-      });
+        timestamp:
+          stock.createdAt ??
+          stock.job?.dateOfOpeation ??
+          stock.job?.dateOfOperation ??
+          null,
+        operationName: presenter.getOperationName(),
+      };
     });
-
-    return chartData;
   }
 
   public calculateTotalStock(): number {
@@ -146,18 +371,6 @@ class StockDataProcessor {
 
   public getStocksByType(type: "IN" | "OUT"): StockEntry[] {
     return this.stocks.filter((s) => s.type === type);
-  }
-}
-
-class StockFormatter {
-  private constructor() {}
-
-  public static formatQuantity(quantity: number): string {
-    if (!Number.isFinite(quantity)) {
-      return "0.0";
-    }
-    const roundedQuantity = Math.round(quantity * 10) / 10;
-    return roundedQuantity.toFixed(1);
   }
 }
 
@@ -185,15 +398,44 @@ const chartConfig: ChartConfig = {
   },
 };
 
-function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
+function DrawerProduct({
+  productId,
+  previewProduct,
+  open,
+  onOpenChange,
+}: DrawerProductProps) {
   const queryClient = useQueryClient();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [detailView, setDetailView] = useState<"movements" | "chart">(
+    "movements"
+  );
+
+  const {
+    product: detailedProduct,
+    isLoading: isDetailLoading,
+    isError: isDetailError,
+    error: detailError,
+  } = useProductDetail(productId, open);
+
+  const product = detailedProduct ?? previewProduct;
 
   // Edit product form
   const [productName, setProductName] = useState("");
   const [productDescription, setProductDescription] = useState("");
   const [productBarcode, setProductBarcode] = useState("");
+
+  useEffect(() => {
+    setDetailView("movements");
+  }, [productId]);
+
+  const unitAnalyzer = useMemo(
+    () => new StockUnitAnalyzer(product?.stocks ?? []),
+    [product]
+  );
+  const preferredUnit = unitAnalyzer.getPreferredUnit();
+  const hasMixedUnits = unitAnalyzer.hasMixedUnits();
+  const secondaryUnits = unitAnalyzer.getSecondaryUnits(preferredUnit);
 
   const processor = useMemo(
     () => (product ? new StockDataProcessor(product.stocks) : null),
@@ -201,12 +443,15 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
   );
 
   const chartData = useMemo(
-    () => (processor ? processor.processForChart() : []),
-    [processor]
+    () => (processor ? processor.processForChart(preferredUnit) : []),
+    [processor, preferredUnit]
   );
+  const dateFormatter = useMemo(() => new DateFormatter(), []);
 
   const handleOpenEditDialog = () => {
-    if (!product) return;
+    if (!product) {
+      return;
+    }
     setProductName(product.name);
     setProductDescription(product.description || "");
     setProductBarcode(product.barcode || "");
@@ -267,7 +512,7 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
   const totalStock = processor.calculateTotalStock();
   const totalIn = processor.getTotalIn();
   const totalOut = processor.getTotalOut();
-  const unit = product.stocks[0]?.unitOfMeasureQuantity ?? "unità";
+  const unit = preferredUnit;
   const formattedTotalStock = StockFormatter.formatQuantity(totalStock);
   const formattedTotalIn = StockFormatter.formatQuantity(totalIn);
   const formattedTotalOut = StockFormatter.formatQuantity(totalOut);
@@ -276,6 +521,26 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto bg-white p-2">
+          {isDetailLoading && (
+            <div className="flex items-center gap-3 border border-blue-100 bg-blue-50 rounded-lg px-4 py-2 mb-4">
+              <Spinner size={24} />
+              <span className="text-sm text-blue-700">
+                Caricamento dettagli prodotto...
+              </span>
+            </div>
+          )}
+
+          {isDetailError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTitle>Errore caricamento</AlertTitle>
+              <AlertDescription>
+                {detailError instanceof Error
+                  ? detailError.message
+                  : "Impossibile recuperare i dettagli del prodotto"}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <SheetHeader>
             <div className="flex items-start justify-between">
               <div>
@@ -382,217 +647,323 @@ function DrawerProduct({ product, open, onOpenChange }: DrawerProductProps) {
                   </p>
                 </div>
               </div>
-            </div>
-
-            <Separator />
-
-            {/* Grafico movimenti */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold">
-                Andamento Stock nel Tempo
-              </h3>
-              {chartData.length > 0 ? (
-                <div className="w-full h-[350px]">
-                  <ChartContainer config={chartConfig}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart
-                        data={chartData}
-                        margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
-                      >
-                        <defs>
-                          <linearGradient
-                            id="stockGradient"
-                            x1="0"
-                            y1="0"
-                            x2="0"
-                            y2="1"
-                          >
-                            <stop
-                              offset="5%"
-                              stopColor="hsl(220, 70%, 50%)"
-                              stopOpacity={0.3}
-                            />
-                            <stop
-                              offset="95%"
-                              stopColor="hsl(220, 70%, 50%)"
-                              stopOpacity={0}
-                            />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          opacity={0.3}
-                          vertical={false}
-                        />
-                        <XAxis
-                          dataKey="label"
-                          tickLine={false}
-                          tickMargin={12}
-                          axisLine={true}
-                          style={{ fontSize: "11px", fontWeight: 500 }}
-                          label={{
-                            value: "Movimenti nel Periodo",
-                            position: "insideBottom",
-                            offset: -10,
-                            style: {
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              fill: "#666",
-                            },
-                          }}
-                        />
-                        <YAxis
-                          tickLine={false}
-                          axisLine={true}
-                          style={{ fontSize: "11px", fontWeight: 500 }}
-                          tickFormatter={(value) =>
-                            StockFormatter.formatQuantity(Number(value))
-                          }
-                          label={{
-                            value: `Stock (${unit})`,
-                            angle: -90,
-                            position: "insideLeft",
-                            style: {
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              fill: "#666",
-                            },
-                          }}
-                          domain={["dataMin - 5", "dataMax + 5"]}
-                        />
-                        <ChartTooltip
-                          content={
-                            <ChartTooltipContent
-                              formatter={(value, _name, props) => {
-                                const numValue = Number(value);
-                                const dataPoint = props.payload;
-                                return (
-                                  <div className="flex flex-col gap-1">
-                                    <span className="text-xs text-gray-500">
-                                      {dataPoint.label}
-                                    </span>
-                                    <span className="font-bold text-blue-600 text-base">
-                                      {StockFormatter.formatQuantity(numValue)}{" "}
-                                      {unit}
-                                    </span>
-                                    {dataPoint.type === "IN" && (
-                                      <span className="text-xs text-green-600">
-                                        ↑ Carico
-                                      </span>
-                                    )}
-                                    {dataPoint.type === "OUT" && (
-                                      <span className="text-xs text-red-600">
-                                        ↓ Scarico
-                                      </span>
-                                    )}
-                                  </div>
-                                );
-                              }}
-                            />
-                          }
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="stock"
-                          stroke="hsl(220, 70%, 50%)"
-                          strokeWidth={3}
-                          fill="url(#stockGradient)"
-                          dot={(props: {
-                            cx?: number;
-                            cy?: number;
-                            payload?: { type: "IN" | "OUT" | "INITIAL" };
-                          }) => {
-                            const { cx, cy, payload } = props;
-                            return (
-                              <circle
-                                cx={cx}
-                                cy={cy}
-                                r={5}
-                                fill={
-                                  payload?.type === "IN"
-                                    ? "hsl(142, 76%, 36%)"
-                                    : payload?.type === "OUT"
-                                    ? "hsl(0, 84%, 60%)"
-                                    : "hsl(220, 70%, 50%)"
-                                }
-                                stroke="white"
-                                strokeWidth={2}
-                              />
-                            );
-                          }}
-                          activeDot={{
-                            r: 7,
-                            strokeWidth: 2,
-                            stroke: "white",
-                          }}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500 text-center py-8">
-                  Nessun movimento registrato
+              {hasMixedUnits && (
+                <p className="text-xs text-amber-700">
+                  Totali e grafico sono calcolati in {unit}. Controlla i
+                  movimenti per le altre unità disponibili.
                 </p>
               )}
             </div>
 
-            {/* Dettaglio movimenti */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold">Dettaglio Movimenti</h3>
-              <AddStock product={product} onStockCreated={handleStockCreated} />
-              <div className="space-y-2">
-                {product.stocks.map((stock) => (
-                  <div
-                    key={stock.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      {stock.type === "IN" ? (
-                        <TrendingUp className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <TrendingDown className="h-5 w-5 text-red-600" />
-                      )}
-                      <div>
-                        <p className="font-medium text-sm">
-                          {stock.type === "IN" ? "Carico" : "Scarico"}
-                        </p>
-                        {stock.jobId && (
-                          <p className="text-xs text-gray-500">
-                            Job: {stock.jobId}
-                            {stock.job?.isVerified && (
-                              <Badge
-                                variant="outline"
-                                className="ml-2 text-xs py-0"
-                              >
-                                Verificato
-                              </Badge>
-                            )}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p
-                        className={`font-bold ${
-                          stock.type === "IN"
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {stock.type === "IN" ? "+" : "-"}
-                        {StockFormatter.formatQuantity(
-                          Number.isFinite(stock.quantity)
-                            ? Math.abs(stock.quantity)
-                            : 0
-                        )}{" "}
-                        {stock.unitOfMeasureQuantity}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+            <Separator />
+
+            <Tabs
+              value={detailView}
+              onValueChange={(value) =>
+                setDetailView(
+                  value === "chart" ? "chart" : ("movements" as const)
+                )
+              }
+              className="space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">
+                  Movimenti e Vista Grafica
+                </h3>
+                <TabsList className="grid grid-cols-2 w-48">
+                  <TabsTrigger value="movements">Movimenti</TabsTrigger>
+                  <TabsTrigger value="chart">Grafico</TabsTrigger>
+                </TabsList>
               </div>
-            </div>
+              {hasMixedUnits && (
+                <Alert className="bg-amber-50 border-amber-200 text-amber-900">
+                  <Info className="h-4 w-4" />
+                  <AlertTitle>Unità differenti rilevate</AlertTitle>
+                  <AlertDescription>
+                    Il grafico considera solo i movimenti in {unit}.
+                    {secondaryUnits.length > 0
+                      ? ` Altre unità presenti: ${secondaryUnits.join(", ")}.`
+                      : null}
+                  </AlertDescription>
+                </Alert>
+              )}
+              <TabsContent value="movements" className="space-y-3 mt-0">
+                <AddStock
+                  product={product}
+                  onStockCreated={handleStockCreated}
+                />
+                {product.stocks.length > 0 ? (
+                  <div className="space-y-3">
+                    {product.stocks.map((stock) => {
+                      const presenter = new JobDetailsPresenter(stock.job);
+                      const operationDetails = presenter.getDetails();
+                      const recordedDate = dateFormatter.format(
+                        stock.createdAt ?? null
+                      );
+                      const operationDate = presenter.getOperationDate();
+                      return (
+                        <Card
+                          key={stock.id}
+                          className="border border-gray-200 shadow-none "
+                        >
+                          <CardContent className="p-4 space-y-3">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-start gap-3">
+                                {stock.type === "IN" ? (
+                                  <TrendingUp className="h-5 w-5 text-green-600" />
+                                ) : (
+                                  <TrendingDown className="h-5 w-5 text-red-600" />
+                                )}
+                                <div>
+                                  <p className="font-medium text-sm">
+                                    {stock.type === "IN" ? "Carico" : "Scarico"}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {presenter.hasJob()
+                                      ? `Operazione: ${presenter.getOperationName()}`
+                                      : "Operazione non collegata"}
+                                  </p>
+                                  {operationDate && (
+                                    <p className="text-xs text-muted-foreground">
+                                      {operationDate}
+                                    </p>
+                                  )}
+                                  {stock.job?.isVerified && (
+                                    <Badge
+                                      variant="outline"
+                                      className="mt-1 text-xs py-0"
+                                    >
+                                      Verificato
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p
+                                  className={`font-bold ${
+                                    stock.type === "IN"
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  {stock.type === "IN" ? "+" : "-"}
+                                  {StockFormatter.formatQuantity(
+                                    Number.isFinite(stock.quantity)
+                                      ? Math.abs(stock.quantity)
+                                      : 0
+                                  )}{" "}
+                                  {stock.unitOfMeasureQuantity}
+                                </p>
+                                {recordedDate && (
+                                  <p className="text-xs text-gray-500">
+                                    Registrato il {recordedDate}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            {presenter.hasJob() &&
+                              operationDetails.length > 0 && (
+                                <Accordion type="single" collapsible>
+                                  <AccordionItem
+                                    value={`job-${stock.id}`}
+                                    className="p-2 rounded-md"
+                                  >
+                                    <AccordionTrigger className="text-sm">
+                                      Dettagli operazione
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                      <div className="space-y-2 ">
+                                        {operationDetails.map((detail) => (
+                                          <div
+                                            key={`${stock.id}-${detail.label}`}
+                                            className="text-xs"
+                                          >
+                                            <span className="text-gray-500">
+                                              {detail.label}
+                                            </span>
+                                            <p className="font-medium text-gray-900">
+                                              {detail.value}
+                                            </p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </AccordionContent>
+                                  </AccordionItem>
+                                </Accordion>
+                              )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    Nessun movimento registrato
+                  </p>
+                )}
+              </TabsContent>
+              <TabsContent value="chart" className="mt-0">
+                {chartData.length > 0 ? (
+                  <div className="w-full h-[350px]">
+                    <ChartContainer config={chartConfig}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                          data={chartData}
+                          margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+                        >
+                          <defs>
+                            <linearGradient
+                              id="stockGradient"
+                              x1="0"
+                              y1="0"
+                              x2="0"
+                              y2="1"
+                            >
+                              <stop
+                                offset="5%"
+                                stopColor="hsl(220, 70%, 50%)"
+                                stopOpacity={0.3}
+                              />
+                              <stop
+                                offset="95%"
+                                stopColor="hsl(220, 70%, 50%)"
+                                stopOpacity={0}
+                              />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            opacity={0.3}
+                            vertical={false}
+                          />
+                          <XAxis
+                            dataKey="label"
+                            tickLine={false}
+                            tickMargin={12}
+                            axisLine={true}
+                            style={{ fontSize: "11px", fontWeight: 500 }}
+                            label={{
+                              value: "Movimenti nel Periodo",
+                              position: "insideBottom",
+                              offset: -10,
+                              style: {
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                fill: "#666",
+                              },
+                            }}
+                          />
+                          <YAxis
+                            tickLine={false}
+                            axisLine={true}
+                            style={{ fontSize: "11px", fontWeight: 500 }}
+                            tickFormatter={(value) =>
+                              StockFormatter.formatQuantity(Number(value))
+                            }
+                            label={{
+                              value: `Stock (${unit})`,
+                              angle: -90,
+                              position: "insideLeft",
+                              style: {
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                fill: "#666",
+                              },
+                            }}
+                            domain={["dataMin - 5", "dataMax + 5"]}
+                          />
+                          <ChartTooltip
+                            content={
+                              <ChartTooltipContent
+                                formatter={(value, _name, props) => {
+                                  const numValue = Number(value);
+                                  const dataPoint = props.payload as {
+                                    label: string;
+                                    timestamp?: string | null;
+                                    type: "IN" | "OUT";
+                                    operationName?: string;
+                                  };
+                                  const formattedTimestamp = dataPoint.timestamp
+                                    ? dateFormatter.format(dataPoint.timestamp)
+                                    : null;
+                                  return (
+                                    <div className="flex flex-col gap-1">
+                                      <span className="text-xs text-gray-500">
+                                        {formattedTimestamp ?? dataPoint.label}
+                                      </span>
+                                      <span className="font-bold text-blue-600 text-base">
+                                        {StockFormatter.formatQuantity(
+                                          numValue
+                                        )}{" "}
+                                        {unit}
+                                      </span>
+                                      {dataPoint.operationName && (
+                                        <span className="text-xs text-gray-600">
+                                          {dataPoint.operationName}
+                                        </span>
+                                      )}
+                                      {dataPoint.type === "IN" && (
+                                        <span className="text-xs text-green-600">
+                                          ↑ Carico
+                                        </span>
+                                      )}
+                                      {dataPoint.type === "OUT" && (
+                                        <span className="text-xs text-red-600">
+                                          ↓ Scarico
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                }}
+                              />
+                            }
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="stock"
+                            stroke="hsl(220, 70%, 50%)"
+                            strokeWidth={3}
+                            fill="url(#stockGradient)"
+                            dot={(props: {
+                              cx?: number;
+                              cy?: number;
+                              payload?: { type: "IN" | "OUT" };
+                            }) => {
+                              const { cx, cy, payload } = props;
+                              return (
+                                <circle
+                                  cx={cx}
+                                  cy={cy}
+                                  r={5}
+                                  fill={
+                                    payload?.type === "IN"
+                                      ? "hsl(142, 76%, 36%)"
+                                      : "hsl(0, 84%, 60%)"
+                                  }
+                                  stroke="white"
+                                  strokeWidth={2}
+                                />
+                              );
+                            }}
+                            activeDot={{
+                              r: 7,
+                              strokeWidth: 2,
+                              stroke: "white",
+                            }}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-8">
+                    {hasMixedUnits
+                      ? `Nessun movimento in ${unit} disponibile per il grafico`
+                      : "Nessun movimento registrato"}
+                  </p>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         </SheetContent>
       </Sheet>
