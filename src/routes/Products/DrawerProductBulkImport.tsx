@@ -1,7 +1,13 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { Upload, FileDown, Info, CheckCircle2, AlertTriangle } from "lucide-react";
+import {
+  Upload,
+  FileDown,
+  Info,
+  CheckCircle2,
+  AlertTriangle,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -19,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import authService from "@/utils/auth";
 import {
   productsApiService,
@@ -26,6 +33,8 @@ import {
   type BulkImportProductsPayload,
   type BulkImportProductsResponse,
 } from "@/api/products";
+import { useCompanies } from "@/hooks/useCompanies";
+import { useCompanyWarehouses } from "@/hooks/useCompanyWarehouses";
 
 type BulkProductFileRow = Record<string, unknown>;
 
@@ -60,43 +69,44 @@ const BULK_PRODUCT_COLUMNS = [
   "stock_companySupplierName",
 ] as const;
 
-const BULK_TEMPLATE_ROWS: Array<Record<(typeof BULK_PRODUCT_COLUMNS)[number], string>> =
-  [
-    {
-      name: "Prodotto A",
-      sku: "SKU-A",
-      category: "FERTILIZER",
-      type: "Liquido",
-      description: "Descrizione A",
-      registrationNumber: "REG-A",
-      labelUrl: "https://example.com/label-a.pdf",
-      labelMetadata: '{"color":"green"}',
-      stock_quantity: "100",
-      stock_unitOfMeasureQuantity: "kg",
-      stock_price: "25.5",
-      stock_unitOfMeasurePrice: "EUR",
-      stock_type: "IN",
-      stock_ddtCode: "DDT-001",
-      stock_companySupplierName: "Fornitore SPA",
-    },
-    {
-      name: "Prodotto B",
-      sku: "SKU-B",
-      category: "PESTICIDE",
-      type: "Granulare",
-      description: "",
-      registrationNumber: "",
-      labelUrl: "",
-      labelMetadata: "",
-      stock_quantity: "",
-      stock_unitOfMeasureQuantity: "",
-      stock_price: "",
-      stock_unitOfMeasurePrice: "",
-      stock_type: "",
-      stock_ddtCode: "",
-      stock_companySupplierName: "",
-    },
-  ];
+const BULK_TEMPLATE_ROWS: Array<
+  Record<(typeof BULK_PRODUCT_COLUMNS)[number], string>
+> = [
+  {
+    name: "Prodotto A",
+    sku: "SKU-A",
+    category: "FERTILIZER",
+    type: "Liquido",
+    description: "Descrizione A",
+    registrationNumber: "REG-A",
+    labelUrl: "https://example.com/label-a.pdf",
+    labelMetadata: '{"color":"green"}',
+    stock_quantity: "100",
+    stock_unitOfMeasureQuantity: "kg",
+    stock_price: "25.5",
+    stock_unitOfMeasurePrice: "EUR",
+    stock_type: "IN",
+    stock_ddtCode: "DDT-001",
+    stock_companySupplierName: "Fornitore SPA",
+  },
+  {
+    name: "Prodotto B",
+    sku: "SKU-B",
+    category: "PESTICIDE",
+    type: "Granulare",
+    description: "",
+    registrationNumber: "",
+    labelUrl: "",
+    labelMetadata: "",
+    stock_quantity: "",
+    stock_unitOfMeasureQuantity: "",
+    stock_price: "",
+    stock_unitOfMeasurePrice: "",
+    stock_type: "",
+    stock_ddtCode: "",
+    stock_companySupplierName: "",
+  },
+];
 
 class EmptyRowDetector {
   public static isEmpty(row: BulkProductFileRow): boolean {
@@ -113,7 +123,10 @@ class EmptyRowDetector {
 }
 
 class BulkProductRecordMapper {
-  public map(row: BulkProductFileRow, rowIndex: number): {
+  public map(
+    row: BulkProductFileRow,
+    rowIndex: number
+  ): {
     product?: BulkProductPayload;
     errors: string[];
   } {
@@ -134,7 +147,11 @@ class BulkProductRecordMapper {
       description: this.optionalString(row.description),
       registrationNumber: this.optionalString(row.registrationNumber),
       labelUrl: this.optionalUrl(row.labelUrl, "labelUrl", rowIndex, errors),
-      labelMetadata: this.parseLabelMetadata(row.labelMetadata, rowIndex, errors),
+      labelMetadata: this.parseLabelMetadata(
+        row.labelMetadata,
+        rowIndex,
+        errors
+      ),
     };
 
     const stock = this.buildStock(row, rowIndex, errors);
@@ -206,7 +223,9 @@ class BulkProductRecordMapper {
       );
       return undefined;
     } catch {
-      errors.push(`Riga ${rowIndex}: JSON non valido nel campo "labelMetadata"`);
+      errors.push(
+        `Riga ${rowIndex}: JSON non valido nel campo "labelMetadata"`
+      );
       return undefined;
     }
   }
@@ -221,10 +240,14 @@ class BulkProductRecordMapper {
       row.stock_unitOfMeasureQuantity
     );
     const price = this.parseNumber(row.stock_price);
-    const unitOfMeasurePrice = this.optionalString(row.stock_unitOfMeasurePrice);
+    const unitOfMeasurePrice = this.optionalString(
+      row.stock_unitOfMeasurePrice
+    );
     const type = this.parseStockType(row.stock_type, rowIndex, errors);
     const ddtCode = this.optionalString(row.stock_ddtCode);
-    const companySupplierName = this.optionalString(row.stock_companySupplierName);
+    const companySupplierName = this.optionalString(
+      row.stock_companySupplierName
+    );
 
     const hasStockData =
       quantity !== undefined ||
@@ -443,9 +466,45 @@ function DrawerProductBulkImport({
   const [isParsing, setIsParsing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
-  const [parsedProducts, setParsedProducts] = useState<BulkProductPayload[]>([]);
+  const [parsedProducts, setParsedProducts] = useState<BulkProductPayload[]>(
+    []
+  );
   const [parserErrors, setParserErrors] = useState<string[]>([]);
-  const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
+  const [importSummary, setImportSummary] = useState<ImportSummary | null>(
+    null
+  );
+
+  const {
+    companies,
+    isLoading: isLoadingCompanies,
+    isError: isCompaniesError,
+    error: companiesError,
+  } = useCompanies();
+
+  const {
+    warehouses,
+    isLoading: isLoadingWarehouses,
+    isError: isWarehousesError,
+    error: warehousesError,
+  } = useCompanyWarehouses(companyId || undefined);
+
+  const companyOptions = useMemo(
+    () =>
+      companies.map((company) => ({
+        value: company.id,
+        label: company.name || company.id,
+      })),
+    [companies]
+  );
+
+  const warehouseOptions = useMemo(
+    () =>
+      warehouses.map((warehouse) => ({
+        value: warehouse.id,
+        label: warehouse.name || warehouse.id,
+      })),
+    [warehouses]
+  );
 
   const canImport = useMemo(() => {
     return (
@@ -502,6 +561,15 @@ function DrawerProductBulkImport({
       fileInputRef.current.value = "";
     }
   }, []);
+
+  const handleCompanyChange = useCallback(
+    (value: string) => {
+      resetForm();
+      setCompanyId(value);
+      setWarehouseId("");
+    },
+    [resetForm]
+  );
 
   const handleImport = useCallback(async () => {
     if (!canImport) {
@@ -560,206 +628,234 @@ function DrawerProductBulkImport({
     [parsedProducts]
   );
 
+  const canShowImportSections = Boolean(companyId && warehouseId);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-4xl">
+      <SheetContent side="right" className="w-full sm:max-w-4xl bg-white">
         <SheetHeader>
           <SheetTitle>Importazione massiva prodotti</SheetTitle>
           <SheetDescription>
-            Carica un file CSV o Excel con le colonne del template per chiamare il
-            servizio <code>/products/bulk</code>.
+            Seleziona un&apos;azienda, scegli il magazzino di destinazione e poi
+            carica un file CSV o Excel compatibile con il template fornito.
           </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-4">
           <div className="space-y-5 pb-16">
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertTitle>Formato richiesto</AlertTitle>
-              <AlertDescription>
-                Il file deve contenere le colonne indicate qui sotto. Il sistema
-                invierà una POST verso <code>http://localhost:3000/products/bulk</code>{" "}
-                con lo stesso payload mostrato nell&apos;esempio curl.
-              </AlertDescription>
-            </Alert>
-
-            <div className="flex flex-wrap gap-2">
-              {BULK_PRODUCT_COLUMNS.map((column) => (
-                <Badge key={column} variant="secondary" className="font-mono">
-                  {column}
-                </Badge>
-              ))}
-            </div>
-
             <Card>
               <CardHeader className="space-y-2">
-                <CardTitle>Parametri obbligatori</CardTitle>
+                <CardTitle>1. Seleziona azienda e magazzino</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Company e warehouse ID sono applicati a tutte le righe importate.
+                  L&apos;import massivo richiede un&apos;azienda e un magazzino
+                  di destinazione per applicare correttamente ogni riga del
+                  file.
                 </p>
               </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-2">
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="companyId">Company ID</Label>
-                  <Input
-                    id="companyId"
+                  <Label>Seleziona azienda</Label>
+                  <SearchableSelect
                     value={companyId}
-                    onChange={(event) => setCompanyId(event.target.value)}
-                    placeholder="comp-123"
+                    options={companyOptions}
+                    placeholder="Seleziona azienda"
+                    searchPlaceholder="Cerca azienda..."
+                    emptyMessage="Nessuna azienda trovata"
+                    loading={isLoadingCompanies}
+                    loadingMessage="Caricamento aziende..."
+                    noneOptionLabel="Nessuna selezione"
+                    onChange={handleCompanyChange}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="warehouseId">Warehouse ID</Label>
-                  <Input
-                    id="warehouseId"
-                    value={warehouseId}
-                    onChange={(event) => setWarehouseId(event.target.value)}
-                    placeholder="wh-456"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="space-y-2">
-              <Label htmlFor="bulk-file">File CSV o Excel</Label>
-              <Input
-                id="bulk-file"
-                ref={fileInputRef}
-                type="file"
-                accept={BULK_FILE_ACCEPT}
-                onChange={handleFileChange}
-              />
-              {selectedFileName && (
-                <p className="text-xs text-muted-foreground">
-                  File selezionato: {selectedFileName}
-                </p>
-              )}
-            </div>
-
-            {isParsing && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Spinner size={18} /> Analisi del file in corso...
-              </div>
-            )}
-
-            {parserErrors.length > 0 && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Problemi rilevati</AlertTitle>
-                <AlertDescription>
-                  <ul className="list-disc pl-5 space-y-1">
-                    {parserErrors.map((error) => (
-                      <li key={error}>{error}</li>
-                    ))}
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {parsedProducts.length > 0 && (
-              <Card>
-                <CardHeader className="space-y-2">
-                  <CardTitle>Anteprima prodotti</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Mostrate le prime {previewRows.length} righe su{" "}
-                    {parsedProducts.length} totali.
-                  </p>
-                </CardHeader>
-                <CardContent className="overflow-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-muted-foreground">
-                        <th className="px-2 py-1">Nome</th>
-                        <th className="px-2 py-1">SKU</th>
-                        <th className="px-2 py-1">Categoria</th>
-                        <th className="px-2 py-1">Tipo</th>
-                        <th className="px-2 py-1">Stock</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {previewRows.map((product) => (
-                        <tr key={`${product.sku}-${product.name}`}>
-                          <td className="px-2 py-1 font-medium">{product.name}</td>
-                          <td className="px-2 py-1 font-mono text-xs">{product.sku}</td>
-                          <td className="px-2 py-1">{product.category ?? "-"}</td>
-                          <td className="px-2 py-1">{product.type ?? "-"}</td>
-                          <td className="px-2 py-1">
-                            {product.stock
-                              ? `${product.stock.quantity} ${product.stock.unitOfMeasureQuantity}`
-                              : "-"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </CardContent>
-              </Card>
-            )}
-
-            {importSummary && (
-              <Alert variant="default">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertTitle>Risultato importazione</AlertTitle>
-                <AlertDescription>
-                  <p>
-                    Importati: {importSummary.imported} · Saltati:{" "}
-                    {importSummary.skipped}
-                  </p>
-                  {importSummary.errors.length > 0 && (
-                    <ul className="mt-2 list-disc pl-5 space-y-1">
-                      {importSummary.errors.map((error) => (
-                        <li key={error}>{error}</li>
-                      ))}
-                    </ul>
+                  {!isLoadingCompanies && companyOptions.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Nessuna azienda disponibile. Creane una prima di
+                      procedere.
+                    </p>
                   )}
-                </AlertDescription>
-              </Alert>
-            )}
+                  {isCompaniesError && (
+                    <p className="text-xs text-red-600">
+                      {companiesError?.message ??
+                        "Impossibile caricare le aziende"}
+                    </p>
+                  )}
+                </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Esempio CURL</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <pre className="whitespace-pre-wrap rounded-md bg-muted p-4 text-xs">
-{`curl --request POST \\
-  --url http://localhost:3000/products/bulk \\
-  --header 'Authorization: Bearer <TOKEN>' \\
-  --header 'Content-Type: application/json' \\
-  --data '{
-    "companyId": "comp-123",
-    "warehouseId": "wh-456",
-    "products": [
-      {
-        "name": "Prodotto A",
-        "sku": "SKU-A",
-        "category": "FERTILIZER",
-        "type": "Liquido",
-        "description": "Descrizione A",
-        "registrationNumber": "REG-A",
-        "labelUrl": "https://example.com/label-a.pdf",
-        "labelMetadata": { "color": "green" },
-        "stock": {
-          "quantity": 100,
-          "unitOfMeasureQuantity": "kg",
-          "price": 25.5,
-          "unitOfMeasurePrice": "EUR",
-          "type": "IN",
-          "ddtCode": "DDT-001",
-          "companySupplierName": "Fornitore SPA"
-        }
-      },
-      {
-        "name": "Prodotto B",
-        "sku": "SKU-B",
-        "category": "PESTICIDE",
-        "type": "Granulare"
-      }
-    ]
-  }'`}
-                </pre>
+                <div className="space-y-2">
+                  <Label>Seleziona magazzino</Label>
+                  {companyId ? (
+                    <>
+                      <SearchableSelect
+                        value={warehouseId}
+                        options={warehouseOptions}
+                        placeholder="Seleziona magazzino"
+                        searchPlaceholder="Cerca magazzino..."
+                        emptyMessage="Nessun magazzino trovato"
+                        noneOptionLabel="Nessuna selezione"
+                        loading={isLoadingWarehouses}
+                        loadingMessage="Caricamento magazzini..."
+                        disabled={!companyId}
+                        onChange={setWarehouseId}
+                      />
+                      {!isLoadingWarehouses &&
+                        warehouseOptions.length === 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Nessun magazzino disponibile per l&apos;azienda
+                            selezionata.
+                          </p>
+                        )}
+                    </>
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-3 text-sm text-muted-foreground">
+                      Seleziona prima un&apos;azienda per visualizzare i suoi
+                      magazzini.
+                    </div>
+                  )}
+                  {isWarehousesError && (
+                    <p className="text-xs text-red-600">
+                      {warehousesError?.message ??
+                        "Impossibile caricare i magazzini"}
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
+
+            {!canShowImportSections ? (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertTitle>Seleziona i dati principali</AlertTitle>
+                <AlertDescription>
+                  Per poter importare il file devi prima scegliere
+                  un&apos;azienda e un magazzino. Una volta completata la
+                  selezione appariranno i controlli di caricamento.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <>
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertTitle>Formato richiesto</AlertTitle>
+                  <AlertDescription>
+                    Il file caricato deve includere:
+                    <div className="flex flex-wrap gap-2">
+                      {BULK_PRODUCT_COLUMNS.map((column) => (
+                        <Badge
+                          key={column}
+                          variant="secondary"
+                          className="font-mono"
+                        >
+                          {column}
+                        </Badge>
+                      ))}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bulk-file">File CSV o Excel</Label>
+                  <Input
+                    id="bulk-file"
+                    ref={fileInputRef}
+                    type="file"
+                    accept={BULK_FILE_ACCEPT}
+                    onChange={handleFileChange}
+                  />
+                  {selectedFileName && (
+                    <p className="text-xs text-muted-foreground">
+                      File selezionato: {selectedFileName}
+                    </p>
+                  )}
+                </div>
+
+                {isParsing && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Spinner size={18} /> Analisi del file in corso...
+                  </div>
+                )}
+
+                {parserErrors.length > 0 && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Problemi rilevati</AlertTitle>
+                    <AlertDescription>
+                      <ul className="list-disc pl-5 space-y-1">
+                        {parserErrors.map((error) => (
+                          <li key={error}>{error}</li>
+                        ))}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {parsedProducts.length > 0 && (
+                  <Card>
+                    <CardHeader className="space-y-2">
+                      <CardTitle>Anteprima prodotti</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Mostrate le prime {previewRows.length} righe su{" "}
+                        {parsedProducts.length} totali.
+                      </p>
+                    </CardHeader>
+                    <CardContent className="overflow-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-muted-foreground">
+                            <th className="px-2 py-1">Nome</th>
+                            <th className="px-2 py-1">SKU</th>
+                            <th className="px-2 py-1">Categoria</th>
+                            <th className="px-2 py-1">Tipo</th>
+                            <th className="px-2 py-1">Stock</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {previewRows.map((product) => (
+                            <tr key={`${product.sku}-${product.name}`}>
+                              <td className="px-2 py-1 font-medium">
+                                {product.name}
+                              </td>
+                              <td className="px-2 py-1 font-mono text-xs">
+                                {product.sku}
+                              </td>
+                              <td className="px-2 py-1">
+                                {product.category ?? "-"}
+                              </td>
+                              <td className="px-2 py-1">
+                                {product.type ?? "-"}
+                              </td>
+                              <td className="px-2 py-1">
+                                {product.stock
+                                  ? `${product.stock.quantity} ${product.stock.unitOfMeasureQuantity}`
+                                  : "-"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {importSummary && (
+                  <Alert variant="default">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <AlertTitle>Risultato importazione</AlertTitle>
+                    <AlertDescription>
+                      <p>
+                        Importati: {importSummary.imported} · Saltati:{" "}
+                        {importSummary.skipped}
+                      </p>
+                      {importSummary.errors.length > 0 && (
+                        <ul className="mt-2 list-disc pl-5 space-y-1">
+                          {importSummary.errors.map((error) => (
+                            <li key={error}>{error}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </>
+            )}
           </div>
         </div>
 
@@ -812,4 +908,3 @@ function DrawerProductBulkImport({
 }
 
 export default DrawerProductBulkImport;
-

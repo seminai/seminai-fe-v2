@@ -11,10 +11,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Package, Eye, Plus } from "lucide-react";
+import { AlertCircle, Package, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import DrawerProduct from "./DrawerProduct";
 import DrawerProductBulkImport from "./DrawerProductBulkImport";
-import { Button } from "@/components/ui/button";
 
 class ProductStockCalculator {
   private readonly stocks: Product["stocks"];
@@ -340,19 +340,7 @@ function ProductsPage() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <PageHeader
-        title="Prodotti"
-        rightElement={
-          <Button
-            type="button"
-            className="gap-2"
-            onClick={() => setImportDrawerOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Aggiungi
-          </Button>
-        }
-      />
+      <PageHeader title="Prodotti" />
 
       <div className="flex-1 overflow-auto px-6 pb-24">
         {sortedProducts.length === 0 ? (
@@ -372,6 +360,8 @@ function ProductsPage() {
             columns={tableColumns}
             rows={tableRows}
             isModify={false}
+            addButton={true}
+            onAddClick={() => setImportDrawerOpen(true)}
             getRowId={(row) => (row as ProductTableRow).id}
             lastComponent={(row) => {
               const data = row as ProductTableRow;
