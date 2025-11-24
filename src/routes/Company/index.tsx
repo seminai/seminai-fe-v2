@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useRef } from "react";
+import { useNavigate, type NavigateFunction } from "react-router-dom";
 import {
   type Company,
   type BulkCompanyInput,
@@ -15,6 +16,33 @@ import { ImportCompanyByPdf } from "./ImportCompanyByPdf";
 import { useCompanies } from "@/hooks/useCompanies";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/organism/Header";
+
+class CompanyDetailsNavigator {
+  private readonly navigate: NavigateFunction;
+
+  public constructor(navigate: NavigateFunction) {
+    this.navigate = navigate;
+  }
+
+  public open(row: Record<string, unknown>): void {
+    const id = this.extractId(row);
+    if (!id) {
+      return;
+    }
+    this.navigate(`/company/${id}`);
+  }
+
+  private extractId(row: Record<string, unknown>): string | null {
+    const rawId = row.id;
+    if (typeof rawId === "string") {
+      return rawId;
+    }
+    if (typeof rawId === "number") {
+      return String(rawId);
+    }
+    return null;
+  }
+}
 
 const buildCompaniesEditColumns = (): EditableColumn[] => {
   return [
@@ -98,6 +126,11 @@ const buildCompaniesEditColumns = (): EditableColumn[] => {
 
 export default function Company(): React.ReactElement {
   const tableRef = useRef<EditableTable>(null);
+  const navigate = useNavigate();
+  const detailsNavigator = React.useMemo(
+    () => new CompanyDetailsNavigator(navigate),
+    [navigate]
+  );
 
   const {
     companies,
@@ -231,6 +264,12 @@ export default function Company(): React.ReactElement {
 
   // Colonne unificate per view e edit
   const columns = buildCompaniesEditColumns();
+  const handleOpenDetails = React.useCallback(
+    (row: Record<string, unknown>): void => {
+      detailsNavigator.open(row);
+    },
+    [detailsNavigator]
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -259,6 +298,7 @@ export default function Company(): React.ReactElement {
               (typeof row.id === "string" && row.id) || index
             }
             onSave={handleSave}
+            onOpenDetails={handleOpenDetails}
             newRowDefaults={{
               name: "",
               vatNumber: "",
