@@ -287,4 +287,3 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
     );
   }
 }
-
