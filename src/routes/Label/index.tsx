@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { labelsApiService, type LabelSummary } from "@/api/labels";
 import { Spinner } from "@/components/ui/spinner";
@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { buildColumns, formatConfidence } from "@/utils/tableHelpers";
-import { createTextSearch } from "@/utils/filter";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/organism/Header";
 
@@ -112,8 +111,6 @@ const buildLabelSummaryColumns = (): EditableColumn[] =>
 export default function Label(): React.ReactElement {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [searchFilter, setSearchFilter] = useState<string>("");
-
   const { data, isLoading, error } = useQuery({
     queryKey: ["labels", "summary"],
     queryFn: async () => labelsApiService.getSummary(),
@@ -146,16 +143,6 @@ export default function Label(): React.ReactElement {
   const items: LabelSummary[] = useMemo(() => data?.data ?? [], [data]);
 
   // Crea il filtro di ricerca testuale (riutilizzabile)
-  const textSearch = useMemo(
-    () => createTextSearch<LabelSummary>(["productName", "registrationNumber"]),
-    []
-  );
-
-  // Applica il filtro
-  const filteredItems = useMemo(() => {
-    return textSearch.setSearchTerm(searchFilter).filter(items);
-  }, [items, searchFilter, textSearch]);
-
   // Handler per l'eliminazione di elementi selezionati
   const handleDeleteSelected = (
     removedRows: Array<Record<string, unknown>>
@@ -182,11 +169,6 @@ export default function Label(): React.ReactElement {
     <div className="flex flex-col h-full">
       <PageHeader
         title="Etichette"
-        searchPlaceholder="Cerca per nome prodotto o numero registrazione..."
-        searchValue={searchFilter}
-        onSearchChange={setSearchFilter}
-        totalItems={items.length}
-        filteredItems={filteredItems.length}
         rightElement={
           <Button
             onClick={() => navigate("/new-label")}
@@ -208,23 +190,14 @@ export default function Label(): React.ReactElement {
           <div className="text-sm text-red-600">
             Impossibile caricare le etichette.
           </div>
-        ) : filteredItems.length === 0 && searchFilter ? (
-          <div className="text-center py-8 text-gray-500">
-            <p className="text-sm">
-              Nessun risultato trovato per "<strong>{searchFilter}</strong>"
-            </p>
-            <p className="text-xs mt-1">
-              Prova con un termine di ricerca diverso
-            </p>
-          </div>
-        ) : filteredItems.length === 0 ? (
+        ) : items.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <p className="text-sm">Nessuna etichetta disponibile</p>
           </div>
         ) : (
           <EditableTable
             columns={columns}
-            rows={filteredItems}
+            rows={items}
             isModify={false}
             getRowId={(row, index) =>
               (typeof row.id === "string" && row.id) || index

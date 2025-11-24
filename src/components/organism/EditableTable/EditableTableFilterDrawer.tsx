@@ -16,6 +16,7 @@ import type {
   FilterDraft,
   NormalizedSelectOption,
   TableFilterRule,
+  SearchableValueConfig,
 } from "./index";
 
 interface OperatorOption {
@@ -38,6 +39,7 @@ interface EditableTableFilterDrawerProps {
   systemDateSection: React.ReactNode;
   searchableValueOptions: NormalizedSelectOption[];
   showSearchableValueSelect: boolean;
+  searchableValueConfig?: SearchableValueConfig;
   onDrawerOpenChange: (open: boolean) => void;
   onFilterDraftChange: (field: keyof FilterDraft, value?: string) => void;
   onAddFilter: () => void;
@@ -147,23 +149,34 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
   }
 
   private renderSearchableValue(): React.ReactNode {
-    const { showSearchableValueSelect, searchableValueOptions, filterDraft } =
-      this.props;
-    if (!showSearchableValueSelect) {
+    const {
+      showSearchableValueSelect,
+      searchableValueOptions,
+      filterDraft,
+      searchableValueConfig,
+    } = this.props;
+    if (!showSearchableValueSelect || !searchableValueConfig) {
       return null;
     }
+    const {
+      label,
+      placeholder,
+      searchPlaceholder,
+      emptyMessage,
+      noneOptionLabel,
+    } = searchableValueConfig;
     return (
       <div className="space-y-1.5">
         <label className="text-xs font-semibold text-muted-foreground">
-          Ricerca aziende
+          {label}
         </label>
         <SearchableSelect
           value={filterDraft.value ?? ""}
           options={searchableValueOptions}
-          placeholder="Seleziona azienda"
-          searchPlaceholder="Cerca azienda..."
-          emptyMessage="Nessuna azienda trovata"
-          noneOptionLabel="Nessuna selezione"
+          placeholder={placeholder}
+          searchPlaceholder={searchPlaceholder}
+          emptyMessage={emptyMessage}
+          noneOptionLabel={noneOptionLabel}
           onChange={(newValue) =>
             this.handleFieldChange("value", newValue ?? "")
           }

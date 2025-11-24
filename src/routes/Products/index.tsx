@@ -54,28 +54,6 @@ class ProductStockCalculator {
   }
 }
 
-class ProductFilter {
-  private readonly searchTerm: string;
-  private readonly products: Product[];
-
-  constructor(products: Product[], searchTerm: string) {
-    this.products = products;
-    this.searchTerm = searchTerm.toLowerCase();
-  }
-
-  public filter(): Product[] {
-    if (!this.searchTerm) return this.products;
-
-    return this.products.filter(
-      (product) =>
-        product.name.toLowerCase().includes(this.searchTerm) ||
-        product.sku.toLowerCase().includes(this.searchTerm) ||
-        product.warehouse.name.toLowerCase().includes(this.searchTerm) ||
-        product.warehouse.company.name.toLowerCase().includes(this.searchTerm)
-    );
-  }
-}
-
 type SortField = "name" | "sku" | "stock" | "warehouse" | "company";
 type SortDirection = "asc" | "desc";
 
@@ -277,25 +255,19 @@ class ProductTableColumnsFactory {
 }
 
 function ProductsPage() {
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { products, isLoading, isError, error } = useProducts();
 
-  const filteredProducts = useMemo(() => {
-    const filter = new ProductFilter(products, searchTerm);
-    return filter.filter();
-  }, [products, searchTerm]);
-
   const sortedProducts = useMemo(() => {
     const sorter = new ProductSorter(
-      filteredProducts,
+      products,
       DEFAULT_SORT_FIELD,
       DEFAULT_SORT_DIRECTION
     );
     return sorter.sort();
-  }, [filteredProducts]);
+  }, [products]);
 
   const tableColumns = useMemo(() => ProductTableColumnsFactory.create(), []);
 
@@ -312,12 +284,7 @@ function ProductsPage() {
   if (isLoading) {
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
-        <PageHeader
-          title="Prodotti"
-          searchPlaceholder="Cerca prodotti..."
-          searchValue={searchTerm}
-          onSearchChange={setSearchTerm}
-        />
+        <PageHeader title="Prodotti" />
         <div className="flex-1 overflow-auto px-6 pb-24">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
@@ -358,14 +325,7 @@ function ProductsPage() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <PageHeader
-        title="Prodotti"
-        searchPlaceholder="Cerca prodotti per nome, SKU, magazzino..."
-        searchValue={searchTerm}
-        onSearchChange={setSearchTerm}
-        totalItems={products.length}
-        filteredItems={filteredProducts.length}
-      />
+      <PageHeader title="Prodotti" />
 
       <div className="flex-1 overflow-auto px-6 pb-24">
         {sortedProducts.length === 0 ? (
@@ -376,9 +336,7 @@ function ProductsPage() {
                 Nessun prodotto trovato
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                {searchTerm
-                  ? "Prova a modificare i criteri di ricerca"
-                  : "Non ci sono prodotti disponibili"}
+                Non ci sono prodotti disponibili
               </p>
             </div>
           </div>
