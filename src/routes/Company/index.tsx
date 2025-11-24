@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, useMemo, useRef } from "react";
+import { useRef } from "react";
 import {
   type Company,
   type BulkCompanyInput,
@@ -10,7 +10,6 @@ import {
   EditableTable,
   type EditableColumn,
 } from "@/components/organism/EditableTable";
-import { createTextSearch } from "@/utils/filter";
 import { DrawerCompanyContent } from "./DrawerCompany";
 import { ImportCompanyByPdf } from "./ImportCompanyByPdf";
 import { useCompanies } from "@/hooks/useCompanies";
@@ -98,7 +97,6 @@ const buildCompaniesEditColumns = (): EditableColumn[] => {
 };
 
 export default function Company(): React.ReactElement {
-  const [searchFilter, setSearchFilter] = useState<string>("");
   const tableRef = useRef<EditableTable>(null);
 
   const {
@@ -109,22 +107,6 @@ export default function Company(): React.ReactElement {
     updateCompanies,
     isUpdating,
   } = useCompanies();
-
-  const textSearch = useMemo(
-    () =>
-      createTextSearch<Company>([
-        "name",
-        "vatNumber",
-        "fiscalCode",
-        "city",
-        "email",
-      ]),
-    []
-  );
-
-  const filteredItems = useMemo(() => {
-    return textSearch.setSearchTerm(searchFilter).filter(companies);
-  }, [companies, searchFilter, textSearch]);
 
   const renderDetails = (row: Record<string, unknown>): React.ReactNode => {
     const companyId = typeof row.id === "string" ? row.id : String(row.id);
@@ -252,14 +234,7 @@ export default function Company(): React.ReactElement {
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader
-        title="Aziende"
-        searchPlaceholder="Cerca per nome, P.IVA, codice fiscale, città o email..."
-        searchValue={searchFilter}
-        onSearchChange={setSearchFilter}
-        totalItems={companies.length}
-        filteredItems={filteredItems.length}
-      />
+      <PageHeader title="Aziende" />
 
       {/* Area scrollabile - solo la tabella */}
       <div className="flex-1 overflow-auto px-6 pb-6">
@@ -277,7 +252,7 @@ export default function Company(): React.ReactElement {
           <EditableTable
             ref={tableRef}
             columns={columns}
-            rows={filteredItems}
+            rows={companies}
             isModify={true}
             addButton={true}
             getRowId={(row, index) =>

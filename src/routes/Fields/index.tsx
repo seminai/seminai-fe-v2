@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import {
   type Field,
   type BulkFieldInput,
@@ -11,7 +11,6 @@ import {
   EditableTable,
   type EditableColumn,
 } from "@/components/organism/EditableTable";
-import { createTextSearch } from "@/utils/filter";
 import { DrawerFieldContent } from "./DrawerField";
 import { ImportFieldByCsv } from "./importFieldByCsv";
 import { useFields } from "@/hooks/useFields";
@@ -178,36 +177,19 @@ const buildFieldsEditColumns = (companies: Company[]): EditableColumn[] => {
 };
 
 export default function Fields(): React.ReactElement {
-  const [searchFilter, setSearchFilter] = useState<string>("");
   const tableRef = useRef<EditableTable>(null);
 
   const { fields, isLoading, error, createFields, updateFields, isUpdating } =
     useFields();
   const { companies, isLoading: isLoadingCompanies } = useCompanies();
 
-  const textSearch = useMemo(
-    () =>
-      createTextSearch<Field>([
-        "name",
-        "address",
-        "city",
-        "foglio",
-        "particella",
-      ]),
-    []
-  );
-
-  const filteredItems = useMemo(() => {
-    return textSearch.setSearchTerm(searchFilter).filter(fields);
-  }, [fields, searchFilter, textSearch]);
-
   const rowsWithActiveUnits = useMemo(() => {
-    return filteredItems.map((field) => ({
+    return fields.map((field) => ({
       ...field,
       currentProductionUnitLabel:
         FieldProductionUnitInspector.fromField(field).getActiveUnitsLabel(),
     }));
-  }, [filteredItems]);
+  }, [fields]);
 
   const renderDetails = (row: Record<string, unknown>): React.ReactNode => {
     const fieldId = typeof row.id === "string" ? row.id : String(row.id);
@@ -348,14 +330,7 @@ export default function Fields(): React.ReactElement {
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader
-        title="Campi"
-        searchPlaceholder="Cerca per nome, indirizzo, città, foglio o particella..."
-        searchValue={searchFilter}
-        onSearchChange={setSearchFilter}
-        totalItems={fields.length}
-        filteredItems={filteredItems.length}
-      />
+      <PageHeader title="Campi" />
 
       {/* Area scrollabile - solo la tabella */}
       <div className="flex-1 overflow-auto px-6 pb-6">

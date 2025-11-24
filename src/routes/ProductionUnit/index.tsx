@@ -10,7 +10,6 @@ import {
   EditableTable,
   type EditableColumn,
 } from "@/components/organism/EditableTable";
-import { createTextSearch } from "@/utils/filter";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { PageHeader } from "@/components/organism/Header";
 import { Button } from "@/components/ui/button";
@@ -405,7 +404,6 @@ const buildProductionUnitColumns = (
 };
 
 export default function ProductionUnit(): React.ReactElement {
-  const [searchFilter, setSearchFilter] = useState<string>("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -493,22 +491,6 @@ export default function ProductionUnit(): React.ReactElement {
       productionUnit: pu,
     }));
   }, [productionUnits]);
-
-  const textSearch = useMemo(
-    () =>
-      createTextSearch<(typeof rows)[0]>([
-        "name",
-        "companyName",
-        "cropName",
-        "cropType",
-        "variety",
-      ]),
-    []
-  );
-
-  const filteredItems = useMemo(() => {
-    return textSearch.setSearchTerm(searchFilter).filter(rows);
-  }, [rows, searchFilter, textSearch]);
 
   const handleDelete = async (id: string) => {
     setIsDeleting(true);
@@ -1167,14 +1149,7 @@ export default function ProductionUnit(): React.ReactElement {
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader
-        title="Unità Produttive"
-        searchPlaceholder="Cerca per nome, azienda, coltura, varietà o campo..."
-        searchValue={searchFilter}
-        onSearchChange={setSearchFilter}
-        totalItems={productionUnits.length}
-        filteredItems={filteredItems.length}
-      />
+      <PageHeader title="Unità Produttive" />
 
       {/* Area scrollabile - solo la tabella */}
       <div className="flex-1 overflow-auto px-6 pb-6">
@@ -1196,7 +1171,7 @@ export default function ProductionUnit(): React.ReactElement {
           <>
             <EditableTable
               columns={columns}
-              rows={filteredItems}
+              rows={rows}
               isModify={true}
               addButton={false}
               getRowId={(row, index) =>

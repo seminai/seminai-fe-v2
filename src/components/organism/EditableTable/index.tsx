@@ -109,6 +109,14 @@ export interface NormalizedSelectOption {
   value: string;
 }
 
+export interface SearchableValueConfig {
+  label: string;
+  placeholder: string;
+  searchPlaceholder: string;
+  emptyMessage: string;
+  noneOptionLabel: string;
+}
+
 interface TruncatedCellTextProps {
   text: string;
 }
@@ -304,6 +312,87 @@ const SYSTEM_DATE_COLUMNS: EditableColumn[] = [
   { id: "updatedAt", title: "Aggiornato il", type: "date" },
 ];
 
+interface SearchableColumnMatch {
+  keywords: string[];
+  config: SearchableValueConfig;
+}
+
+const SEARCHABLE_COLUMN_CONFIGS: SearchableColumnMatch[] = [
+  {
+    keywords: ["company", "companyname", "companies", "azienda", "aziende"],
+    config: {
+      label: "Ricerca aziende",
+      placeholder: "Seleziona azienda",
+      searchPlaceholder: "Cerca azienda...",
+      emptyMessage: "Nessuna azienda trovata",
+      noneOptionLabel: "Nessuna selezione",
+    },
+  },
+  {
+    keywords: [
+      "productionunit",
+      "productionunits",
+      "unitaproduttiva",
+      "unitaproduttive",
+      "stabilimento",
+      "stabilimenti",
+    ],
+    config: {
+      label: "Ricerca unita produttive",
+      placeholder: "Seleziona unita produttiva",
+      searchPlaceholder: "Cerca unita produttiva...",
+      emptyMessage: "Nessuna unita produttiva trovata",
+      noneOptionLabel: "Nessuna selezione",
+    },
+  },
+  {
+    keywords: [
+      "product",
+      "products",
+      "prodotto",
+      "prodotti",
+      "coltura",
+      "colture",
+    ],
+    config: {
+      label: "Ricerca prodotti",
+      placeholder: "Seleziona prodotto",
+      searchPlaceholder: "Cerca prodotto...",
+      emptyMessage: "Nessun prodotto trovato",
+      noneOptionLabel: "Nessuna selezione",
+    },
+  },
+  {
+    keywords: [
+      "field",
+      "fields",
+      "campo",
+      "campi",
+      "appezzamento",
+      "appezzamenti",
+      "lotto",
+      "lotti",
+    ],
+    config: {
+      label: "Ricerca campi",
+      placeholder: "Seleziona campo",
+      searchPlaceholder: "Cerca campo...",
+      emptyMessage: "Nessun campo trovato",
+      noneOptionLabel: "Nessuna selezione",
+    },
+  },
+  {
+    keywords: ["city", "cities", "citta", "comune", "comuni", "municipality"],
+    config: {
+      label: "Ricerca citta",
+      placeholder: "Seleziona citta",
+      searchPlaceholder: "Cerca citta...",
+      emptyMessage: "Nessuna citta trovata",
+      noneOptionLabel: "Nessuna selezione",
+    },
+  },
+];
+
 interface InternalRow {
   id: string;
   data: Record<string, unknown>;
@@ -453,25 +542,32 @@ export class EditableTable extends React.Component<
       .map((value) => ({ label: value, value }));
   }
 
-  private isCompanyColumn(column?: EditableColumn): boolean {
+  private normalizeSearchableText(value?: string): string {
+    return (value || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[\s_-]+/g, "");
+  }
+
+  private getSearchableValueConfig(
+    column?: EditableColumn
+  ): SearchableValueConfig | undefined {
     if (!column) {
-      return false;
+      return undefined;
     }
-    const normalizedId = column.id.toLowerCase();
-    const normalizedTitle = (column.title || "").toLowerCase();
-    return (
-      normalizedId === "company" ||
-      normalizedId === "companyname" ||
-      normalizedId === "companies" ||
-      normalizedId === "azienda" ||
-      normalizedId === "aziende" ||
-      normalizedTitle === "azienda" ||
-      normalizedTitle === "aziende"
-    );
+    const normalizedId = this.normalizeSearchableText(column.id);
+    const normalizedTitle = this.normalizeSearchableText(column.title || "");
+    return SEARCHABLE_COLUMN_CONFIGS.find(({ keywords }) =>
+      keywords.some(
+        (keyword) =>
+          normalizedId.includes(keyword) || normalizedTitle.includes(keyword)
+      )
+    )?.config;
   }
 
   private shouldShowSearchableValueSelect(column?: EditableColumn): boolean {
-    return this.isCompanyColumn(column);
+    return Boolean(this.getSearchableValueConfig(column));
   }
 
   private getSearchableValueOptions(
@@ -958,8 +1054,8 @@ export class EditableTable extends React.Component<
       value,
       label,
     }));
-    const showSearchableValueSelect =
-      this.shouldShowSearchableValueSelect(selectedColumn);
+    const searchableValueConfig = this.getSearchableValueConfig(selectedColumn);
+    const showSearchableValueSelect = Boolean(searchableValueConfig);
     const searchableValueOptions =
       this.getSearchableValueOptions(selectedColumn);
 
@@ -979,6 +1075,7 @@ export class EditableTable extends React.Component<
         systemDateSection={this.renderSystemDateSection()}
         searchableValueOptions={searchableValueOptions}
         showSearchableValueSelect={showSearchableValueSelect}
+        searchableValueConfig={searchableValueConfig}
         onDrawerOpenChange={this.handleFilterDrawerChange}
         onFilterDraftChange={this.handleFilterDraftChange}
         onAddFilter={this.addFilter}
