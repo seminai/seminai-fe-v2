@@ -1596,10 +1596,11 @@ class CompanyWarehousesPanel extends React.Component<
 
   private renderDetailRow(
     label: string,
-    value: string | null
+    value: string | null,
+    key?: string
   ): React.ReactNode {
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1" key={key}>
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
         <p className="text-sm font-semibold text-foreground">{value ?? "-"}</p>
       </div>
@@ -1916,7 +1917,8 @@ class CompanyWarehousesPanel extends React.Component<
           {CompanyWarehousesPanel.fieldDefinitions.map(({ field, label }) =>
             this.renderDetailRow(
               label,
-              this.getWarehouseFieldValue(warehouse, field)
+              this.getWarehouseFieldValue(warehouse, field),
+              `warehouse-${warehouse.id}-${field}`
             )
           )}
         </div>

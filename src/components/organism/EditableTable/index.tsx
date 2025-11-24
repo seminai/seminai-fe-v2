@@ -4,12 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import {
   Drawer,
   DrawerContent,
   DrawerHeader,
@@ -19,10 +13,16 @@ import {
 import { IoOpenOutline, IoDownloadOutline } from "react-icons/io5";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import Papa from "papaparse";
-import { Calendar as CalendarIcon, Plus, Filter } from "lucide-react";
+import { Plus } from "lucide-react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
-import { EditableTableFilterDrawer } from "./EditableTableFilterDrawer";
+import {
+  EditableTableFilterActivator,
+  EditableTableFiltersPanel,
+} from "./EditableTableFiltersPanel";
+import { TruncatedCellText } from "./EditableTableTruncatedCellText";
+import { AutoExpandTextarea } from "./EditableTableAutoExpandTextarea";
+import { EditableTableCreateDrawer } from "./EditableTableCreateDrawer";
 
 // EditableTable - Notion-like editable table with bulk add/save
 // The component follows an OOP approach using a React Class.
@@ -117,163 +117,17 @@ export interface SearchableValueConfig {
   noneOptionLabel: string;
 }
 
-interface TruncatedCellTextProps {
-  text: string;
-}
-
-interface TruncatedCellTextState {
-  open: boolean;
-}
-
-class TruncatedCellText extends React.PureComponent<
-  TruncatedCellTextProps,
-  TruncatedCellTextState
-> {
-  state: TruncatedCellTextState = { open: false };
-
-  private handleOpenChange = (open: boolean): void => {
-    this.setState({ open });
-  };
-
-  private get normalizedText(): string {
-    const { text } = this.props;
-    if (typeof text !== "string") return "-";
-    return text.trim().length > 0 ? text : "-";
-  }
-
-  private get previewText(): string {
-    const normalized = this.normalizedText;
-    if (normalized === "-") return normalized;
-    const words = normalized.split(/\s+/).filter(Boolean);
-    if (words.length <= 5) {
-      return normalized;
-    }
-    return `${words.slice(0, 5).join(" ")}...`;
-  }
-
-  render(): React.ReactNode {
-    const preview = this.previewText;
-    const fullText = this.normalizedText;
-    return (
-      <Popover open={this.state.open} onOpenChange={this.handleOpenChange}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="w-full max-w-[320px] cursor-pointer text-left text-[14px] leading-relaxed text-foreground line-clamp-3 break-words whitespace-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A84FF]/60"
-            aria-label="Mostra testo completo"
-          >
-            {preview}
-          </button>
-        </PopoverTrigger>
-        <PopoverContent
-          align="start"
-          className="max-w-2xl whitespace-pre-wrap break-words text-sm bg-white"
-        >
-          {fullText}
-        </PopoverContent>
-      </Popover>
-    );
-  }
-}
-
-interface AutoExpandTextareaProps {
-  value: string;
-  placeholder?: string;
-  isInvalid?: boolean;
-  onValueChange: (nextValue: string) => void;
-}
-
-interface AutoExpandTextareaState {
-  isFocused: boolean;
-}
-
-class AutoExpandTextarea extends React.PureComponent<
-  AutoExpandTextareaProps,
-  AutoExpandTextareaState
-> {
-  state: AutoExpandTextareaState = { isFocused: false };
-  private textareaRef = React.createRef<HTMLTextAreaElement>();
-  private readonly MIN_HEIGHT = 40;
-
-  componentDidMount(): void {
-    this.resetHeight();
-  }
-
-  componentDidUpdate(
-    prevProps: AutoExpandTextareaProps,
-    prevState: AutoExpandTextareaState
-  ): void {
-    if (this.state.isFocused) {
-      this.expandToContent();
-      return;
-    }
-    if (
-      prevState.isFocused !== this.state.isFocused ||
-      prevProps.value !== this.props.value
-    ) {
-      this.resetHeight();
-    }
-  }
-
-  private resetHeight(): void {
-    const textarea = this.textareaRef.current;
-    if (!textarea) return;
-    textarea.style.height = `${this.MIN_HEIGHT}px`;
-  }
-
-  private expandToContent(): void {
-    const textarea = this.textareaRef.current;
-    if (!textarea) return;
-    textarea.style.height = "auto";
-    textarea.style.height = `${Math.max(
-      this.MIN_HEIGHT,
-      textarea.scrollHeight
-    )}px`;
-  }
-
-  private handleFocus = (
-    event: React.FocusEvent<HTMLTextAreaElement>
-  ): void => {
-    this.setState({ isFocused: true }, () => this.expandToContent());
-    event.currentTarget.select();
-  };
-
-  private handleBlur = (): void => {
-    this.setState({ isFocused: false }, () => this.resetHeight());
-  };
-
-  private handleChange = (
-    event: React.ChangeEvent<HTMLTextAreaElement>
-  ): void => {
-    this.props.onValueChange(event.target.value);
-    if (this.state.isFocused) {
-      this.expandToContent();
-    }
-  };
-
-  render(): React.ReactNode {
-    const { value, placeholder, isInvalid } = this.props;
-    return (
-      <textarea
-        ref={this.textareaRef}
-        data-slot="textarea"
-        value={value}
-        placeholder={placeholder}
-        aria-invalid={isInvalid}
-        onFocus={this.handleFocus}
-        onBlur={this.handleBlur}
-        onChange={this.handleChange}
-        className={cn(
-          "placeholder:text-foreground/40 dark:placeholder:text-foreground/50 selection:bg-primary selection:text-primary-foreground flex w-full min-w-0 rounded-xl bg-white/70 dark:bg-input/30 backdrop-blur supports-[backdrop-filter]:bg-white/60 px-3 py-2 text-base inset-shadow-xs transition-[background-color,border-color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-          "border border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20",
-          "focus-visible:ring-2 focus-visible:ring-[#0A84FF]/80 focus-visible:border-transparent",
-          "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-          "min-h-[40px] resize-none overflow-hidden transition-[height] duration-200 ease-in-out",
-          isInvalid && "ring-1 ring-red-200/50 border-red-200/60"
-        )}
-      />
-    );
-  }
+interface FilterPanelConfig {
+  operatorOptions: Array<{ value: string; label: string }>;
+  showSecondaryValueInput: boolean;
+  disableAdd: boolean;
+  inputType: FilterInputType;
+  useValueSelect: boolean;
+  valueOptions: NormalizedSelectOption[];
+  systemColumns: EditableColumn[];
+  searchableValueOptions: NormalizedSelectOption[];
+  showSearchableValueSelect: boolean;
+  searchableValueConfig?: SearchableValueConfig;
 }
 
 const TEXT_FILTER_OPERATORS: FilterOperatorConfig[] = [
@@ -393,7 +247,7 @@ const SEARCHABLE_COLUMN_CONFIGS: SearchableColumnMatch[] = [
   },
 ];
 
-interface InternalRow {
+export interface InternalRow {
   id: string;
   data: Record<string, unknown>;
   isNew: boolean;
@@ -577,6 +431,83 @@ export class EditableTable extends React.Component<
       return [];
     }
     return this.buildUniqueValueOptions(column.id);
+  }
+
+  private buildFilterPanelConfig(): FilterPanelConfig {
+    const { filterDraft } = this.state;
+    const selectedColumn = this.getColumnById(filterDraft.columnId);
+    const operatorOptions = this.getOperatorsForColumn(selectedColumn);
+    const selectedOperator = operatorOptions.find(
+      (operator) => operator.value === filterDraft.operator
+    );
+    const columnOptions = this.getColumnOptions(selectedColumn);
+    const shouldUseSelect = columnOptions.length > 0;
+    const disableAdd =
+      !filterDraft.columnId ||
+      !filterDraft.operator ||
+      !(filterDraft.value && filterDraft.value.trim()) ||
+      (Boolean(selectedOperator?.requiresSecondValue) &&
+        !(filterDraft.secondaryValue && filterDraft.secondaryValue.trim()));
+
+    const inputType =
+      selectedOperator?.inputType === "number"
+        ? "number"
+        : selectedOperator?.inputType === "date"
+        ? "date"
+        : "text";
+    const operatorOptionItems = operatorOptions.map(({ value, label }) => ({
+      value,
+      label,
+    }));
+    const searchableValueConfig = this.getSearchableValueConfig(selectedColumn);
+    const showSearchableValueSelect = Boolean(searchableValueConfig);
+    const searchableValueOptions =
+      this.getSearchableValueOptions(selectedColumn);
+    const systemColumns = this.getAvailableSystemDateColumns();
+
+    return {
+      operatorOptions: operatorOptionItems,
+      showSecondaryValueInput: Boolean(selectedOperator?.requiresSecondValue),
+      disableAdd,
+      inputType,
+      useValueSelect: shouldUseSelect,
+      valueOptions: columnOptions,
+      systemColumns,
+      searchableValueOptions,
+      showSearchableValueSelect,
+      searchableValueConfig,
+    };
+  }
+
+  private renderFiltersPanel(): React.ReactNode {
+    const config = this.buildFilterPanelConfig();
+    return (
+      <EditableTableFiltersPanel
+        open={this.state.filterDrawerOpen}
+        columns={this.props.columns}
+        activeFilters={this.state.activeFilters}
+        filterDraft={this.state.filterDraft}
+        operatorOptions={config.operatorOptions}
+        selectedOperatorValue={this.state.filterDraft.operator ?? ""}
+        showSecondaryValueInput={config.showSecondaryValueInput}
+        disableAdd={config.disableAdd}
+        inputType={config.inputType}
+        useValueSelect={config.useValueSelect}
+        valueOptions={config.valueOptions}
+        systemColumns={config.systemColumns}
+        systemDateRanges={this.state.systemDateRanges}
+        searchableValueOptions={config.searchableValueOptions}
+        showSearchableValueSelect={config.showSearchableValueSelect}
+        searchableValueConfig={config.searchableValueConfig}
+        onDrawerOpenChange={this.handleFilterDrawerChange}
+        onFilterDraftChange={this.handleFilterDraftChange}
+        onAddFilter={this.addFilter}
+        onRemoveFilter={this.removeFilter}
+        onClearFilters={this.clearFilters}
+        onSystemDateRangeChange={this.handleSystemDateRangeChange}
+        formatFilterLabel={this.formatFilterLabel}
+      />
+    );
   }
 
   private hasColumnData(columnId: string): boolean {
@@ -764,7 +695,7 @@ export class EditableTable extends React.Component<
     return rows.filter((row) => this.matchesFilters(row, activeFilters));
   }
 
-  private formatFilterLabel(filter: TableFilterRule): string {
+  private formatFilterLabel = (filter: TableFilterRule): string => {
     const column = this.getColumnById(filter.columnId);
     const columnLabel = column?.title ?? filter.columnId;
     const operatorLabel =
@@ -776,7 +707,7 @@ export class EditableTable extends React.Component<
       return `${columnLabel} ${operatorLabel} ${filter.value} - ${filter.secondaryValue}`;
     }
     return `${columnLabel} ${operatorLabel} ${filter.value}`;
-  }
+  };
 
   private handleFilterDraftChange = (
     field: keyof FilterDraft,
@@ -926,165 +857,6 @@ export class EditableTable extends React.Component<
       };
     });
   };
-
-  private renderSystemDatePicker(column: EditableColumn): React.ReactNode {
-    const range = this.state.systemDateRanges[column.id];
-    const hasRange = Boolean(range?.from && range?.to);
-    const fromLabel = range?.from ? format(range.from, "dd/MM/yyyy") : "";
-    const toLabel = range?.to ? format(range.to, "dd/MM/yyyy") : "";
-    const label = hasRange
-      ? `${fromLabel} → ${toLabel}`
-      : "Seleziona intervallo";
-
-    return (
-      <div key={`system-filter-${column.id}`} className="space-y-1.5">
-        <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-          <CalendarIcon className="h-4 w-4" />
-          {column.title}
-        </label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-full justify-start text-left font-normal h-10 rounded-xl border border-black/5 dark:border-white/10 bg-white/70 hover:bg-white",
-                !hasRange && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {label}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            className="w-auto p-0 border border-border/40 rounded-2xl shadow-xl bg-white"
-            align="end"
-          >
-            <Calendar
-              mode="range"
-              selected={range}
-              onSelect={(selectedRange) =>
-                this.handleSystemDateRangeChange(
-                  column.id,
-                  selectedRange ?? undefined
-                )
-              }
-              numberOfMonths={1}
-              initialFocus
-            />
-            <div className="flex items-center justify-end gap-2 border-t border-border/40 px-3 py-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() =>
-                  this.handleSystemDateRangeChange(column.id, undefined)
-                }
-              >
-                Pulisci
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
-      </div>
-    );
-  }
-
-  private renderSystemDateSection(): React.ReactNode {
-    const systemColumns = this.getAvailableSystemDateColumns();
-    if (systemColumns.length === 0) {
-      return null;
-    }
-    return (
-      <div className="space-y-3">
-        <h4 className="text-sm font-semibold text-muted-foreground">
-          Date di sistema
-        </h4>
-        <div className="space-y-3">
-          {systemColumns.map((column) => this.renderSystemDatePicker(column))}
-        </div>
-      </div>
-    );
-  }
-
-  private renderFilterActivator(): React.ReactNode {
-    const hasFilters = this.state.activeFilters.length > 0;
-    return (
-      <Button
-        variant="ghost"
-        size="sm"
-        disabled={this.props.columns.length === 0}
-        onClick={this.openFilterDrawer}
-        aria-label="Apri filtri"
-        className={cn(
-          "text-muted-foreground cursor-pointer",
-          hasFilters &&
-            "bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100"
-        )}
-      >
-        <Filter className="h-4 w-4 sm:mr-2" />
-        <span className="hidden sm:inline">
-          Filtri{hasFilters ? ` (${this.state.activeFilters.length})` : ""}
-        </span>
-      </Button>
-    );
-  }
-
-  private renderFilterDrawer(): React.ReactNode {
-    const { filterDrawerOpen, activeFilters, filterDraft } = this.state;
-    const selectedColumn = this.getColumnById(filterDraft.columnId);
-    const operatorOptions = this.getOperatorsForColumn(selectedColumn);
-    const selectedOperator = operatorOptions.find(
-      (operator) => operator.value === filterDraft.operator
-    );
-    const columnOptions = this.getColumnOptions(selectedColumn);
-    const shouldUseSelect = columnOptions.length > 0;
-    const disableAdd =
-      !filterDraft.columnId ||
-      !filterDraft.operator ||
-      !(filterDraft.value && filterDraft.value.trim()) ||
-      (Boolean(selectedOperator?.requiresSecondValue) &&
-        !(filterDraft.secondaryValue && filterDraft.secondaryValue.trim()));
-
-    const inputType =
-      selectedOperator?.inputType === "number"
-        ? "number"
-        : selectedOperator?.inputType === "date"
-        ? "date"
-        : "text";
-    const operatorOptionItems = operatorOptions.map(({ value, label }) => ({
-      value,
-      label,
-    }));
-    const searchableValueConfig = this.getSearchableValueConfig(selectedColumn);
-    const showSearchableValueSelect = Boolean(searchableValueConfig);
-    const searchableValueOptions =
-      this.getSearchableValueOptions(selectedColumn);
-
-    return (
-      <EditableTableFilterDrawer
-        open={filterDrawerOpen}
-        columns={this.props.columns}
-        activeFilters={activeFilters}
-        filterDraft={filterDraft}
-        operatorOptions={operatorOptionItems}
-        selectedOperatorValue={filterDraft.operator ?? ""}
-        showSecondaryValueInput={Boolean(selectedOperator?.requiresSecondValue)}
-        disableAdd={disableAdd}
-        inputType={inputType}
-        useValueSelect={shouldUseSelect}
-        valueOptions={columnOptions}
-        systemDateSection={this.renderSystemDateSection()}
-        searchableValueOptions={searchableValueOptions}
-        showSearchableValueSelect={showSearchableValueSelect}
-        searchableValueConfig={searchableValueConfig}
-        onDrawerOpenChange={this.handleFilterDrawerChange}
-        onFilterDraftChange={this.handleFilterDraftChange}
-        onAddFilter={this.addFilter}
-        onRemoveFilter={this.removeFilter}
-        onClearFilters={this.clearFilters}
-        formatFilterLabel={this.formatFilterLabel}
-      />
-    );
-  }
 
   private generateTempId(): string {
     return `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -1667,7 +1439,7 @@ export class EditableTable extends React.Component<
     return <TruncatedCellText text={formattedValue} />;
   }
 
-  private renderInput(
+  private renderInput = (
     row: InternalRow,
     col: EditableColumn,
     config?: {
@@ -1678,7 +1450,7 @@ export class EditableTable extends React.Component<
       ) => void;
       touchedOverride?: Record<string, boolean>;
     }
-  ) {
+  ): React.ReactNode => {
     const value = row.data[col.id] as unknown;
     const touchedSource =
       config?.touchedOverride ?? this.state.touched[row.id] ?? {};
@@ -1776,7 +1548,7 @@ export class EditableTable extends React.Component<
           />
         );
       case "text":
-      default: {
+      default:
         return (
           <AutoExpandTextarea
             value={value ? String(value) : ""}
@@ -1785,9 +1557,8 @@ export class EditableTable extends React.Component<
             onValueChange={(nextValue) => handleChange(row, col, nextValue)}
           />
         );
-      }
     }
-  }
+  };
 
   private getRowHeaderLabel(row: InternalRow, index: number): string {
     try {
@@ -1806,8 +1577,9 @@ export class EditableTable extends React.Component<
     }
 
     const pendingRow = this.state.createRow;
-    const pendingErrors = pendingRow ? this.validateRow(pendingRow) : {};
-    const disableSave = !pendingRow || Object.keys(pendingErrors).length > 0;
+    const disableSave =
+      !pendingRow ||
+      Object.keys(pendingRow ? this.validateRow(pendingRow) : {}).length > 0;
     const drawerChildren = this.getChildrenForSlot("create-drawer");
     const enhancedDrawerChildren = drawerChildren.map((child, index) => {
       if (React.isValidElement(child)) {
@@ -1832,52 +1604,19 @@ export class EditableTable extends React.Component<
     });
 
     return (
-      <Drawer
+      <EditableTableCreateDrawer
         open={this.state.createDrawerOpen}
+        columns={this.props.columns}
+        pendingRow={pendingRow}
+        createTouched={this.state.createTouched}
+        drawerChildren={enhancedDrawerChildren}
+        disableSave={disableSave}
         onOpenChange={this.handleCreateDrawerChange}
-      >
-        <DrawerContent data-vaul-drawer-direction="right">
-          <DrawerHeader>
-            <DrawerTitle>Nuovo elemento</DrawerTitle>
-            <DrawerDescription>
-              Compila i campi per aggiungere un nuovo elemento alla tabella
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="p-6 space-y-5 overflow-y-auto max-h-[calc(100vh-180px)]">
-            {enhancedDrawerChildren.length > 0 && (
-              <div className="space-y-4">{enhancedDrawerChildren}</div>
-            )}
-            {pendingRow ? (
-              this.props.columns.map((column) => (
-                <div key={column.id} className="space-y-2">
-                  <div className="text-sm font-semibold text-muted-foreground flex items-center gap-1">
-                    <span>{column.title}</span>
-                    {column.required ? (
-                      <span className="text-red-500">*</span>
-                    ) : null}
-                  </div>
-                  {this.renderInput(pendingRow, column, {
-                    onChange: this.handleCreateCellChange,
-                    touchedOverride: this.state.createTouched,
-                  })}
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Nessun campo disponibile
-              </p>
-            )}
-          </div>
-          <div className="flex items-center justify-end gap-2 border-t border-border/50 px-6 py-4">
-            <Button variant="ghost" onClick={this.handleCreateCancel}>
-              Annulla
-            </Button>
-            <Button onClick={this.handleCreateSave} disabled={disableSave}>
-              Salva
-            </Button>
-          </div>
-        </DrawerContent>
-      </Drawer>
+        onCancel={this.handleCreateCancel}
+        onSave={this.handleCreateSave}
+        onCellChange={this.handleCreateCellChange}
+        renderInput={this.renderInput}
+      />
     );
   }
 
@@ -1911,7 +1650,11 @@ export class EditableTable extends React.Component<
                   <span className="hidden sm:inline">Esporta File</span>
                 </Button>
               )}
-              {this.renderFilterActivator()}
+              <EditableTableFilterActivator
+                activeCount={this.state.activeFilters.length}
+                disabled={this.props.columns.length === 0}
+                onClick={this.openFilterDrawer}
+              />
             </div>
             <div className="flex items-center gap-2">
               {!showEditActions && rightActions}
@@ -2069,7 +1812,7 @@ export class EditableTable extends React.Component<
             </div>
           )}
         </div>
-        {this.renderFilterDrawer()}
+        {this.renderFiltersPanel()}
         {this.renderCreateDrawer()}
       </React.Fragment>
     );
@@ -2125,7 +1868,11 @@ export class EditableTable extends React.Component<
                   : ""}
               </span>
             )}
-            {this.renderFilterActivator()}
+            <EditableTableFilterActivator
+              activeCount={this.state.activeFilters.length}
+              disabled={this.props.columns.length === 0}
+              onClick={this.openFilterDrawer}
+            />
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {!showEditActions && !anySelected && rightActions}
@@ -2423,7 +2170,7 @@ export class EditableTable extends React.Component<
             </DrawerContent>
           </Drawer>
         ) : null}
-        {this.renderFilterDrawer()}
+        {this.renderFiltersPanel()}
         {this.renderCreateDrawer()}
       </div>
     );
