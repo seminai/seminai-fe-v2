@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Popover,
   PopoverContent,
@@ -108,6 +107,165 @@ export interface FilterDraft {
 export interface NormalizedSelectOption {
   label: string;
   value: string;
+}
+
+interface TruncatedCellTextProps {
+  text: string;
+}
+
+interface TruncatedCellTextState {
+  open: boolean;
+}
+
+class TruncatedCellText extends React.PureComponent<
+  TruncatedCellTextProps,
+  TruncatedCellTextState
+> {
+  state: TruncatedCellTextState = { open: false };
+
+  private handleOpenChange = (open: boolean): void => {
+    this.setState({ open });
+  };
+
+  private get normalizedText(): string {
+    const { text } = this.props;
+    if (typeof text !== "string") return "-";
+    return text.trim().length > 0 ? text : "-";
+  }
+
+  private get previewText(): string {
+    const normalized = this.normalizedText;
+    if (normalized === "-") return normalized;
+    const words = normalized.split(/\s+/).filter(Boolean);
+    if (words.length <= 5) {
+      return normalized;
+    }
+    return `${words.slice(0, 5).join(" ")}...`;
+  }
+
+  render(): React.ReactNode {
+    const preview = this.previewText;
+    const fullText = this.normalizedText;
+    return (
+      <Popover open={this.state.open} onOpenChange={this.handleOpenChange}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="w-full max-w-[320px] cursor-pointer text-left text-[14px] leading-relaxed text-foreground line-clamp-3 break-words whitespace-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A84FF]/60"
+            aria-label="Mostra testo completo"
+          >
+            {preview}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="max-w-2xl whitespace-pre-wrap break-words text-sm bg-white"
+        >
+          {fullText}
+        </PopoverContent>
+      </Popover>
+    );
+  }
+}
+
+interface AutoExpandTextareaProps {
+  value: string;
+  placeholder?: string;
+  isInvalid?: boolean;
+  onValueChange: (nextValue: string) => void;
+}
+
+interface AutoExpandTextareaState {
+  isFocused: boolean;
+}
+
+class AutoExpandTextarea extends React.PureComponent<
+  AutoExpandTextareaProps,
+  AutoExpandTextareaState
+> {
+  state: AutoExpandTextareaState = { isFocused: false };
+  private textareaRef = React.createRef<HTMLTextAreaElement>();
+  private readonly MIN_HEIGHT = 40;
+
+  componentDidMount(): void {
+    this.resetHeight();
+  }
+
+  componentDidUpdate(
+    prevProps: AutoExpandTextareaProps,
+    prevState: AutoExpandTextareaState
+  ): void {
+    if (this.state.isFocused) {
+      this.expandToContent();
+      return;
+    }
+    if (
+      prevState.isFocused !== this.state.isFocused ||
+      prevProps.value !== this.props.value
+    ) {
+      this.resetHeight();
+    }
+  }
+
+  private resetHeight(): void {
+    const textarea = this.textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = `${this.MIN_HEIGHT}px`;
+  }
+
+  private expandToContent(): void {
+    const textarea = this.textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.max(
+      this.MIN_HEIGHT,
+      textarea.scrollHeight
+    )}px`;
+  }
+
+  private handleFocus = (
+    event: React.FocusEvent<HTMLTextAreaElement>
+  ): void => {
+    this.setState({ isFocused: true }, () => this.expandToContent());
+    event.currentTarget.select();
+  };
+
+  private handleBlur = (): void => {
+    this.setState({ isFocused: false }, () => this.resetHeight());
+  };
+
+  private handleChange = (
+    event: React.ChangeEvent<HTMLTextAreaElement>
+  ): void => {
+    this.props.onValueChange(event.target.value);
+    if (this.state.isFocused) {
+      this.expandToContent();
+    }
+  };
+
+  render(): React.ReactNode {
+    const { value, placeholder, isInvalid } = this.props;
+    return (
+      <textarea
+        ref={this.textareaRef}
+        data-slot="textarea"
+        value={value}
+        placeholder={placeholder}
+        aria-invalid={isInvalid}
+        onFocus={this.handleFocus}
+        onBlur={this.handleBlur}
+        onChange={this.handleChange}
+        className={cn(
+          "placeholder:text-foreground/40 dark:placeholder:text-foreground/50 selection:bg-primary selection:text-primary-foreground flex w-full min-w-0 rounded-xl bg-white/70 dark:bg-input/30 backdrop-blur supports-[backdrop-filter]:bg-white/60 px-3 py-2 text-base inset-shadow-xs transition-[background-color,border-color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          "border border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20",
+          "focus-visible:ring-2 focus-visible:ring-[#0A84FF]/80 focus-visible:border-transparent",
+          "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+          "min-h-[40px] resize-none overflow-hidden transition-[height] duration-200 ease-in-out",
+          isInvalid && "ring-1 ring-red-200/50 border-red-200/60"
+        )}
+      />
+    );
+  }
 }
 
 const TEXT_FILTER_OPERATORS: FilterOperatorConfig[] = [
@@ -1385,12 +1543,7 @@ export class EditableTable extends React.Component<
     }));
   };
 
-  private renderReadOnlyCell(
-    col: EditableColumn,
-    value: unknown,
-    row: InternalRow
-  ) {
-    if (col.render) return col.render(value, row.data);
+  private formatDefaultCellValue(col: EditableColumn, value: unknown): string {
     if (col.type === "currency" && typeof value === "number") {
       try {
         return new Intl.NumberFormat(undefined, {
@@ -1401,7 +1554,20 @@ export class EditableTable extends React.Component<
         return String(value);
       }
     }
-    return String(value ?? "");
+    if (value === null || value === undefined) {
+      return "";
+    }
+    return String(value);
+  }
+
+  private renderReadOnlyCell(
+    col: EditableColumn,
+    value: unknown,
+    row: InternalRow
+  ) {
+    if (col.render) return col.render(value, row.data);
+    const formattedValue = this.formatDefaultCellValue(col, value);
+    return <TruncatedCellText text={formattedValue} />;
   }
 
   private renderInput(
@@ -1514,39 +1680,12 @@ export class EditableTable extends React.Component<
         );
       case "text":
       default: {
-        const MIN_HEIGHT = 40; // Same as h-10
-        const autoResize = (textarea: HTMLTextAreaElement | null) => {
-          if (textarea) {
-            textarea.style.height = "auto";
-            const newHeight = Math.max(MIN_HEIGHT, textarea.scrollHeight);
-            textarea.style.height = `${newHeight}px`;
-          }
-        };
-
         return (
-          <Textarea
-            ref={(el) => {
-              // Auto-resize on mount
-              if (el) {
-                setTimeout(() => autoResize(el), 0);
-              }
-            }}
-            placeholder={col.placeholder}
-            aria-invalid={Boolean(isTouched && error)}
+          <AutoExpandTextarea
             value={value ? String(value) : ""}
-            onChange={(e) => {
-              handleChange(row, col, e.target.value);
-              autoResize(e.target);
-            }}
-            onInput={(e) => autoResize(e.currentTarget)}
-            className={cn(
-              "resize-none overflow-hidden w-full",
-              Boolean(isTouched && error) &&
-                "ring-1 ring-red-200/50 border-red-200/60"
-            )}
-            style={{
-              height: "40px",
-            }}
+            placeholder={col.placeholder}
+            isInvalid={Boolean(isTouched && error)}
+            onValueChange={(nextValue) => handleChange(row, col, nextValue)}
           />
         );
       }
@@ -1750,7 +1889,7 @@ export class EditableTable extends React.Component<
                     <td
                       data-slot="table-cell"
                       className={cn(
-                        "p-3 align-top text-left w-[250px] min-w-[200px]"
+                        "p-3 align-middle text-left w-[250px] min-w-[200px]"
                       )}
                     >
                       <div className="text-muted-foreground font-semibold text-[14px] break-words">
@@ -1767,7 +1906,7 @@ export class EditableTable extends React.Component<
                         key={row.id}
                         data-slot="table-cell"
                         className={cn(
-                          "p-3 align-top text-left break-words min-w-[250px]"
+                          "p-3 align-middle text-left break-words min-w-[250px]"
                         )}
                       >
                         {isModify &&
@@ -1790,7 +1929,7 @@ export class EditableTable extends React.Component<
                   <td
                     data-slot="table-cell"
                     className={cn(
-                      "p-3 align-top text-left w-[250px] min-w-[200px]"
+                      "p-3 align-middle text-left w-[250px] min-w-[200px]"
                     )}
                   >
                     <div className="text-muted-foreground font-semibold text-[14px]">
@@ -1801,7 +1940,7 @@ export class EditableTable extends React.Component<
                     <td
                       key={row.id}
                       data-slot="table-cell"
-                      className={cn("p-3 align-top text-left min-w-[250px]")}
+                      className={cn("p-3 align-middle text-left min-w-[250px]")}
                     >
                       {typeof this.props.lastComponent === "function"
                         ? (
@@ -2107,7 +2246,7 @@ export class EditableTable extends React.Component<
                         data-slot="table-cell"
                         style={{ minWidth: c.width || "250px" }}
                         className={cn(
-                          "p-3 align-top text-left",
+                          "p-3 align-middle text-left",
                           c.type !== "text" && "whitespace-nowrap"
                         )}
                       >
