@@ -62,6 +62,7 @@ export interface EditableTableProps {
   isModify?: boolean;
   isVertical?: boolean;
   addButton?: boolean;
+  onAddClick?: () => void;
   alwaysEdit?: boolean; // Force edit mode without toggle (useful for vertical detail views)
   lastComponent?:
     | React.ReactNode
@@ -971,6 +972,14 @@ export class EditableTable extends React.Component<
     });
   };
 
+  private handleAddButtonClick = (): void => {
+    if (typeof this.props.onAddClick === "function") {
+      this.props.onAddClick();
+      return;
+    }
+    this.openCreateDrawer();
+  };
+
   private handleCreateDrawerChange = (open: boolean): void => {
     if (!open) {
       this.handleCreateCancel();
@@ -1802,7 +1811,7 @@ export class EditableTable extends React.Component<
                 <Button
                   variant="ghost"
                   className="text-muted-foreground"
-                  onClick={this.openCreateDrawer}
+                  onClick={this.handleAddButtonClick}
                   aria-label="Aggiungi"
                 >
                   <Plus className="w-4 h-4 sm:mr-2" />
@@ -1908,7 +1917,7 @@ export class EditableTable extends React.Component<
               <Button
                 variant="ghost"
                 className="text-muted-foreground bg-agri-green-200 text-agri-green-700 cursor-pointer"
-                onClick={this.openCreateDrawer}
+                onClick={this.handleAddButtonClick}
                 aria-label="Aggiungi"
               >
                 <Plus className="w-4 h-4 sm:mr-2" />
