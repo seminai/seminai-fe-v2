@@ -1,4 +1,4 @@
-import { AuthorizedHeadersBuilder } from "./http";
+import { authenticatedHttpClient } from "./http";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -179,7 +179,6 @@ export type BulkImportProductsResponse = {
 };
 
 export async function getProducts(
-  token: string,
   companyName?: string,
   baseUrl: string = BASE_URL
 ): Promise<GetProductsResponse> {
@@ -188,14 +187,11 @@ export async function getProducts(
     url.searchParams.set("companyName", companyName);
   }
 
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(url.toString(), {
+  const response = await authenticatedHttpClient.request(url.toString(), {
     method: "GET",
-    headers: headersBuilder.build({
+    headers: {
       Accept: "application/json",
-    }),
-    credentials: "include",
+    },
   });
 
   if (!response.ok) {
@@ -207,21 +203,17 @@ export async function getProducts(
 }
 
 export async function getProduct(
-  token: string,
   productId: string,
   baseUrl: string = BASE_URL
 ): Promise<GetProductResponse> {
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(
+  const response = await authenticatedHttpClient.request(
     `${baseUrl}/products/${encodeURIComponent(productId)}`,
     {
       method: "GET",
-      headers: headersBuilder.build({
+      headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-      }),
-      credentials: "include",
+      },
     }
   );
 
@@ -234,22 +226,18 @@ export async function getProduct(
 }
 
 export async function updateProduct(
-  token: string,
   productId: string,
   payload: UpdateProductPayload,
   baseUrl: string = BASE_URL
 ): Promise<UpdateProductResponse> {
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(
+  const response = await authenticatedHttpClient.request(
     `${baseUrl}/products/${encodeURIComponent(productId)}`,
     {
       method: "PUT",
-      headers: headersBuilder.build({
+      headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-      }),
-      credentials: "include",
+      },
       body: JSON.stringify(payload),
     }
   );
@@ -263,7 +251,6 @@ export async function updateProduct(
 }
 
 export async function importProductsFromDdt(
-  token: string,
   files: File[],
   baseUrl: string = BASE_URL
 ): Promise<BulkFromDdtToProductListResponse> {
@@ -276,14 +263,10 @@ export async function importProductsFromDdt(
     formData.append("files", file);
   });
 
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(
+  const response = await authenticatedHttpClient.request(
     `${baseUrl}/products/bulk-from-ddt-to-product-list`,
     {
       method: "POST",
-      headers: headersBuilder.build(),
-      credentials: "include",
       body: formData,
     }
   );
@@ -297,7 +280,6 @@ export async function importProductsFromDdt(
 }
 
 export async function bulkImportProducts(
-  token: string,
   payload: BulkImportProductsPayload,
   baseUrl: string = BASE_URL
 ): Promise<BulkImportProductsResponse> {
@@ -309,17 +291,17 @@ export async function bulkImportProducts(
     throw new Error("At least one product is required for the bulk import");
   }
 
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(`${baseUrl}/products/bulk`, {
-    method: "POST",
-    headers: headersBuilder.build({
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }),
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/products/bulk`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
 
   if (!response.ok) {
     const errorText = await safeReadText(response);
@@ -335,40 +317,31 @@ class ProductsApiService {
     this.baseUrl = baseUrl;
   }
 
-  public async getAll(
-    token: string,
-    companyName?: string
-  ): Promise<GetProductsResponse> {
-    return await getProducts(token, companyName, this.baseUrl);
+  public async getAll(companyName?: string): Promise<GetProductsResponse> {
+    return await getProducts(companyName, this.baseUrl);
   }
 
-  public async getById(
-    token: string,
-    productId: string
-  ): Promise<GetProductResponse> {
-    return await getProduct(token, productId, this.baseUrl);
+  public async getById(productId: string): Promise<GetProductResponse> {
+    return await getProduct(productId, this.baseUrl);
   }
 
   public async update(
-    token: string,
     productId: string,
     payload: UpdateProductPayload
   ): Promise<UpdateProductResponse> {
-    return await updateProduct(token, productId, payload, this.baseUrl);
+    return await updateProduct(productId, payload, this.baseUrl);
   }
 
   public async importFromDdt(
-    token: string,
     files: File[]
   ): Promise<BulkFromDdtToProductListResponse> {
-    return await importProductsFromDdt(token, files, this.baseUrl);
+    return await importProductsFromDdt(files, this.baseUrl);
   }
 
   public async bulkImport(
-    token: string,
     payload: BulkImportProductsPayload
   ): Promise<BulkImportProductsResponse> {
-    return await bulkImportProducts(token, payload, this.baseUrl);
+    return await bulkImportProducts(payload, this.baseUrl);
   }
 }
 

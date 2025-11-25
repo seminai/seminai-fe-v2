@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -15,7 +15,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { ExternalLink, Trash2, RefreshCw } from "lucide-react";
 import { indexDBManager, type LabelJob } from "@/utils/indexDBManager";
 import { toast } from "sonner";
-import authService from "@/utils/auth";
+import { authenticatedHttpClient } from "@/api/http";
 
 interface LabelJobsTableProps {
   onRefresh?: () => void;
@@ -31,7 +31,7 @@ export function LabelJobsTable({
   const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
 
   // Load jobs from IndexedDB
-  const loadJobs = async (): Promise<void> => {
+  const loadJobs = useCallback(async (): Promise<void> => {
     try {
       const allJobs = await indexDBManager.getAllJobs();
       setJobs(allJobs);
@@ -41,62 +41,61 @@ export function LabelJobsTable({
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Poll job status from backend
-  const pollJobStatus = async (jobId: string): Promise<void> => {
-    try {
-      const token = authService.getAuthToken();
-
-      if (!token) {
-        console.error("Token di autenticazione non trovato");
-        return;
-      }
-
-      const response = await fetch(`${BASE_URL}/labels/job-status/${jobId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.status === "success" && data.data) {
-        const jobData = data.data;
-
-        await indexDBManager.updateJob(jobId, {
-          state: jobData.state,
-          progress: jobData.progress,
-          result: jobData.result,
-        });
-
-        // If job is completed or failed, stop polling
-        if (jobData.state === "completed" || jobData.state === "failed") {
-          setPollingJobIds((prev) => {
-            const newSet = new Set(prev);
-            newSet.delete(jobId);
-            return newSet;
-          });
-
-          if (jobData.state === "completed") {
-            toast.success(
-              `Job ${jobId.slice(0, 8)}... completato con successo`
-            );
-          } else {
-            toast.error(`Job ${jobId.slice(0, 8)}... fallito`);
+  const pollJobStatus = useCallback(
+    async (jobId: string): Promise<void> => {
+      try {
+        const response = await authenticatedHttpClient.request(
+          `${BASE_URL}/labels/job-status/${jobId}`,
+          {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+            },
           }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        await loadJobs();
+        const data = await response.json();
+
+        if (data.status === "success" && data.data) {
+          const jobData = data.data;
+
+          await indexDBManager.updateJob(jobId, {
+            state: jobData.state,
+            progress: jobData.progress,
+            result: jobData.result,
+          });
+
+          if (jobData.state === "completed" || jobData.state === "failed") {
+            setPollingJobIds((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(jobId);
+              return newSet;
+            });
+
+            if (jobData.state === "completed") {
+              toast.success(
+                `Job ${jobId.slice(0, 8)}... completato con successo`
+              );
+            } else {
+              toast.error(`Job ${jobId.slice(0, 8)}... fallito`);
+            }
+          }
+
+          await loadJobs();
+        }
+      } catch (error) {
+        console.error(`Error polling job ${jobId}:`, error);
       }
-    } catch (error) {
-      console.error(`Error polling job ${jobId}:`, error);
-    }
-  };
+    },
+    [BASE_URL, loadJobs]
+  );
 
   // Initialize polling for active jobs
   useEffect(() => {
@@ -110,7 +109,7 @@ export function LabelJobsTable({
     };
 
     initPolling();
-  }, []);
+  }, [loadJobs]);
 
   // Polling interval
   useEffect(() => {
@@ -123,7 +122,7 @@ export function LabelJobsTable({
     }, 3000); // Poll every 3 seconds
 
     return () => clearInterval(interval);
-  }, [pollingJobIds]);
+  }, [pollingJobIds, pollJobStatus]);
 
   const handleDeleteJob = async (jobId: string): Promise<void> => {
     try {

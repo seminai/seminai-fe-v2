@@ -41,6 +41,9 @@ export interface EditableColumn {
   required?: boolean;
   width?: string;
   options?: Array<{ label: string; value: string }> | string[]; // for select
+  getOptions?: (
+    rowData: Record<string, unknown>
+  ) => Array<{ label: string; value: string }> | string[]; // dynamic select options
   placeholder?: string;
   // Optional read-only renderer
   render?: (value: unknown, row: Record<string, unknown>) => React.ReactNode;
@@ -363,16 +366,32 @@ export class EditableTable extends React.Component<
     }, {} as Record<string, DateRange | undefined>);
   }
 
+  private normalizeSelectOptions(
+    rawOptions?: Array<{ label: string; value: string }> | string[]
+  ): NormalizedSelectOption[] {
+    if (!rawOptions) {
+      return [];
+    }
+    return rawOptions.map((option) =>
+      typeof option === "string" ? { label: option, value: option } : option
+    );
+  }
+
   private getColumnOptions(column?: EditableColumn): NormalizedSelectOption[] {
     if (!column || !column.options) {
       return [];
     }
-    const rawOptions = column.options as Array<
-      { label: string; value: string } | string
-    >;
-    return rawOptions.map((option) =>
-      typeof option === "string" ? { label: option, value: option } : option
-    );
+    return this.normalizeSelectOptions(column.options);
+  }
+
+  private getRowSelectOptions(
+    column: EditableColumn,
+    row?: InternalRow
+  ): NormalizedSelectOption[] {
+    if (column.getOptions && row) {
+      return this.normalizeSelectOptions(column.getOptions(row.data));
+    }
+    return this.getColumnOptions(column);
   }
 
   private buildUniqueValueOptions(columnId?: string): NormalizedSelectOption[] {
@@ -1479,15 +1498,7 @@ export class EditableTable extends React.Component<
 
     switch (col.type) {
       case "select": {
-        const options = (col.options || []) as
-          | Array<{ label: string; value: string }>
-          | string[];
-        type Opt = { label: string; value: string } | string;
-        const normalized = Array.isArray(options)
-          ? (options as Opt[]).map((o) =>
-              typeof o === "string" ? { label: o, value: o } : o
-            )
-          : [];
+        const normalized = this.getRowSelectOptions(col, row);
 
         if (col.enableSearch) {
           return (

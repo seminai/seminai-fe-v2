@@ -6,7 +6,6 @@ import {
   type CreateWarehouseRequest,
   type UpdateWarehouseRequest,
 } from "@/api/warehouses";
-import authService from "@/utils/auth";
 import { toast } from "sonner";
 
 type CreateWarehouseInput = Omit<CreateWarehouseRequest, "companyId">;
@@ -47,12 +46,7 @@ export function useCompanyWarehouses(
         throw new Error("Missing company identifier");
       }
 
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-
-      return await service.listByCompany(token, companyId);
+      return await service.listByCompany(companyId);
     },
     enabled: Boolean(companyId),
   });
@@ -63,12 +57,7 @@ export function useCompanyWarehouses(
         throw new Error("Missing company identifier");
       }
 
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-
-      await service.create(token, { ...input, companyId });
+      await service.create({ ...input, companyId });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -91,12 +80,7 @@ export function useCompanyWarehouses(
         throw new Error("Missing company identifier");
       }
 
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-
-      await service.update(token, input.warehouseId, input.data);
+      await service.update(input.warehouseId, input.data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -119,12 +103,7 @@ export function useCompanyWarehouses(
         throw new Error("Missing company identifier");
       }
 
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-
-      await service.delete(token, warehouseId);
+      await service.delete(warehouseId);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({

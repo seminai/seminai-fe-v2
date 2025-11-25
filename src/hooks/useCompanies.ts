@@ -6,7 +6,6 @@ import {
   type CompaniesResponse,
   type BulkCompaniesResponse,
 } from "@/api/companies";
-import authService from "@/utils/auth";
 import { toast } from "sonner";
 
 interface UseCompaniesOptions {
@@ -23,22 +22,14 @@ export function useCompanies(options?: UseCompaniesOptions) {
   const companiesQuery = useQuery<CompaniesResponse, Error>({
     queryKey: ["companies"],
     queryFn: async () => {
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-      return await companiesApiService.getAll(token);
+      return await companiesApiService.getAll();
     },
   });
 
   // Mutation per creare companies in bulk
   const createMutation = useMutation({
     mutationFn: async (companies: BulkCompanyInput[]) => {
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-      return await companiesApiService.bulkCreate(token, {
+      return await companiesApiService.bulkCreate({
         companies,
       });
     },
@@ -69,11 +60,7 @@ export function useCompanies(options?: UseCompaniesOptions) {
   // Mutation per aggiornare companies in bulk
   const updateMutation = useMutation({
     mutationFn: async (companies: BulkCompanyUpdateInput[]) => {
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-      return await companiesApiService.bulkUpdate(token, {
+      return await companiesApiService.bulkUpdate({
         companies,
       });
     },

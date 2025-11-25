@@ -7,7 +7,6 @@ import {
   type CreateUserOnCompanyRequest,
   type UpdateUserOnCompanyRoleResponse,
 } from "@/api/userOnCompany";
-import authService from "@/utils/auth";
 import { toast } from "sonner";
 
 type AddCompanyUserInput = Omit<CreateUserOnCompanyRequest, "companyId">;
@@ -48,12 +47,7 @@ export function useCompanyUsers(companyId?: string): CompanyUsersHookResult {
         throw new Error("Missing company identifier");
       }
 
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-
-      const response = await service.listByCompany(token, companyId);
+      const response = await service.listByCompany(companyId);
       return response.data?.users ?? [];
     },
     enabled: Boolean(companyId),
@@ -65,12 +59,7 @@ export function useCompanyUsers(companyId?: string): CompanyUsersHookResult {
         throw new Error("Missing company identifier");
       }
 
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-
-      await service.create(token, { ...input, companyId });
+      await service.create({ ...input, companyId });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -93,12 +82,7 @@ export function useCompanyUsers(companyId?: string): CompanyUsersHookResult {
         throw new Error("Missing company identifier");
       }
 
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-
-      await service.delete(token, companyId, userId);
+      await service.delete(companyId, userId);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -121,12 +105,7 @@ export function useCompanyUsers(companyId?: string): CompanyUsersHookResult {
         throw new Error("Missing company identifier");
       }
 
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-
-      return await service.updateRole(token, input.relationId, {
+      return await service.updateRole(input.relationId, {
         role: input.role,
         companyId,
       });

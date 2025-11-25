@@ -12,6 +12,7 @@ export type ProductionUnitInput = {
   id: string;
   name: string;
   cropCode: string;
+  cultivarId?: string | null;
   allocations: Map<string, number>;
   protectionStructure: string;
   occupazione: string;
@@ -41,5 +42,13 @@ export type FieldWithCompany = {
   sezione?: string | null;
   soilType?: string | null;
   uso?: string | null;
+};
+
+export type CultivarHarvestRecord = {
+  id: string;
+  species: string;
+  cultivar: string;
+  offsetDays: number | null;
+  harvestLabel: string;
 };
 

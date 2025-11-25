@@ -1,20 +1,6 @@
-import { AuthorizedHeadersBuilder } from "./http";
-import authService from "@/utils/auth";
+import { authenticatedHttpClient } from "./http";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
-const AUTH_TOKEN_ERROR_MESSAGE =
-  "Token di autenticazione mancante. Effettua nuovamente l'accesso.";
-
-type AuthTokenProvider = () => string | null;
-
-function getAuthTokenOrThrow(provider: AuthTokenProvider): string {
-  const token = provider();
-  if (!token) {
-    throw new Error(AUTH_TOKEN_ERROR_MESSAGE);
-  }
-  return token;
-}
-
 // Types for starting a dosage job
 export type DosageProduct = {
   productName: string;
@@ -147,20 +133,19 @@ async function safeReadText(response: Response): Promise<string> {
 // Start a new dosage calculation job
 export async function startDosageJob(
   request: StartDosageJobRequest,
-  baseUrl: string = BASE_URL,
-  tokenProvider: AuthTokenProvider = authService.getAuthToken.bind(authService)
+  baseUrl: string = BASE_URL
 ): Promise<StartDosageJobResponse> {
-  const token = getAuthTokenOrThrow(tokenProvider);
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-  const response = await fetch(`${baseUrl}/dosage-agent/start-job`, {
-    method: "POST",
-    headers: headersBuilder.build({
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }),
-    credentials: "include",
-    body: JSON.stringify(request),
-  });
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/dosage-agent/start-job`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    }
+  );
 
   if (!response.ok) {
     const errorText = await safeReadText(response);
@@ -173,19 +158,18 @@ export async function startDosageJob(
 // Get status of a dosage job
 export async function getDosageJobStatus(
   jobId: string,
-  baseUrl: string = BASE_URL,
-  tokenProvider: AuthTokenProvider = authService.getAuthToken.bind(authService)
+  baseUrl: string = BASE_URL
 ): Promise<DosageJobStatusResponse> {
-  const token = getAuthTokenOrThrow(tokenProvider);
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-  const response = await fetch(`${baseUrl}/dosage-agent/job-status/${jobId}`, {
-    method: "GET",
-    headers: headersBuilder.build({
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }),
-    credentials: "include",
-  });
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/dosage-agent/job-status/${jobId}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    }
+  );
 
   if (!response.ok) {
     const errorText = await safeReadText(response);
@@ -197,26 +181,18 @@ export async function getDosageJobStatus(
 
 class DosageAgentApiService {
   private readonly baseUrl: string;
-  private readonly tokenProvider: AuthTokenProvider;
-
-  constructor(
-    baseUrl: string,
-    tokenProvider: AuthTokenProvider = authService.getAuthToken.bind(
-      authService
-    )
-  ) {
+  constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
-    this.tokenProvider = tokenProvider;
   }
 
   public async startJob(
     request: StartDosageJobRequest
   ): Promise<StartDosageJobResponse> {
-    return await startDosageJob(request, this.baseUrl, this.tokenProvider);
+    return await startDosageJob(request, this.baseUrl);
   }
 
   public async getJobStatus(jobId: string): Promise<DosageJobStatusResponse> {
-    return await getDosageJobStatus(jobId, this.baseUrl, this.tokenProvider);
+    return await getDosageJobStatus(jobId, this.baseUrl);
   }
 }
 

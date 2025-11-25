@@ -3,18 +3,13 @@ import {
   getFieldsAvailability,
   type FieldsAvailabilityResponse,
 } from "@/api/fields";
-import authService from "@/utils/auth";
 
 export function useFieldsAvailability(startAt: string, endAt: string) {
   // Query per ottenere la disponibilità dei campi nel range di date selezionato
   const fieldsAvailabilityQuery = useQuery<FieldsAvailabilityResponse, Error>({
     queryKey: ["fields-availability", startAt, endAt],
     queryFn: async () => {
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-      return await getFieldsAvailability(token, startAt, endAt);
+      return await getFieldsAvailability(startAt, endAt);
     },
     enabled: !!startAt && !!endAt, // Solo se entrambe le date sono definite
   });

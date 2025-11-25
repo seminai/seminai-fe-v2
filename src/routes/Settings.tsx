@@ -8,7 +8,6 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Spinner } from "@/components/ui/spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import authService from "@/utils/auth";
 import {
   updateCurrentUserWithBearer,
   type UpdateCurrentUserRequest,
@@ -44,9 +43,7 @@ export default function Settings() {
 
   const { mutateAsync: saveAsync, isPending: isSaving } = useMutation({
     mutationFn: async (payload: UpdateCurrentUserRequest) => {
-      const token = authService.getAuthToken();
-      if (!token) throw new Error("Unauthorized");
-      return await updateCurrentUserWithBearer(token, payload);
+      return await updateCurrentUserWithBearer(payload);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["users", "me"] });
@@ -60,9 +57,7 @@ export default function Settings() {
 
   const { mutateAsync: uploadAsync, isPending: isUploading } = useMutation({
     mutationFn: async (file: File) => {
-      const token = authService.getAuthToken();
-      if (!token) throw new Error("Unauthorized");
-      return await uploadProfilePictureWithBearer(token, file);
+      return await uploadProfilePictureWithBearer(file);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["users", "me"] });
@@ -83,9 +78,7 @@ export default function Settings() {
   const { mutateAsync: changePasswordAsync, isPending: isChangingPassword } =
     useMutation({
       mutationFn: async (payload: UpdatePasswordRequest) => {
-        const token = authService.getAuthToken();
-        if (!token) throw new Error("Unauthorized");
-        return await updatePasswordWithBearer(token, payload);
+        return await updatePasswordWithBearer(payload);
       },
       onSuccess: () => {
         toast.success("Password aggiornata");

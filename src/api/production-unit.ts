@@ -1,5 +1,4 @@
-import authService from "@/utils/auth";
-import { AuthorizedHeadersBuilder } from "./http";
+import { authenticatedHttpClient } from "./http";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -61,18 +60,17 @@ async function safeReadText(response: Response): Promise<string> {
 }
 
 export async function getProductionUnits(
-  token: string,
   baseUrl: string = BASE_URL
 ): Promise<ProductionUnitsResponse> {
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(`${baseUrl}/production-units`, {
-    method: "GET",
-    headers: headersBuilder.build({
-      Accept: "application/json",
-    }),
-    credentials: "include",
-  });
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/production-units`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    }
+  );
 
   if (!response.ok) {
     const errorText = await safeReadText(response);
@@ -120,21 +118,20 @@ export type BulkCreateProductionUnitsResponse = {
 
 // API function for bulk create
 export async function bulkCreateProductionUnits(
-  token: string,
   request: BulkCreateProductionUnitsRequest,
   baseUrl: string = BASE_URL
 ): Promise<BulkCreateProductionUnitsResponse> {
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(`${baseUrl}/production-units/bulk/create`, {
-    method: "POST",
-    headers: headersBuilder.build({
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }),
-    credentials: "include",
-    body: JSON.stringify(request),
-  });
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/production-units/bulk/create`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    }
+  );
 
   if (!response.ok) {
     const errorText = await safeReadText(response);
@@ -146,19 +143,18 @@ export async function bulkCreateProductionUnits(
 
 // API function for delete
 export async function deleteProductionUnit(
-  token: string,
   id: string,
   baseUrl: string = BASE_URL
 ): Promise<void> {
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(`${baseUrl}/production-units/${id}`, {
-    method: "DELETE",
-    headers: headersBuilder.build({
-      Accept: "application/json",
-    }),
-    credentials: "include",
-  });
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/production-units/${id}`,
+    {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+      },
+    }
+  );
 
   if (!response.ok) {
     const errorText = await safeReadText(response);
@@ -193,22 +189,21 @@ export type ProductionUnitUpdateResponse = {
 
 // API function for single update
 export async function updateProductionUnit(
-  token: string,
   id: string,
   data: ProductionUnitUpdateInput,
   baseUrl: string = BASE_URL
 ): Promise<ProductionUnitUpdateResponse> {
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(`${baseUrl}/production-units/${id}`, {
-    method: "PUT",
-    headers: headersBuilder.build({
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }),
-    credentials: "include",
-    body: JSON.stringify(data),
-  });
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/production-units/${id}`,
+    {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }
+  );
 
   if (!response.ok) {
     const errorText = await safeReadText(response);
@@ -237,21 +232,20 @@ export type BulkUpdateProductionUnitsResponse = {
 
 // API function for bulk update
 export async function bulkUpdateProductionUnits(
-  token: string,
   request: BulkUpdateProductionUnitsRequest,
   baseUrl: string = BASE_URL
 ): Promise<BulkUpdateProductionUnitsResponse> {
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(`${baseUrl}/production-units/bulk`, {
-    method: "PUT",
-    headers: headersBuilder.build({
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }),
-    credentials: "include",
-    body: JSON.stringify(request),
-  });
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/production-units/bulk`,
+    {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    }
+  );
 
   if (!response.ok) {
     const errorText = await safeReadText(response);
@@ -268,53 +262,37 @@ class ProductionUnitApiService {
     this.baseUrl = baseUrl;
   }
 
-  private resolveToken(): string {
-    const token = authService.getAuthToken();
-
-    if (!token) {
-      throw new Error("Unauthorized");
-    }
-
-    return token;
-  }
-
   public async getAll(): Promise<ProductionUnitsResponse> {
-    const token = this.resolveToken();
-    return await getProductionUnits(token, this.baseUrl);
+    return await getProductionUnits(this.baseUrl);
   }
 
   public async bulkCreate(
     request: BulkCreateProductionUnitsRequest
   ): Promise<BulkCreateProductionUnitsResponse> {
-    const token = this.resolveToken();
-    return await bulkCreateProductionUnits(token, request, this.baseUrl);
+    return await bulkCreateProductionUnits(request, this.baseUrl);
   }
 
   public async bulkImport(
     request: BulkImportRequest
   ): Promise<BulkImportResponse> {
-    const token = this.resolveToken();
-    return await bulkImportProductionUnits(token, request, this.baseUrl);
+    return await bulkImportProductionUnits(request, this.baseUrl);
   }
 
   public async delete(id: string): Promise<void> {
-    const token = this.resolveToken();
-    return await deleteProductionUnit(token, id, this.baseUrl);
+    await deleteProductionUnit(id, this.baseUrl);
   }
 
   public async update(
     id: string,
     data: ProductionUnitUpdateInput
   ): Promise<ProductionUnitUpdateResponse> {
-    const token = this.resolveToken();
-    return await updateProductionUnit(token, id, data, this.baseUrl);
+    return await updateProductionUnit(id, data, this.baseUrl);
   }
 
   public async bulkUpdate(
     request: BulkUpdateProductionUnitsRequest
   ): Promise<BulkUpdateProductionUnitsResponse> {
-    const token = this.resolveToken();
-    return await bulkUpdateProductionUnits(token, request, this.baseUrl);
+    return await bulkUpdateProductionUnits(request, this.baseUrl);
   }
 }
 
@@ -399,21 +377,20 @@ export type BulkImportResponse = {
 
 // API function for bulk-import (CSV)
 export async function bulkImportProductionUnits(
-  token: string,
   request: BulkImportRequest,
   baseUrl: string = BASE_URL
 ): Promise<BulkImportResponse> {
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(`${baseUrl}/production-units/bulk-import`, {
-    method: "POST",
-    headers: headersBuilder.build({
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }),
-    credentials: "include",
-    body: JSON.stringify(request),
-  });
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/production-units/bulk-import`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    }
+  );
 
   if (!response.ok) {
     const errorText = await safeReadText(response);

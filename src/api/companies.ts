@@ -1,4 +1,4 @@
-import { AuthorizedHeadersBuilder } from "./http";
+import { authenticatedHttpClient } from "./http";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -63,18 +63,17 @@ async function safeReadText(response: Response): Promise<string> {
 }
 
 export async function getCompanies(
-  token: string,
   baseUrl: string = BASE_URL
 ): Promise<CompaniesResponse> {
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(`${baseUrl}/companies`, {
-    method: "GET",
-    headers: headersBuilder.build({
-      Accept: "application/json",
-    }),
-    credentials: "include",
-  });
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/companies`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    }
+  );
 
   if (!response.ok) {
     const errorText = await safeReadText(response);
@@ -85,21 +84,20 @@ export async function getCompanies(
 }
 
 export async function bulkCreateCompanies(
-  token: string,
   request: BulkCompaniesRequest,
   baseUrl: string = BASE_URL
 ): Promise<BulkCompaniesResponse> {
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(`${baseUrl}/companies/bulk`, {
-    method: "POST",
-    headers: headersBuilder.build({
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    }),
-    credentials: "include",
-    body: JSON.stringify(request),
-  });
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/companies/bulk`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(request),
+    }
+  );
 
   if (!response.ok) {
     const errorText = await safeReadText(response);
@@ -120,21 +118,20 @@ export type BulkCompaniesUpdateRequest = {
 };
 
 export async function bulkUpdateCompanies(
-  token: string,
   request: BulkCompaniesUpdateRequest,
   baseUrl: string = BASE_URL
 ): Promise<BulkCompaniesResponse> {
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(`${baseUrl}/companies/bulk`, {
-    method: "PUT",
-    headers: headersBuilder.build({
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    }),
-    credentials: "include",
-    body: JSON.stringify(request),
-  });
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/companies/bulk`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(request),
+    }
+  );
 
   if (!response.ok) {
     const errorText = await safeReadText(response);
@@ -152,22 +149,20 @@ class CompaniesApiService {
     this.baseUrl = baseUrl;
   }
 
-  public async getAll(token: string): Promise<CompaniesResponse> {
-    return await getCompanies(token, this.baseUrl);
+  public async getAll(): Promise<CompaniesResponse> {
+    return await getCompanies(this.baseUrl);
   }
 
   public async bulkCreate(
-    token: string,
     request: BulkCompaniesRequest
   ): Promise<BulkCompaniesResponse> {
-    return await bulkCreateCompanies(token, request, this.baseUrl);
+    return await bulkCreateCompanies(request, this.baseUrl);
   }
 
   public async bulkUpdate(
-    token: string,
     request: BulkCompaniesUpdateRequest
   ): Promise<BulkCompaniesResponse> {
-    return await bulkUpdateCompanies(token, request, this.baseUrl);
+    return await bulkUpdateCompanies(request, this.baseUrl);
   }
 }
 

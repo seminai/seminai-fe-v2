@@ -55,7 +55,6 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import AddStock from "./AddStock";
-import authService from "@/utils/auth";
 import { useProductDetail } from "@/hooks/useProductDetail";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -474,12 +473,7 @@ function DrawerProduct({
 
     setIsUpdating(true);
     try {
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-
-      await productsApiService.update(token, product.id, {
+      await productsApiService.update(product.id, {
         name: productName,
         description: productDescription || undefined,
         barcode: productBarcode || undefined,
@@ -542,33 +536,34 @@ function DrawerProduct({
           )}
 
           <SheetHeader>
-            <div className="flex items-start justify-between">
-              <div>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-3">
                 <SheetTitle className="text-2xl">{product.name}</SheetTitle>
-                <div className="flex items-center gap-2 mt-2">
-                  <SheetDescription className="mb-0">
-                    SKU: {product.sku}
-                  </SheetDescription>
-                  <Badge
-                    variant={
-                      totalStock > 50
-                        ? "default"
-                        : totalStock > 0
-                        ? "secondary"
-                        : "destructive"
-                    }
-                  >
-                    Stock: {formattedTotalStock} {unit}
-                  </Badge>
-                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleOpenEditDialog}
+                  className="shrink-0"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleOpenEditDialog}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <SheetDescription className="mb-0">
+                  SKU: {product.sku}
+                </SheetDescription>
+                <Badge
+                  variant={
+                    totalStock > 50
+                      ? "default"
+                      : totalStock > 0
+                      ? "secondary"
+                      : "destructive"
+                  }
+                >
+                  Stock: {formattedTotalStock} {unit}
+                </Badge>
+              </div>
             </div>
           </SheetHeader>
 

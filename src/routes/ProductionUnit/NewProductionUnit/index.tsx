@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 
 import { Calendar } from "@/components/ui/calendar";
 import { PageHeader } from "@/components/organism/Header";
@@ -47,6 +47,7 @@ import type { ParsedBulkImport } from "@/utils/csvProductionUnitParser";
 
 import { SingleProductionUnitForm } from "./components/SingleProductionUnitForm";
 import { useCropVarieties } from "./hooks/useCropVarieties";
+import { useCultivarHarvestDates } from "./hooks/useCultivarHarvestDates";
 import {
   buildSplitAllocationKey,
   calculateCropDates,
@@ -125,6 +126,19 @@ export default function NewProductionUnit(): React.ReactElement {
   // Load crop varieties
   const { varieties: cropVarieties, isLoading: isLoadingVarieties } =
     useCropVarieties();
+  const {
+    catalog: cultivarCatalog,
+    isLoading: isLoadingCultivarCatalog,
+    error: cultivarCatalogError,
+  } = useCultivarHarvestDates();
+
+  useEffect(() => {
+    if (cultivarCatalogError) {
+      toast.error(
+        "Impossibile caricare il dataset delle cultivar. Continuerai senza suggerimenti automatici."
+      );
+    }
+  }, [cultivarCatalogError]);
 
   const { companies, isLoading, isError, error } = useFieldsAvailability(
     dateRange.start.toISOString().split("T")[0],
@@ -527,12 +541,17 @@ export default function NewProductionUnit(): React.ReactElement {
             return acc;
           }, new Map());
 
+          const resolvedVariety =
+            (unit.cultivarId &&
+              cultivarCatalog?.getCultivarName(unit.cultivarId)) ||
+            crop.code;
+
           return {
             name: unit.name,
             companyId: field.companyId,
             cropName: crop.species,
             cropType: crop.cropType,
-            variety: crop.code,
+            variety: resolvedVariety,
             protocoll: "", // TODO: aggiungere se necessario
             allocations: Array.from(allocationsByField.entries()).map(
               ([fieldId, areaHa]) => ({
@@ -1024,7 +1043,7 @@ export default function NewProductionUnit(): React.ReactElement {
                             }}
                           >
                             <CardContent className="p-4">
-                              <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+                              <div className="flex flex-col gap-4 md:flex-row md:items-center">
                                 {/* Checkbox per multiselect */}
                                 <div
                                   className="flex-shrink-0 self-start lg:self-center"
@@ -1163,7 +1182,7 @@ export default function NewProductionUnit(): React.ReactElement {
 
                                   {/* Controlli allocazione */}
                                   <div
-                                    className="md:col-span-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:justify-end"
+                                    className="md:col-span-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:justify-end md:self-center"
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <Input
@@ -1214,7 +1233,7 @@ export default function NewProductionUnit(): React.ReactElement {
 
                                 {/* Azioni */}
                                 <div
-                                  className="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full lg:w-[180px] items-stretch sm:items-center lg:justify-end"
+                                  className="flex-shrink-0 flex flex-col md:flex-row gap-2 w-full md:w-auto lg:w-[180px] items-stretch md:items-center md:justify-end md:self-center"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {!isSplitField && (
@@ -1266,6 +1285,9 @@ export default function NewProductionUnit(): React.ReactElement {
             <SingleProductionUnitForm
               cropVarieties={cropVarieties}
               isLoadingVarieties={isLoadingVarieties}
+              cultivarCatalog={cultivarCatalog}
+              isLoadingCultivars={isLoadingCultivarCatalog}
+              cultivarCatalogError={cultivarCatalogError}
               allocatedFields={allocatedFields}
               allFields={allFieldsWithSplits}
               dateRange={dateRange}
