@@ -1,3 +1,5 @@
+import { authenticatedHttpClient } from "./http";
+
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export type Warehouse = {
@@ -50,19 +52,14 @@ class WarehousesApiService {
     this.baseUrl = baseUrl;
   }
 
-  public async listByCompany(
-    token: string,
-    companyId: string
-  ): Promise<Warehouse[]> {
-    const response = await fetch(
+  public async listByCompany(companyId: string): Promise<Warehouse[]> {
+    const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/warehouses/company/${encodeURIComponent(companyId)}`,
       {
         method: "GET",
         headers: {
           Accept: "application/json",
-          Authorization: `Bearer ${token}`,
         },
-        credentials: "include",
       }
     );
 
@@ -85,20 +82,18 @@ class WarehousesApiService {
     return [];
   }
 
-  public async create(
-    token: string,
-    request: CreateWarehouseRequest
-  ): Promise<Warehouse> {
-    const response = await fetch(`${this.baseUrl}/warehouses`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      credentials: "include",
-      body: JSON.stringify(request),
-    });
+  public async create(request: CreateWarehouseRequest): Promise<Warehouse> {
+    const response = await authenticatedHttpClient.request(
+      `${this.baseUrl}/warehouses`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(request),
+      }
+    );
 
     if (!response.ok) {
       const errorText = await safeReadText(response);
@@ -114,20 +109,17 @@ class WarehousesApiService {
   }
 
   public async update(
-    token: string,
     warehouseId: string,
     request: UpdateWarehouseRequest
   ): Promise<Warehouse> {
-    const response = await fetch(
+    const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/warehouses/${encodeURIComponent(warehouseId)}`,
       {
         method: "PUT",
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
-        credentials: "include",
         body: JSON.stringify(request),
       }
     );
@@ -145,16 +137,14 @@ class WarehousesApiService {
     return this.normalizeWarehouse(payload);
   }
 
-  public async delete(token: string, warehouseId: string): Promise<void> {
-    const response = await fetch(
+  public async delete(warehouseId: string): Promise<void> {
+    const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/warehouses/${encodeURIComponent(warehouseId)}`,
       {
         method: "DELETE",
         headers: {
           Accept: "application/json",
-          Authorization: `Bearer ${token}`,
         },
-        credentials: "include",
       }
     );
 

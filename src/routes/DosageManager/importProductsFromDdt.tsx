@@ -18,7 +18,6 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import authService from "@/utils/auth";
 import {
   productsApiService,
   type BulkFromDdtFileResult,
@@ -36,14 +35,7 @@ interface ImportProductsFromDdtProps {
 }
 
 interface ProductsImporterService {
-  importFromDdt(
-    token: string,
-    files: File[]
-  ): Promise<BulkFromDdtToProductListResponse>;
-}
-
-interface AuthManager {
-  getAuthToken(): string | null;
+  importFromDdt(files: File[]): Promise<BulkFromDdtToProductListResponse>;
 }
 
 type DdtImportOutcome = {
@@ -60,14 +52,12 @@ const MAX_IMPORT_FILES = 10;
 
 class DdtProductImportManager {
   constructor(
-    private readonly service: ProductsImporterService,
-    private readonly authManager: AuthManager
+    private readonly service: ProductsImporterService
   ) {}
 
   public async import(files: File[]): Promise<DdtImportOutcome> {
     const sanitizedFiles = this.sanitizeFiles(files);
-    const token = this.retrieveToken();
-    const response = await this.service.importFromDdt(token, sanitizedFiles);
+    const response = await this.service.importFromDdt(sanitizedFiles);
     const normalized = this.normalizeResponse(response, sanitizedFiles);
 
     const products = this.toDosageProducts(normalized.results);
@@ -110,16 +100,6 @@ class DdtProductImportManager {
     }
 
     return pdfFiles;
-  }
-
-  private retrieveToken(): string {
-    const token = this.authManager.getAuthToken();
-    if (!token) {
-      throw new Error(
-        "A valid authentication token is required to import DDT files"
-      );
-    }
-    return token;
   }
 
   private toDosageProducts(results: BulkFromDdtFileResult[]): DosageProduct[] {
@@ -330,7 +310,7 @@ export function ImportProductsFromDdt({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const importManager = useMemo(
-    () => new DdtProductImportManager(productsApiService, authService),
+    () => new DdtProductImportManager(productsApiService),
     []
   );
 

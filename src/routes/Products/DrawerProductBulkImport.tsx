@@ -26,7 +26,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import authService from "@/utils/auth";
 import {
   productsApiService,
   type BulkProductPayload,
@@ -575,12 +574,6 @@ function DrawerProductBulkImport({
     if (!canImport) {
       return;
     }
-    const token = authService.getAuthToken();
-    if (!token) {
-      toast.error("Sessione scaduta. Effettua di nuovo l'accesso.");
-      return;
-    }
-
     const payload: BulkImportProductsPayload = {
       companyId: companyId.trim(),
       warehouseId: warehouseId.trim(),
@@ -589,7 +582,7 @@ function DrawerProductBulkImport({
 
     setIsImporting(true);
     try {
-      const response = await productsApiService.bulkImport(token, payload);
+      const response = await productsApiService.bulkImport(payload);
       const presenter = new BulkImportResponsePresenter(response);
       const summary: ImportSummary = {
         imported: presenter.getImportedCount(parsedProducts.length),

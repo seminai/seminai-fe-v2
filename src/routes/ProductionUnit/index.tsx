@@ -5,12 +5,16 @@ import {
   type ProductionUnitUpdateInput,
   type FieldInfo,
 } from "@/api/production-unit";
+import type { Company } from "@/api/companies";
+import type { Field as CompanyField } from "@/api/fields";
 import { Spinner } from "@/components/ui/spinner";
 import {
   EditableTable,
   type EditableColumn,
 } from "@/components/organism/EditableTable";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
+import { useCompanies } from "@/hooks/useCompanies";
+import { useFields } from "@/hooks/useFields";
 import { PageHeader } from "@/components/organism/Header";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -229,19 +233,135 @@ class CropCatalog {
   }
 }
 
+class CompanyDirectory {
+  private readonly companyOptions: Array<{ label: string; value: string }>;
+  private readonly companyNameById: Map<string, string>;
+  private readonly fieldsByCompany: Map<
+    string,
+    Array<{ label: string; value: string }>
+  >;
+  private readonly fieldInfoById: Map<string, FieldInfo>;
+
+  constructor(companies: Company[], fields: CompanyField[]) {
+    this.companyNameById = new Map(
+      companies.map((company) => [company.id, company.name])
+    );
+    this.companyOptions = companies
+      .map((company) => ({
+        label: company.name,
+        value: company.id,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    this.fieldsByCompany = new Map();
+    this.fieldInfoById = new Map();
+
+    fields.forEach((field) => {
+      const option = { label: field.name, value: field.id };
+      const list = this.fieldsByCompany.get(field.companyId) ?? [];
+      list.push(option);
+      this.fieldsByCompany.set(field.companyId, list);
+      this.fieldInfoById.set(field.id, CompanyDirectory.buildFieldInfo(field));
+    });
+
+    this.fieldsByCompany.forEach((options) =>
+      options.sort((first, second) =>
+        first.label.localeCompare(second.label, "it", {
+          sensitivity: "base",
+        })
+      )
+    );
+  }
+
+  private static buildFieldInfo(field: CompanyField): FieldInfo {
+    const areaHaValue = (field as CompanyField & { areaHa?: number | null })
+      .areaHa;
+    return {
+      id: field.id,
+      name: field.name,
+      sauHa: field.sauHa ?? 0,
+      gisHa: field.gisHa,
+      areaHaOnField:
+        typeof areaHaValue === "number" ? areaHaValue : field.sauHa ?? 0,
+    };
+  }
+
+  public getCompanyOptions(): Array<{ label: string; value: string }> {
+    return this.companyOptions;
+  }
+
+  public getCompanyName(companyId: string): string {
+    if (!companyId) {
+      return "";
+    }
+    return this.companyNameById.get(companyId) ?? companyId;
+  }
+
+  public getFieldsOptions(
+    companyId: string | undefined
+  ): Array<{ label: string; value: string }> {
+    if (!companyId) {
+      return [];
+    }
+    return this.fieldsByCompany.get(companyId) ?? [];
+  }
+
+  public getFieldInfo(fieldId: string): FieldInfo | null {
+    if (!fieldId) {
+      return null;
+    }
+    return this.fieldInfoById.get(fieldId) ?? null;
+  }
+}
+
 const buildProductionUnitColumns = (
   catalog: CropCatalog | null,
-  onFieldClick: (field: FieldInfo) => void
+  onFieldClick: (field: FieldInfo) => void,
+  directory: CompanyDirectory | null
 ): EditableColumn[] => {
   const speciesOptions = catalog?.getSpeciesOptions() ?? [];
   const cropTypeOptions = catalog?.getCropTypeOptions() ?? [];
   const varietyOptions = catalog?.getVarietyOptions() ?? [];
+  const companyOptions = directory?.getCompanyOptions() ?? [];
 
   return [
     {
       id: "companyName",
       title: "Azienda",
-      type: "text",
+      type: "select",
+      options: companyOptions,
+      placeholder: "Seleziona azienda",
+      enableSearch: true,
+      searchPlaceholder: "Cerca azienda...",
+      emptyStateMessage: "Nessuna azienda trovata",
+      noneOptionLabel: "Nessuna selezione",
+      onValueChange: ({ value }) => {
+        const sanitizedValue =
+          typeof value === "string" ? value : String(value ?? "");
+
+        if (!directory) {
+          return {
+            companyName: sanitizedValue,
+            companyId: sanitizedValue,
+          };
+        }
+
+        if (sanitizedValue === "") {
+          return {
+            companyName: "",
+            companyId: "",
+            fieldSelection: "",
+            fields: [],
+          };
+        }
+
+        const label = directory.getCompanyName(sanitizedValue);
+        return {
+          companyName: label,
+          companyId: sanitizedValue,
+          fieldSelection: "",
+          fields: [],
+        };
+      },
     },
     {
       id: "name",
@@ -363,11 +483,24 @@ const buildProductionUnitColumns = (
       type: "text",
     },
     {
-      id: "fields",
+      id: "fieldSelection",
       title: "Campi",
-      type: "text",
-      render: (value: unknown) => {
-        const fields = value as FieldInfo[] | undefined;
+      type: "select",
+      placeholder: "Seleziona campo",
+      enableSearch: true,
+      searchPlaceholder: "Cerca campo...",
+      emptyStateMessage: "Nessun campo trovato",
+      noneOptionLabel: "Nessuna selezione",
+      getOptions: (rowData) => {
+        if (!directory) {
+          return [];
+        }
+        const companyId =
+          typeof rowData.companyId === "string" ? rowData.companyId : "";
+        return directory.getFieldsOptions(companyId);
+      },
+      render: (_value: unknown, rowData: Record<string, unknown>) => {
+        const fields = rowData.fields as FieldInfo[] | undefined;
         if (!fields || fields.length === 0) {
           return <span className="text-gray-400">-</span>;
         }
@@ -388,6 +521,27 @@ const buildProductionUnitColumns = (
             ))}
           </div>
         );
+      },
+      onValueChange: ({ value, rowData }) => {
+        const sanitizedValue =
+          typeof value === "string" ? value : String(value ?? "");
+
+        if (!directory) {
+          return { fieldSelection: sanitizedValue };
+        }
+
+        if (sanitizedValue === "") {
+          return { fieldSelection: "", fields: [] };
+        }
+
+        const fieldInfo = directory.getFieldInfo(sanitizedValue);
+
+        return {
+          fieldSelection: sanitizedValue,
+          fields: fieldInfo
+            ? [fieldInfo]
+            : (rowData.fields as FieldInfo[]) ?? [],
+        };
       },
     },
     {
@@ -418,6 +572,15 @@ export default function ProductionUnit(): React.ReactElement {
   const [isFieldDrawerOpen, setIsFieldDrawerOpen] = useState(false);
 
   const { productionUnits, isLoading, error, refetch } = useProductionUnit();
+  const { companies } = useCompanies();
+  const { fields: availableFields } = useFields();
+
+  const companyDirectory = useMemo(() => {
+    if (companies.length === 0 && availableFields.length === 0) {
+      return null;
+    }
+    return new CompanyDirectory(companies, availableFields);
+  }, [companies, availableFields]);
 
   const handleFieldClick = useCallback((field: FieldInfo) => {
     setSelectedField(field);
@@ -472,6 +635,7 @@ export default function ProductionUnit(): React.ReactElement {
   const rows = useMemo(() => {
     return productionUnits.map((pu) => ({
       id: pu.productionUnit.id,
+      companyId: pu.companyId,
       companyName: pu.companyName,
       name: pu.productionUnit.name,
       cropName: pu.productionUnit.cropName,
@@ -481,6 +645,7 @@ export default function ProductionUnit(): React.ReactElement {
       areaHa: pu.productionUnit.areaHa,
       protectionStructure: pu.productionUnit.protectionStructure,
       fields: pu.fields || [],
+      fieldSelection: pu.fields && pu.fields.length > 0 ? pu.fields[0].id : "",
       startDate: pu.productionUnit.startDate
         ? new Date(pu.productionUnit.startDate).toISOString().split("T")[0]
         : "",
@@ -1143,8 +1308,13 @@ export default function ProductionUnit(): React.ReactElement {
   };
 
   const columns = useMemo(
-    () => buildProductionUnitColumns(cropCatalog, handleFieldClick),
-    [cropCatalog, handleFieldClick]
+    () =>
+      buildProductionUnitColumns(
+        cropCatalog,
+        handleFieldClick,
+        companyDirectory
+      ),
+    [cropCatalog, handleFieldClick, companyDirectory]
   );
 
   return (

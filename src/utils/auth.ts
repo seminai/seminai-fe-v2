@@ -1,6 +1,9 @@
 import cookieService from "./cookies";
 import type { User } from "@/api/auth";
-import { logout as logoutRequest } from "@/api/auth";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ??
+  (typeof window !== "undefined" ? window.location.origin : "");
 
 // Nomi dei cookies
 // Nota: il token leggibile dal client usa un nome diverso dall'httpOnly del server
@@ -73,13 +76,17 @@ class AuthService {
    */
   async logout(): Promise<void> {
     try {
-      // Prima invalida la sessione server-side (cancella i cookie httpOnly)
-      await logoutRequest();
+      const endpoint = API_BASE_URL
+        ? `${API_BASE_URL}/auth/logout`
+        : "/auth/logout";
+
+      await fetch(endpoint, {
+        method: "POST",
+        credentials: "include",
+      });
     } catch (error) {
       console.error("Errore durante il logout server-side:", error);
-      // Continua comunque con la pulizia client-side
     } finally {
-      // Poi cancella i cookie client-side
       cookieService.deleteCookie(TOKEN_COOKIE_NAME);
       cookieService.deleteCookie(TOKEN_COOKIE_NAME_BE);
       cookieService.deleteCookie(USER_COOKIE_NAME);

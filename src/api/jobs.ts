@@ -1,4 +1,4 @@
-import { AuthorizedHeadersBuilder } from "./http";
+import { authenticatedHttpClient } from "./http";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
 
@@ -90,7 +90,6 @@ export type BulkDeleteJobsResponse = {
 };
 
 export async function getJobs(
-  token: string,
   companyName?: string,
   baseUrl: string = BASE_URL
 ): Promise<GetJobsResponse> {
@@ -101,14 +100,11 @@ export async function getJobs(
 
   console.log("Calling API:", url.toString());
 
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(url.toString(), {
+  const response = await authenticatedHttpClient.request(url.toString(), {
     method: "GET",
-    headers: headersBuilder.build({
+    headers: {
       Accept: "application/json",
-    }),
-    credentials: "include",
+    },
   });
 
   console.log("API response status:", response.status);
@@ -126,24 +122,23 @@ export async function getJobs(
 }
 
 export async function updateJob(
-  token: string,
   jobId: string,
   payload: UpdateJobPayload,
   baseUrl: string = BASE_URL
 ): Promise<UpdateJobResponse> {
   console.log("Updating job:", jobId, payload);
 
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(`${baseUrl}/jobs/${jobId}`, {
-    method: "PUT",
-    headers: headersBuilder.build({
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }),
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/jobs/${jobId}`,
+    {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
 
   console.log("Update job response status:", response.status);
 
@@ -160,23 +155,22 @@ export async function updateJob(
 }
 
 export async function bulkDeleteJobs(
-  token: string,
   payload: BulkDeleteJobsPayload,
   baseUrl: string = BASE_URL
 ): Promise<BulkDeleteJobsResponse> {
   console.log("Bulk deleting jobs:", payload);
 
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(`${baseUrl}/jobs/bulk`, {
-    method: "DELETE",
-    headers: headersBuilder.build({
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }),
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/jobs/bulk`,
+    {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
 
   console.log("Bulk delete response status:", response.status);
 
@@ -199,26 +193,21 @@ class JobsApiService {
     this.baseUrl = baseUrl;
   }
 
-  public async getJobs(
-    token: string,
-    companyName?: string
-  ): Promise<GetJobsResponse> {
-    return await getJobs(token, companyName, this.baseUrl);
+  public async getJobs(companyName?: string): Promise<GetJobsResponse> {
+    return await getJobs(companyName, this.baseUrl);
   }
 
   public async updateJob(
-    token: string,
     jobId: string,
     payload: UpdateJobPayload
   ): Promise<UpdateJobResponse> {
-    return await updateJob(token, jobId, payload, this.baseUrl);
+    return await updateJob(jobId, payload, this.baseUrl);
   }
 
   public async bulkDelete(
-    token: string,
     payload: BulkDeleteJobsPayload
   ): Promise<BulkDeleteJobsResponse> {
-    return await bulkDeleteJobs(token, payload, this.baseUrl);
+    return await bulkDeleteJobs(payload, this.baseUrl);
   }
 }
 

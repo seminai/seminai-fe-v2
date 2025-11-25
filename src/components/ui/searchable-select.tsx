@@ -27,6 +27,7 @@ export interface SearchableSelectProps {
   onChange: (value: string) => void;
   wrapperClassName?: string;
   contentClassName?: string;
+  maxVisibleOptions?: number;
 }
 
 export function SearchableSelect({
@@ -42,6 +43,7 @@ export function SearchableSelect({
   onChange,
   wrapperClassName,
   contentClassName,
+  maxVisibleOptions,
 }: SearchableSelectProps): React.ReactElement {
   const EMPTY_VALUE_TOKEN = "__SEARCHABLE_SELECT_EMPTY__";
   const [searchTerm, setSearchTerm] = React.useState<string>("");
@@ -59,6 +61,18 @@ export function SearchableSelect({
       );
     });
   }, [options, normalizedSearch]);
+
+  const visibleOptions = React.useMemo(() => {
+    if (!maxVisibleOptions || maxVisibleOptions <= 0) {
+      return filteredOptions;
+    }
+    return filteredOptions.slice(0, maxVisibleOptions);
+  }, [filteredOptions, maxVisibleOptions]);
+
+  const isTruncated = React.useMemo(() => {
+    if (!maxVisibleOptions) return false;
+    return filteredOptions.length > visibleOptions.length;
+  }, [filteredOptions, visibleOptions, maxVisibleOptions]);
 
   React.useEffect(() => {
     setSearchTerm("");
@@ -115,18 +129,23 @@ export function SearchableSelect({
           {shouldShowNoneOption && (
             <SelectItem value={EMPTY_VALUE_TOKEN}>{noneOptionLabel}</SelectItem>
           )}
-          {filteredOptions.length === 0 ? (
+          {visibleOptions.length === 0 ? (
             <div className="px-3 py-4 text-sm text-muted-foreground">
               {emptyMessage}
             </div>
           ) : (
-            filteredOptions.map((option) => (
+            visibleOptions.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
             ))
           )}
         </div>
+        {isTruncated && (
+          <div className="px-3 py-2 text-xs text-muted-foreground border-t border-black/5">
+            Risultati limitati, raffina la ricerca.
+          </div>
+        )}
       </SelectContent>
     </Select>
   );

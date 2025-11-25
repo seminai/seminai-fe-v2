@@ -14,7 +14,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, X } from "lucide-react";
-import authService from "@/utils/auth";
 
 interface AddStockProps {
   product: Product;
@@ -235,12 +234,7 @@ class AddStock extends Component<AddStockProps, AddStockState> {
         payload.vatNumberSupplier = this.state.supplierVat;
       }
 
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-
-      await stocksApiService.create(token, payload);
+      await stocksApiService.create(payload);
 
       toast.success("Movimento di stock registrato con successo");
       this.closeForm();

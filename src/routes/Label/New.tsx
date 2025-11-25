@@ -7,6 +7,7 @@ import {
   type BulkExtractItem,
   type BulkExtractRequest,
 } from "@/api/labels";
+import { authenticatedHttpClient } from "@/api/http";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +18,6 @@ import { Trash2, Plus, Upload, FileText, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { indexDBManager, type LabelJob } from "@/utils/indexDBManager";
 import { LabelJobsTable } from "@/components/organism/LabelJobsTable";
-import authService from "@/utils/auth";
 
 interface LabelFormItem extends BulkExtractItem {
   id: string;
@@ -81,19 +81,13 @@ export default function NewLabel(): React.ReactElement {
       formData.append("concurrency", concurrency.toString());
 
       const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
-      const token = authService.getAuthToken();
-
-      if (!token) {
-        throw new Error("Token di autenticazione non trovato");
-      }
-
-      const response = await fetch(`${BASE_URL}/labels/bulk-pdf-label-async`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
+      const response = await authenticatedHttpClient.request(
+        `${BASE_URL}/labels/bulk-pdf-label-async`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => "");

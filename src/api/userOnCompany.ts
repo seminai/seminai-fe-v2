@@ -1,3 +1,5 @@
+import { authenticatedHttpClient } from "./http";
+
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export type UserOnCompanyRole = "ADMIN" | "EDITOR" | string;
@@ -78,10 +80,9 @@ class UserOnCompanyApiService {
   }
 
   public async listByCompany(
-    token: string,
     companyId: string
   ): Promise<ListCompanyUsersResponse> {
-    const response = await fetch(
+    const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/user-on-company/company/${encodeURIComponent(
         companyId
       )}`,
@@ -89,9 +90,7 @@ class UserOnCompanyApiService {
         method: "GET",
         headers: {
           Accept: "application/json",
-          Authorization: `Bearer ${token}`,
         },
-        credentials: "include",
       }
     );
 
@@ -104,19 +103,19 @@ class UserOnCompanyApiService {
   }
 
   public async create(
-    token: string,
     payload: CreateUserOnCompanyRequest
   ): Promise<CreateUserOnCompanyResponse> {
-    const response = await fetch(`${this.baseUrl}/user-on-company`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    });
+    const response = await authenticatedHttpClient.request(
+      `${this.baseUrl}/user-on-company`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
 
     if (!response.ok) {
       const errorText = await safeReadText(response);
@@ -126,12 +125,8 @@ class UserOnCompanyApiService {
     return (await response.json()) as CreateUserOnCompanyResponse;
   }
 
-  public async delete(
-    token: string,
-    companyId: string,
-    userId: string
-  ): Promise<void> {
-    const response = await fetch(
+  public async delete(companyId: string, userId: string): Promise<void> {
+    const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/user-on-company/company/${encodeURIComponent(
         companyId
       )}/user/${encodeURIComponent(userId)}`,
@@ -139,9 +134,7 @@ class UserOnCompanyApiService {
         method: "DELETE",
         headers: {
           Accept: "application/json",
-          Authorization: `Bearer ${token}`,
         },
-        credentials: "include",
       }
     );
 
@@ -152,20 +145,17 @@ class UserOnCompanyApiService {
   }
 
   public async updateRole(
-    token: string,
     relationId: string,
     payload: UpdateUserOnCompanyRoleRequest
   ): Promise<UpdateUserOnCompanyRoleResponse> {
-    const response = await fetch(
+    const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/user-on-company/${encodeURIComponent(relationId)}/role`,
       {
         method: "PATCH",
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
-        credentials: "include",
         body: JSON.stringify(payload),
       }
     );

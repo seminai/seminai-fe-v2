@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import authService from "@/utils/auth";
 import { productsApiService, type Product } from "@/api/products";
 
 export class ProductDetailQueryManager {
@@ -18,12 +17,7 @@ export class ProductDetailQueryManager {
       throw new Error("Missing product id");
     }
 
-    const token = authService.getAuthToken();
-    if (!token) {
-      throw new Error("Unauthorized");
-    }
-
-    const response = await productsApiService.getById(token, this.productId);
+    const response = await productsApiService.getById(this.productId);
     return response.data.product;
   }
 }

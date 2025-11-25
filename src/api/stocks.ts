@@ -1,4 +1,4 @@
-import { AuthorizedHeadersBuilder } from "./http";
+import { authenticatedHttpClient } from "./http";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -32,21 +32,20 @@ export type CreateStockResponse = {
 };
 
 export async function createStock(
-  token: string,
   payload: CreateStockPayload,
   baseUrl: string = BASE_URL
 ): Promise<CreateStockResponse> {
-  const headersBuilder = new AuthorizedHeadersBuilder(token);
-
-  const response = await fetch(`${baseUrl}/stocks`, {
-    method: "POST",
-    headers: headersBuilder.build({
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    }),
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/stocks`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
 
   if (!response.ok) {
     const errorText = await safeReadText(response);
@@ -64,10 +63,9 @@ class StocksApiService {
   }
 
   public async create(
-    token: string,
     payload: CreateStockPayload
   ): Promise<CreateStockResponse> {
-    return await createStock(token, payload, this.baseUrl);
+    return await createStock(payload, this.baseUrl);
   }
 }
 

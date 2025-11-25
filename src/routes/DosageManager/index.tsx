@@ -1,9 +1,17 @@
-import type { ReactElement } from "react";
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import type { KeyboardEvent, ReactElement } from "react";
+import {
+  Component,
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useCompanies } from "@/hooks/useCompanies";
 import { ImportProducts } from "./importProducts";
 import { ImportProductsFromDdt } from "./importProductsFromDdt";
+import { FitosanitariProductSearch } from "./FitosanitariProductSearch";
 import { PageHeader } from "@/components/organism/Header";
 import {
   EditableTable,
@@ -41,11 +49,13 @@ import {
   type DosageProduct,
   type DosageUnitOfProduction,
 } from "@/api/dosage-agent";
+import type { ProductionUnit } from "@/api/production-unit";
 import {
   dosageJobsIndexDBManager,
   type DosageJob,
 } from "@/utils/dosageJobsIndexDBManager";
 import { JobDetails } from "./JobDetails";
+import type { FitosanitariDatasetRecord } from "@/services/fitosanitariRegistry";
 class DosageJobDetailsManager {
   public async load(job: DosageJob): Promise<DosageJob> {
     if (job.state === "completed" && job.result) {
@@ -125,6 +135,67 @@ class DosagePlaceholderRenderer {
 
 const dosagePlaceholderRenderer = new DosagePlaceholderRenderer();
 
+interface ProductionUnitCardProps {
+  unit: ProductionUnit;
+  isSelected: boolean;
+  onToggle: (unitId: string) => void;
+}
+
+class ProductionUnitCard extends Component<ProductionUnitCardProps> {
+  private readonly handleClick = (): void => {
+    const { unit, onToggle } = this.props;
+    onToggle(unit.productionUnit.id);
+  };
+
+  private readonly handleKeyDown = (
+    event: KeyboardEvent<HTMLDivElement>
+  ): void => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      this.handleClick();
+    }
+  };
+
+  public render(): ReactElement {
+    const { unit, isSelected } = this.props;
+
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        aria-pressed={isSelected}
+        onClick={this.handleClick}
+        onKeyDown={this.handleKeyDown}
+        className={`group relative p-6 text-left rounded-xl border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 ${
+          isSelected
+            ? "border-neutral-900 bg-neutral-50 shadow-sm"
+            : "border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm"
+        }`}
+      >
+        <div className="flex items-start gap-4">
+          <Checkbox checked={isSelected} className="mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <h3 className="font-medium text-neutral-900 truncate">
+              {unit.productionUnit.name}
+            </h3>
+            <p className="text-sm text-neutral-600 mt-1">
+              {unit.productionUnit.cropName}
+            </p>
+            <div className="flex items-center gap-3 mt-3">
+              <Badge variant="outline" className="text-xs">
+                {unit.productionUnit.variety}
+              </Badge>
+              <span className="text-xs text-neutral-500">
+                {unit.productionUnit.areaHa} ha
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
 export default function DosageManager() {
   const { productionUnits, isLoading: loadingUnits } = useProductionUnit();
   const { companies } = useCompanies();
@@ -192,28 +263,30 @@ export default function DosageManager() {
   ];
 
   // Converte i dati della tabella in DosageProduct[]
-  const convertTableRowsToProducts = (
-    rows: Array<Record<string, unknown>>
-  ): DosageProduct[] => {
-    return rows.map((row) => ({
-      productName: String(row.productName || ""),
-      registrationNumber: String(row.registrationNumber || ""),
-      quantity: Number(row.quantity) || 0,
-      quantityUnitOfMeasure: String(row.quantityUnitOfMeasure || ""),
-      supplierName: row.supplierName ? String(row.supplierName) : undefined,
-      supplierVat: row.supplierVat ? String(row.supplierVat) : undefined,
-    }));
-  };
+  const convertTableRowsToProducts = useCallback(
+    (rows: Array<Record<string, unknown>>): DosageProduct[] => {
+      return rows.map((row) => ({
+        productName: String(row.productName || ""),
+        registrationNumber: String(row.registrationNumber || ""),
+        quantity: Number(row.quantity) || 0,
+        quantityUnitOfMeasure: String(row.quantityUnitOfMeasure || ""),
+        supplierName: row.supplierName ? String(row.supplierName) : undefined,
+        supplierVat: row.supplierVat ? String(row.supplierVat) : undefined,
+      }));
+    },
+    []
+  );
 
   // Gestisce l'aggiunta di righe dalla tabella editabile
-  const handleAddRows = (rows: Array<Record<string, unknown>>): void => {
-    if (editableTableRef.current) {
+  const handleAddRows = useCallback(
+    (rows: Array<Record<string, unknown>>): void => {
+      if (!editableTableRef.current) {
+        return;
+      }
       editableTableRef.current.addRows(rows);
       // Aggiorna anche lo stato dei prodotti per mantenere la sincronizzazione
-      // I prodotti importati vengono aggiunti come "nuovi" e verranno salvati quando l'utente clicca "Salva"
       const newProducts = convertTableRowsToProducts(rows);
       setProducts((prev) => {
-        // Evita duplicati controllando se il prodotto esiste già
         const existingIds = new Set(
           prev.map((p) => `${p.productName}-${p.registrationNumber}`)
         );
@@ -222,8 +295,9 @@ export default function DosageManager() {
         );
         return [...prev, ...uniqueNewProducts];
       });
-    }
-  };
+    },
+    [convertTableRowsToProducts]
+  );
 
   // Gestisce il salvataggio dalla tabella editabile
   const handleSaveProducts = (payload: {
@@ -283,6 +357,54 @@ export default function DosageManager() {
       supplierVat: product.supplierVat || "",
     }));
   }, [products]);
+
+  const getDefaultUnitOfMeasure = useCallback(
+    (record: FitosanitariDatasetRecord): string => {
+      const description = (record.formulationDescription || "")
+        .toLowerCase()
+        .trim();
+      const code = (record.formulationCode || "").toUpperCase();
+      const looksLiquid =
+        description.includes("liquido") ||
+        description.includes("sospensione") ||
+        description.includes("emulsione") ||
+        description.includes("olio") ||
+        code.startsWith("L") ||
+        code.includes("SL") ||
+        code.includes("AL");
+      if (looksLiquid) {
+        return "L";
+      }
+      const looksGranular =
+        description.includes("granul") ||
+        description.includes("polvere") ||
+        description.includes("microgranul") ||
+        description.includes("sospensione concentrata") ||
+        code.includes("WG") ||
+        code.includes("WP") ||
+        code.includes("SG");
+      if (looksGranular) {
+        return "kg";
+      }
+      return "kg";
+    },
+    []
+  );
+
+  const handleRegistryProductSelected = useCallback(
+    (record: FitosanitariDatasetRecord) => {
+      if (!editableTableRef.current) {
+        return;
+      }
+      editableTableRef.current.prefillCreateRow({
+        productName: record.productName,
+        registrationNumber: record.registrationNumber,
+        supplierName: record.companyName || "",
+        quantityUnitOfMeasure: getDefaultUnitOfMeasure(record),
+      });
+    },
+    [getDefaultUnitOfMeasure]
+  );
 
   // Load jobs from IndexedDB on mount
   useEffect(() => {
@@ -644,43 +766,14 @@ export default function DosageManager() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredUnits.map((unit) => (
-                      <button
+                      <ProductionUnitCard
                         key={unit.productionUnit.id}
-                        onClick={() => handleToggleUnit(unit.productionUnit.id)}
-                        className={`
-                            group relative p-6 text-left rounded-xl border transition-all
-                            ${
-                              selectedUnitIds.includes(unit.productionUnit.id)
-                                ? "border-neutral-900 bg-neutral-50 shadow-sm"
-                                : "border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm"
-                            }
-                          `}
-                      >
-                        <div className="flex items-start gap-4">
-                          <Checkbox
-                            checked={selectedUnitIds.includes(
-                              unit.productionUnit.id
-                            )}
-                            className="mt-0.5"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-neutral-900 truncate">
-                              {unit.productionUnit.name}
-                            </h3>
-                            <p className="text-sm text-neutral-600 mt-1">
-                              {unit.productionUnit.cropName}
-                            </p>
-                            <div className="flex items-center gap-3 mt-3">
-                              <Badge variant="outline" className="text-xs">
-                                {unit.productionUnit.variety}
-                              </Badge>
-                              <span className="text-xs text-neutral-500">
-                                {unit.productionUnit.areaHa} ha
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </button>
+                        unit={unit}
+                        isSelected={selectedUnitIds.includes(
+                          unit.productionUnit.id
+                        )}
+                        onToggle={handleToggleUnit}
+                      />
                     ))}
                   </div>
                 )}
@@ -713,7 +806,7 @@ export default function DosageManager() {
               >
                 <div
                   data-editable-table-slot="create-drawer"
-                  className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 space-y-4"
+                  className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 space-y-6"
                 >
                   <div className="space-y-1">
                     <p className="text-sm font-semibold text-neutral-900">
@@ -734,6 +827,9 @@ export default function DosageManager() {
                       onProductsChange={setProducts}
                     />
                   </div>
+                  <FitosanitariProductSearch
+                    onProductSelected={handleRegistryProductSelected}
+                  />
                 </div>
               </EditableTable>
               {products.length === 0 &&

@@ -125,28 +125,7 @@ export async function me(baseUrl: string = BASE_URL): Promise<MeResponse> {
   return (await response.json()) as MeResponse;
 }
 
-export async function meWithBearer(
-  token: string,
-  baseUrl: string = BASE_URL
-): Promise<MeResponse> {
-  const response = await fetch(`${baseUrl}/auth/me`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    const errorText = await safeReadText(response);
-    throw new Error(errorText || "Unauthorized");
-  }
-
-  return (await response.json()) as MeResponse;
-}
-
 export async function updatePasswordWithBearer(
-  token: string,
   payload: UpdatePasswordRequest,
   baseUrl: string = BASE_URL
 ): Promise<UpdatePasswordResponse> {
@@ -154,7 +133,6 @@ export async function updatePasswordWithBearer(
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     },
     credentials: "include",
     body: JSON.stringify(payload),

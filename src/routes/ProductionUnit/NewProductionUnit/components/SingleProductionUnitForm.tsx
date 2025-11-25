@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,6 +45,7 @@ import { it } from "date-fns/locale";
 import { toast } from "sonner";
 
 import { calculateCropDates, getBaseFieldIdFromAllocation } from "../utils";
+import { CultivarCatalog } from "../models/CultivarCatalog";
 import type {
   CropVariety,
   DateRange,
@@ -52,9 +53,14 @@ import type {
   ProductionUnitInput,
 } from "../types";
 
+const NO_CULTIVAR_VALUE = "__cultivar_none__";
+
 type SingleProductionUnitFormProps = {
   cropVarieties: CropVariety[];
   isLoadingVarieties: boolean;
+  cultivarCatalog: CultivarCatalog | null;
+  isLoadingCultivars: boolean;
+  cultivarCatalogError?: Error | null;
   allocatedFields: Map<string, number>;
   allFields: FieldWithCompany[];
   dateRange: DateRange;
@@ -75,6 +81,9 @@ export const SingleProductionUnitForm: React.FC<
 > = ({
   cropVarieties,
   isLoadingVarieties,
+  cultivarCatalog,
+  isLoadingCultivars,
+  cultivarCatalogError,
   allocatedFields,
   allFields,
   dateRange,
@@ -104,6 +113,7 @@ export const SingleProductionUnitForm: React.FC<
       id: `pu-${Date.now()}`,
       name: "",
       cropCode: "",
+      cultivarId: null,
       allocations: new Map(allocatedFields),
       protectionStructure: "",
       occupazione: "",
@@ -116,8 +126,14 @@ export const SingleProductionUnitForm: React.FC<
   });
 
   const [cropSearchQuery, setCropSearchQuery] = useState("");
+  const [cultivarSearchQuery, setCultivarSearchQuery] = useState("");
   const [isNameManuallyEdited, setIsNameManuallyEdited] = useState(
     !!editingUnitId
+  );
+  const [harvestDateManuallyEdited, setHarvestDateManuallyEdited] =
+    useState(false);
+  const previousCultivarIdRef = useRef<string | null>(
+    formData.cultivarId ?? null
   );
 
   const selectedCrop = cropVarieties.find((v) => v.code === formData.cropCode);
@@ -133,9 +149,45 @@ export const SingleProductionUnitForm: React.FC<
     );
   }, [cropVarieties, cropSearchQuery]);
 
+  const availableCultivars = useMemo(() => {
+    if (!cultivarCatalog || !selectedCrop) {
+      return [];
+    }
+    const baseList = cultivarCatalog.getCultivarsForCrop(selectedCrop);
+    if (!cultivarSearchQuery.trim()) {
+      return baseList;
+    }
+    const query = cultivarSearchQuery.toLowerCase();
+    return baseList.filter((record) =>
+      record.cultivar.toLowerCase().includes(query)
+    );
+  }, [cultivarCatalog, selectedCrop, cultivarSearchQuery]);
+
+  const selectedCultivarRecord = useMemo(() => {
+    if (!cultivarCatalog || !formData.cultivarId) {
+      return null;
+    }
+    return cultivarCatalog.findById(formData.cultivarId);
+  }, [cultivarCatalog, formData.cultivarId]);
+
   const defaultCropDates = selectedCrop
     ? calculateCropDates(selectedCrop, dateRange.start)
     : null;
+
+  const recommendedHarvestDate = useMemo(() => {
+    if (!cultivarCatalog || !formData.cultivarId) {
+      return null;
+    }
+    return cultivarCatalog.getRecommendedHarvestDate(
+      formData.cultivarId,
+      dateRange.start
+    );
+  }, [cultivarCatalog, formData.cultivarId, dateRange.start]);
+
+  const cultivarReferenceLabel =
+    (formData.cultivarId &&
+      cultivarCatalog?.getReferenceLabel(formData.cultivarId)) ||
+    null;
 
   const effectiveSowingDate =
     formData.customSowingDate || defaultCropDates?.sowingDate;
@@ -185,6 +237,33 @@ export const SingleProductionUnitForm: React.FC<
     }
   }, [selectedCrop, generateAutoName, isNameManuallyEdited]);
 
+  useEffect(() => {
+    const currentCultivarId = formData.cultivarId ?? null;
+    if (previousCultivarIdRef.current !== currentCultivarId) {
+      previousCultivarIdRef.current = currentCultivarId;
+      setHarvestDateManuallyEdited(false);
+    }
+  }, [formData.cultivarId]);
+
+  useEffect(() => {
+    if (!recommendedHarvestDate || harvestDateManuallyEdited) {
+      return;
+    }
+    setFormData((prev) => {
+      const current = prev.customHarvestingDate;
+      if (
+        current &&
+        current.getTime() === recommendedHarvestDate.getTime()
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        customHarvestingDate: recommendedHarvestDate,
+      };
+    });
+  }, [recommendedHarvestDate, harvestDateManuallyEdited, setFormData]);
+
   const handleSave = () => {
     if (!formData.name || !formData.cropCode) {
       toast.error("Compila tutti i campi obbligatori: Nome e Coltura");
@@ -210,11 +289,14 @@ export const SingleProductionUnitForm: React.FC<
     onNext();
   };
 
-  if (isLoadingVarieties) {
+  if (isLoadingVarieties || isLoadingCultivars) {
+    const loadingLabel = isLoadingVarieties
+      ? "Caricamento varietà..."
+      : "Caricamento cultivar...";
     return (
       <div className="flex items-center justify-center py-12">
         <Spinner size={24} ariaLabel="Caricamento varietà" />
-        <span className="ml-2">Caricamento varietà...</span>
+        <span className="ml-2">{loadingLabel}</span>
       </div>
     );
   }
@@ -239,6 +321,10 @@ export const SingleProductionUnitForm: React.FC<
                 const unitTotalArea = Array.from(
                   unit.allocations.values()
                 ).reduce((sum, area) => sum + area, 0);
+                const cultivarLabel =
+                  (unit.cultivarId &&
+                    cultivarCatalog?.getCultivarLabel(unit.cultivarId)) ||
+                  crop?.code;
 
                 return (
                   <AccordionItem
@@ -299,7 +385,7 @@ export const SingleProductionUnitForm: React.FC<
                             <span className="font-medium text-gray-700 block">
                               Varietà:
                             </span>
-                            {crop?.code}
+                            {cultivarLabel || "N/A"}
                           </div>
                           {unit.protectionStructure && (
                             <div>
@@ -477,8 +563,13 @@ export const SingleProductionUnitForm: React.FC<
             <Select
               value={formData.cropCode}
               onValueChange={(value) => {
-                setFormData({ ...formData, cropCode: value });
+                setFormData({
+                  ...formData,
+                  cropCode: value,
+                  cultivarId: null,
+                });
                 setCropSearchQuery("");
+                setCultivarSearchQuery("");
                 // Se l'utente non ha modificato manualmente il nome, resetta il flag
                 // così il nuovo nome auto-generato verrà applicato
                 if (!editingUnitId) {
@@ -543,6 +634,107 @@ export const SingleProductionUnitForm: React.FC<
               </div>
             )}
           </div>
+
+          {selectedCrop && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">
+                  Cultivar (fonte: date_raccolta.csv)
+                </label>
+                {formData.cultivarId && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setFormData({ ...formData, cultivarId: null });
+                      setCultivarSearchQuery("");
+                    }}
+                  >
+                    Rimuovi selezione
+                  </Button>
+                )}
+              </div>
+
+              {!cultivarCatalog && cultivarCatalogError && (
+                <p className="text-xs text-red-600">
+                  Dataset cultivar non disponibile. Puoi continuare senza
+                  selezionare la cultivar.
+                </p>
+              )}
+
+              {cultivarCatalog && (
+                <>
+                  <Select
+                    value={formData.cultivarId ?? NO_CULTIVAR_VALUE}
+                    onValueChange={(value) => {
+                      if (value === NO_CULTIVAR_VALUE) {
+                        setFormData({ ...formData, cultivarId: null });
+                        return;
+                      }
+                      setFormData({ ...formData, cultivarId: value });
+                      setCultivarSearchQuery("");
+                    }}
+                    disabled={availableCultivars.length === 0}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Seleziona una cultivar..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[360px]">
+                      <SelectItem value={NO_CULTIVAR_VALUE}>
+                        Nessuna cultivar
+                      </SelectItem>
+                      <div className="sticky top-0 z-10 bg-white border-b p-2">
+                        <div className="relative">
+                          <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                          <Input
+                            placeholder="Cerca cultivar..."
+                            value={cultivarSearchQuery}
+                            onChange={(e) =>
+                              setCultivarSearchQuery(e.target.value)
+                            }
+                            className="pl-8"
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      </div>
+                      <div className="max-h-[260px] overflow-y-auto">
+                        {availableCultivars.length === 0 ? (
+                          <div className="p-4 text-center text-sm text-gray-500">
+                            Nessuna cultivar disponibile per questa coltura
+                          </div>
+                        ) : (
+                          availableCultivars.map((cultivar) => (
+                            <SelectItem key={cultivar.id} value={cultivar.id}>
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {cultivar.cultivar}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {cultivar.species} • {cultivar.harvestLabel}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))
+                        )}
+                      </div>
+                    </SelectContent>
+                  </Select>
+                  {availableCultivars.length === 0 && (
+                    <p className="text-xs text-gray-500">
+                      Aggiorna il dataset per associare una cultivar specifica e
+                      ricevere la data di raccolta consigliata.
+                    </p>
+                  )}
+                  {selectedCultivarRecord && cultivarReferenceLabel && (
+                    <p className="text-xs text-blue-600">
+                      Data raccolta di riferimento: {cultivarReferenceLabel}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
           {/* Poi: Nome Unità Produttiva (auto-compilato) */}
           <div>
@@ -678,16 +870,46 @@ export const SingleProductionUnitForm: React.FC<
                       <Calendar
                         mode="single"
                         selected={effectiveHarvestingDate}
-                        onSelect={(date) =>
+                        onSelect={(date) => {
+                          setHarvestDateManuallyEdited(true);
                           setFormData({
                             ...formData,
                             customHarvestingDate: date || null,
-                          })
-                        }
+                          });
+                        }}
                         initialFocus
                       />
                     </PopoverContent>
                   </Popover>
+                  {recommendedHarvestDate && (
+                    <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+                      <span>
+                        Suggerita:{" "}
+                        {format(recommendedHarvestDate, "dd/MM/yyyy", {
+                          locale: it,
+                        })}
+                        {cultivarReferenceLabel
+                          ? ` (${cultivarReferenceLabel})`
+                          : ""}
+                      </span>
+                      {harvestDateManuallyEdited && (
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="px-0"
+                          onClick={() => {
+                            setHarvestDateManuallyEdited(false);
+                            setFormData((prev) => ({
+                              ...prev,
+                              customHarvestingDate: recommendedHarvestDate,
+                            }));
+                          }}
+                        >
+                          Usa suggerita
+                        </Button>
+                      )}
+                    </div>
+                  )}
                   {!formData.customHarvestingDate && defaultCropDates && (
                     <p className="text-xs text-gray-500 mt-1">
                       Default: {selectedCrop.harvestPeriod.minDate}

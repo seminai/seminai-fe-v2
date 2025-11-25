@@ -22,7 +22,6 @@ import {
 import { stocksApiService, type CreateStockPayload } from "@/api/stocks";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import authService from "@/utils/auth";
 
 class JobProductsFormatter {
   private readonly products: Product[];
@@ -289,11 +288,6 @@ export default function JobPage() {
     updated: Array<Record<string, unknown>>;
   }) => {
     try {
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-
       // Processa solo gli aggiornamenti (non ci dovrebbero essere creazioni)
       for (const row of payload.updated) {
         const jobId = row.id as string;
@@ -303,7 +297,7 @@ export default function JobPage() {
         const companyId = row._companyId as string;
 
         // 1. Aggiorna lo stato di verifica
-        await jobsApiService.updateJob(token, jobId, { isVerified });
+        await jobsApiService.updateJob(jobId, { isVerified });
 
         // 2. Gestisci le modifiche dello stock
         if (newStock !== originalStock) {
@@ -319,7 +313,7 @@ export default function JobPage() {
             jobId,
           };
 
-          await stocksApiService.create(token, stockPayload);
+          await stocksApiService.create(stockPayload);
         }
       }
 
@@ -343,16 +337,11 @@ export default function JobPage() {
     removed: Array<Record<string, unknown>>
   ) => {
     try {
-      const token = authService.getAuthToken();
-      if (!token) {
-        throw new Error("Unauthorized");
-      }
-
       const jobIds = removed.map((row) => row.id as string);
 
       console.log("Deleting jobs:", jobIds);
 
-      await jobsApiService.bulkDelete(token, { jobIds });
+      await jobsApiService.bulkDelete({ jobIds });
 
       toast.success("Operazioni eliminate", {
         description: `${jobIds.length} operazioni eliminate con successo`,

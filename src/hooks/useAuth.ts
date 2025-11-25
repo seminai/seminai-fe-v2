@@ -3,7 +3,6 @@ import {
   login as loginRequest,
   register as registerRequest,
   me as meRequest,
-  meWithBearer as meWithBearerRequest,
   wakeUp as wakeUpRequest,
   type LoginRequest,
   type RegisterRequest,
@@ -12,7 +11,6 @@ import {
   type MeResponse,
   UserRole,
 } from "@/api/auth";
-import authService from "@/utils/auth";
 
 // Re-export UserRole for convenience
 export { UserRole };
@@ -20,9 +18,7 @@ export { UserRole };
 export function useLogin() {
   return useMutation<LoginResponse, Error, LoginRequest>({
     mutationFn: async (payload: LoginRequest) => {
-      const result = await loginRequest(payload);
-      authService.setAuthToken(result.data.token);
-      return result;
+      return await loginRequest(payload);
     },
   });
 }
@@ -40,11 +36,6 @@ export function useMe() {
   return useQuery<MeResponse, Error>({
     queryKey: ["auth", "me"],
     queryFn: async () => {
-      const token = authService.getAuthToken();
-
-      if (token) {
-        return await meWithBearerRequest(token);
-      }
       return await meRequest();
     },
     retry: 0,
