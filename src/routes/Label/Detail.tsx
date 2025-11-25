@@ -142,7 +142,7 @@ export default function LabelDetailPage(): React.ReactElement {
   const columns = buildLabelColumns();
 
   return (
-    <div className="p-6">
+    <div className="p-6 h-screen overflow-hidden flex flex-col">
       <Breadcrumb className="mb-2">
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -238,8 +238,8 @@ export default function LabelDetailPage(): React.ReactElement {
           Impossibile caricare il dettaglio.
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="md:h-full md:overflow-auto">
+        <div className="grid md:grid-cols-2 gap-4 flex-1 min-h-0 overflow-hidden">
+          <div className="h-full min-h-0 overflow-y-auto pr-1">
             {view === "dati" ? (
               viewMode === "table" ? (
                 <EditableTable
@@ -724,7 +724,7 @@ export default function LabelDetailPage(): React.ReactElement {
               )
             ) : null}
           </div>
-          <div className="md:h-full md:overflow-auto">
+          <div className="h-full min-h-0 overflow-y-auto">
             {String(detail.sourceUrl || "").length > 0 ? (
               <div className="w-full h-full border rounded-lg overflow-hidden">
                 <iframe

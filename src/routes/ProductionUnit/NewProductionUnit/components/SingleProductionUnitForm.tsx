@@ -251,10 +251,7 @@ export const SingleProductionUnitForm: React.FC<
     }
     setFormData((prev) => {
       const current = prev.customHarvestingDate;
-      if (
-        current &&
-        current.getTime() === recommendedHarvestDate.getTime()
-      ) {
+      if (current && current.getTime() === recommendedHarvestDate.getTime()) {
         return prev;
       }
       return {
@@ -638,9 +635,7 @@ export const SingleProductionUnitForm: React.FC<
           {selectedCrop && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">
-                  Cultivar (fonte: date_raccolta.csv)
-                </label>
+                <label className="text-sm font-medium">Cultivar</label>
                 {formData.cultivarId && (
                   <Button
                     variant="ghost"
