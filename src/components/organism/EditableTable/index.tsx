@@ -95,6 +95,10 @@ export interface EditableTableProps {
   isBulkVerifyLoading?: boolean;
   className?: string;
   children?: React.ReactNode;
+  onSelectionChange?: (
+    selectedRows: Array<Record<string, unknown>>
+  ) => void;
+  showDeleteAction?: boolean;
 }
 
 export type FilterInputType = "text" | "number" | "date";
@@ -302,6 +306,7 @@ export class EditableTable extends React.Component<
     alwaysEdit: false,
     getRowId: (_row: Record<string, unknown>, index: number) => index,
     newRowDefaults: {},
+    showDeleteAction: true,
   };
 
   constructor(props: EditableTableProps) {
@@ -353,15 +358,18 @@ export class EditableTable extends React.Component<
         }
       }
 
-      this.setState({
-        rows: newRows,
-        touched: {},
-        selected: {},
-        isEditMode: false,
-        sortColumn: undefined,
-        sortDirection: "asc",
-        drawerRow: updatedDrawerRow,
-      });
+      this.setState(
+        {
+          rows: newRows,
+          touched: {},
+          selected: {},
+          isEditMode: false,
+          sortColumn: undefined,
+          sortDirection: "asc",
+          drawerRow: updatedDrawerRow,
+        },
+        this.notifySelectionChange
+      );
     }
   }
 
@@ -1182,20 +1190,26 @@ export class EditableTable extends React.Component<
   };
 
   private toggleRowSelection = (rowId: string, value: boolean): void => {
-    this.setState((prev) => ({
-      selected: { ...prev.selected, [rowId]: value },
-    }));
+    this.setState(
+      (prev) => ({
+        selected: { ...prev.selected, [rowId]: value },
+      }),
+      this.notifySelectionChange
+    );
   };
 
   private toggleSelectAll = (value: boolean): void => {
     const visibleRows = this.getFilteredRows();
-    this.setState((prev) => {
-      const updatedSelection = { ...prev.selected };
-      visibleRows.forEach((row) => {
-        updatedSelection[row.id] = value;
-      });
-      return { selected: updatedSelection };
-    });
+    this.setState(
+      (prev) => {
+        const updatedSelection = { ...prev.selected };
+        visibleRows.forEach((row) => {
+          updatedSelection[row.id] = value;
+        });
+        return { selected: updatedSelection };
+      },
+      this.notifySelectionChange
+    );
   };
 
   private toggleEditMode = (): void => {
@@ -1328,6 +1342,13 @@ export class EditableTable extends React.Component<
       .map((row) => ({ ...row.data }));
   }
 
+  private notifySelectionChange = (): void => {
+    if (!this.props.onSelectionChange) {
+      return;
+    }
+    this.props.onSelectionChange(this.buildSelectionPayload());
+  };
+
   private requestDeleteConfirmation = (): void => {
     if (this.selectedIds.length === 0) {
       return;
@@ -1355,14 +1376,17 @@ export class EditableTable extends React.Component<
     if (this.props.onDeleteSelected) {
       this.props.onDeleteSelected(removed.map((r) => r.data));
     }
-    this.setState((prev) => ({
-      rows: prev.rows.filter((r) => !ids.has(r.id)),
-      selected: {},
-      touched: Object.fromEntries(
-        Object.entries(prev.touched).filter(([rid]) => !ids.has(rid))
-      ),
-      confirmDialogOpen: false,
-    }));
+    this.setState(
+      (prev) => ({
+        rows: prev.rows.filter((r) => !ids.has(r.id)),
+        selected: {},
+        touched: Object.fromEntries(
+          Object.entries(prev.touched).filter(([rid]) => !ids.has(rid))
+        ),
+        confirmDialogOpen: false,
+      }),
+      this.notifySelectionChange
+    );
   };
 
   private openDetails = (row: InternalRow): void => {
@@ -2036,7 +2060,9 @@ export class EditableTable extends React.Component<
                 <span className="hidden sm:inline">{bulkVerifyLabel}</span>
               </Button>
             )}
-            {anySelected && !showEditActions && (
+            {anySelected &&
+              !showEditActions &&
+              this.props.showDeleteAction !== false && (
               <Button
                 onClick={this.requestDeleteConfirmation}
                 className={cn(

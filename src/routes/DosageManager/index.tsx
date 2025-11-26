@@ -1,12 +1,5 @@
-import type { KeyboardEvent, ReactElement } from "react";
-import {
-  Component,
-  useState,
-  useEffect,
-  useMemo,
-  useRef,
-  useCallback,
-} from "react";
+import type { ChangeEvent, ReactElement } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useCompanies } from "@/hooks/useCompanies";
 import { ImportProducts } from "./importProducts";
@@ -32,9 +25,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+
 import {
   Loader2,
   Calculator,
@@ -135,64 +129,156 @@ class DosagePlaceholderRenderer {
 
 const dosagePlaceholderRenderer = new DosagePlaceholderRenderer();
 
-interface ProductionUnitCardProps {
-  unit: ProductionUnit;
-  isSelected: boolean;
-  onToggle: (unitId: string) => void;
+interface ProductionUnitTableRow extends Record<string, unknown> {
+  id: string;
+  name: string;
+  cropName: string;
+  cropType: string;
+  variety: string;
+  protectionStructure?: string | null;
+  fieldsCount: number;
+  areaHa: number;
+  areaLabel: string;
+  companyName: string;
 }
 
-class ProductionUnitCard extends Component<ProductionUnitCardProps> {
-  private readonly handleClick = (): void => {
-    const { unit, onToggle } = this.props;
-    onToggle(unit.productionUnit.id);
-  };
+class ProductionUnitAreaFormatter {
+  private readonly areaHa: number;
 
-  private readonly handleKeyDown = (
-    event: KeyboardEvent<HTMLDivElement>
-  ): void => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      this.handleClick();
-    }
-  };
+  constructor(areaHa: number) {
+    this.areaHa = areaHa;
+  }
 
-  public render(): ReactElement {
-    const { unit, isSelected } = this.props;
+  public format(): string {
+    return `${this.areaHa.toLocaleString("it-IT", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })} ha`;
+  }
+}
+
+class ProductionUnitTableRowBuilder {
+  private readonly units: ProductionUnit[];
+
+  constructor(units: ProductionUnit[]) {
+    this.units = units;
+  }
+
+  public build(): ProductionUnitTableRow[] {
+    return this.units.map((unit) => {
+      const areaFormatter = new ProductionUnitAreaFormatter(
+        unit.productionUnit.areaHa
+      );
+
+      return {
+        id: unit.productionUnit.id,
+        name: unit.productionUnit.name,
+        cropName: unit.productionUnit.cropName,
+        cropType: unit.productionUnit.cropType,
+        variety: unit.productionUnit.variety,
+        protectionStructure: unit.productionUnit.protectionStructure,
+        fieldsCount: unit.fields.length,
+        areaHa: unit.productionUnit.areaHa,
+        areaLabel: areaFormatter.format(),
+        companyName: unit.companyName,
+      };
+    });
+  }
+}
+
+class ProductionUnitTableColumnsFactory {
+  public static create(): EditableColumn[] {
+    return [
+      {
+        id: "name",
+        title: "Unità Produttiva",
+        width: "280px",
+        render: (_value, row) =>
+          ProductionUnitTableColumnsFactory.renderUnitInfo(row),
+      },
+      {
+        id: "variety",
+        title: "Varietà",
+        width: "200px",
+        render: (_value, row) =>
+          ProductionUnitTableColumnsFactory.renderVariety(row),
+      },
+      {
+        id: "protectionStructure",
+        title: "Struttura di Protezione",
+        width: "220px",
+        render: (_value, row) =>
+          ProductionUnitTableColumnsFactory.renderStructure(row),
+      },
+      {
+        id: "areaHa",
+        title: "Superficie",
+        width: "160px",
+        render: (_value, row) =>
+          ProductionUnitTableColumnsFactory.renderArea(row),
+      },
+      {
+        id: "fieldsCount",
+        title: "Campi",
+        width: "120px",
+        render: (_value, row) =>
+          ProductionUnitTableColumnsFactory.renderFields(row),
+      },
+    ];
+  }
+
+  private static asRow(row: Record<string, unknown>): ProductionUnitTableRow {
+    return row as ProductionUnitTableRow;
+  }
+
+  private static renderUnitInfo(row: Record<string, unknown>): ReactElement {
+    const data = ProductionUnitTableColumnsFactory.asRow(row);
 
     return (
-      <div
-        role="button"
-        tabIndex={0}
-        aria-pressed={isSelected}
-        onClick={this.handleClick}
-        onKeyDown={this.handleKeyDown}
-        className={`group relative p-6 text-left rounded-xl border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 ${
-          isSelected
-            ? "border-neutral-900 bg-neutral-50 shadow-sm"
-            : "border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm"
-        }`}
-      >
-        <div className="flex items-start gap-4">
-          <Checkbox checked={isSelected} className="mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-neutral-900 truncate">
-              {unit.productionUnit.name}
-            </h3>
-            <p className="text-sm text-neutral-600 mt-1">
-              {unit.productionUnit.cropName}
-            </p>
-            <div className="flex items-center gap-3 mt-3">
-              <Badge variant="outline" className="text-xs">
-                {unit.productionUnit.variety}
-              </Badge>
-              <span className="text-xs text-neutral-500">
-                {unit.productionUnit.areaHa} ha
-              </span>
-            </div>
-          </div>
-        </div>
+      <div className="space-y-1">
+        <p className="font-medium text-neutral-900">{data.name}</p>
+        <p className="text-sm text-neutral-500">
+          {data.cropName} - {data.cropType}
+        </p>
+        <p className="text-xs text-neutral-500">{data.companyName}</p>
       </div>
     );
+  }
+
+  private static renderVariety(row: Record<string, unknown>): ReactElement {
+    const data = ProductionUnitTableColumnsFactory.asRow(row);
+
+    return (
+      <Badge variant="outline" className="text-xs">
+        {data.variety || "N/D"}
+      </Badge>
+    );
+  }
+
+  private static renderStructure(row: Record<string, unknown>): ReactElement {
+    const data = ProductionUnitTableColumnsFactory.asRow(row);
+
+    return (
+      <span className="text-sm text-neutral-700">
+        {data.protectionStructure || "-"}
+      </span>
+    );
+  }
+
+  private static renderArea(row: Record<string, unknown>): ReactElement {
+    const data = ProductionUnitTableColumnsFactory.asRow(row);
+
+    return (
+      <Badge variant="secondary" className="text-xs">
+        {data.areaLabel}
+      </Badge>
+    );
+  }
+
+  private static renderFields(row: Record<string, unknown>): ReactElement {
+    const data = ProductionUnitTableColumnsFactory.asRow(row);
+
+    return <span className="text-sm text-neutral-700">{data.fieldsCount}</span>;
   }
 }
 
@@ -215,6 +301,22 @@ export default function DosageManager() {
   const [selectedJob, setSelectedJob] = useState<DosageJob | null>(null);
   const [showJobsPanel, setShowJobsPanel] = useState(false);
   const [isJobDetailsLoading, setIsJobDetailsLoading] = useState(false);
+  const isHistoryPage = currentPage === "history";
+
+  const handleShowHistory = useCallback(() => {
+    setCurrentPage("history");
+  }, []);
+
+  const handleShowManage = useCallback(() => {
+    setCurrentPage("manage");
+  }, []);
+
+  const historyButtonLabel = isHistoryPage
+    ? "Torna alla gestione"
+    : "Storico operazioni";
+  const historyButtonAction = isHistoryPage
+    ? handleShowManage
+    : handleShowHistory;
 
   // Colonne per la tabella editabile dei prodotti
   const productColumns: EditableColumn[] = [
@@ -492,21 +594,55 @@ export default function DosageManager() {
     );
   }, [filteredUnits, selectedUnitIds]);
 
-  const handleToggleUnit = (unitId: string) => {
-    setSelectedUnitIds((prev) =>
-      prev.includes(unitId)
-        ? prev.filter((id) => id !== unitId)
-        : [...prev, unitId]
-    );
-  };
+  const productionUnitTableColumns = useMemo(() => {
+    return ProductionUnitTableColumnsFactory.create();
+  }, []);
 
-  const handleSelectAll = () => {
-    if (selectedUnitIds.length === filteredUnits.length) {
-      setSelectedUnitIds([]);
-    } else {
-      setSelectedUnitIds(filteredUnits.map((u) => u.productionUnit.id));
+  const productionUnitTableRows = useMemo(() => {
+    const builder = new ProductionUnitTableRowBuilder(filteredUnits);
+    return builder.build();
+  }, [filteredUnits]);
+
+  const handleUnitSelectionChange = useCallback(
+    (rows: Array<Record<string, unknown>>) => {
+      const ids = rows
+        .map((row) => {
+          const data = row as Partial<ProductionUnitTableRow>;
+          return data.id;
+        })
+        .filter((id): id is string => Boolean(id));
+      setSelectedUnitIds(ids);
+    },
+    []
+  );
+
+  const selectedCompanyName = useMemo(() => {
+    if (!selectedCompanyId) {
+      return null;
     }
-  };
+    const company = companies.find((item) => item.id === selectedCompanyId);
+    return company?.name ?? null;
+  }, [companies, selectedCompanyId]);
+
+  const selectedUnitsCount = selectedUnitIds.length;
+  const selectedProductsCount = products.length;
+  const isCalculateDisabled =
+    isSubmitting || selectedProductsCount === 0 || selectedUnitsCount === 0;
+
+  const selectionSummary = useMemo(() => {
+    const unitLabel =
+      selectedUnitsCount === 1
+        ? "1 unità produttiva"
+        : `${selectedUnitsCount} unità produttive`;
+    const productLabel =
+      selectedProductsCount === 1
+        ? "1 prodotto"
+        : `${selectedProductsCount} prodotti`;
+    if (selectedCompanyName) {
+      return `Selezionati per ${selectedCompanyName}: ${unitLabel} e ${productLabel}`;
+    }
+    return `Selezionati: ${unitLabel} e ${productLabel}`;
+  }, [selectedCompanyName, selectedProductsCount, selectedUnitsCount]);
 
   const handleShowJobDetails = useCallback(
     async (job: DosageJob) => {
@@ -634,30 +770,6 @@ export default function DosageManager() {
         title="Gestione Dosaggi"
         totalItems={totalUnits}
         filteredItems={filteredUnits.length}
-        centerElement={
-          <div className="inline-flex p-1 bg-gray-100 rounded-lg gap-1 w-full md:w-auto">
-            <button
-              onClick={() => setCurrentPage("manage")}
-              className={`flex-1 md:flex-none px-4 md:px-6 py-2 rounded-md text-sm font-medium transition-all ${
-                currentPage === "manage"
-                  ? "bg-white shadow-sm text-gray-900"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Gestione
-            </button>
-            <button
-              onClick={() => setCurrentPage("history")}
-              className={`flex-1 md:flex-none px-4 md:px-6 py-2 rounded-md text-sm font-medium transition-all ${
-                currentPage === "history"
-                  ? "bg-white shadow-sm text-gray-900"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Storico
-            </button>
-          </div>
-        }
         rightElement={
           activeJobs.length > 0 && (
             <Button
@@ -670,7 +782,16 @@ export default function DosageManager() {
             </Button>
           )
         }
-      />
+      >
+        <Button
+          variant="ghost"
+          onClick={historyButtonAction}
+          className="gap-2 text-neutral-500 hover:text-neutral-700"
+        >
+          <Clock className="h-4 w-4" />
+          <span>{historyButtonLabel}</span>
+        </Button>
+      </PageHeader>
 
       <div className="flex-1 overflow-auto px-4 md:px-6 pb-6">
         {currentPage === "manage" ? (
@@ -681,28 +802,6 @@ export default function DosageManager() {
                 <h2 className="text-lg md:text-xl font-medium text-neutral-900">
                   Seleziona Azienda
                 </h2>
-                <Button
-                  size="lg"
-                  onClick={handleCalculateDosages}
-                  disabled={
-                    isSubmitting ||
-                    products.length === 0 ||
-                    selectedUnitIds.length === 0
-                  }
-                  className="gap-2 w-full md:w-auto md:self-end"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Calcolo...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Calculator className="h-4 w-4" />
-                      <span>Calcola Dosaggi</span>
-                    </>
-                  )}
-                </Button>
               </div>
               <Select
                 value={selectedCompanyId}
@@ -728,10 +827,10 @@ export default function DosageManager() {
             {/* Units Section */}
             {selectedCompanyId && (
               <div className="space-y-4 md:space-y-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <h2 className="text-lg md:text-xl font-medium text-neutral-900">
-                      Unità Produttive
+                      Seleziona Unità Produttive
                     </h2>
                     {selectedUnitIds.length > 0 && (
                       <p className="text-sm text-neutral-500 mt-1">
@@ -739,18 +838,18 @@ export default function DosageManager() {
                       </p>
                     )}
                   </div>
-                  {filteredUnits.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSelectAll}
-                      className="text-neutral-600 self-start md:self-auto"
-                    >
-                      {selectedUnitIds.length === filteredUnits.length
-                        ? "Deseleziona tutto"
-                        : "Seleziona tutto"}
-                    </Button>
-                  )}
+                  <div className="w-full lg:w-auto">
+                    <Input
+                      value={searchQuery}
+                      onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                        setSearchQuery(event.target.value)
+                      }
+                      placeholder="Cerca per nome, coltura o varietà"
+                      aria-label="Cerca unità produttive"
+                      disabled={loadingUnits}
+                      className="bg-white"
+                    />
+                  </div>
                 </div>
 
                 {loadingUnits ? (
@@ -764,18 +863,16 @@ export default function DosageManager() {
                       : "Nessuna unità disponibile per questa azienda"}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredUnits.map((unit) => (
-                      <ProductionUnitCard
-                        key={unit.productionUnit.id}
-                        unit={unit}
-                        isSelected={selectedUnitIds.includes(
-                          unit.productionUnit.id
-                        )}
-                        onToggle={handleToggleUnit}
-                      />
-                    ))}
-                  </div>
+                  <EditableTable
+                    columns={productionUnitTableColumns}
+                    rows={productionUnitTableRows}
+                    isModify={false}
+                    addButton={false}
+                    onSelectionChange={handleUnitSelectionChange}
+                    showDeleteAction={false}
+                    getRowId={(row) => (row as ProductionUnitTableRow).id}
+                    className="bg-white rounded-2xl border border-neutral-200"
+                  />
                 )}
               </div>
             )}
@@ -784,7 +881,7 @@ export default function DosageManager() {
             <div className="space-y-4 md:space-y-6">
               <div>
                 <h2 className="text-lg md:text-xl font-medium text-neutral-900">
-                  Prodotti Fitosanitari
+                  Seleziona prodotti fitosanitari
                 </h2>
                 {products.length > 0 && (
                   <p className="text-sm text-neutral-500 mt-1">
@@ -976,6 +1073,39 @@ export default function DosageManager() {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="flex-shrink-0 border-t bg-white px-4 md:px-6 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.08)]">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm text-neutral-500">
+              {selectedCompanyName
+                ? `Azienda selezionata: ${selectedCompanyName}`
+                : "Nessuna azienda selezionata"}
+            </p>
+            <p className="text-base font-medium text-neutral-900">
+              {selectionSummary}
+            </p>
+          </div>
+          <Button
+            size="lg"
+            onClick={handleCalculateDosages}
+            disabled={isCalculateDisabled}
+            className="gap-2 w-full md:w-auto min-w-48 md:self-end"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Calcolo...</span>
+              </>
+            ) : (
+              <>
+                <Calculator className="h-4 w-4" />
+                <span>Calcola Dosaggi</span>
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       <JobDetails
