@@ -1,3 +1,5 @@
+import { authenticatedHttpClient } from "./http";
+
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 export enum UserRole {
@@ -112,9 +114,8 @@ export async function register(
 }
 
 export async function me(baseUrl: string = BASE_URL): Promise<MeResponse> {
-  const response = await fetch(`${baseUrl}/auth/me`, {
+  const response = await authenticatedHttpClient.request(`${baseUrl}/auth/me`, {
     method: "GET",
-    credentials: "include", // Il server legge il cookie httpOnly
   });
 
   if (!response.ok) {
