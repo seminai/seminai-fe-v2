@@ -1,13 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { jobsApiService, type JobWithRelations } from "@/api/jobs";
 
-export function useJobs(companyName?: string) {
+export function useJobs() {
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["jobs", companyName],
+    queryKey: ["jobs"],
     queryFn: async () => {
-      console.log("Fetching jobs with companyName:", companyName);
-      const response = await jobsApiService.getJobs(companyName);
-      console.log("Jobs response:", response);
+      const response = await jobsApiService.getJobs();
       return response.data.jobs;
     },
     enabled: true,
