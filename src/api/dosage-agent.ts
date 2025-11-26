@@ -7,6 +7,7 @@ export type DosageProduct = {
   registrationNumber: string;
   quantity: number;
   quantityUnitOfMeasure: string;
+  loadWarehouse: boolean;
   supplierName?: string;
   supplierVat?: string;
 };
