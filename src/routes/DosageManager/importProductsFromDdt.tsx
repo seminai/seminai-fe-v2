@@ -51,9 +51,7 @@ type DdtImportOutcome = {
 const MAX_IMPORT_FILES = 10;
 
 class DdtProductImportManager {
-  constructor(
-    private readonly service: ProductsImporterService
-  ) {}
+  constructor(private readonly service: ProductsImporterService) {}
 
   public async import(files: File[]): Promise<DdtImportOutcome> {
     const sanitizedFiles = this.sanitizeFiles(files);
@@ -128,6 +126,7 @@ class DdtProductImportManager {
           registrationNumber,
           quantity,
           quantityUnitOfMeasure: unit,
+          loadWarehouse: true,
           supplierName,
           supplierVat,
         });
@@ -159,6 +158,7 @@ class DdtProductImportManager {
       quantityUnitOfMeasure: product.quantityUnitOfMeasure,
       supplierName: product.supplierName || "",
       supplierVat: product.supplierVat || "",
+      loadWarehouse: product.loadWarehouse,
     }));
   }
 

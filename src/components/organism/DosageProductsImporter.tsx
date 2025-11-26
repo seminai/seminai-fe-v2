@@ -81,6 +81,7 @@ export function DosageProductsImporter({
                 registrationNumber: row["numero di registrazione"].trim(),
                 quantity,
                 quantityUnitOfMeasure: row["unità di misura"].trim(),
+                loadWarehouse: true,
                 supplierName: row["nome fornitore"]?.trim() || undefined,
                 supplierVat: row["partita iva"]?.trim() || undefined,
               };
