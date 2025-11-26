@@ -4,6 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Drawer,
   DrawerContent,
   DrawerHeader,
@@ -13,7 +21,7 @@ import {
 import { IoOpenOutline, IoDownloadOutline } from "react-icons/io5";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import Papa from "papaparse";
-import { Plus } from "lucide-react";
+import { CheckCircle2, Loader2, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import {
@@ -80,6 +88,11 @@ export interface EditableTableProps {
   detailsRenderer?: (row: Record<string, unknown>) => React.ReactNode;
   detailsTitle?: string;
   onOpenDetails?: (row: Record<string, unknown>) => void; // Callback per gestire l'apertura dei dettagli
+  onBulkVerifySelected?: (
+    selectedRows: Array<Record<string, unknown>>
+  ) => void;
+  bulkVerifyButtonLabel?: string;
+  isBulkVerifyLoading?: boolean;
   className?: string;
   children?: React.ReactNode;
 }
@@ -274,6 +287,7 @@ interface EditableTableState {
   activeFilters: TableFilterRule[];
   filterDraft: FilterDraft;
   systemDateRanges: Record<string, DateRange | undefined>;
+  confirmDialogOpen: boolean;
 }
 
 export class EditableTable extends React.Component<
@@ -314,6 +328,7 @@ export class EditableTable extends React.Component<
       activeFilters: [],
       filterDraft: this.createEmptyFilterDraft(),
       systemDateRanges: this.createInitialSystemRanges(),
+      confirmDialogOpen: false,
     };
   }
 
@@ -1296,22 +1311,46 @@ export class EditableTable extends React.Component<
       .map(([k]) => k);
   }
 
-  private confirmDeletion(): boolean {
+  private get deletionTargetLabel(): string {
     const selectionCount = this.selectedIds.length;
     if (selectionCount === 0) {
-      return false;
+      return "";
     }
-    const entityLabel =
-      selectionCount === 1
-        ? "questo elemento selezionato"
-        : `${selectionCount} elementi selezionati`;
-    return window.confirm(`Confermi di voler eliminare ${entityLabel}?`);
+    return selectionCount === 1
+      ? "questo elemento selezionato"
+      : `${selectionCount} elementi selezionati`;
   }
+
+  private buildSelectionPayload(): Array<Record<string, unknown>> {
+    const selectedIdsSet = new Set(this.selectedIds);
+    return this.state.rows
+      .filter((row) => selectedIdsSet.has(row.id))
+      .map((row) => ({ ...row.data }));
+  }
+
+  private requestDeleteConfirmation = (): void => {
+    if (this.selectedIds.length === 0) {
+      return;
+    }
+    this.setState({ confirmDialogOpen: true });
+  };
+
+  private closeDeleteDialog = (): void => {
+    this.setState({ confirmDialogOpen: false });
+  };
+
+  private handleDeleteDialogOpenChange = (open: boolean): void => {
+    if (!open) {
+      this.closeDeleteDialog();
+    }
+  };
 
   private handleDelete = (): void => {
     const ids = new Set(this.selectedIds);
-    if (ids.size === 0) return;
-    if (!this.confirmDeletion()) return;
+    if (ids.size === 0) {
+      this.closeDeleteDialog();
+      return;
+    }
     const removed: InternalRow[] = this.state.rows.filter((r) => ids.has(r.id));
     if (this.props.onDeleteSelected) {
       this.props.onDeleteSelected(removed.map((r) => r.data));
@@ -1322,6 +1361,7 @@ export class EditableTable extends React.Component<
       touched: Object.fromEntries(
         Object.entries(prev.touched).filter(([rid]) => !ids.has(rid))
       ),
+      confirmDialogOpen: false,
     }));
   };
 
@@ -1838,6 +1878,38 @@ export class EditableTable extends React.Component<
     );
   }
 
+  private renderDeleteConfirmationDialog(): React.ReactNode {
+    const targetLabel =
+      this.deletionTargetLabel || "gli elementi selezionati";
+    return (
+      <Dialog
+        open={this.state.confirmDialogOpen}
+        onOpenChange={this.handleDeleteDialogOpenChange}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Conferma eliminazione</DialogTitle>
+            <DialogDescription>
+              {`Confermi di voler eliminare ${targetLabel}?`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={this.closeDeleteDialog}>
+              Annulla
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={this.handleDelete}
+              aria-label="Conferma eliminazione"
+            >
+              Elimina
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   render(): React.ReactNode {
     if (this.props.isVertical) {
       return this.renderVertical();
@@ -1847,6 +1919,7 @@ export class EditableTable extends React.Component<
     const showEditActions = this.shouldShowEditActions;
     const hasErrors = this.hasErrors;
     const anySelected = this.selectedIds.length > 0;
+    const selectionPayload = this.buildSelectionPayload();
     const allSelected =
       rows.length > 0 &&
       rows.every((row) => Boolean(this.state.selected[row.id]));
@@ -1856,12 +1929,19 @@ export class EditableTable extends React.Component<
     const hasLast = Boolean(this.props.lastComponent);
     const { left: leftActions, right: rightActions } = this.getActionChildren();
     const showAddButton = Boolean(this.props.addButton) && !showEditActions;
+    const shouldRenderBulkVerifyButton =
+      anySelected &&
+      !showEditActions &&
+      Boolean(this.props.onBulkVerifySelected);
+    const bulkVerifyLabel =
+      this.props.bulkVerifyButtonLabel ?? "Verify selected";
 
     return (
       <div
         data-slot="table-wrapper"
         className={cn("relative w-full rounded-lg bg-background", className)}
       >
+        {this.renderDeleteConfirmationDialog()}
         {/* Top action bar */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-agri-green-50 bg-agri-green-50 rounded-t-lg sticky top-0 left-0 right-0 z-10">
           <div className="flex flex-wrap items-center gap-2">
@@ -1935,9 +2015,30 @@ export class EditableTable extends React.Component<
                 <span className="hidden sm:inline">Aggiungi</span>
               </Button>
             )}
+            {shouldRenderBulkVerifyButton && (
+              <Button
+                onClick={() =>
+                  this.props.onBulkVerifySelected?.(selectionPayload)
+                }
+                className={cn(
+                  "border border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                )}
+                variant="ghost"
+                size="sm"
+                aria-label="Verify selected rows"
+                disabled={this.props.isBulkVerifyLoading}
+              >
+                {this.props.isBulkVerifyLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin sm:mr-2" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4 sm:mr-2" />
+                )}
+                <span className="hidden sm:inline">{bulkVerifyLabel}</span>
+              </Button>
+            )}
             {anySelected && !showEditActions && (
               <Button
-                onClick={this.handleDelete}
+                onClick={this.requestDeleteConfirmation}
                 className={cn(
                   "border border-red-200 text-red-400 hover:bg-red-50"
                 )}
