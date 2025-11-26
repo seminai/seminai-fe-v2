@@ -139,6 +139,7 @@ export function ImportProducts({
               registrationNumber: row["numero di registrazione"].trim(),
               quantity,
               quantityUnitOfMeasure: row["unità di misura"].trim(),
+              loadWarehouse: true,
               supplierName: row["nome fornitore"]?.trim() || undefined,
               supplierVat: row["partita iva"]?.trim() || undefined,
             });
@@ -174,6 +175,7 @@ export function ImportProducts({
               quantityUnitOfMeasure: product.quantityUnitOfMeasure,
               supplierName: product.supplierName || "",
               supplierVat: product.supplierVat || "",
+              loadWarehouse: product.loadWarehouse,
             })
           );
 
