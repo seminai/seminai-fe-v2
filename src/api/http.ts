@@ -15,12 +15,20 @@ export class AuthenticatedHttpClient {
     input: RequestInfo | URL,
     options: HttpRequestOptions = {}
   ): Promise<Response> {
+    const authToken = authService.getAuthToken();
+
+    const headers: HttpHeaders = {
+      ...(options.headers ?? {}),
+    };
+
+    if (authToken && !headers.Authorization) {
+      headers.Authorization = `Bearer ${authToken}`;
+    }
+
     const response = await fetch(input, {
       ...options,
       credentials: "include",
-      headers: {
-        ...(options.headers ?? {}),
-      },
+      headers,
     });
 
     if (response.status === 401) {

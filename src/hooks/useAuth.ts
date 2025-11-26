@@ -11,6 +11,7 @@ import {
   type MeResponse,
   UserRole,
 } from "@/api/auth";
+import authService from "@/utils/auth";
 
 // Re-export UserRole for convenience
 export { UserRole };
@@ -18,7 +19,9 @@ export { UserRole };
 export function useLogin() {
   return useMutation<LoginResponse, Error, LoginRequest>({
     mutationFn: async (payload: LoginRequest) => {
-      return await loginRequest(payload);
+      const result = await loginRequest(payload);
+      authService.setAuthToken(result.data.token);
+      return result;
     },
   });
 }

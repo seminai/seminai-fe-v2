@@ -315,6 +315,7 @@ class WarehouseProductsMapper {
           registrationNumber: product.sku || product.id,
           quantity: netQuantity > 0 ? netQuantity : 0,
           quantityUnitOfMeasure: calculator.getUnitOfMeasure(),
+          loadWarehouse: false,
           supplierName: product.warehouse.company.name,
         };
       })
@@ -422,6 +423,8 @@ export default function DosageManager() {
         registrationNumber: String(row.registrationNumber || ""),
         quantity: Number(row.quantity) || 0,
         quantityUnitOfMeasure: String(row.quantityUnitOfMeasure || ""),
+        loadWarehouse:
+          typeof row.loadWarehouse === "boolean" ? row.loadWarehouse : true,
         supplierName: row.supplierName ? String(row.supplierName) : undefined,
         supplierVat: row.supplierVat ? String(row.supplierVat) : undefined,
       }));
@@ -507,6 +510,7 @@ export default function DosageManager() {
       quantityUnitOfMeasure: product.quantityUnitOfMeasure,
       supplierName: product.supplierName || "",
       supplierVat: product.supplierVat || "",
+      loadWarehouse: product.loadWarehouse,
     }));
   }, [products]);
 
