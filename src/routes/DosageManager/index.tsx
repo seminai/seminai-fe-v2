@@ -2,6 +2,7 @@ import type { ChangeEvent, ReactElement } from "react";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useCompanies } from "@/hooks/useCompanies";
+import { useProducts } from "@/hooks/useProducts";
 import { ImportProducts } from "./importProducts";
 import { ImportProductsFromDdt } from "./importProductsFromDdt";
 import { FitosanitariProductSearch } from "./FitosanitariProductSearch";
@@ -36,6 +37,7 @@ import {
   Clock,
   Activity,
   Apple,
+  Package,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -44,6 +46,7 @@ import {
   type DosageUnitOfProduction,
 } from "@/api/dosage-agent";
 import type { ProductionUnit } from "@/api/production-unit";
+import type { Product } from "@/api/products";
 import {
   dosageJobsIndexDBManager,
   type DosageJob,
@@ -282,9 +285,56 @@ class ProductionUnitTableColumnsFactory {
   }
 }
 
+class WarehouseProductStockCalculator {
+  private readonly stocks: Product["stocks"];
+
+  constructor(stocks: Product["stocks"]) {
+    this.stocks = stocks;
+  }
+
+  public calculateNetQuantity(): number {
+    return this.stocks.reduce((total, stock) => {
+      const quantity = stock.quantity ?? 0;
+      return stock.type === "IN" ? total + quantity : total - quantity;
+    }, 0);
+  }
+
+  public getUnitOfMeasure(): string {
+    return this.stocks[0]?.unitOfMeasureQuantity || "kg";
+  }
+}
+
+class WarehouseProductsMapper {
+  public static toDosageProducts(products: Product[]): DosageProduct[] {
+    return products
+      .map((product) => {
+        const calculator = new WarehouseProductStockCalculator(product.stocks);
+        const netQuantity = calculator.calculateNetQuantity();
+        return {
+          productName: product.name,
+          registrationNumber: product.sku || product.id,
+          quantity: netQuantity > 0 ? netQuantity : 0,
+          quantityUnitOfMeasure: calculator.getUnitOfMeasure(),
+          supplierName: product.warehouse.company.name,
+        };
+      })
+      .filter((product) => product.quantity > 0);
+  }
+}
+
+class DosageProductKeyBuilder {
+  public static build(product: DosageProduct): string {
+    return `${product.productName}-${product.registrationNumber}`;
+  }
+}
+
 export default function DosageManager() {
   const { productionUnits, isLoading: loadingUnits } = useProductionUnit();
   const { companies } = useCompanies();
+  const {
+    products: warehouseInventory,
+    isLoading: isWarehouseProductsLoading,
+  } = useProducts();
 
   const [currentPage, setCurrentPage] = useState<"manage" | "history">(
     "manage"
@@ -616,6 +666,58 @@ export default function DosageManager() {
     []
   );
 
+  const handleImportFromWarehouse = useCallback(() => {
+    if (isWarehouseProductsLoading) {
+      return;
+    }
+
+    if (!warehouseInventory || warehouseInventory.length === 0) {
+      toast.info("Nessun prodotto disponibile in magazzino", {
+        description: "Aggiungi prodotti in magazzino prima di importarli.",
+      });
+      return;
+    }
+
+    const mappedProducts =
+      WarehouseProductsMapper.toDosageProducts(warehouseInventory);
+
+    if (mappedProducts.length === 0) {
+      toast.info("Nessun prodotto importabile", {
+        description: "I prodotti disponibili non hanno quantità valide.",
+      });
+      return;
+    }
+
+    let importedCount = 0;
+    setProducts((prev) => {
+      const existingKeys = new Set(
+        prev.map((product) => DosageProductKeyBuilder.build(product))
+      );
+      const uniqueProducts = mappedProducts.filter((product) => {
+        const key = DosageProductKeyBuilder.build(product);
+        return !existingKeys.has(key);
+      });
+
+      importedCount = uniqueProducts.length;
+      if (uniqueProducts.length === 0) {
+        return prev;
+      }
+      return [...prev, ...uniqueProducts];
+    });
+
+    if (importedCount === 0) {
+      toast.info("Tutti i prodotti di magazzino sono già presenti", {
+        description:
+          "Rimuovi quelli non necessari oppure aggiorna il magazzino.",
+      });
+      return;
+    }
+
+    toast.success("Prodotti importati dal magazzino", {
+      description: `${importedCount} prodotti aggiunti alla tabella`,
+    });
+  }, [isWarehouseProductsLoading, warehouseInventory]);
+
   const selectedCompanyName = useMemo(() => {
     if (!selectedCompanyId) {
       return null;
@@ -923,6 +1025,24 @@ export default function DosageManager() {
                       onAddRows={handleAddRows}
                       onProductsChange={setProducts}
                     />
+                    <Button
+                      variant="outline"
+                      className="gap-2"
+                      onClick={handleImportFromWarehouse}
+                      disabled={isWarehouseProductsLoading}
+                    >
+                      {isWarehouseProductsLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Importazione...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Package className="h-4 w-4" />
+                          <span>Importa da magazzino</span>
+                        </>
+                      )}
+                    </Button>
                   </div>
                   <FitosanitariProductSearch
                     onProductSelected={handleRegistryProductSelected}
