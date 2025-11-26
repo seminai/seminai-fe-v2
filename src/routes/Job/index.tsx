@@ -1,18 +1,11 @@
 import { useState, useMemo } from "react";
 import { useJobs } from "@/hooks/useJobs";
-import { useCompanies } from "@/hooks/useCompanies";
 import { PageHeader } from "@/components/organism/Header";
 import {
   EditableTable,
   type EditableColumn,
 } from "@/components/organism/EditableTable";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { toast } from "sonner";
 import {
   jobsApiService,
@@ -122,24 +115,10 @@ class JobBulkVerifier {
 }
 
 export default function JobPage() {
-  const { companies } = useCompanies();
-  const [selectedCompanyName, setSelectedCompanyName] = useState<string>("");
   const [isBulkVerifying, setIsBulkVerifying] = useState<boolean>(false);
 
-  const { jobs, isLoading, error, refetch } = useJobs(
-    selectedCompanyName || undefined
-  );
-  const bulkVerifier = useMemo(
-    () => new JobBulkVerifier(jobsApiService),
-    []
-  );
-
-  // Debug logging
-  console.log("JobPage - companies:", companies);
-  console.log("JobPage - selectedCompanyName:", selectedCompanyName);
-  console.log("JobPage - jobs:", jobs);
-  console.log("JobPage - isLoading:", isLoading);
-  console.log("JobPage - error:", error);
+  const { jobs, isLoading, error, refetch } = useJobs();
+  const bulkVerifier = useMemo(() => new JobBulkVerifier(jobsApiService), []);
 
   // Converte i jobs in formato per la tabella
   const jobsAsRows = useMemo(() => {
@@ -291,32 +270,6 @@ export default function JobPage() {
     },
   ];
 
-  const companyFilter = (
-    <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 w-full">
-      <span className="text-sm font-medium text-neutral-900 whitespace-nowrap">
-        Filtra per Azienda
-      </span>
-      <Select
-        value={selectedCompanyName}
-        onValueChange={(value) => {
-          setSelectedCompanyName(value === "all" ? "" : value);
-        }}
-      >
-        <SelectTrigger className="w-full md:w-64 h-12 bg-neutral-50 border-neutral-200">
-          <SelectValue placeholder="Tutte le aziende" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Tutte le aziende</SelectItem>
-          {companies.map((company) => (
-            <SelectItem key={company.id} value={company.name}>
-              {company.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-
   // Gestisce il salvataggio delle modifiche
   const handleSave = async (payload: {
     created: Array<Record<string, unknown>>;
@@ -423,7 +376,7 @@ export default function JobPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title="Operazioni" filterElement={companyFilter} />
+      <PageHeader title="Operazioni" />
 
       <div className="flex-1 overflow-auto px-6 pb-6">
         <div className="mx-auto space-y-6">
@@ -447,11 +400,6 @@ export default function JobPage() {
             ) : jobs.length === 0 ? (
               <div className="text-center py-16 text-neutral-500">
                 <p>Nessuna operazione trovata</p>
-                {selectedCompanyName && (
-                  <p className="text-sm mt-2">
-                    Filtrato per: {selectedCompanyName}
-                  </p>
-                )}
               </div>
             ) : (
               <EditableTable
