@@ -88,16 +88,12 @@ export interface EditableTableProps {
   detailsRenderer?: (row: Record<string, unknown>) => React.ReactNode;
   detailsTitle?: string;
   onOpenDetails?: (row: Record<string, unknown>) => void; // Callback per gestire l'apertura dei dettagli
-  onBulkVerifySelected?: (
-    selectedRows: Array<Record<string, unknown>>
-  ) => void;
+  onBulkVerifySelected?: (selectedRows: Array<Record<string, unknown>>) => void;
   bulkVerifyButtonLabel?: string;
   isBulkVerifyLoading?: boolean;
   className?: string;
   children?: React.ReactNode;
-  onSelectionChange?: (
-    selectedRows: Array<Record<string, unknown>>
-  ) => void;
+  onSelectionChange?: (selectedRows: Array<Record<string, unknown>>) => void;
   showDeleteAction?: boolean;
 }
 
@@ -1200,16 +1196,13 @@ export class EditableTable extends React.Component<
 
   private toggleSelectAll = (value: boolean): void => {
     const visibleRows = this.getFilteredRows();
-    this.setState(
-      (prev) => {
-        const updatedSelection = { ...prev.selected };
-        visibleRows.forEach((row) => {
-          updatedSelection[row.id] = value;
-        });
-        return { selected: updatedSelection };
-      },
-      this.notifySelectionChange
-    );
+    this.setState((prev) => {
+      const updatedSelection = { ...prev.selected };
+      visibleRows.forEach((row) => {
+        updatedSelection[row.id] = value;
+      });
+      return { selected: updatedSelection };
+    }, this.notifySelectionChange);
   };
 
   private toggleEditMode = (): void => {
@@ -1903,14 +1896,13 @@ export class EditableTable extends React.Component<
   }
 
   private renderDeleteConfirmationDialog(): React.ReactNode {
-    const targetLabel =
-      this.deletionTargetLabel || "gli elementi selezionati";
+    const targetLabel = this.deletionTargetLabel || "gli elementi selezionati";
     return (
       <Dialog
         open={this.state.confirmDialogOpen}
         onOpenChange={this.handleDeleteDialogOpenChange}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
             <DialogTitle>Conferma eliminazione</DialogTitle>
             <DialogDescription>
@@ -2063,31 +2055,31 @@ export class EditableTable extends React.Component<
             {anySelected &&
               !showEditActions &&
               this.props.showDeleteAction !== false && (
-              <Button
-                onClick={this.requestDeleteConfirmation}
-                className={cn(
-                  "border border-red-200 text-red-400 hover:bg-red-50"
-                )}
-                variant="ghost"
-                size="sm"
-                aria-label="Elimina"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="h-4 w-4 sm:mr-2"
+                <Button
+                  onClick={this.requestDeleteConfirmation}
+                  className={cn(
+                    "border border-red-200 text-red-400 hover:bg-red-50"
+                  )}
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Elimina"
                 >
-                  <path d="M3 6h18" />
-                  <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                  <path d="M10 11v6M14 11v6" />
-                </svg>
-                <span className="hidden sm:inline">Elimina</span>
-              </Button>
-            )}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="h-4 w-4 sm:mr-2"
+                  >
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                  </svg>
+                  <span className="hidden sm:inline">Elimina</span>
+                </Button>
+              )}
             {showEditActions && (
               <>
                 <Button
