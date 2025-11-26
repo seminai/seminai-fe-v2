@@ -91,12 +91,47 @@ class JobTableRowBuilder {
   }
 }
 
+type EditableTableRowData = Record<string, unknown>;
+
+class JobBulkVerifier {
+  private readonly jobService: typeof jobsApiService;
+
+  constructor(jobService: typeof jobsApiService) {
+    this.jobService = jobService;
+  }
+
+  public async verify(rows: EditableTableRowData[]): Promise<number> {
+    const actionableRows = rows.filter((row) => this.hasValidIdentifier(row));
+
+    if (actionableRows.length === 0) {
+      return 0;
+    }
+
+    await Promise.all(
+      actionableRows.map((row) =>
+        this.jobService.updateJob(String(row.id), { isVerified: true })
+      )
+    );
+
+    return actionableRows.length;
+  }
+
+  private hasValidIdentifier(row: EditableTableRowData): boolean {
+    return Boolean(row.id);
+  }
+}
+
 export default function JobPage() {
   const { companies } = useCompanies();
   const [selectedCompanyName, setSelectedCompanyName] = useState<string>("");
+  const [isBulkVerifying, setIsBulkVerifying] = useState<boolean>(false);
 
   const { jobs, isLoading, error, refetch } = useJobs(
     selectedCompanyName || undefined
+  );
+  const bulkVerifier = useMemo(
+    () => new JobBulkVerifier(jobsApiService),
+    []
   );
 
   // Debug logging
@@ -358,6 +393,34 @@ export default function JobPage() {
     }
   };
 
+  const handleBulkVerifySelected = async (
+    selectedRows: EditableTableRowData[]
+  ) => {
+    if (selectedRows.length === 0 || isBulkVerifying) {
+      return;
+    }
+
+    setIsBulkVerifying(true);
+
+    try {
+      const verifiedCount = await bulkVerifier.verify(selectedRows);
+
+      toast.success("Operazioni verificate", {
+        description: `${verifiedCount} operazioni verificate con successo`,
+      });
+
+      await refetch();
+    } catch (error) {
+      toast.error("Errore durante la verifica", {
+        description:
+          error instanceof Error ? error.message : "Riprova più tardi",
+      });
+      console.error("Error verifying jobs:", error);
+    } finally {
+      setIsBulkVerifying(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Operazioni" filterElement={companyFilter} />
@@ -397,6 +460,9 @@ export default function JobPage() {
                 isModify={true}
                 onSave={handleSave}
                 onDeleteSelected={handleDeleteSelected}
+                onBulkVerifySelected={handleBulkVerifySelected}
+                bulkVerifyButtonLabel="Verifica"
+                isBulkVerifyLoading={isBulkVerifying}
                 getRowId={(row) => row.id as string}
               />
             )}
