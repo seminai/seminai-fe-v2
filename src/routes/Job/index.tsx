@@ -13,7 +13,7 @@ import {
   type Product,
 } from "@/api/jobs";
 import { stocksApiService, type CreateStockPayload } from "@/api/stocks";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 
 class JobProductsFormatter {
@@ -395,7 +395,10 @@ export default function JobPage() {
 
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+                <Spinner
+                  ariaLabel="Caricamento operazioni"
+                  className="text-neutral-400"
+                />
               </div>
             ) : jobs.length === 0 ? (
               <div className="text-center py-16 text-neutral-500">

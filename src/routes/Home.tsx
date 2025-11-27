@@ -104,7 +104,7 @@ export default class Home extends Component<
 
   private renderHeader() {
     return (
-      <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
+      <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-100 px-4 py-2 md:px-0 md:py-0">
         <div className="max-w-7xl mx-auto py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="Seminai Logo" className="h-10 w-auto" />
