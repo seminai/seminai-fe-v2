@@ -38,13 +38,20 @@ import {
   Activity,
   Apple,
   Package,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   dosageAgentApiService,
   type DosageProduct,
+  type DosageStrategy,
   type DosageUnitOfProduction,
 } from "@/api/dosage-agent";
+import {
+  productLabelsApiService,
+  type ProductLabelDetails,
+  type ProductLabelStructuredData,
+} from "@/api/product-labels";
 import type { ProductionUnit } from "@/api/production-unit";
 import type { Product } from "@/api/products";
 import {
@@ -52,7 +59,21 @@ import {
   type DosageJob,
 } from "@/utils/dosageJobsIndexDBManager";
 import { JobDetails } from "./JobDetails";
-import type { FitosanitariDatasetRecord } from "@/services/fitosanitariRegistry";
+import {
+  type FitosanitariDatasetRecord,
+  findRegNumberByName,
+} from "@/services/fitosanitariRegistry";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 class DosageJobDetailsManager {
   public async load(job: DosageJob): Promise<DosageJob> {
     if (job.state === "completed" && job.result) {
@@ -131,6 +152,78 @@ class DosagePlaceholderRenderer {
 }
 
 const dosagePlaceholderRenderer = new DosagePlaceholderRenderer();
+
+interface DosageStrategyOption {
+  value: DosageStrategy;
+  label: string;
+  description: string;
+}
+
+class DosageStrategyOptionsFactory {
+  private static readonly options: DosageStrategyOption[] = [
+    {
+      value: "current",
+      label: "Dose Corrente",
+      description: "Applica i dosaggi consigliati presenti in etichetta.",
+    },
+    {
+      value: "max",
+      label: "Dose Massima",
+      description: "Utilizza la dose massima consentita per ciascun prodotto.",
+    },
+    {
+      value: "min",
+      label: "Dose Minima",
+      description:
+        "Applica la dose minima certificata per la coltura selezionata.",
+    },
+    {
+      value: "avg",
+      label: "Dose Media",
+      description: "Calcola la media tra la dose minima e quella massima.",
+    },
+  ];
+
+  public static create(): DosageStrategyOption[] {
+    return [...this.options];
+  }
+
+  public static getByValue(value: DosageStrategy): DosageStrategyOption {
+    return (
+      this.options.find((option) => option.value === value) ?? this.options[0]
+    );
+  }
+
+  public static buildCurlSnippet(strategy: DosageStrategy): string {
+    return [
+      "curl -X POST https://<host>/dosage-agent/start-job \\",
+      "",
+      '  -H "Authorization: Bearer <JWT_TOKEN>" \\',
+      "",
+      '  -H "Content-Type: application/json" \\',
+      "",
+      "  -d '{",
+      '        "products": [',
+      "          {",
+      '            "productId": "123",',
+      '            "quantity": 100,',
+      '            "quantityUnitOfMeasure": "kg",',
+      '            "loadWarehouse": true',
+      "          }",
+      "        ],",
+      '        "unitOfProduction": [',
+      "          {",
+      '            "id": "unit-001",',
+      '            "cropName": "Vite",',
+      '            "cropVariety": "Trebbiano",',
+      '            "disciplinari": ["disciplinare-2025"]',
+      "          }",
+      "        ],",
+      `        "strategy": "${strategy}"`,
+      "      }'",
+    ].join("\n");
+  }
+}
 
 interface ProductionUnitTableRow extends Record<string, unknown> {
   id: string;
@@ -304,22 +397,96 @@ class WarehouseProductStockCalculator {
   }
 }
 
+class WarehouseRegistrationNumberSanitizer {
+  private static readonly digitsRegex = /\d+/g;
+
+  public static normalize(value: unknown): string {
+    if (value === null || value === undefined) {
+      return "";
+    }
+    const trimmed = String(value).trim();
+    const digits = trimmed.match(this.digitsRegex)?.join("") ?? "";
+    return digits;
+  }
+
+  public static pickFirstNumeric(values: Array<unknown>): string {
+    for (const value of values) {
+      const normalized = this.normalize(value);
+      if (normalized) {
+        return normalized;
+      }
+    }
+    return "";
+  }
+}
+
+class WarehouseProductRegistrationResolver {
+  private readonly registryLookup: typeof findRegNumberByName;
+
+  constructor(
+    registryLookup: typeof findRegNumberByName = findRegNumberByName
+  ) {
+    this.registryLookup = registryLookup;
+  }
+
+  public async resolve(
+    productName: string,
+    fallbackCandidates: Array<string | undefined>
+  ): Promise<string> {
+    const fallback =
+      WarehouseRegistrationNumberSanitizer.pickFirstNumeric(fallbackCandidates);
+
+    if (!productName) {
+      return fallback;
+    }
+
+    try {
+      const registryNumber = await this.registryLookup(productName);
+      const normalizedRegistry =
+        WarehouseRegistrationNumberSanitizer.normalize(registryNumber);
+      if (normalizedRegistry) {
+        return normalizedRegistry;
+      }
+    } catch (error) {
+      console.error(
+        "Failed to resolve registration number from fitosanitari dataset:",
+        error
+      );
+    }
+
+    return fallback;
+  }
+}
+
 class WarehouseProductsMapper {
-  public static toDosageProducts(products: Product[]): DosageProduct[] {
-    return products
-      .map((product) => {
+  private static readonly registrationResolver =
+    new WarehouseProductRegistrationResolver();
+
+  public static async toDosageProducts(
+    products: Product[]
+  ): Promise<DosageProduct[]> {
+    const mappedProducts = await Promise.all(
+      products.map(async (product) => {
         const calculator = new WarehouseProductStockCalculator(product.stocks);
         const netQuantity = calculator.calculateNetQuantity();
+        const registrationNumber =
+          (await this.registrationResolver.resolve(product.name, [
+            product.sku,
+            product.id,
+          ])) || "";
+
         return {
           productName: product.name,
-          registrationNumber: product.sku || product.id,
+          registrationNumber,
           quantity: netQuantity > 0 ? netQuantity : 0,
           quantityUnitOfMeasure: calculator.getUnitOfMeasure(),
           loadWarehouse: false,
           supplierName: product.warehouse.company.name,
         };
       })
-      .filter((product) => product.quantity > 0);
+    );
+
+    return mappedProducts.filter((product) => product.quantity > 0);
   }
 }
 
@@ -328,6 +495,327 @@ class DosageProductKeyBuilder {
     return `${product.productName}-${product.registrationNumber}`;
   }
 }
+
+class ProductLabelReference {
+  public readonly productName: string;
+  public readonly registrationNumber: string;
+
+  private static readonly digitsRegex = /\d+/g;
+
+  private constructor(productName: string, registrationNumber: string) {
+    this.productName = productName;
+    this.registrationNumber = registrationNumber;
+  }
+
+  private static normalize(value: unknown): string {
+    if (value === null || value === undefined) {
+      return "";
+    }
+    return String(value).trim();
+  }
+
+  private static normalizeRegistration(value: unknown): string {
+    const normalized = this.normalize(value);
+    if (!normalized) {
+      return "";
+    }
+    const digits = normalized.match(this.digitsRegex)?.join("") ?? "";
+    return digits || normalized;
+  }
+
+  public static create(
+    productName: unknown,
+    registrationNumber: unknown
+  ): ProductLabelReference | null {
+    const normalizedName = this.normalize(productName);
+    const normalizedRegistration =
+      this.normalizeRegistration(registrationNumber);
+    if (!normalizedName || !normalizedRegistration) {
+      return null;
+    }
+    return new ProductLabelReference(normalizedName, normalizedRegistration);
+  }
+
+  public static fromRow(
+    row: Record<string, unknown>
+  ): ProductLabelReference | null {
+    const typedRow = row as {
+      productName?: unknown;
+      registrationNumber?: unknown;
+    };
+    return this.create(typedRow.productName, typedRow.registrationNumber);
+  }
+
+  public get displayLabel(): string {
+    return `${this.productName} • ${this.registrationNumber}`;
+  }
+}
+
+class ProductLabelLoader {
+  private readonly api: typeof productLabelsApiService;
+
+  constructor(api: typeof productLabelsApiService = productLabelsApiService) {
+    this.api = api;
+  }
+
+  public async load(
+    reference: ProductLabelReference
+  ): Promise<ProductLabelDetails | null> {
+    const response = await this.api.getByProduct({
+      name: reference.productName,
+      regNumber: reference.registrationNumber,
+    });
+    return response.data ?? null;
+  }
+}
+
+class ProductLabelConfidence {
+  public static normalize(value: number | null | undefined): number {
+    if (typeof value !== "number" || Number.isNaN(value)) {
+      return 0;
+    }
+    if (value < 0) {
+      return 0;
+    }
+    if (value > 100) {
+      return 100;
+    }
+    return Math.round(value);
+  }
+}
+
+interface ProductLabelDosageDetail extends Record<string, unknown> {
+  coltura?: string;
+  malattia?: string;
+  dose_minima?: number;
+  dose_massima?: number;
+  dose_um?: string;
+  n_max_applicazioni?: number;
+  n_max_applicazioni_um?: string;
+  intervallo_sicurezza_giorni?: number | null;
+  intervallo_min_giorni?: number | null;
+  modalita_applicazione?: string;
+  istruzioni?: string;
+}
+
+interface ProductLabelStructuredPayload extends ProductLabelStructuredData {
+  prodotto?: string;
+  categoria?: string;
+  formulazione?: string;
+  principio_attivo?: string;
+  composizione?: string;
+  compatibilita?: string;
+  fitotossicita?: string;
+  note_tecniche?: string;
+  numero_registrazione?: string;
+  titolare?: string;
+  stabilimento?: string;
+  caratteristiche?: string;
+  specie?: string[];
+  malattie?: string[];
+  colture_target?: string[];
+  frasi_pericolo?: string[];
+  frasi_prudenza?: string[];
+  avvertenze?: string[];
+  fasce_di_rispetto_e_deriva?: string[];
+  dosaggi_dettagliati?: ProductLabelDosageDetail[];
+}
+
+type ProductLabelArrayKey =
+  | "specie"
+  | "malattie"
+  | "colture_target"
+  | "frasi_pericolo"
+  | "frasi_prudenza"
+  | "avvertenze"
+  | "fasce_di_rispetto_e_deriva";
+
+type ProductLabelTextKey =
+  | "composizione"
+  | "compatibilita"
+  | "fitotossicita"
+  | "note_tecniche"
+  | "caratteristiche";
+
+interface ProductLabelInfoPair {
+  label: string;
+  value: string;
+}
+
+interface ProductLabelDescriptiveField {
+  title: string;
+  value: string;
+}
+
+class ProductLabelStructuredAdapter {
+  private readonly payload: ProductLabelStructuredPayload;
+
+  constructor(raw: unknown) {
+    this.payload =
+      raw && typeof raw === "object"
+        ? (raw as ProductLabelStructuredPayload)
+        : {};
+  }
+
+  public get data(): ProductLabelStructuredPayload {
+    return this.payload;
+  }
+
+  public hasData(): boolean {
+    return Object.keys(this.payload).length > 0;
+  }
+
+  public getStringList(key: ProductLabelArrayKey): string[] {
+    const value = this.payload[key];
+    if (!Array.isArray(value)) {
+      return [];
+    }
+    return value
+      .map((item) => (typeof item === "string" ? item.trim() : ""))
+      .filter((item) => item.length > 0);
+  }
+
+  public getText(key: ProductLabelTextKey): string | null {
+    const value = this.payload[key];
+    if (typeof value !== "string") {
+      return null;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  public getDosageDetails(): ProductLabelDosageDetail[] {
+    const value = this.payload.dosaggi_dettagliati;
+    if (!Array.isArray(value)) {
+      return [];
+    }
+    return value
+      .map((entry) =>
+        entry && typeof entry === "object"
+          ? (entry as ProductLabelDosageDetail)
+          : null
+      )
+      .filter((entry): entry is ProductLabelDosageDetail => Boolean(entry));
+  }
+}
+
+class ProductLabelSummaryBuilder {
+  private static normalizeText(value: unknown): string | null {
+    if (typeof value !== "string") {
+      return null;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  public static buildInfoPairs(
+    details: ProductLabelDetails,
+    structured: ProductLabelStructuredPayload
+  ): ProductLabelInfoPair[] {
+    const pairs: Array<[string, string | null]> = [
+      ["Prodotto", structured.prodotto ?? details.productName],
+      [
+        "N. registrazione",
+        structured.numero_registrazione ?? details.registrationNumber,
+      ],
+      ["Categoria", structured.categoria ?? null],
+      ["Principio attivo", structured.principio_attivo ?? null],
+      ["Formulazione", structured.formulazione ?? null],
+      ["Titolare", structured.titolare ?? null],
+      ["Stabilimento", structured.stabilimento ?? null],
+    ];
+
+    return pairs
+      .map(([label, rawValue]) => ({
+        label,
+        value: this.normalizeText(rawValue),
+      }))
+      .filter(
+        (pair): pair is ProductLabelInfoPair =>
+          Boolean(pair.value) && Boolean(pair.label)
+      )
+      .map((pair) => ({
+        label: pair.label,
+        value: pair.value ?? "",
+      }));
+  }
+
+  public static buildDescriptiveFields(
+    structured: ProductLabelStructuredPayload
+  ): ProductLabelDescriptiveField[] {
+    const fields: Array<[string, string | null]> = [
+      ["Composizione", structured.composizione ?? null],
+      ["Compatibilità", structured.compatibilita ?? null],
+      ["Fitotossicità", structured.fitotossicita ?? null],
+      ["Note tecniche", structured.note_tecniche ?? null],
+      ["Caratteristiche", structured.caratteristiche ?? null],
+    ];
+
+    return fields
+      .map(([title, rawValue]) => ({
+        title,
+        value: this.normalizeText(rawValue),
+      }))
+      .filter((field): field is ProductLabelDescriptiveField =>
+        Boolean(field.value)
+      )
+      .map((field) => ({
+        title: field.title,
+        value: field.value ?? "",
+      }));
+  }
+}
+
+class ProductLabelDosageFormatter {
+  private static formatNumber(value?: number | null): string | null {
+    if (typeof value !== "number" || Number.isNaN(value)) {
+      return null;
+    }
+    return value % 1 === 0 ? value.toString() : value.toFixed(2);
+  }
+
+  public static formatDose(detail: ProductLabelDosageDetail): string {
+    const min = this.formatNumber(detail.dose_minima);
+    const max = this.formatNumber(detail.dose_massima);
+    const unit = detail.dose_um ? ` ${detail.dose_um}` : "";
+
+    if (min && max) {
+      if (min === max) {
+        return `${min}${unit}`.trim();
+      }
+      return `${min} - ${max}${unit}`.trim();
+    }
+    if (min) {
+      return `${min}${unit}`.trim();
+    }
+    if (max) {
+      return `${max}${unit}`.trim();
+    }
+    return detail.dose_um ? detail.dose_um : "-";
+  }
+
+  public static formatApplications(detail: ProductLabelDosageDetail): string {
+    const maxApps = this.formatNumber(detail.n_max_applicazioni);
+    if (!maxApps) {
+      return "-";
+    }
+    const unit = detail.n_max_applicazioni_um
+      ? ` ${detail.n_max_applicazioni_um}`
+      : "";
+    return `${maxApps}${unit}`.trim();
+  }
+
+  public static formatSafetyInterval(detail: ProductLabelDosageDetail): string {
+    const safety = this.formatNumber(detail.intervallo_sicurezza_giorni);
+    if (safety) {
+      return `${safety} gg`;
+    }
+    return detail.intervallo_sicurezza_giorni === 0 ? "0 gg" : "-";
+  }
+}
+
+const productLabelLoader = new ProductLabelLoader();
+const MAX_LABEL_DOSAGE_ROWS = 12;
 
 export default function DosageManager() {
   const { productionUnits, isLoading: loadingUnits } = useProductionUnit();
@@ -345,6 +833,7 @@ export default function DosageManager() {
   const [products, setProducts] = useState<DosageProduct[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [strategy, setStrategy] = useState<DosageStrategy>("avg");
 
   const editableTableRef = useRef<EditableTable>(null);
 
@@ -352,7 +841,110 @@ export default function DosageManager() {
   const [selectedJob, setSelectedJob] = useState<DosageJob | null>(null);
   const [showJobsPanel, setShowJobsPanel] = useState(false);
   const [isJobDetailsLoading, setIsJobDetailsLoading] = useState(false);
+  const [isLabelDrawerOpen, setIsLabelDrawerOpen] = useState(false);
+  const [labelReference, setLabelReference] =
+    useState<ProductLabelReference | null>(null);
+  const [labelDetails, setLabelDetails] = useState<ProductLabelDetails | null>(
+    null
+  );
+  const [labelError, setLabelError] = useState<string | null>(null);
+  const [isLabelLoading, setIsLabelLoading] = useState(false);
+  const labelRequestId = useRef(0);
   const isHistoryPage = currentPage === "history";
+  const strategyOptions = useMemo(
+    () => DosageStrategyOptionsFactory.create(),
+    []
+  );
+  const selectedStrategyOption = useMemo(
+    () => DosageStrategyOptionsFactory.getByValue(strategy),
+    [strategy]
+  );
+  const structuredLabelAdapter = useMemo(
+    () => new ProductLabelStructuredAdapter(labelDetails?.label),
+    [labelDetails]
+  );
+  const labelSummaryPairs = useMemo(
+    () =>
+      labelDetails
+        ? ProductLabelSummaryBuilder.buildInfoPairs(
+            labelDetails,
+            structuredLabelAdapter.data
+          )
+        : [],
+    [labelDetails, structuredLabelAdapter]
+  );
+  const labelDescriptiveFields = useMemo(
+    () =>
+      ProductLabelSummaryBuilder.buildDescriptiveFields(
+        structuredLabelAdapter.data
+      ),
+    [structuredLabelAdapter]
+  );
+  const labelConfidenceValue = useMemo(
+    () => ProductLabelConfidence.normalize(labelDetails?.extractionConfidence),
+    [labelDetails]
+  );
+  const labelSpecies = useMemo(
+    () => structuredLabelAdapter.getStringList("specie"),
+    [structuredLabelAdapter]
+  );
+  const labelDiseases = useMemo(
+    () => structuredLabelAdapter.getStringList("malattie"),
+    [structuredLabelAdapter]
+  );
+  const labelCrops = useMemo(
+    () => structuredLabelAdapter.getStringList("colture_target"),
+    [structuredLabelAdapter]
+  );
+  const labelHazardStatements = useMemo(
+    () => structuredLabelAdapter.getStringList("frasi_pericolo"),
+    [structuredLabelAdapter]
+  );
+  const labelPrecautionStatements = useMemo(
+    () => structuredLabelAdapter.getStringList("frasi_prudenza"),
+    [structuredLabelAdapter]
+  );
+  const labelWarnings = useMemo(
+    () => structuredLabelAdapter.getStringList("avvertenze"),
+    [structuredLabelAdapter]
+  );
+  const labelRespectRules = useMemo(
+    () => structuredLabelAdapter.getStringList("fasce_di_rispetto_e_deriva"),
+    [structuredLabelAdapter]
+  );
+  const labelDosageDetails = useMemo(
+    () => structuredLabelAdapter.getDosageDetails(),
+    [structuredLabelAdapter]
+  );
+  const hasLabelDosageOverflow =
+    labelDosageDetails.length > MAX_LABEL_DOSAGE_ROWS;
+  const visibleLabelDosages = hasLabelDosageOverflow
+    ? labelDosageDetails.slice(0, MAX_LABEL_DOSAGE_ROWS)
+    : labelDosageDetails;
+  const hasStructuredLabelPayload = structuredLabelAdapter.hasData();
+  const labelExtractedFields = useMemo<string[]>(
+    () =>
+      Array.isArray(labelDetails?.extractedFields)
+        ? labelDetails.extractedFields
+            .map((item) => String(item).trim())
+            .filter((item) => item.length > 0)
+        : [],
+    [labelDetails]
+  );
+  const labelQualityExtraction = useMemo<ProductLabelStructuredData[]>(
+    () =>
+      Array.isArray(labelDetails?.qualityExtraction)
+        ? (labelDetails?.qualityExtraction as ProductLabelStructuredData[])
+        : [],
+    [labelDetails]
+  );
+  const labelErrors = useMemo<string[]>(
+    () =>
+      Array.isArray(labelDetails?.errors)
+        ? labelDetails?.errors.map((errorItem) => String(errorItem))
+        : [],
+    [labelDetails]
+  );
 
   const handleShowHistory = useCallback(() => {
     setCurrentPage("history");
@@ -562,6 +1154,82 @@ export default function DosageManager() {
     [getDefaultUnitOfMeasure]
   );
 
+  const handleLabelDrawerChange = useCallback((open: boolean) => {
+    setIsLabelDrawerOpen(open);
+    if (!open) {
+      labelRequestId.current += 1;
+      setLabelDetails(null);
+      setLabelReference(null);
+      setLabelError(null);
+      setIsLabelLoading(false);
+    }
+  }, []);
+
+  const handleOpenProductLabel = useCallback(
+    async (reference: ProductLabelReference) => {
+      setIsLabelDrawerOpen(true);
+      setLabelReference(reference);
+      setLabelDetails(null);
+      setLabelError(null);
+      setIsLabelLoading(true);
+
+      const currentRequestId = labelRequestId.current + 1;
+      labelRequestId.current = currentRequestId;
+
+      try {
+        const details = await productLabelLoader.load(reference);
+        if (labelRequestId.current !== currentRequestId) {
+          return;
+        }
+        if (!details) {
+          setLabelError("Nessuna etichetta disponibile per questo prodotto.");
+          return;
+        }
+        setLabelDetails(details);
+      } catch (error) {
+        if (labelRequestId.current !== currentRequestId) {
+          return;
+        }
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Impossibile recuperare l'etichetta";
+        setLabelError(message);
+      } finally {
+        if (labelRequestId.current === currentRequestId) {
+          setIsLabelLoading(false);
+        }
+      }
+    },
+    []
+  );
+
+  const renderProductLabelAction = useCallback(
+    (row: Record<string, unknown>): ReactElement => {
+      const reference = ProductLabelReference.fromRow(row);
+      const disabled = reference === null;
+
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 text-xs text-neutral-600"
+          onClick={() => {
+            if (!reference) {
+              return;
+            }
+            void handleOpenProductLabel(reference);
+          }}
+          disabled={disabled}
+        >
+          <FileText className="mr-1 h-3.5 w-3.5" />
+          Etichetta
+        </Button>
+      );
+    },
+    [handleOpenProductLabel]
+  );
+
   // Load jobs from IndexedDB on mount
   useEffect(() => {
     const loadJobs = async () => {
@@ -670,7 +1338,7 @@ export default function DosageManager() {
     []
   );
 
-  const handleImportFromWarehouse = useCallback(() => {
+  const handleImportFromWarehouse = useCallback(async () => {
     if (isWarehouseProductsLoading) {
       return;
     }
@@ -682,8 +1350,19 @@ export default function DosageManager() {
       return;
     }
 
-    const mappedProducts =
-      WarehouseProductsMapper.toDosageProducts(warehouseInventory);
+    let mappedProducts: DosageProduct[] = [];
+    try {
+      mappedProducts = await WarehouseProductsMapper.toDosageProducts(
+        warehouseInventory
+      );
+    } catch (error) {
+      console.error("Failed to import warehouse products:", error);
+      toast.error("Importazione dal magazzino non riuscita", {
+        description:
+          error instanceof Error ? error.message : "Riprova più tardi.",
+      });
+      return;
+    }
 
     if (mappedProducts.length === 0) {
       toast.info("Nessun prodotto importabile", {
@@ -825,6 +1504,7 @@ export default function DosageManager() {
       const response = await dosageAgentApiService.startJob({
         products,
         unitOfProduction: unitsOfProduction,
+        strategy,
       });
 
       const jobId = response.data.jobId;
@@ -1006,6 +1686,7 @@ export default function DosageManager() {
                 getRowId={(row) =>
                   `${row.productName}-${row.registrationNumber}`
                 }
+                lastComponent={renderProductLabelAction}
               >
                 <div
                   data-editable-table-slot="create-drawer"
@@ -1055,6 +1736,33 @@ export default function DosageManager() {
               </EditableTable>
               {products.length === 0 &&
                 dosagePlaceholderRenderer.renderEmptyProductsPlaceholder()}
+            </div>
+
+            {/* Strategy Section */}
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="text-lg md:text-xl font-medium text-neutral-900">
+                  Seleziona la strategia di calcolo dosaggi
+                </h2>
+                <p className="text-sm text-neutral-500 mt-1">
+                  {selectedStrategyOption.description}
+                </p>
+              </div>
+              <Select
+                value={strategy}
+                onValueChange={(value) => setStrategy(value as DosageStrategy)}
+              >
+                <SelectTrigger className="w-full max-w-sm h-12 bg-white border-neutral-200">
+                  <SelectValue placeholder="Seleziona una strategia" />
+                </SelectTrigger>
+                <SelectContent>
+                  {strategyOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         ) : (
@@ -1207,6 +1915,9 @@ export default function DosageManager() {
                 ? `Azienda selezionata: ${selectedCompanyName}`
                 : "Nessuna azienda selezionata"}
             </p>
+            <p className="text-sm text-neutral-500">
+              Strategia selezionata: {selectedStrategyOption.label}
+            </p>
             <p className="text-base font-medium text-neutral-900">
               {selectionSummary}
             </p>
@@ -1231,6 +1942,435 @@ export default function DosageManager() {
           </Button>
         </div>
       </div>
+
+      <Drawer open={isLabelDrawerOpen} onOpenChange={handleLabelDrawerChange}>
+        <DrawerContent data-vaul-drawer-direction="right">
+          <DrawerHeader>
+            <DrawerTitle>Dettaglio etichetta</DrawerTitle>
+            <DrawerDescription>
+              {labelReference
+                ? labelReference.displayLabel
+                : "Seleziona un prodotto per visualizzare l'etichetta."}
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="max-h-[calc(100vh-200px)] overflow-y-auto px-6 pb-6 space-y-6">
+            {isLabelLoading && (
+              <div className="flex h-48 flex-col items-center justify-center gap-3 text-neutral-500">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <p className="text-sm font-medium">Caricamento etichetta...</p>
+              </div>
+            )}
+            {!isLabelLoading && labelError && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {labelError}
+              </div>
+            )}
+            {!isLabelLoading && !labelError && labelDetails && (
+              <>
+                <section className="space-y-3">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold text-neutral-900">
+                        Panoramica etichetta
+                      </h3>
+                      <p className="text-xs text-neutral-500">
+                        Dati principali estratti automaticamente
+                      </p>
+                    </div>
+                    <Badge
+                      variant={labelDetails.isVerified ? "default" : "outline"}
+                      className="text-xs"
+                    >
+                      {labelDetails.isVerified ? "Verificata" : "Da verificare"}
+                    </Badge>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {labelSummaryPairs.map((pair) => (
+                      <div
+                        key={`label-summary-${pair.label}`}
+                        className="rounded-xl border border-neutral-200 bg-white p-3"
+                      >
+                        <p className="text-xs text-neutral-500">{pair.label}</p>
+                        <p className="text-sm font-semibold text-neutral-900 break-words">
+                          {pair.value}
+                        </p>
+                      </div>
+                    ))}
+                    <div className="rounded-xl border border-neutral-200 bg-white p-3">
+                      <p className="text-xs text-neutral-500">Fonte</p>
+                      {labelDetails.sourceUrl ? (
+                        <a
+                          href={labelDetails.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-blue-600 hover:underline break-all"
+                        >
+                          {labelDetails.sourceUrl}
+                        </a>
+                      ) : (
+                        <span className="text-sm text-neutral-500">N/D</span>
+                      )}
+                    </div>
+                    <div className="rounded-xl border border-neutral-200 bg-white p-3">
+                      <p className="text-xs text-neutral-500">
+                        Ultimo aggiornamento
+                      </p>
+                      <p className="text-sm font-semibold text-neutral-900">
+                        {new Date(labelDetails.updatedAt).toLocaleString(
+                          "it-IT"
+                        )}
+                      </p>
+                      <p className="text-xs text-neutral-500">
+                        Creato il{" "}
+                        {new Date(labelDetails.createdAt).toLocaleString(
+                          "it-IT"
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-neutral-900">
+                      Affidabilità estrazione
+                    </h3>
+                    <span className="text-xs font-medium text-neutral-700">
+                      {labelConfidenceValue}%
+                    </span>
+                  </div>
+                  <Progress value={labelConfidenceValue} />
+                </section>
+
+                {(labelSpecies.length > 0 ||
+                  labelDiseases.length > 0 ||
+                  labelCrops.length > 0) && (
+                  <section className="space-y-3">
+                    <h3 className="text-sm font-semibold text-neutral-900">
+                      Ambito di impiego
+                    </h3>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {labelSpecies.length > 0 && (
+                        <div>
+                          <p className="text-xs text-neutral-500 mb-2">
+                            Specie coperte
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {labelSpecies.map((item, index) => (
+                              <Badge
+                                key={`species-${index}`}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {item}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {labelDiseases.length > 0 && (
+                        <div>
+                          <p className="text-xs text-neutral-500 mb-2">
+                            Organismi bersaglio
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {labelDiseases.map((item, index) => (
+                              <Badge
+                                key={`diseases-${index}`}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {item}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {labelCrops.length > 0 && (
+                      <div>
+                        <p className="text-xs text-neutral-500 mb-2">
+                          Colture target
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {labelCrops.map((item, index) => (
+                            <Badge
+                              key={`crops-${index}`}
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {item}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                )}
+
+                {labelDescriptiveFields.length > 0 && (
+                  <section className="space-y-3">
+                    <h3 className="text-sm font-semibold text-neutral-900">
+                      Note agronomiche
+                    </h3>
+                    <div className="space-y-3">
+                      {labelDescriptiveFields.map((field) => (
+                        <div
+                          key={field.title}
+                          className="rounded-xl border border-neutral-200 bg-white p-4"
+                        >
+                          <p className="text-xs text-neutral-500">
+                            {field.title}
+                          </p>
+                          <p className="text-sm text-neutral-900 whitespace-pre-line">
+                            {field.value}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {(labelHazardStatements.length > 0 ||
+                  labelPrecautionStatements.length > 0 ||
+                  labelWarnings.length > 0) && (
+                  <section className="space-y-4">
+                    <h3 className="text-sm font-semibold text-neutral-900">
+                      Sicurezza e avvertenze
+                    </h3>
+                    {labelHazardStatements.length > 0 && (
+                      <div>
+                        <p className="text-xs text-neutral-500 mb-1">
+                          Frasi di pericolo
+                        </p>
+                        <ul className="list-inside list-disc space-y-1 text-sm text-neutral-900">
+                          {labelHazardStatements.map((item, index) => (
+                            <li key={`hazard-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {labelPrecautionStatements.length > 0 && (
+                      <div>
+                        <p className="text-xs text-neutral-500 mb-1">
+                          Frasi di prudenza
+                        </p>
+                        <ul className="list-inside list-disc space-y-1 text-sm text-neutral-900">
+                          {labelPrecautionStatements.map((item, index) => (
+                            <li key={`precaution-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {labelWarnings.length > 0 && (
+                      <div>
+                        <p className="text-xs text-neutral-500 mb-1">
+                          Avvertenze aggiuntive
+                        </p>
+                        <ul className="list-inside list-disc space-y-1 text-sm text-neutral-900">
+                          {labelWarnings.map((item, index) => (
+                            <li key={`warning-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </section>
+                )}
+
+                {labelRespectRules.length > 0 && (
+                  <section className="space-y-2">
+                    <h3 className="text-sm font-semibold text-neutral-900">
+                      Fasce di rispetto e deriva
+                    </h3>
+                    <ul className="list-inside list-disc space-y-1 text-sm text-neutral-900">
+                      {labelRespectRules.map((rule, index) => (
+                        <li key={`respect-rule-${index}`}>{rule}</li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+
+                {labelDosageDetails.length > 0 && (
+                  <section className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-neutral-900">
+                        Dosaggi dettagliati
+                      </h3>
+                      {hasLabelDosageOverflow && (
+                        <span className="text-xs text-neutral-500">
+                          Mostrate {visibleLabelDosages.length} di{" "}
+                          {labelDosageDetails.length} voci
+                        </span>
+                      )}
+                    </div>
+                    <div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-neutral-50">
+                            <TableHead className="text-xs font-semibold">
+                              Coltura
+                            </TableHead>
+                            <TableHead className="text-xs font-semibold">
+                              Bersaglio / istruzioni
+                            </TableHead>
+                            <TableHead className="text-xs font-semibold">
+                              Dose
+                            </TableHead>
+                            <TableHead className="text-xs font-semibold">
+                              Applicazioni
+                            </TableHead>
+                            <TableHead className="text-xs font-semibold">
+                              Carenza
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {visibleLabelDosages.map((detail, index) => (
+                            <TableRow key={`dosage-detail-${index}`}>
+                              <TableCell>
+                                <p className="text-sm font-medium text-neutral-900">
+                                  {detail.coltura || "-"}
+                                </p>
+                                {detail.modalita_applicazione && (
+                                  <p className="text-xs text-neutral-500">
+                                    {detail.modalita_applicazione}
+                                  </p>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <p className="text-sm font-medium text-neutral-900">
+                                  {detail.malattia || "-"}
+                                </p>
+                                {detail.istruzioni && (
+                                  <p className="text-xs text-neutral-500">
+                                    {detail.istruzioni}
+                                  </p>
+                                )}
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap text-sm text-neutral-900">
+                                {ProductLabelDosageFormatter.formatDose(detail)}
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap text-sm text-neutral-900">
+                                {ProductLabelDosageFormatter.formatApplications(
+                                  detail
+                                )}
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap text-sm text-neutral-900">
+                                {ProductLabelDosageFormatter.formatSafetyInterval(
+                                  detail
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </section>
+                )}
+
+                {labelExtractedFields.length > 0 && (
+                  <section className="space-y-2">
+                    <h3 className="text-sm font-semibold text-neutral-900">
+                      Campi riconosciuti
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {labelExtractedFields.map((field, index) => (
+                        <Badge
+                          key={`label-extracted-${index}`}
+                          variant="outline"
+                          className="text-xs"
+                        >
+                          {field}
+                        </Badge>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {labelQualityExtraction.length > 0 && (
+                  <section className="space-y-3">
+                    <h3 className="text-sm font-semibold text-neutral-900">
+                      Indicatori di qualità
+                    </h3>
+                    <ScrollArea className="max-h-48 rounded-xl border border-neutral-200 bg-white">
+                      <div className="divide-y">
+                        {labelQualityExtraction.map((item, index) => (
+                          <div
+                            key={`label-quality-${index}`}
+                            className="space-y-1 p-3"
+                          >
+                            <p className="text-xs text-neutral-500">
+                              Voce {index + 1}
+                            </p>
+                            <pre className="whitespace-pre-wrap text-xs text-neutral-800">
+                              {JSON.stringify(item, null, 2)}
+                            </pre>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </section>
+                )}
+
+                {labelErrors.length > 0 && (
+                  <section className="space-y-2">
+                    <h3 className="text-sm font-semibold text-neutral-900">
+                      Errori di estrazione
+                    </h3>
+                    <ul className="list-inside list-disc space-y-1 text-sm text-red-600">
+                      {labelErrors.map((message, index) => (
+                        <li key={`label-error-${index}`}>{message}</li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+
+                <section className="space-y-3">
+                  <h3 className="text-sm font-semibold text-neutral-900">
+                    Estratto testuale
+                  </h3>
+                  {labelDetails.rawText ? (
+                    <ScrollArea className="h-48 rounded-xl border border-neutral-200 bg-neutral-50">
+                      <pre className="whitespace-pre-wrap p-4 text-xs text-neutral-800">
+                        {labelDetails.rawText}
+                      </pre>
+                    </ScrollArea>
+                  ) : (
+                    <p className="text-sm text-neutral-500">
+                      Nessun testo disponibile.
+                    </p>
+                  )}
+                </section>
+
+                {hasStructuredLabelPayload && (
+                  <section className="space-y-3">
+                    <h3 className="text-sm font-semibold text-neutral-900">
+                      Payload etichetta (JSON)
+                    </h3>
+                    <ScrollArea className="h-56 rounded-xl border border-neutral-200 bg-neutral-50">
+                      <pre className="whitespace-pre-wrap p-4 text-xs font-mono text-neutral-800">
+                        {JSON.stringify(structuredLabelAdapter.data, null, 2)}
+                      </pre>
+                    </ScrollArea>
+                  </section>
+                )}
+              </>
+            )}
+            {!isLabelLoading && !labelError && !labelDetails && (
+              <p className="text-sm text-neutral-500">
+                Nessuna etichetta disponibile per questo prodotto.
+              </p>
+            )}
+          </div>
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline" className="w-full">
+                Chiudi
+              </Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
       <JobDetails
         showPanel={showJobsPanel}
