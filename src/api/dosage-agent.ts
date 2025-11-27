@@ -32,9 +32,12 @@ export type DosageUnitOfProduction = {
   acquaTotalePeridoL: number | null;
 };
 
+export type DosageStrategy = "min" | "max" | "avg" | "current";
+
 export type StartDosageJobRequest = {
   products: DosageProduct[];
   unitOfProduction: DosageUnitOfProduction[];
+  strategy: DosageStrategy;
 };
 
 export type StartDosageJobResponse = {

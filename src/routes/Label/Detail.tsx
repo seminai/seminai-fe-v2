@@ -142,7 +142,7 @@ export default function LabelDetailPage(): React.ReactElement {
   const columns = buildLabelColumns();
 
   return (
-    <div className="p-6 h-screen overflow-hidden flex flex-col">
+    <div className="p-4 md:p-6 h-screen overflow-hidden flex flex-col">
       <Breadcrumb className="mb-2">
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -152,21 +152,24 @@ export default function LabelDetailPage(): React.ReactElement {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>
+            <BreadcrumbPage className="truncate max-w-[150px] md:max-w-none">
               {detail?.productName ?? "Dettaglio"}
             </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="flex items-center justify-between mb-4 gap-2">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-semibold">
+
+      {/* Header section - stacked on mobile */}
+      <div className="flex flex-col gap-3 mb-4">
+        {/* Title and verification status */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-semibold leading-tight">
             {detail
               ? `${detail.productName} - no. ${detail.registrationNumber}`
               : ""}
           </h1>
           {detail ? (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200 self-start">
               <Checkbox
                 id="is-verified"
                 checked={detail.isVerified}
@@ -181,7 +184,7 @@ export default function LabelDetailPage(): React.ReactElement {
               />
               <label
                 htmlFor="is-verified"
-                className={`text-sm font-medium cursor-pointer ${
+                className={`text-sm font-medium cursor-pointer whitespace-nowrap ${
                   detail.isVerified ? "text-green-700" : "text-gray-600"
                 }`}
               >
@@ -190,15 +193,17 @@ export default function LabelDetailPage(): React.ReactElement {
             </div>
           ) : null}
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Controls row */}
+        <div className="flex flex-wrap items-center gap-2">
           <Select
             value={viewMode}
             onValueChange={(v) => setViewMode(v as "table" | "json")}
           >
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-[130px] md:w-40">
               <SelectValue placeholder="Vista" />
             </SelectTrigger>
-            <SelectContent align="end">
+            <SelectContent align="start">
               <SelectItem value="table">Vista tabella</SelectItem>
               <SelectItem value="json">Vista JSON</SelectItem>
             </SelectContent>
@@ -206,17 +211,17 @@ export default function LabelDetailPage(): React.ReactElement {
           <div className="inline-flex p-1 bg-gray-100 rounded-lg gap-1">
             <button
               onClick={() => setView("dati")}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`px-3 md:px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 view === "dati"
                   ? "bg-white shadow-sm text-gray-900"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              Dettaggli
+              Dettagli
             </button>
             <button
               onClick={() => setView("dosaggi")}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`px-3 md:px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 view === "dosaggi"
                   ? "bg-white shadow-sm text-gray-900"
                   : "text-gray-600 hover:text-gray-900"
@@ -238,8 +243,34 @@ export default function LabelDetailPage(): React.ReactElement {
           Impossibile caricare il dettaglio.
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-4 flex-1 min-h-0 overflow-hidden">
-          <div className="h-full min-h-0 overflow-y-auto pr-1">
+        <div className="flex flex-col md:grid md:grid-cols-2 gap-4 flex-1 min-h-0 overflow-hidden">
+          {/* Mobile PDF toggle */}
+          <div className="md:hidden">
+            <Accordion type="single" collapsible>
+              <AccordionItem value="pdf" className="border rounded-lg">
+                <AccordionTrigger className="px-4 hover:no-underline">
+                  <span className="text-sm font-medium">📄 Visualizza PDF etichetta</span>
+                </AccordionTrigger>
+                <AccordionContent>
+                  {String(detail.sourceUrl || "").length > 0 ? (
+                    <div className="w-full h-[400px] border-t overflow-hidden">
+                      <iframe
+                        title="Label PDF Mobile"
+                        src={String(detail.sourceUrl)}
+                        className="w-full h-full"
+                      />
+                    </div>
+                  ) : (
+                    <div className="p-4 text-sm text-gray-600">
+                      PDF non disponibile.
+                    </div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+
+          <div className="flex-1 md:h-full min-h-0 overflow-y-auto pr-1">
             {view === "dati" ? (
               viewMode === "table" ? (
                 <EditableTable
@@ -342,9 +373,10 @@ export default function LabelDetailPage(): React.ReactElement {
                 <div className="space-y-4 pr-1">
                   {JSON.stringify(editedDosaggi) !==
                     JSON.stringify(detail.label?.dosaggi_dettagliati ?? []) && (
-                    <div className="sticky top-0 z-10 flex justify-end gap-2 mb-4 pb-2 bg-background">
+                    <div className="sticky top-0 z-10 flex flex-col sm:flex-row sm:justify-end gap-2 mb-4 pb-2 bg-background border-b sm:border-b-0">
                       <Button
                         variant="outline"
+                        className="w-full sm:w-auto"
                         onClick={() => {
                           setEditedDosaggi(
                             detail.label?.dosaggi_dettagliati ?? []
@@ -355,6 +387,7 @@ export default function LabelDetailPage(): React.ReactElement {
                         Annulla
                       </Button>
                       <Button
+                        className="w-full sm:w-auto"
                         onClick={async () => {
                           try {
                             await saveAsync({
@@ -380,15 +413,23 @@ export default function LabelDetailPage(): React.ReactElement {
                         <AccordionItem
                           key={idx}
                           value={`dosaggio-${idx}`}
-                          className="border rounded-lg px-4"
+                          className="border rounded-lg px-3 md:px-4"
                         >
-                          <AccordionTrigger className="hover:no-underline">
-                            <span className="text-left">
-                              <span className="font-semibold">#{idx + 1}</span>{" "}
-                              - {d.coltura || "Coltura non specificata"} -{" "}
-                              {d.malattia || "Malattia non specificata"} -{" "}
-                              <span className="text-muted-foreground text-sm text-agri-green-700 font-bold">
-                                {countFilledFields(d)}
+                          <AccordionTrigger className="hover:no-underline py-3">
+                            <span className="text-left flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0">
+                              <span>
+                                <span className="font-semibold">#{idx + 1}</span>{" "}
+                                <span className="hidden sm:inline">-</span>{" "}
+                                <span className="block sm:inline truncate max-w-[200px] sm:max-w-none">
+                                  {d.coltura || "Coltura non specificata"}
+                                </span>
+                              </span>
+                              <span className="text-muted-foreground text-xs sm:text-sm">
+                                <span className="hidden sm:inline"> - </span>
+                                {d.malattia || "Malattia non specificata"}{" "}
+                                <span className="text-agri-green-700 font-bold">
+                                  ({countFilledFields(d)})
+                                </span>
                               </span>
                             </span>
                           </AccordionTrigger>
@@ -724,7 +765,8 @@ export default function LabelDetailPage(): React.ReactElement {
               )
             ) : null}
           </div>
-          <div className="h-full min-h-0 overflow-y-auto">
+          {/* Desktop PDF - hidden on mobile */}
+          <div className="hidden md:block h-full min-h-0 overflow-y-auto">
             {String(detail.sourceUrl || "").length > 0 ? (
               <div className="w-full h-full border rounded-lg overflow-hidden">
                 <iframe
