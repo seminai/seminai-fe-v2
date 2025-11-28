@@ -343,29 +343,23 @@ export default function NewLabel(): React.ReactElement {
 
   return (
     <div className="min-h-screen bg-gray-50/50">
-      <PageHeader
-        title="Aggiungi Etichette"
-        rightElement={
-          activeJobsCount > 0 && (
-            <Button
-              variant="outline"
-              onClick={handleToggleHistory}
-              className="gap-2"
-            >
-              <Spinner size={16} />
+      <PageHeader title="Aggiungi Etichette">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            onClick={handleToggleHistory}
+            className="gap-2 text-neutral-500 hover:text-neutral-700"
+          >
+            <Clock className="h-4 w-4" />
+            <span>{showHistory ? "Nascondi storico" : "Storico operazioni"}</span>
+          </Button>
+          {activeJobsCount > 0 && (
+            <div className="flex items-center gap-2 text-sm text-neutral-600 border border-neutral-200 rounded-lg px-3 py-1.5 bg-white">
+              <Spinner size={14} />
               <span>{activeJobsCount} Job attivi</span>
-            </Button>
-          )
-        }
-      >
-        <Button
-          variant="ghost"
-          onClick={handleToggleHistory}
-          className="gap-2 text-neutral-500 hover:text-neutral-700"
-        >
-          <Clock className="h-4 w-4" />
-          <span>{showHistory ? "Nascondi storico" : "Storico operazioni"}</span>
-        </Button>
+            </div>
+          )}
+        </div>
       </PageHeader>
 
       <div className="max-w-6xl mx-auto px-8 pb-12">
