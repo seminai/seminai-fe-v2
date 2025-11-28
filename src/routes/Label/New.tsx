@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
@@ -14,10 +14,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
-import { Trash2, Plus, Upload, FileText, X } from "lucide-react";
+import { Trash2, Plus, Upload, FileText, X, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { indexDBManager, type LabelJob } from "@/utils/indexDBManager";
 import { LabelJobsTable } from "@/components/organism/LabelJobsTable";
+import { PageHeader } from "@/components/organism/Header";
 
 interface LabelFormItem extends BulkExtractItem {
   id: string;
@@ -45,10 +46,20 @@ export default function NewLabel(): React.ReactElement {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [concurrency, setConcurrency] = useState<number>(5);
   const [jobsRefreshKey, setJobsRefreshKey] = useState(0);
+  const [activeJobsCount, setActiveJobsCount] = useState(0);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Initialize IndexedDB
   useEffect(() => {
     indexDBManager.init();
+  }, []);
+
+  const handleToggleHistory = useCallback(() => {
+    setShowHistory((prev) => !prev);
+  }, []);
+
+  const handleActiveJobsChange = useCallback((count: number) => {
+    setActiveJobsCount(count);
   }, []);
 
   // Reset upload mode when label type changes
@@ -332,22 +343,38 @@ export default function NewLabel(): React.ReactElement {
 
   return (
     <div className="min-h-screen bg-gray-50/50">
-      <div className="max-w-6xl mx-auto px-8 py-12">
-        {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-3xl font-semibold mb-3 text-gray-900">
-            Aggiungi Etichette
-          </h1>
-          <p className="text-base text-gray-500">
-            Inserisci le informazioni delle etichette da cui estrarre i dati
-          </p>
-        </div>
+      <PageHeader
+        title="Aggiungi Etichette"
+        rightElement={
+          activeJobsCount > 0 && (
+            <Button
+              variant="outline"
+              onClick={handleToggleHistory}
+              className="gap-2"
+            >
+              <Spinner size={16} />
+              <span>{activeJobsCount} Job attivi</span>
+            </Button>
+          )
+        }
+      >
+        <Button
+          variant="ghost"
+          onClick={handleToggleHistory}
+          className="gap-2 text-neutral-500 hover:text-neutral-700"
+        >
+          <Clock className="h-4 w-4" />
+          <span>{showHistory ? "Nascondi storico" : "Storico operazioni"}</span>
+        </Button>
+      </PageHeader>
 
-        {/* Jobs Status Table */}
-        <div className="mb-12">
+      <div className="max-w-6xl mx-auto px-8 pb-12">
+        {/* Jobs Status Table - Hidden unless showHistory is true, but always rendered to track active jobs */}
+        <div className={showHistory ? "mb-12" : "hidden"}>
           <LabelJobsTable
             key={jobsRefreshKey}
             onRefresh={() => setJobsRefreshKey((prev) => prev + 1)}
+            onActiveJobsChange={handleActiveJobsChange}
           />
         </div>
 
