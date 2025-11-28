@@ -42,43 +42,121 @@ type LabelData = LabelDetail["label"];
 // Fertilizer specific columns
 const buildFertilizerColumns = (): EditableColumn[] =>
   buildColumns<any>([
-    {
-      id: "nome_commerciale",
-      title: "Nome Commerciale",
-      type: "text",
-      width: "20%",
-    },
-    {
-      id: "funzione_categoria",
-      title: "Funzione/Categoria",
-      type: "text",
-      width: "20%",
-    },
-    { id: "uso_previsto", title: "Uso Previsto", type: "text", width: "20%" },
-    { id: "n_totale", title: "N Totale (%)", type: "number", width: "10%" },
-    {
-      id: "p2o5_totale",
-      title: "P2O5 Totale (%)",
-      type: "number",
-      width: "10%",
-    },
-    { id: "k2o_totale", title: "K2O Totale (%)", type: "number", width: "10%" },
+    // Identificazione Prodotto
+    { id: "nome_commerciale", title: "Nome Commerciale", type: "text" },
+    { id: "funzione_categoria", title: "Funzione/Categoria", type: "text" },
+    { id: "numero_lotto", title: "Numero Lotto", type: "text" },
+    { id: "stato_fisico", title: "Stato Fisico", type: "text" },
+    { id: "confezioni_disponibili", title: "Confezioni Disponibili", type: "text" },
+    { id: "quantita_nominale", title: "Quantità Nominale", type: "text" },
+    // NPK
+    { id: "n_totale", title: "N Totale (%)", type: "number" },
+    { id: "p2o5_totale", title: "P2O5 Totale (%)", type: "number" },
+    { id: "k2o_totale", title: "K2O Totale (%)", type: "number" },
+    // Meso elementi
+    { id: "cao_totale", title: "CaO Totale (%)", type: "number" },
+    { id: "mgo_totale", title: "MgO Totale (%)", type: "number" },
+    { id: "so3_totale", title: "SO3 Totale (%)", type: "number" },
+    { id: "na2o_totale", title: "Na2O Totale (%)", type: "number" },
+    // Forme Azoto
+    { id: "forme_azoto", title: "Forme Azoto", type: "text" },
+    // Solubilità Fosforo
+    { id: "p2o5_solubile_acqua", title: "P2O5 Solubile Acqua (%)", type: "number" },
+    { id: "p2o5_solubile_citrato", title: "P2O5 Solubile Citrato (%)", type: "number" },
+    // Micronutrienti
+    { id: "micronutrienti", title: "Micronutrienti", type: "text" },
+    // Parametri organici
+    { id: "carbonio_organico", title: "Carbonio Organico (%)", type: "number" },
+    { id: "acidi_umici_fulvici", title: "Acidi Umici/Fulvici (%)", type: "number" },
+    { id: "sostanza_organica", title: "Sostanza Organica (%)", type: "number" },
+    // Istruzioni uso
+    { id: "uso_previsto", title: "Uso Previsto", type: "text" },
+    { id: "frequenza", title: "Frequenza", type: "text" },
+    { id: "condizioni_stoccaggio", title: "Condizioni Stoccaggio", type: "text" },
+    // Sicurezza
+    { id: "avvertenza", title: "Avvertenza", type: "text" },
+    { id: "pittogrammi_pericolo", title: "Pittogrammi Pericolo", type: "text" },
+    { id: "indicazioni_pericolo", title: "Indicazioni Pericolo (H)", type: "text" },
+    { id: "consigli_prudenza", title: "Consigli Prudenza (P)", type: "text" },
+    { id: "note_mediche", title: "Note Mediche", type: "text" },
   ]);
 
 const toFertilizerRow = (detail: LabelDetail): Record<string, unknown> => {
   const fert = (detail as any).label?.prodotto_fertilizzante_ue || {};
   const ident = fert.identificazione_prodotto || {};
-  const npk =
-    fert.composizione_garantita?.analisi_principale_NPK_percentuale_peso || {};
+  const comp = fert.composizione_garantita || {};
+  const npk = comp.analisi_principale_NPK_percentuale_peso || {};
+  const meso = comp.meso_elementi_percentuale_peso || {};
+  const solFosforo = comp.solubilita_fosforo || {};
+  const paramOrg = comp.parametri_organici_biologici || {};
   const instr = fert.istruzioni_uso_agronomiche || {};
+  const sicurezza = fert.informazioni_sicurezza_clp || {};
+
+  // Helper per formattare array come stringa
+  const formatArray = (arr: any[] | null | undefined): string => {
+    if (!arr || !Array.isArray(arr) || arr.length === 0) return "";
+    return arr.map((item) => {
+      if (typeof item === "string") return item;
+      if (typeof item === "object") {
+        // Per forme_azoto: { tipo, percentuale }
+        if (item.tipo && item.percentuale !== undefined) {
+          return `${item.tipo}: ${item.percentuale}%`;
+        }
+        // Per micronutrienti: { elemento, percentuale }
+        if (item.elemento && item.percentuale !== undefined) {
+          return `${item.elemento}: ${item.percentuale}%`;
+        }
+        return JSON.stringify(item);
+      }
+      return String(item);
+    }).join(", ");
+  };
+
+  // Helper per quantità nominale
+  const formatQuantitaNominale = (qn: any): string => {
+    if (!qn) return "";
+    if (qn.valore && qn.unita) return `${qn.valore} ${qn.unita}`;
+    return "";
+  };
 
   return {
-    nome_commerciale: ident.nome_commerciale || "",
-    funzione_categoria: ident.funzione_categoria_prodotto || "",
-    uso_previsto: instr.uso_previsto || "",
+    // Identificazione Prodotto
+    nome_commerciale: ident.nome_commerciale ?? "",
+    funzione_categoria: ident.funzione_categoria_prodotto ?? "",
+    numero_lotto: ident.numero_lotto ?? "",
+    stato_fisico: ident.stato_fisico ?? "",
+    confezioni_disponibili: formatArray(ident.confezioni_disponibili),
+    quantita_nominale: formatQuantitaNominale(ident.quantita_nominale),
+    // NPK
     n_totale: npk.N_totale ?? "",
     p2o5_totale: npk.P2O5_totale ?? "",
     k2o_totale: npk.K2O_totale ?? "",
+    // Meso elementi
+    cao_totale: meso.CaO_totale ?? "",
+    mgo_totale: meso.MgO_totale ?? "",
+    so3_totale: meso.SO3_totale ?? "",
+    na2o_totale: meso.Na2O_totale ?? "",
+    // Forme Azoto
+    forme_azoto: formatArray(comp.forme_azoto),
+    // Solubilità Fosforo
+    p2o5_solubile_acqua: solFosforo.P2O5_solubile_acqua ?? "",
+    p2o5_solubile_citrato: solFosforo.P2O5_solubile_citrato_ammonio_neutro ?? "",
+    // Micronutrienti
+    micronutrienti: formatArray(comp.micronutrienti),
+    // Parametri organici
+    carbonio_organico: paramOrg.carbonio_organico_biologico ?? "",
+    acidi_umici_fulvici: paramOrg.acidi_umici_fulvici ?? "",
+    sostanza_organica: paramOrg.sostanza_organica ?? "",
+    // Istruzioni uso
+    uso_previsto: instr.uso_previsto ?? "",
+    frequenza: instr.frequenza ?? "",
+    condizioni_stoccaggio: instr.condizioni_stoccaggio ?? "",
+    // Sicurezza
+    avvertenza: sicurezza.avvertenza ?? "",
+    pittogrammi_pericolo: formatArray(sicurezza.pittogrammi_pericolo),
+    indicazioni_pericolo: formatArray(sicurezza.indicazioni_pericolo_H),
+    consigli_prudenza: formatArray(sicurezza.consigli_prudenza_P),
+    note_mediche: sicurezza.note_mediche ?? "",
   };
 };
 
@@ -365,9 +443,25 @@ export default function LabelDetailPage(): React.ReactElement {
                         const fert = currentLabel.prodotto_fertilizzante_ue || {};
                         const ident = fert.identificazione_prodotto || {};
                         const comp = fert.composizione_garantita || {};
-                        const npk =
-                          comp.analisi_principale_NPK_percentuale_peso || {};
+                        const npk = comp.analisi_principale_NPK_percentuale_peso || {};
+                        const meso = comp.meso_elementi_percentuale_peso || {};
+                        const solFosforo = comp.solubilita_fosforo || {};
+                        const paramOrg = comp.parametri_organici_biologici || {};
                         const instr = fert.istruzioni_uso_agronomiche || {};
+                        const sicurezza = fert.informazioni_sicurezza_clp || {};
+
+                        // Helper per convertire in numero o null
+                        const toNumberOrNull = (val: any): number | null => {
+                          if (val === "" || val === null || val === undefined) return null;
+                          const num = Number(val);
+                          return isNaN(num) ? null : num;
+                        };
+
+                        // Helper per convertire stringa in array
+                        const parseConfezioni = (val: string): string[] => {
+                          if (!val || typeof val !== "string") return ident.confezioni_disponibili || [];
+                          return val.split(",").map((s) => s.trim()).filter(Boolean);
+                        };
 
                         const payloadLabel = {
                           ...currentLabel,
@@ -375,31 +469,49 @@ export default function LabelDetailPage(): React.ReactElement {
                             ...fert,
                             identificazione_prodotto: {
                               ...ident,
-                              nome_commerciale:
-                                row.nome_commerciale ?? ident.nome_commerciale,
-                              funzione_categoria_prodotto:
-                                row.funzione_categoria ??
-                                ident.funzione_categoria_prodotto,
+                              nome_commerciale: row.nome_commerciale ?? ident.nome_commerciale,
+                              funzione_categoria_prodotto: row.funzione_categoria ?? ident.funzione_categoria_prodotto,
+                              numero_lotto: row.numero_lotto || ident.numero_lotto,
+                              stato_fisico: row.stato_fisico || ident.stato_fisico,
+                              confezioni_disponibili: parseConfezioni(row.confezioni_disponibili as string),
                             },
                             composizione_garantita: {
                               ...comp,
                               analisi_principale_NPK_percentuale_peso: {
                                 ...npk,
-                                N_totale: Number(
-                                  row.n_totale ?? npk.N_totale
-                                ),
-                                P2O5_totale: Number(
-                                  row.p2o5_totale ?? npk.P2O5_totale
-                                ),
-                                K2O_totale: Number(
-                                  row.k2o_totale ?? npk.K2O_totale
-                                ),
+                                N_totale: toNumberOrNull(row.n_totale) ?? npk.N_totale,
+                                P2O5_totale: toNumberOrNull(row.p2o5_totale) ?? npk.P2O5_totale,
+                                K2O_totale: toNumberOrNull(row.k2o_totale) ?? npk.K2O_totale,
+                              },
+                              meso_elementi_percentuale_peso: {
+                                ...meso,
+                                CaO_totale: toNumberOrNull(row.cao_totale) ?? meso.CaO_totale,
+                                MgO_totale: toNumberOrNull(row.mgo_totale) ?? meso.MgO_totale,
+                                SO3_totale: toNumberOrNull(row.so3_totale) ?? meso.SO3_totale,
+                                Na2O_totale: toNumberOrNull(row.na2o_totale) ?? meso.Na2O_totale,
+                              },
+                              solubilita_fosforo: {
+                                ...solFosforo,
+                                P2O5_solubile_acqua: toNumberOrNull(row.p2o5_solubile_acqua) ?? solFosforo.P2O5_solubile_acqua,
+                                P2O5_solubile_citrato_ammonio_neutro: toNumberOrNull(row.p2o5_solubile_citrato) ?? solFosforo.P2O5_solubile_citrato_ammonio_neutro,
+                              },
+                              parametri_organici_biologici: {
+                                ...paramOrg,
+                                carbonio_organico_biologico: toNumberOrNull(row.carbonio_organico) ?? paramOrg.carbonio_organico_biologico,
+                                acidi_umici_fulvici: toNumberOrNull(row.acidi_umici_fulvici) ?? paramOrg.acidi_umici_fulvici,
+                                sostanza_organica: toNumberOrNull(row.sostanza_organica) ?? paramOrg.sostanza_organica,
                               },
                             },
                             istruzioni_uso_agronomiche: {
                               ...instr,
-                              uso_previsto:
-                                row.uso_previsto ?? instr.uso_previsto,
+                              uso_previsto: row.uso_previsto ?? instr.uso_previsto,
+                              frequenza: row.frequenza ?? instr.frequenza,
+                              condizioni_stoccaggio: row.condizioni_stoccaggio ?? instr.condizioni_stoccaggio,
+                            },
+                            informazioni_sicurezza_clp: {
+                              ...sicurezza,
+                              avvertenza: row.avvertenza ?? sicurezza.avvertenza,
+                              note_mediche: row.note_mediche || sicurezza.note_mediche,
                             },
                           },
                         };
