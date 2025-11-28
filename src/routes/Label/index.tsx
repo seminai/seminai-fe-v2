@@ -28,6 +28,38 @@ const buildLabelSummaryColumns = (): EditableColumn[] =>
       width: "20%",
     },
     {
+      id: "category",
+      title: "Categoria",
+      type: "text",
+      width: "15%",
+      render: (value: unknown) => {
+        const category = value as string | undefined;
+        if (!category) return "-";
+
+        const label =
+          category === "FITO"
+            ? "Fitosanitario"
+            : category === "FERTILIZER"
+            ? "Fertilizzante"
+            : category;
+
+        const colorClass =
+          category === "FITO"
+            ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+            : category === "FERTILIZER"
+            ? "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400"
+            : "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
+
+        return (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorClass}`}
+          >
+            {label}
+          </span>
+        );
+      },
+    },
+    {
       id: "isVerified",
       title: "Verificata",
       type: "text",
@@ -167,17 +199,14 @@ export default function Label(): React.ReactElement {
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader
-        title="Etichette"
-        rightElement={
-          <Button
-            onClick={() => navigate("/new-label")}
-            className="whitespace-nowrap"
-          >
-            Aggiungi Etichette
-          </Button>
-        }
-      />
+      <PageHeader title="Etichette">
+        <Button
+          onClick={() => navigate("/new-label")}
+          className="whitespace-nowrap"
+        >
+          Aggiungi Etichette
+        </Button>
+      </PageHeader>
 
       {/* Area scrollabile - solo la tabella */}
       <div className="flex-1 overflow-auto px-6 pb-6">

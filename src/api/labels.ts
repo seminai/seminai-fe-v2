@@ -8,6 +8,7 @@ export type LabelSummary = {
   qualityExtraction: number[];
   errors: string[];
   isVerified: boolean;
+  category?: string;
   createdAt: string;
 };
 
