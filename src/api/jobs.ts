@@ -10,8 +10,17 @@ async function safeReadText(response: Response): Promise<string> {
   }
 }
 
+export type JobHistoryEntry = {
+  step: string;
+  title: string;
+  value: string | number;
+  source: string;
+  timestamp: string;
+};
+
 export type Job = {
   id: string;
+  jobId: string;
   productionUnitId: string;
   dateOfOpeation: string;
   isVerified: boolean;
@@ -27,6 +36,7 @@ export type Job = {
   isLocalizedTreatment: boolean;
   userId: string;
   note: string;
+  history: JobHistoryEntry[];
   totalDistributedWaterL: number | null;
   machineId: string | null;
   createdAt: string;

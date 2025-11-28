@@ -11,10 +11,144 @@ import {
   jobsApiService,
   type JobWithRelations,
   type Product,
+  type JobHistoryEntry,
 } from "@/api/jobs";
 import { stocksApiService, type CreateStockPayload } from "@/api/stocks";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { History } from "lucide-react";
+
+// Component to display job history in a Sheet
+interface JobHistorySheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  history: JobHistoryEntry[];
+  jobCode: string;
+}
+
+class HistoryEntryFormatter {
+  private static readonly STEP_LABELS: Record<string, string> = {
+    crop_matching: "Matching Coltura",
+    dosage_scheduling: "Pianificazione Dosaggio",
+    dosage_optimization: "Ottimizzazione Dosaggio",
+    job_creation: "Creazione Job",
+  };
+
+  private static readonly SOURCE_COLORS: Record<string, string> = {
+    label_extraction: "bg-blue-100 text-blue-700",
+    user_input: "bg-green-100 text-green-700",
+    llm_openai: "bg-purple-100 text-purple-700",
+    linear_programming: "bg-amber-100 text-amber-700",
+    automatic_calculation: "bg-cyan-100 text-cyan-700",
+  };
+
+  public static formatStep(step: string): string {
+    return this.STEP_LABELS[step] ?? step;
+  }
+
+  public static getSourceColor(source: string): string {
+    return this.SOURCE_COLORS[source] ?? "bg-gray-100 text-gray-700";
+  }
+
+  public static formatTimestamp(timestamp: string): string {
+    return new Date(timestamp).toLocaleString("it-IT", {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+  }
+}
+
+function JobHistorySheet({
+  open,
+  onOpenChange,
+  history,
+  jobCode,
+}: JobHistorySheetProps) {
+  const groupedHistory = useMemo(() => {
+    const groups: Record<string, JobHistoryEntry[]> = {};
+    history.forEach((entry) => {
+      if (!groups[entry.step]) {
+        groups[entry.step] = [];
+      }
+      groups[entry.step].push(entry);
+    });
+    return groups;
+  }, [history]);
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-xl bg-white flex flex-col h-full"
+      >
+        <SheetHeader className="flex-shrink-0">
+          <SheetTitle className="flex items-center gap-2">
+            <History className="h-5 w-5" />
+            Storico Operazione
+          </SheetTitle>
+          <SheetDescription>
+            Codice:{" "}
+            <Badge variant="outline" className="ml-1">
+              {jobCode}
+            </Badge>
+          </SheetDescription>
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto mt-4 p-2">
+          <div className="space-y-6 pb-6">
+            {Object.entries(groupedHistory).map(([step, entries]) => (
+              <div key={step} className="space-y-3">
+                <h3 className="text-sm font-semibold text-foreground border-b pb-2">
+                  {HistoryEntryFormatter.formatStep(step)}
+                </h3>
+                <div className="space-y-2 pl-2">
+                  {entries.map((entry, idx) => (
+                    <div
+                      key={`${step}-${idx}`}
+                      className="flex flex-col gap-1 py-2 border-l-2 border-muted pl-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-foreground">
+                          {entry.title}
+                        </span>
+                        <Badge
+                          variant="secondary"
+                          className={`text-xs ${HistoryEntryFormatter.getSourceColor(
+                            entry.source
+                          )}`}
+                        >
+                          {entry.source}
+                        </Badge>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {String(entry.value)}
+                      </span>
+                      <span className="text-xs text-muted-foreground/70">
+                        {HistoryEntryFormatter.formatTimestamp(entry.timestamp)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {history.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                Nessuno storico disponibile per questa operazione.
+              </div>
+            )}
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
 
 class JobProductsFormatter {
   private readonly products: Product[];
@@ -58,6 +192,7 @@ class JobTableRowBuilder {
 
     return {
       id: job.id,
+      jobCode: job.jobId ?? "-",
       dateOfOpeation: new Date(job.dateOfOpeation).toLocaleDateString("it-IT"),
       companyName: company.name,
       productionUnitName: productionUnit.name,
@@ -80,6 +215,7 @@ class JobTableRowBuilder {
       _originalStock: job.quantity,
       _companyId: company.id,
       _productionUnitId: productionUnit.id,
+      _history: job.history ?? [],
     };
   }
 }
@@ -116,9 +252,20 @@ class JobBulkVerifier {
 
 export default function JobPage() {
   const [isBulkVerifying, setIsBulkVerifying] = useState<boolean>(false);
+  const [historySheetOpen, setHistorySheetOpen] = useState<boolean>(false);
+  const [selectedJobHistory, setSelectedJobHistory] = useState<
+    JobHistoryEntry[]
+  >([]);
+  const [selectedJobCode, setSelectedJobCode] = useState<string>("");
 
   const { jobs, isLoading, error, refetch } = useJobs();
   const bulkVerifier = useMemo(() => new JobBulkVerifier(jobsApiService), []);
+
+  const handleOpenHistory = (row: Record<string, unknown>) => {
+    setSelectedJobHistory(row._history as JobHistoryEntry[]);
+    setSelectedJobCode(row.jobCode as string);
+    setHistorySheetOpen(true);
+  };
 
   // Converte i jobs in formato per la tabella
   const jobsAsRows = useMemo(() => {
@@ -129,6 +276,18 @@ export default function JobPage() {
 
   // Colonne per la tabella editabile
   const columns: EditableColumn[] = [
+    {
+      id: "jobCode",
+      title: "Codice Operazione",
+      type: "text",
+      width: "150px",
+      readOnly: true,
+      render: (value) => (
+        <Badge variant="outline" className="font-mono">
+          {value as string}
+        </Badge>
+      ),
+    },
     {
       id: "isVerified",
       title: "Stato Verifica",
@@ -267,6 +426,27 @@ export default function JobPage() {
       type: "text",
       width: "250px",
       readOnly: true,
+    },
+    {
+      id: "_history",
+      title: "Storico",
+      type: "text",
+      width: "100px",
+      readOnly: true,
+      render: (_value, row) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleOpenHistory(row);
+          }}
+          className="gap-1.5"
+        >
+          <History className="h-4 w-4" />
+          Storico
+        </Button>
+      ),
     },
   ];
 
@@ -420,6 +600,14 @@ export default function JobPage() {
           </div>
         </div>
       </div>
+
+      {/* History Sheet */}
+      <JobHistorySheet
+        open={historySheetOpen}
+        onOpenChange={setHistorySheetOpen}
+        history={selectedJobHistory}
+        jobCode={selectedJobCode}
+      />
     </div>
   );
 }
