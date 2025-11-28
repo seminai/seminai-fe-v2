@@ -19,10 +19,12 @@ import { authenticatedHttpClient } from "@/api/http";
 
 interface LabelJobsTableProps {
   onRefresh?: () => void;
+  onActiveJobsChange?: (count: number) => void;
 }
 
 export function LabelJobsTable({
   onRefresh,
+  onActiveJobsChange,
 }: LabelJobsTableProps): React.ReactElement {
   const [jobs, setJobs] = useState<LabelJob[]>([]);
   const [loading, setLoading] = useState(true);
@@ -189,6 +191,18 @@ export function LabelJobsTable({
     }
   };
 
+  const activeJobs = jobs.filter(
+    (job) => job.state === "waiting" || job.state === "active"
+  );
+  const completedJobs = jobs.filter(
+    (job) => job.state === "completed" || job.state === "failed"
+  );
+
+  // Notify parent about active jobs count changes
+  useEffect(() => {
+    onActiveJobsChange?.(activeJobs.length);
+  }, [activeJobs.length, onActiveJobsChange]);
+
   if (loading) {
     return (
       <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm">
@@ -202,13 +216,6 @@ export function LabelJobsTable({
   if (jobs.length === 0) {
     return <></>; // Don't show anything if no jobs
   }
-
-  const activeJobs = jobs.filter(
-    (job) => job.state === "waiting" || job.state === "active"
-  );
-  const completedJobs = jobs.filter(
-    (job) => job.state === "completed" || job.state === "failed"
-  );
 
   return (
     <div className="space-y-4 ">
