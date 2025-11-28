@@ -10,12 +10,30 @@ async function safeReadText(response: Response): Promise<string> {
   }
 }
 
+export type JobHistoryMetadata = {
+  productionUnitId?: string;
+  productionUnitName?: string;
+  productId?: string;
+  productName?: string;
+  productRegistrationNumber?: string;
+  companyId?: string;
+  companyName?: string;
+  cropName?: string;
+  variety?: string;
+  areaHa?: number;
+  stockId?: string;
+  stockQuantity?: number;
+  stockUnit?: string;
+  description?: string;
+};
+
 export type JobHistoryEntry = {
   step: string;
   title: string;
   value: string | number;
   source: string;
   timestamp: string;
+  metadata?: JobHistoryMetadata;
 };
 
 export type Job = {
