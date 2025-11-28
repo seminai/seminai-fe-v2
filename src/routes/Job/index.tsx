@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useJobs } from "@/hooks/useJobs";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { PageHeader } from "@/components/organism/Header";
 import {
   EditableTable,
@@ -33,6 +34,7 @@ import {
   Building2,
   Calendar,
   ChevronRight,
+  ChevronLeft,
   Package,
   Sprout,
 } from "lucide-react";
@@ -624,7 +626,7 @@ class JobBulkVerifier {
 type ViewMode = "all" | "review";
 
 export default function JobPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>("all");
+  const [viewMode, setViewMode] = useState<ViewMode>("review");
   const [isBulkVerifying, setIsBulkVerifying] = useState<boolean>(false);
   const [historySheetOpen, setHistorySheetOpen] = useState<boolean>(false);
   const [selectedJobHistory, setSelectedJobHistory] = useState<
@@ -637,7 +639,9 @@ export default function JobPage() {
   const [selectedReviewRows, setSelectedReviewRows] = useState<
     EditableTableRowData[]
   >([]);
+  const [mobileHistoryOpen, setMobileHistoryOpen] = useState<boolean>(false);
 
+  const isMobile = useIsMobile();
   const { jobs, isLoading, error, refetch } = useJobs();
   const bulkVerifier = useMemo(() => new JobBulkVerifier(jobsApiService), []);
 
@@ -678,6 +682,30 @@ export default function JobPage() {
       new JobTableRowBuilder(jobWithRelations).build()
     );
   }, [selectedGroup]);
+
+  // Indice del gruppo selezionato e navigazione tra gruppi
+  const currentGroupIndex = useMemo(() => {
+    if (!selectedGroup) return -1;
+    return jobGroups.findIndex((g) => g.jobCode === selectedGroup.jobCode);
+  }, [jobGroups, selectedGroup]);
+
+  const canGoToPreviousGroup = currentGroupIndex > 0;
+  const canGoToNextGroup =
+    currentGroupIndex < jobGroups.length - 1 && currentGroupIndex >= 0;
+
+  const goToPreviousGroup = () => {
+    if (canGoToPreviousGroup) {
+      setSelectedGroupCode(jobGroups[currentGroupIndex - 1].jobCode);
+      setSelectedReviewRows([]);
+    }
+  };
+
+  const goToNextGroup = () => {
+    if (canGoToNextGroup) {
+      setSelectedGroupCode(jobGroups[currentGroupIndex + 1].jobCode);
+      setSelectedReviewRows([]);
+    }
+  };
 
   // Colonne per la tabella editabile
   const columns: EditableColumn[] = [
@@ -1089,70 +1117,242 @@ export default function JobPage() {
   );
 
   // Renderizza la vista "Da confermare" (review)
-  const renderReviewView = () => (
-    <div className="flex-1 flex overflow-hidden min-h-0">
-      {/* Sidebar sinistra - Lista gruppi */}
-      <div className="w-72 flex-shrink-0 bg-slate-50 flex flex-col overflow-hidden">
-        <div className="p-3 bg-white flex-shrink-0">
-          <h3 className="text-sm font-medium text-slate-700">
-            Gruppi da verificare
-          </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {jobGroups.length} grupp{jobGroups.length === 1 ? "o" : "i"} •{" "}
-            {unverifiedJobs.length} operazion
-            {unverifiedJobs.length === 1 ? "e" : "i"}
-          </p>
-        </div>
-        <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
-          {jobGroups.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 text-sm">
-              <ClipboardCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Nessuna operazione da verificare</p>
+  const renderReviewView = () => {
+    // Vista mobile: mostra una schermata alla volta
+    if (isMobile) {
+      // Se nessun gruppo è selezionato, mostra la lista gruppi
+      if (!selectedGroup) {
+        return (
+          <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+            <div className="p-3 bg-white flex-shrink-0">
+              <h3 className="text-sm font-medium text-slate-700">
+                Gruppi da verificare
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {jobGroups.length} grupp{jobGroups.length === 1 ? "o" : "i"} •{" "}
+                {unverifiedJobs.length} operazion
+                {unverifiedJobs.length === 1 ? "e" : "i"}
+              </p>
             </div>
-          ) : (
-            jobGroups.map((group) => (
-              <JobGroupCard
-                key={group.jobCode}
-                group={group}
-                isSelected={selectedGroup?.jobCode === group.jobCode}
-                onClick={() => {
-                  setSelectedGroupCode(group.jobCode);
-                  setSelectedReviewRows([]);
-                }}
-              />
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Centro - Tabella del gruppo selezionato */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {selectedGroup ? (
-          <>
-            <div className="flex-shrink-0 p-4 bg-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold text-slate-800">
-                      Operazione #{selectedGroup.jobCode}
-                    </h3>
-                    <Badge variant="outline">
-                      {selectedGroup.jobs.length} trattament
-                      {selectedGroup.jobs.length === 1 ? "o" : "i"}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-slate-500 mt-0.5">
-                    {selectedGroup.companyName}
-                  </p>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
+              {jobGroups.length === 0 ? (
+                <div className="text-center py-8 text-slate-400 text-sm">
+                  <ClipboardCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>Nessuna operazione da verificare</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  {selectedReviewRows.length > 0 && (
+              ) : (
+                jobGroups.map((group) => (
+                  <JobGroupCard
+                    key={group.jobCode}
+                    group={group}
+                    isSelected={false}
+                    onClick={() => {
+                      setSelectedGroupCode(group.jobCode);
+                      setSelectedReviewRows([]);
+                    }}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      // Se un gruppo è selezionato, mostra il dettaglio
+      return (
+        <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+          {/* Header mobile con navigazione tra gruppi */}
+          <div className="flex-shrink-0 p-3 bg-white">
+            <div className="flex items-center gap-2 mb-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={goToPreviousGroup}
+                disabled={!canGoToPreviousGroup}
+                className="p-1 h-auto"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <div className="flex-1 min-w-0 text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <h3 className="text-base font-semibold text-slate-800 truncate">
+                    #{selectedGroup.jobCode}
+                  </h3>
+                  <Badge variant="outline" className="shrink-0 text-xs">
+                    {selectedGroup.jobs.length}
+                  </Badge>
+                </div>
+                <p className="text-xs text-slate-500">
+                  {selectedGroup.companyName}
+                </p>
+                <p className="text-[10px] text-slate-400">
+                  {currentGroupIndex + 1} / {jobGroups.length}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={goToNextGroup}
+                disabled={!canGoToNextGroup}
+                className="p-1 h-auto"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMobileHistoryOpen(true)}
+                className="p-2 h-auto"
+              >
+                <History className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              {selectedReviewRows.length > 0 && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  disabled={isBulkVerifying}
+                  onClick={() => handleBulkVerifySelected(selectedReviewRows)}
+                  className="flex-1 text-xs"
+                >
+                  {isBulkVerifying ? (
+                    <Spinner className="h-3 w-3" />
+                  ) : (
+                    <ClipboardCheck className="h-3 w-3" />
+                  )}
+                  Verifica ({selectedReviewRows.length})
+                </Button>
+              )}
+              <Button
+                variant="default"
+                size="sm"
+                disabled={isBulkVerifying}
+                onClick={() => handleBulkVerifySelected(selectedGroupRows)}
+                className={cn(
+                  "text-xs",
+                  selectedReviewRows.length > 0 ? "flex-1" : "w-full"
+                )}
+              >
+                {isBulkVerifying ? (
+                  <Spinner className="h-3 w-3" />
+                ) : (
+                  <ClipboardCheck className="h-3 w-3" />
+                )}
+                Verifica Tutti
+              </Button>
+            </div>
+          </div>
+
+          {/* Tabella mobile */}
+          <div className="flex-1 overflow-y-auto p-2 min-h-0">
+            <EditableTable
+              columns={reviewColumns}
+              rows={selectedGroupRows}
+              isModify={true}
+              onSave={handleSave}
+              onDeleteSelected={handleDeleteSelected}
+              onSelectionChange={(selectedRows) => {
+                setSelectedReviewRows(selectedRows);
+              }}
+              getRowId={(row) => row.id as string}
+            />
+          </div>
+
+          {/* Sheet storico mobile */}
+          <Sheet open={mobileHistoryOpen} onOpenChange={setMobileHistoryOpen}>
+            <SheetContent side="bottom" className="h-[70vh] p-0">
+              <HistoryPanel
+                history={selectedGroup.history}
+                jobCode={selectedGroup.jobCode}
+              />
+            </SheetContent>
+          </Sheet>
+        </div>
+      );
+    }
+
+    // Vista desktop: layout a 3 colonne
+    return (
+      <div className="flex-1 flex overflow-hidden min-h-0">
+        {/* Sidebar sinistra - Lista gruppi */}
+        <div className="w-72 flex-shrink-0 bg-slate-50 flex flex-col overflow-hidden">
+          <div className="p-3 bg-white flex-shrink-0">
+            <h3 className="text-sm font-medium text-slate-700">
+              Gruppi da verificare
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {jobGroups.length} grupp{jobGroups.length === 1 ? "o" : "i"} •{" "}
+              {unverifiedJobs.length} operazion
+              {unverifiedJobs.length === 1 ? "e" : "i"}
+            </p>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
+            {jobGroups.length === 0 ? (
+              <div className="text-center py-8 text-slate-400 text-sm">
+                <ClipboardCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Nessuna operazione da verificare</p>
+              </div>
+            ) : (
+              jobGroups.map((group) => (
+                <JobGroupCard
+                  key={group.jobCode}
+                  group={group}
+                  isSelected={selectedGroup?.jobCode === group.jobCode}
+                  onClick={() => {
+                    setSelectedGroupCode(group.jobCode);
+                    setSelectedReviewRows([]);
+                  }}
+                />
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Centro - Tabella del gruppo selezionato */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {selectedGroup ? (
+            <>
+              <div className="flex-shrink-0 p-4 bg-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-semibold text-slate-800">
+                        Operazione #{selectedGroup.jobCode}
+                      </h3>
+                      <Badge variant="outline">
+                        {selectedGroup.jobs.length} trattament
+                        {selectedGroup.jobs.length === 1 ? "o" : "i"}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-slate-500 mt-0.5">
+                      {selectedGroup.companyName}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {selectedReviewRows.length > 0 && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        disabled={isBulkVerifying}
+                        onClick={() =>
+                          handleBulkVerifySelected(selectedReviewRows)
+                        }
+                      >
+                        {isBulkVerifying ? (
+                          <Spinner className="h-4 w-4" />
+                        ) : (
+                          <ClipboardCheck className="h-4 w-4" />
+                        )}
+                        Verifica Selezionati ({selectedReviewRows.length})
+                      </Button>
+                    )}
                     <Button
                       variant="default"
                       size="sm"
                       disabled={isBulkVerifying}
                       onClick={() =>
-                        handleBulkVerifySelected(selectedReviewRows)
+                        handleBulkVerifySelected(selectedGroupRows)
                       }
                     >
                       {isBulkVerifying ? (
@@ -1160,62 +1360,49 @@ export default function JobPage() {
                       ) : (
                         <ClipboardCheck className="h-4 w-4" />
                       )}
-                      Verifica Selezionati ({selectedReviewRows.length})
+                      Verifica Tutti
                     </Button>
-                  )}
-                  <Button
-                    variant="default"
-                    size="sm"
-                    disabled={isBulkVerifying}
-                    onClick={() => handleBulkVerifySelected(selectedGroupRows)}
-                  >
-                    {isBulkVerifying ? (
-                      <Spinner className="h-4 w-4" />
-                    ) : (
-                      <ClipboardCheck className="h-4 w-4" />
-                    )}
-                    Verifica Tutti
-                  </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 min-h-0">
-              <div className="h-full [&>div>div:last-child]:max-h-full">
-                <EditableTable
-                  columns={reviewColumns}
-                  rows={selectedGroupRows}
-                  isModify={true}
-                  onSave={handleSave}
-                  onDeleteSelected={handleDeleteSelected}
-                  onSelectionChange={(selectedRows) => {
-                    setSelectedReviewRows(selectedRows);
-                  }}
-                  getRowId={(row) => row.id as string}
-                />
+              <div className="flex-1 overflow-y-auto p-4 min-h-0">
+                <div className="h-full [&>div>div:last-child]:max-h-full">
+                  <EditableTable
+                    columns={reviewColumns}
+                    rows={selectedGroupRows}
+                    isModify={true}
+                    onSave={handleSave}
+                    onDeleteSelected={handleDeleteSelected}
+                    onSelectionChange={(selectedRows) => {
+                      setSelectedReviewRows(selectedRows);
+                    }}
+                    getRowId={(row) => row.id as string}
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-slate-400">
+              <div className="text-center">
+                <ListChecks className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>Seleziona un gruppo per visualizzare i dettagli</p>
               </div>
             </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-slate-400">
-            <div className="text-center">
-              <ListChecks className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>Seleziona un gruppo per visualizzare i dettagli</p>
-            </div>
+          )}
+        </div>
+
+        {/* Destra - Storico */}
+        {selectedGroup && (
+          <div className="w-80 flex-shrink-0 overflow-hidden">
+            <HistoryPanel
+              history={selectedGroup.history}
+              jobCode={selectedGroup.jobCode}
+            />
           </div>
         )}
       </div>
-
-      {/* Destra - Storico */}
-      {selectedGroup && (
-        <div className="w-80 flex-shrink-0 overflow-hidden">
-          <HistoryPanel
-            history={selectedGroup.history}
-            jobCode={selectedGroup.jobCode}
-          />
-        </div>
-      )}
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
