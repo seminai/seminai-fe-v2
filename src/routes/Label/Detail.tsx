@@ -39,6 +39,49 @@ import { Label } from "@/components/ui/label";
 
 type LabelData = LabelDetail["label"];
 
+// Fertilizer specific columns
+const buildFertilizerColumns = (): EditableColumn[] =>
+  buildColumns<any>([
+    {
+      id: "nome_commerciale",
+      title: "Nome Commerciale",
+      type: "text",
+      width: "20%",
+    },
+    {
+      id: "funzione_categoria",
+      title: "Funzione/Categoria",
+      type: "text",
+      width: "20%",
+    },
+    { id: "uso_previsto", title: "Uso Previsto", type: "text", width: "20%" },
+    { id: "n_totale", title: "N Totale (%)", type: "number", width: "10%" },
+    {
+      id: "p2o5_totale",
+      title: "P2O5 Totale (%)",
+      type: "number",
+      width: "10%",
+    },
+    { id: "k2o_totale", title: "K2O Totale (%)", type: "number", width: "10%" },
+  ]);
+
+const toFertilizerRow = (detail: LabelDetail): Record<string, unknown> => {
+  const fert = (detail as any).label?.prodotto_fertilizzante_ue || {};
+  const ident = fert.identificazione_prodotto || {};
+  const npk =
+    fert.composizione_garantita?.analisi_principale_NPK_percentuale_peso || {};
+  const instr = fert.istruzioni_uso_agronomiche || {};
+
+  return {
+    nome_commerciale: ident.nome_commerciale || "",
+    funzione_categoria: ident.funzione_categoria_prodotto || "",
+    uso_previsto: instr.uso_previsto || "",
+    n_totale: npk.N_totale ?? "",
+    p2o5_totale: npk.P2O5_totale ?? "",
+    k2o_totale: npk.K2O_totale ?? "",
+  };
+};
+
 const buildLabelColumns = (): EditableColumn[] =>
   buildColumns<LabelData>([
     { id: "prodotto", title: "Prodotto", type: "text", required: false },
@@ -139,7 +182,40 @@ export default function LabelDetailPage(): React.ReactElement {
     setEditedDosaggi(detail.label?.dosaggi_dettagliati ?? []);
   }, [detail]);
 
-  const columns = buildLabelColumns();
+  const isFertilizer = (detail as any)?.category === "FERTILIZER";
+
+  const columns = React.useMemo(
+    () => (isFertilizer ? buildFertilizerColumns() : buildLabelColumns()),
+    [isFertilizer]
+  );
+
+  const rowData = React.useMemo(() => {
+    if (!detail) return {};
+    return isFertilizer ? toFertilizerRow(detail) : toLabelRow(detail);
+  }, [detail, isFertilizer]);
+
+  // Fertilizer Dosages
+  const fertilizerDosages =
+    (detail as any)?.label?.prodotto_fertilizzante_ue
+      ?.istruzioni_uso_agronomiche?.dosi_applicazione?.specifiche_coltura ?? [];
+
+  const [editedFertilizerDosages, setEditedFertilizerDosages] = React.useState<
+    any[]
+  >([]);
+
+  React.useEffect(() => {
+    if (!detail) return;
+    setLabelJson(JSON.stringify(detail.label ?? {}, null, 2));
+    setDosaggiJson(
+      (detail.label?.dosaggi_dettagliati ?? []).map((d) =>
+        JSON.stringify(d, null, 2)
+      )
+    );
+    setEditedDosaggi(detail.label?.dosaggi_dettagliati ?? []);
+    if (isFertilizer) {
+      setEditedFertilizerDosages(fertilizerDosages);
+    }
+  }, [detail, isFertilizer]);
 
   return (
     <div className="p-4 md:p-6 h-screen overflow-hidden flex flex-col">
@@ -275,7 +351,7 @@ export default function LabelDetailPage(): React.ReactElement {
               viewMode === "table" ? (
                 <EditableTable
                   columns={columns}
-                  rows={[toLabelRow(detail)]}
+                  rows={[rowData]}
                   isModify={true}
                   isVertical={true}
                   alwaysEdit={true}
@@ -283,6 +359,54 @@ export default function LabelDetailPage(): React.ReactElement {
                   onSave={async ({ updated }) => {
                     try {
                       const row = updated?.[0] ?? {};
+
+                      if (isFertilizer) {
+                        const currentLabel = detail.label as any;
+                        const fert = currentLabel.prodotto_fertilizzante_ue || {};
+                        const ident = fert.identificazione_prodotto || {};
+                        const comp = fert.composizione_garantita || {};
+                        const npk =
+                          comp.analisi_principale_NPK_percentuale_peso || {};
+                        const instr = fert.istruzioni_uso_agronomiche || {};
+
+                        const payloadLabel = {
+                          ...currentLabel,
+                          prodotto_fertilizzante_ue: {
+                            ...fert,
+                            identificazione_prodotto: {
+                              ...ident,
+                              nome_commerciale:
+                                row.nome_commerciale ?? ident.nome_commerciale,
+                              funzione_categoria_prodotto:
+                                row.funzione_categoria ??
+                                ident.funzione_categoria_prodotto,
+                            },
+                            composizione_garantita: {
+                              ...comp,
+                              analisi_principale_NPK_percentuale_peso: {
+                                ...npk,
+                                N_totale: Number(
+                                  row.n_totale ?? npk.N_totale
+                                ),
+                                P2O5_totale: Number(
+                                  row.p2o5_totale ?? npk.P2O5_totale
+                                ),
+                                K2O_totale: Number(
+                                  row.k2o_totale ?? npk.K2O_totale
+                                ),
+                              },
+                            },
+                            istruzioni_uso_agronomiche: {
+                              ...instr,
+                              uso_previsto:
+                                row.uso_previsto ?? instr.uso_previsto,
+                            },
+                          },
+                        };
+                        await saveAsync({ label: payloadLabel });
+                        return;
+                      }
+
                       const payloadLabel = {
                         ...detail.label,
                         prodotto: String(
@@ -369,7 +493,250 @@ export default function LabelDetailPage(): React.ReactElement {
             ) : null}
 
             {view === "dosaggi" ? (
-              viewMode === "table" ? (
+              isFertilizer ? (
+                // Fertilizer Dosages View
+                viewMode === "table" ? (
+                  <div className="space-y-4 pr-1">
+                    {JSON.stringify(editedFertilizerDosages) !==
+                      JSON.stringify(fertilizerDosages) && (
+                      <div className="sticky top-0 z-10 flex flex-col sm:flex-row sm:justify-end gap-2 mb-4 pb-2 bg-background border-b sm:border-b-0">
+                        <Button
+                          variant="outline"
+                          className="w-full sm:w-auto"
+                          onClick={() => {
+                            setEditedFertilizerDosages(fertilizerDosages);
+                          }}
+                          disabled={isSaving}
+                        >
+                          Annulla
+                        </Button>
+                        <Button
+                          className="w-full sm:w-auto"
+                          onClick={async () => {
+                            try {
+                              const currentLabel = detail.label as any;
+                              const fert =
+                                currentLabel.prodotto_fertilizzante_ue || {};
+                              const instr =
+                                fert.istruzioni_uso_agronomiche || {};
+
+                              const payloadLabel = {
+                                ...currentLabel,
+                                prodotto_fertilizzante_ue: {
+                                  ...fert,
+                                  istruzioni_uso_agronomiche: {
+                                    ...instr,
+                                    dosi_applicazione: {
+                                      ...instr.dosi_applicazione,
+                                      specifiche_coltura:
+                                        editedFertilizerDosages,
+                                    },
+                                  },
+                                },
+                              };
+
+                              await saveAsync({ label: payloadLabel });
+                            } catch {
+                              /* handled in mutation */
+                            }
+                          }}
+                          disabled={isSaving}
+                        >
+                          {isSaving ? "Salvataggio…" : "Salva"}
+                        </Button>
+                      </div>
+                    )}
+
+                    {editedFertilizerDosages.length > 0 ? (
+                      <Accordion type="multiple" className="space-y-2">
+                        {editedFertilizerDosages.map((d, idx) => (
+                          <AccordionItem
+                            key={idx}
+                            value={`dosaggio-${idx}`}
+                            className="border rounded-lg px-3 md:px-4"
+                          >
+                            <AccordionTrigger className="hover:no-underline py-3">
+                              <span className="text-left flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0">
+                                <span>
+                                  <span className="font-semibold">
+                                    #{idx + 1}
+                                  </span>{" "}
+                                  <span className="hidden sm:inline">-</span>{" "}
+                                  <span className="block sm:inline truncate max-w-[200px] sm:max-w-none">
+                                    {d.coltura || "Coltura non specificata"}
+                                  </span>
+                                </span>
+                                <span className="text-muted-foreground text-xs sm:text-sm">
+                                  <span className="hidden sm:inline"> - </span>
+                                  {d.fase_fenologica ||
+                                    "Fase non specificata"}{" "}
+                                  <span className="text-agri-green-700 font-bold">
+                                    ({d.dose_kg_ha != null
+                                      ? `${d.dose_kg_ha} kg/ha`
+                                      : d.dose_kg_ha_min != null || d.dose_kg_ha_max != null
+                                      ? `${d.dose_kg_ha_min ?? "-"}-${d.dose_kg_ha_max ?? "-"} kg/ha`
+                                      : "-"})
+                                  </span>
+                                </span>
+                              </span>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <Card className="shadow-none border-0">
+                                <CardContent className="space-y-4 pt-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                      <Label htmlFor={`coltura-${idx}`}>
+                                        Coltura
+                                      </Label>
+                                      <Input
+                                        id={`coltura-${idx}`}
+                                        value={d.coltura ?? ""}
+                                        onChange={(e) => {
+                                          const newDosaggi = [
+                                            ...editedFertilizerDosages,
+                                          ];
+                                          newDosaggi[idx] = {
+                                            ...newDosaggi[idx],
+                                            coltura: e.target.value,
+                                          };
+                                          setEditedFertilizerDosages(
+                                            newDosaggi
+                                          );
+                                        }}
+                                      />
+                                    </div>
+                                    {/* Show dose_kg_ha if available, otherwise show min/max */}
+                                    {d.dose_kg_ha != null ? (
+                                      <div className="space-y-2">
+                                        <Label htmlFor={`dose-kg-ha-${idx}`}>
+                                          Dose (kg/ha)
+                                        </Label>
+                                        <Input
+                                          id={`dose-kg-ha-${idx}`}
+                                          type="number"
+                                          value={d.dose_kg_ha ?? ""}
+                                          onChange={(e) => {
+                                            const newDosaggi = [
+                                              ...editedFertilizerDosages,
+                                            ];
+                                            newDosaggi[idx] = {
+                                              ...newDosaggi[idx],
+                                              dose_kg_ha: Number(e.target.value),
+                                            };
+                                            setEditedFertilizerDosages(
+                                              newDosaggi
+                                            );
+                                          }}
+                                        />
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <div className="space-y-2">
+                                          <Label htmlFor={`dose-kg-ha-min-${idx}`}>
+                                            Dose Min (kg/ha)
+                                          </Label>
+                                          <Input
+                                            id={`dose-kg-ha-min-${idx}`}
+                                            type="number"
+                                            value={d.dose_kg_ha_min ?? ""}
+                                            onChange={(e) => {
+                                              const newDosaggi = [
+                                                ...editedFertilizerDosages,
+                                              ];
+                                              newDosaggi[idx] = {
+                                                ...newDosaggi[idx],
+                                                dose_kg_ha_min: Number(e.target.value),
+                                              };
+                                              setEditedFertilizerDosages(
+                                                newDosaggi
+                                              );
+                                            }}
+                                          />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label htmlFor={`dose-kg-ha-max-${idx}`}>
+                                            Dose Max (kg/ha)
+                                          </Label>
+                                          <Input
+                                            id={`dose-kg-ha-max-${idx}`}
+                                            type="number"
+                                            value={d.dose_kg_ha_max ?? ""}
+                                            onChange={(e) => {
+                                              const newDosaggi = [
+                                                ...editedFertilizerDosages,
+                                              ];
+                                              newDosaggi[idx] = {
+                                                ...newDosaggi[idx],
+                                                dose_kg_ha_max: Number(e.target.value),
+                                              };
+                                              setEditedFertilizerDosages(
+                                                newDosaggi
+                                              );
+                                            }}
+                                          />
+                                        </div>
+                                      </>
+                                    )}
+                                    <div className="space-y-2 md:col-span-2">
+                                      <Label htmlFor={`fase-fenologica-${idx}`}>
+                                        Fase Fenologica
+                                      </Label>
+                                      <Input
+                                        id={`fase-fenologica-${idx}`}
+                                        value={d.fase_fenologica ?? ""}
+                                        onChange={(e) => {
+                                          const newDosaggi = [
+                                            ...editedFertilizerDosages,
+                                          ];
+                                          newDosaggi[idx] = {
+                                            ...newDosaggi[idx],
+                                            fase_fenologica: e.target.value,
+                                          };
+                                          setEditedFertilizerDosages(
+                                            newDosaggi
+                                          );
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                    ) : (
+                      <div className="text-sm text-gray-600">
+                        Nessun dosaggio presente.
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // JSON View for Fertilizers
+                  <div className="space-y-2">
+                    <Textarea
+                      value={labelJson}
+                      onChange={(e) => setLabelJson(e.target.value)}
+                      className="font-mono min-h-[400px]"
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={async () => {
+                          try {
+                            const obj = JSON.parse(labelJson);
+                            await saveAsync({ label: obj });
+                          } catch {
+                            toast.error("JSON non valido");
+                          }
+                        }}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? "Salvataggio…" : "Salva"}
+                      </Button>
+                    </div>
+                  </div>
+                )
+              ) : viewMode === "table" ? (
                 <div className="space-y-4 pr-1">
                   {JSON.stringify(editedDosaggi) !==
                     JSON.stringify(detail.label?.dosaggi_dettagliati ?? []) && (

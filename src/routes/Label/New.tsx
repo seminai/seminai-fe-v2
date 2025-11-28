@@ -24,6 +24,7 @@ interface LabelFormItem extends BulkExtractItem {
 }
 
 type UploadMode = "manual" | "pdf";
+type LabelType = "fitofarmaci" | "fertilizzanti";
 
 interface PdfFile {
   id: string;
@@ -35,6 +36,7 @@ export default function NewLabel(): React.ReactElement {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [labelType, setLabelType] = useState<LabelType>("fitofarmaci");
   const [uploadMode, setUploadMode] = useState<UploadMode>("manual");
   const [items, setItems] = useState<LabelFormItem[]>([
     { id: crypto.randomUUID(), name: "", regNumber: "" },
@@ -48,6 +50,15 @@ export default function NewLabel(): React.ReactElement {
   useEffect(() => {
     indexDBManager.init();
   }, []);
+
+  // Reset upload mode when label type changes
+  useEffect(() => {
+    if (labelType === "fertilizzanti") {
+      setUploadMode("pdf");
+    } else {
+      setUploadMode("manual");
+    }
+  }, [labelType]);
 
   const mutation = useMutation({
     mutationFn: async (request: BulkExtractRequest) => {
@@ -129,6 +140,73 @@ export default function NewLabel(): React.ReactElement {
     },
   });
 
+  const fertilizerPdfMutation = useMutation({
+    mutationFn: async ({
+      files,
+      concurrency,
+    }: {
+      files: File[];
+      concurrency: number;
+    }) => {
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append("files", file);
+      });
+      formData.append("concurrency", concurrency.toString());
+
+      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
+      const response = await authenticatedHttpClient.request(
+        `${BASE_URL}/labels/bulk-pdf-label-fertilizer-async`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        throw new Error(errorText || `Errore HTTP: ${response.status}`);
+      }
+
+      return await response.json();
+    },
+    onSuccess: async (response, variables) => {
+      if (response.status === "success" && response.data?.jobId) {
+        const jobId = response.data.jobId;
+
+        // Save job to IndexedDB
+        const job: LabelJob = {
+          id: jobId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          state: "waiting",
+          progress: 0,
+          fileNames: variables.files.map((f) => f.name),
+          concurrency: variables.concurrency,
+        };
+
+        await indexDBManager.saveJob(job);
+
+        toast.success(
+          `Job fertilizzanti creato con successo! ID: ${jobId.slice(0, 8)}...`
+        );
+
+        // Clear PDF files
+        setPdfFiles([]);
+
+        // Trigger jobs table refresh
+        setJobsRefreshKey((prev) => prev + 1);
+
+        queryClient.invalidateQueries({ queryKey: ["labels", "summary"] });
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(
+        `Errore durante l'estrazione PDF (Fertilizzanti): ${error.message}`
+      );
+    },
+  });
+
   const handleAddItem = (): void => {
     setItems([...items, { id: crypto.randomUUID(), name: "", regNumber: "" }]);
   };
@@ -207,6 +285,17 @@ export default function NewLabel(): React.ReactElement {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
 
+    if (labelType === "fertilizzanti") {
+      if (pdfFiles.length === 0) {
+        toast.error("Carica almeno un file PDF");
+        return;
+      }
+
+      const files = pdfFiles.map((pdfFile) => pdfFile.file);
+      fertilizerPdfMutation.mutate({ files, concurrency });
+      return;
+    }
+
     if (uploadMode === "manual") {
       const validItems = items.filter(
         (item) => item.name.trim() !== "" && item.regNumber.trim() !== ""
@@ -236,7 +325,10 @@ export default function NewLabel(): React.ReactElement {
 
   const canRemove = items.length > 1;
 
-  const isLoading = mutation.isPending || pdfMutation.isPending;
+  const isLoading =
+    mutation.isPending ||
+    pdfMutation.isPending ||
+    fertilizerPdfMutation.isPending;
 
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -259,35 +351,67 @@ export default function NewLabel(): React.ReactElement {
           />
         </div>
 
-        {/* Mode Toggle */}
-        <div className="mb-10 flex justify-start">
+        {/* Type Toggle */}
+        <div className="mb-6 flex justify-start">
           <div className="inline-flex p-1 bg-gray-100/80 rounded-xl gap-1 backdrop-blur-sm">
             <button
               type="button"
-              onClick={() => setUploadMode("manual")}
+              onClick={() => setLabelType("fitofarmaci")}
               disabled={isLoading}
               className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                uploadMode === "manual"
+                labelType === "fitofarmaci"
                   ? "bg-white shadow-md text-gray-900"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              Carica numero di registrazione e nome
+              Fitofarmaci
             </button>
             <button
               type="button"
-              onClick={() => setUploadMode("pdf")}
+              onClick={() => setLabelType("fertilizzanti")}
               disabled={isLoading}
               className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                uploadMode === "pdf"
+                labelType === "fertilizzanti"
                   ? "bg-white shadow-md text-gray-900"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              Carica PDF etichette
+              Fertilizzanti
             </button>
           </div>
         </div>
+
+        {/* Mode Toggle - Only for Fitofarmaci */}
+        {labelType === "fitofarmaci" && (
+          <div className="mb-10 flex justify-start">
+            <div className="inline-flex p-1 bg-gray-100/80 rounded-xl gap-1 backdrop-blur-sm">
+              <button
+                type="button"
+                onClick={() => setUploadMode("manual")}
+                disabled={isLoading}
+                className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  uploadMode === "manual"
+                    ? "bg-white shadow-md text-gray-900"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Carica numero di registrazione e nome
+              </button>
+              <button
+                type="button"
+                onClick={() => setUploadMode("pdf")}
+                disabled={isLoading}
+                className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  uploadMode === "pdf"
+                    ? "bg-white shadow-md text-gray-900"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Carica PDF etichette
+              </button>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {uploadMode === "manual" ? (
