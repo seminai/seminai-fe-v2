@@ -34,6 +34,7 @@ import {
 } from "@/api/products";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useCompanyWarehouses } from "@/hooks/useCompanyWarehouses";
+import { findRegNumberByName } from "@/services/fitosanitariRegistry";
 
 type BulkProductFileRow = Record<string, unknown>;
 
@@ -50,62 +51,105 @@ type ImportSummary = {
 
 const BULK_FILE_ACCEPT = ".csv,.xls,.xlsx";
 
-const BULK_PRODUCT_COLUMNS = [
+type BulkProductColumnKey =
+  | "name"
+  | "sku"
+  | "category"
+  | "type"
+  | "description"
+  | "registrationNumber"
+  | "labelUrl"
+  | "labelMetadata"
+  | "stock_quantity"
+  | "stock_unitOfMeasureQuantity"
+  | "stock_price"
+  | "stock_unitOfMeasurePrice"
+  | "stock_type"
+  | "stock_ddtCode"
+  | "stock_companySupplierName"
+  | "stock_invoiceDate";
+
+type BulkProductColumnDefinition = {
+  key: BulkProductColumnKey;
+  label: string;
+  required?: boolean;
+};
+
+const BULK_PRODUCT_COLUMN_DEFINITIONS: ReadonlyArray<BulkProductColumnDefinition> =
+  [
+    { key: "name", label: "Nome prodotto", required: true },
+    { key: "sku", label: "SKU", required: true },
+    { key: "category", label: "Categoria" },
+    { key: "type", label: "Tipologia" },
+    { key: "description", label: "Descrizione" },
+    {
+      key: "registrationNumber",
+      label: "Numero di registrazione",
+    },
+    { key: "labelUrl", label: "URL etichetta" },
+    { key: "labelMetadata", label: "Metadati etichetta" },
+    {
+      key: "stock_quantity",
+      label: "Quantità stock",
+      required: true,
+    },
+    {
+      key: "stock_unitOfMeasureQuantity",
+      label: "Unità di misura stock",
+      required: true,
+    },
+    { key: "stock_price", label: "Prezzo stock" },
+    { key: "stock_unitOfMeasurePrice", label: "Unità di misura prezzo" },
+    { key: "stock_type", label: "Tipo stock (IN/OUT)" },
+    { key: "stock_ddtCode", label: "Codice DDT" },
+    { key: "stock_companySupplierName", label: "Fornitore" },
+    { key: "stock_invoiceDate", label: "Data fattura", required: true },
+  ] as const;
+
+const BULK_MINIMAL_COLUMN_KEYS: ReadonlyArray<BulkProductColumnKey> = [
   "name",
   "sku",
-  "category",
-  "type",
-  "description",
-  "registrationNumber",
-  "labelUrl",
-  "labelMetadata",
   "stock_quantity",
   "stock_unitOfMeasureQuantity",
-  "stock_price",
-  "stock_unitOfMeasurePrice",
-  "stock_type",
   "stock_ddtCode",
-  "stock_companySupplierName",
-] as const;
-
-const BULK_TEMPLATE_ROWS: Array<
-  Record<(typeof BULK_PRODUCT_COLUMNS)[number], string>
-> = [
-  {
-    name: "Prodotto A",
-    sku: "SKU-A",
-    category: "FERTILIZER",
-    type: "Liquido",
-    description: "Descrizione A",
-    registrationNumber: "REG-A",
-    labelUrl: "https://example.com/label-a.pdf",
-    labelMetadata: '{"color":"green"}',
-    stock_quantity: "100",
-    stock_unitOfMeasureQuantity: "kg",
-    stock_price: "25.5",
-    stock_unitOfMeasurePrice: "EUR",
-    stock_type: "IN",
-    stock_ddtCode: "DDT-001",
-    stock_companySupplierName: "Fornitore SPA",
-  },
-  {
-    name: "Prodotto B",
-    sku: "SKU-B",
-    category: "PESTICIDE",
-    type: "Granulare",
-    description: "",
-    registrationNumber: "",
-    labelUrl: "",
-    labelMetadata: "",
-    stock_quantity: "",
-    stock_unitOfMeasureQuantity: "",
-    stock_price: "",
-    stock_unitOfMeasurePrice: "",
-    stock_type: "",
-    stock_ddtCode: "",
-    stock_companySupplierName: "",
-  },
+  "stock_invoiceDate",
 ];
+
+type BulkTemplateType = "minimal" | "complete";
+type BulkTemplateRow = Partial<Record<BulkProductColumnKey, string>>;
+
+const BULK_TEMPLATE_ROWS: Record<BulkTemplateType, BulkTemplateRow[]> = {
+  minimal: [
+    {
+      name: "Prodotto Minimo",
+      sku: "SKU-MIN-001",
+      stock_quantity: "50",
+      stock_unitOfMeasureQuantity: "kg",
+      stock_ddtCode: "DDT-001",
+      stock_invoiceDate: "2023-11-29T10:00:00Z",
+    },
+  ],
+  complete: [
+    {
+      name: "Prodotto Completo",
+      sku: "SKU-COMP-001",
+      category: "FERTILIZER",
+      type: "Liquido",
+      description: "Esempio con tutti i campi disponibili",
+      registrationNumber: "REG-001",
+      labelUrl: "https://example.com/label.pdf",
+      labelMetadata: '{"color":"green","density":"1.05"}',
+      stock_quantity: "125",
+      stock_unitOfMeasureQuantity: "kg",
+      stock_price: "25.5",
+      stock_unitOfMeasurePrice: "EUR",
+      stock_type: "IN",
+      stock_ddtCode: "DDT-001",
+      stock_companySupplierName: "Fornitore SPA",
+      stock_invoiceDate: "2023-11-29T10:00:00Z",
+    },
+  ],
+};
 
 class EmptyRowDetector {
   public static isEmpty(row: BulkProductFileRow): boolean {
@@ -122,13 +166,24 @@ class EmptyRowDetector {
 }
 
 class BulkProductRecordMapper {
-  public map(
+  private async determineCategory(
+    productName: string
+  ): Promise<string | undefined> {
+    try {
+      const regNumber = await findRegNumberByName(productName);
+      return regNumber ? "PESTICIDE" : "FERTILIZER";
+    } catch {
+      return "FERTILIZER";
+    }
+  }
+
+  public async map(
     row: BulkProductFileRow,
     rowIndex: number
-  ): {
+  ): Promise<{
     product?: BulkProductPayload;
     errors: string[];
-  } {
+  }> {
     const errors: string[] = [];
 
     const name = this.requireString(row.name, "name", rowIndex, errors);
@@ -138,10 +193,15 @@ class BulkProductRecordMapper {
       return { errors };
     }
 
+    const explicitCategory = this.optionalString(row.category);
+    const autoCategory = explicitCategory
+      ? undefined
+      : await this.determineCategory(name);
+
     const product: BulkProductPayload = {
       name,
       sku,
-      category: this.optionalString(row.category),
+      category: explicitCategory ?? autoCategory,
       type: this.optionalString(row.type),
       description: this.optionalString(row.description),
       registrationNumber: this.optionalString(row.registrationNumber),
@@ -247,24 +307,34 @@ class BulkProductRecordMapper {
     const companySupplierName = this.optionalString(
       row.stock_companySupplierName
     );
+    const invoiceDate = this.optionalString(row.stock_invoiceDate);
 
-    const hasStockData =
-      quantity !== undefined ||
-      Boolean(unitOfMeasureQuantity) ||
-      price !== undefined ||
+    const hasQuantity = quantity !== undefined;
+    const hasUnitOfMeasure = Boolean(unitOfMeasureQuantity);
+    const hasPrice = price !== undefined;
+    const hasType = Boolean(type);
+    const hasOptionalStockData =
       Boolean(unitOfMeasurePrice) ||
-      Boolean(type) ||
       Boolean(ddtCode) ||
-      Boolean(companySupplierName);
+      Boolean(companySupplierName) ||
+      Boolean(invoiceDate);
 
-    if (!hasStockData) {
+    if (!hasQuantity && !hasPrice && !hasType && !hasUnitOfMeasure && !hasOptionalStockData) {
       return undefined;
     }
 
-    if (quantity === undefined) {
+    if (hasUnitOfMeasure && !hasQuantity) {
       errors.push(
-        `Riga ${rowIndex}: specificare "stock_quantity" quando si inseriscono dati di stock`
+        `Riga ${rowIndex}: specificare "stock_quantity" quando si inserisce "stock_unitOfMeasureQuantity"`
       );
+      return undefined;
+    }
+
+    if (!hasQuantity && !hasPrice && !hasType) {
+      return undefined;
+    }
+
+    if (!hasQuantity) {
       return undefined;
     }
 
@@ -283,6 +353,7 @@ class BulkProductRecordMapper {
       type: type ?? "IN",
       ddtCode,
       companySupplierName,
+      invoiceDate,
     };
   }
 
@@ -291,7 +362,8 @@ class BulkProductRecordMapper {
     if (!parsedString) {
       return undefined;
     }
-    const parsedNumber = Number(parsedString);
+    const normalizedString = parsedString.replace(/,/g, ".").trim();
+    const parsedNumber = Number(normalizedString);
     if (Number.isNaN(parsedNumber)) {
       return undefined;
     }
@@ -337,13 +409,18 @@ class BulkProductFileParser {
       errors: [...rawResult.errors],
     };
 
-    rawResult.rows.forEach((row, index) => {
-      const { product, errors } = this.mapper.map(row, index + 2);
+    for (let index = 0; index < rawResult.rows.length; index++) {
+      const row = rawResult.rows[index];
+      const normalizedRow = BulkProductRowNormalizer.normalize(row);
+      const { product, errors } = await this.mapper.map(
+        normalizedRow,
+        index + 2
+      );
       if (product) {
         parsed.products.push(product);
       }
       parsed.errors.push(...errors);
-    });
+    }
 
     return parsed;
   }
@@ -403,20 +480,83 @@ class BulkProductFileParser {
   }
 }
 
+class BulkProductRowNormalizer {
+  private static readonly keyLookup: Map<string, BulkProductColumnKey> =
+    BULK_PRODUCT_COLUMN_DEFINITIONS.reduce((map, column) => {
+      const aliases = [
+        column.key,
+        column.label,
+        column.label.toLowerCase(),
+        column.key.toLowerCase(),
+      ];
+      aliases.forEach((alias) => {
+        if (!map.has(alias)) {
+          map.set(alias, column.key);
+        }
+      });
+      return map;
+    }, new Map<string, BulkProductColumnKey>());
+
+  public static normalize(row: BulkProductFileRow): BulkProductFileRow {
+    const normalized: BulkProductFileRow = {};
+    Object.entries(row).forEach(([rawKey, value]) => {
+      const trimmedKey = rawKey.trim();
+      const lowerKey = trimmedKey.toLowerCase();
+      const mappedKey =
+        this.keyLookup.get(trimmedKey) ?? this.keyLookup.get(lowerKey);
+
+      if (mappedKey) {
+        normalized[mappedKey] = value;
+      } else {
+        normalized[trimmedKey] = value;
+      }
+    });
+    return normalized;
+  }
+}
+
 class BulkProductTemplateBuilder {
-  public static buildCsv(): string {
-    return Papa.unparse(BULK_TEMPLATE_ROWS, {
-      columns: BULK_PRODUCT_COLUMNS as unknown as string[],
+  private static getColumns(type: BulkTemplateType): BulkProductColumnDefinition[] {
+    if (type === "minimal") {
+      return BULK_PRODUCT_COLUMN_DEFINITIONS.filter((column) =>
+        BULK_MINIMAL_COLUMN_KEYS.includes(column.key)
+      );
+    }
+    return [...BULK_PRODUCT_COLUMN_DEFINITIONS];
+  }
+
+  private static getRows(type: BulkTemplateType): BulkTemplateRow[] {
+    return BULK_TEMPLATE_ROWS[type];
+  }
+
+  public static buildCsv(type: BulkTemplateType): string {
+    const columns = this.getColumns(type);
+    const rows = this.getRows(type);
+    const labeledRows = rows.map((row) => {
+      return columns.reduce<Record<string, string>>((acc, column) => {
+        const value = row[column.key] ?? "";
+        acc[column.label] = value;
+        return acc;
+      }, {});
+    });
+
+    const headers = columns.map((column) => column.label);
+
+    return Papa.unparse(labeledRows, {
+      columns: headers,
     });
   }
 
-  public static downloadTemplate(): void {
-    const csv = this.buildCsv();
+  public static downloadTemplate(type: BulkTemplateType): void {
+    const csv = this.buildCsv(type);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "products-bulk-template.csv";
+    link.download =
+      type === "minimal"
+        ? "products-bulk-template-minimo.csv"
+        : "products-bulk-template-completo.csv";
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -465,6 +605,7 @@ function DrawerProductBulkImport({
   const [isParsing, setIsParsing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
   const [parsedProducts, setParsedProducts] = useState<BulkProductPayload[]>(
     []
   );
@@ -515,12 +656,7 @@ function DrawerProductBulkImport({
     );
   }, [parsedProducts.length, companyId, warehouseId, isImporting, isParsing]);
 
-  const handleFileChange = useCallback(async () => {
-    if (!fileInputRef.current?.files?.length) {
-      return;
-    }
-
-    const file = fileInputRef.current.files[0];
+  const handleFileSelect = useCallback(async (file: File) => {
     const parser = new BulkProductFileParser();
     setIsParsing(true);
     setParserErrors([]);
@@ -551,11 +687,42 @@ function DrawerProductBulkImport({
     }
   }, []);
 
+  const handleFileChange = useCallback(async () => {
+    if (!fileInputRef.current?.files?.length) {
+      return;
+    }
+    await handleFileSelect(fileInputRef.current.files[0]);
+  }, [handleFileSelect]);
+
+  const handleDrag = useCallback((e: React.DragEvent): void => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent): void => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragActive(false);
+
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleFileSelect(e.dataTransfer.files[0]);
+      }
+    },
+    [handleFileSelect]
+  );
+
   const resetForm = useCallback(() => {
     setParsedProducts([]);
     setParserErrors([]);
     setSelectedFileName(null);
     setImportSummary(null);
+    setDragActive(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -729,15 +896,17 @@ function DrawerProductBulkImport({
                   <Info className="h-4 w-4" />
                   <AlertTitle>Formato richiesto</AlertTitle>
                   <AlertDescription>
-                    Il file caricato deve includere:
+                    Il file può contenere le seguenti colonne ( * =
+                    obbligatorio nel template minimo):
                     <div className="flex flex-wrap gap-2">
-                      {BULK_PRODUCT_COLUMNS.map((column) => (
+                      {BULK_PRODUCT_COLUMN_DEFINITIONS.map((column) => (
                         <Badge
-                          key={column}
+                          key={column.key}
                           variant="secondary"
                           className="font-mono"
                         >
-                          {column}
+                          {column.label}
+                          {column.required ? "*" : ""}
                         </Badge>
                       ))}
                     </div>
@@ -745,26 +914,62 @@ function DrawerProductBulkImport({
                 </Alert>
 
                 <div className="space-y-2">
-                  <Label htmlFor="bulk-file">File CSV o Excel</Label>
-                  <Input
-                    id="bulk-file"
-                    ref={fileInputRef}
-                    type="file"
-                    accept={BULK_FILE_ACCEPT}
-                    onChange={handleFileChange}
-                  />
-                  {selectedFileName && (
-                    <p className="text-xs text-muted-foreground">
-                      File selezionato: {selectedFileName}
-                    </p>
-                  )}
-                </div>
+                  <Label>File CSV o Excel</Label>
+                  <div
+                    className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                      dragActive
+                        ? "border-primary bg-primary/5"
+                        : "border-gray-300 hover:border-gray-400"
+                    } ${isParsing ? "opacity-50 pointer-events-none" : ""}`}
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={handleDrop}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept={BULK_FILE_ACCEPT}
+                      onChange={handleFileChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      disabled={isParsing}
+                    />
 
-                {isParsing && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Spinner size={18} /> Analisi del file in corso...
+                    <div className="space-y-2">
+                      <div className="flex justify-center">
+                        {isParsing ? (
+                          <Spinner size={40} ariaLabel="Elaborazione file" />
+                        ) : (
+                          <Upload className="h-12 w-12 text-gray-400" />
+                        )}
+                      </div>
+
+                      {!isParsing && (
+                        <>
+                          <p className="text-sm font-medium text-gray-700">
+                            {selectedFileName
+                              ? `File selezionato: ${selectedFileName}`
+                              : "Trascina qui il file CSV o Excel"}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {selectedFileName
+                              ? "Clicca per selezionare un altro file"
+                              : "oppure clicca per selezionare il file"}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-2">
+                            Formati supportati: CSV, XLS, XLSX
+                          </p>
+                        </>
+                      )}
+
+                      {isParsing && (
+                        <p className="text-sm text-gray-600">
+                          Analisi del file in corso...
+                        </p>
+                      )}
+                    </div>
                   </div>
-                )}
+                </div>
 
                 {parserErrors.length > 0 && (
                   <Alert variant="destructive">
@@ -857,10 +1062,18 @@ function DrawerProductBulkImport({
             <Button
               type="button"
               variant="outline"
-              onClick={() => BulkProductTemplateBuilder.downloadTemplate()}
+              onClick={() => BulkProductTemplateBuilder.downloadTemplate("minimal")}
             >
               <FileDown className="mr-2 h-4 w-4" />
-              Scarica template CSV
+              Template dati minimi
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => BulkProductTemplateBuilder.downloadTemplate("complete")}
+            >
+              <FileDown className="mr-2 h-4 w-4" />
+              Template completo
             </Button>
             <Button
               type="button"

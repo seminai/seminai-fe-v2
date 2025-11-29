@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import type { ComponentProps, ReactNode } from "react";
 import { PageHeader } from "@/components/organism/Header";
 import { useProducts } from "@/hooks/useProducts";
-import { Product } from "@/api/products";
+import { Product, productsApiService } from "@/api/products";
 import {
   EditableTable,
   EditableColumn,
@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Package, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import DrawerProduct from "./DrawerProduct";
 import DrawerProductBulkImport from "./DrawerProductBulkImport";
 
@@ -296,6 +297,50 @@ function ProductsPage() {
     }
   };
 
+  const handleDeleteSelected = async (
+    removed: Array<Record<string, unknown>>
+  ) => {
+    try {
+      const productRows = removed as ProductTableRow[];
+      if (productRows.length === 0) {
+        return;
+      }
+
+      // Ottieni il companyId dal primo prodotto (tutti i prodotti dovrebbero avere lo stesso companyId)
+      const companyId = productRows[0]?.product?.warehouse?.company?.id;
+      if (!companyId) {
+        throw new Error("Company ID non trovato");
+      }
+
+      const productIds = productRows.map((row) => row.product.id);
+
+      await productsApiService.bulkDelete({
+        companyId,
+        ids: productIds,
+      });
+
+      toast.success("Prodotti eliminati", {
+        description: `${productIds.length} prodotto${
+          productIds.length === 1 ? "" : "i"
+        } eliminato${productIds.length === 1 ? "" : "i"} con successo`,
+      });
+
+      // Ricarica i dati (gestisci eventuali errori di refetch separatamente)
+      try {
+        await refetch();
+      } catch (refetchError) {
+        // Non mostrare errore se il refetch fallisce, l'eliminazione è comunque andata a buon fine
+        console.warn("Error refetching products after delete:", refetchError);
+      }
+    } catch (error) {
+      toast.error("Errore durante l'eliminazione", {
+        description:
+          error instanceof Error ? error.message : "Riprova più tardi",
+      });
+      console.error("Error deleting products:", error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -362,6 +407,7 @@ function ProductsPage() {
             isModify={false}
             addButton={true}
             onAddClick={() => setImportDrawerOpen(true)}
+            onDeleteSelected={handleDeleteSelected}
             getRowId={(row) => (row as ProductTableRow).id}
             lastComponent={(row) => {
               const data = row as ProductTableRow;
