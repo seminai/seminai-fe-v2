@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -319,7 +318,13 @@ class BulkProductRecordMapper {
       Boolean(companySupplierName) ||
       Boolean(invoiceDate);
 
-    if (!hasQuantity && !hasPrice && !hasType && !hasUnitOfMeasure && !hasOptionalStockData) {
+    if (
+      !hasQuantity &&
+      !hasPrice &&
+      !hasType &&
+      !hasUnitOfMeasure &&
+      !hasOptionalStockData
+    ) {
       return undefined;
     }
 
@@ -516,7 +521,9 @@ class BulkProductRowNormalizer {
 }
 
 class BulkProductTemplateBuilder {
-  private static getColumns(type: BulkTemplateType): BulkProductColumnDefinition[] {
+  private static getColumns(
+    type: BulkTemplateType
+  ): BulkProductColumnDefinition[] {
     if (type === "minimal") {
       return BULK_PRODUCT_COLUMN_DEFINITIONS.filter((column) =>
         BULK_MINIMAL_COLUMN_KEYS.includes(column.key)
@@ -896,8 +903,8 @@ function DrawerProductBulkImport({
                   <Info className="h-4 w-4" />
                   <AlertTitle>Formato richiesto</AlertTitle>
                   <AlertDescription>
-                    Il file può contenere le seguenti colonne ( * =
-                    obbligatorio nel template minimo):
+                    Il file può contenere le seguenti colonne ( * = obbligatorio
+                    nel template minimo):
                     <div className="flex flex-wrap gap-2">
                       {BULK_PRODUCT_COLUMN_DEFINITIONS.map((column) => (
                         <Badge
@@ -1062,7 +1069,9 @@ function DrawerProductBulkImport({
             <Button
               type="button"
               variant="outline"
-              onClick={() => BulkProductTemplateBuilder.downloadTemplate("minimal")}
+              onClick={() =>
+                BulkProductTemplateBuilder.downloadTemplate("minimal")
+              }
             >
               <FileDown className="mr-2 h-4 w-4" />
               Template dati minimi
@@ -1070,7 +1079,9 @@ function DrawerProductBulkImport({
             <Button
               type="button"
               variant="outline"
-              onClick={() => BulkProductTemplateBuilder.downloadTemplate("complete")}
+              onClick={() =>
+                BulkProductTemplateBuilder.downloadTemplate("complete")
+              }
             >
               <FileDown className="mr-2 h-4 w-4" />
               Template completo
