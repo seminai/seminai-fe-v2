@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { indexDBManager, type LabelJob } from "@/utils/indexDBManager";
 import { LabelJobsTable } from "@/components/organism/LabelJobsTable";
 import { PageHeader } from "@/components/organism/Header";
+import Papa from "papaparse";
 
 interface LabelFormItem extends BulkExtractItem {
   id: string;
@@ -32,10 +33,92 @@ interface PdfFile {
   file: File;
 }
 
+type LabelCsvRow = Record<string, string>;
+
+class LabelCsvImporter {
+  private readonly productNameKey: string;
+  private readonly registrationNumberKey: string;
+
+  constructor() {
+    this.productNameKey = this.normalizeKey("nome prodotto");
+    this.registrationNumberKey = this.normalizeKey("numero registrazione");
+  }
+
+  public parse(file: File): Promise<LabelFormItem[]> {
+    return new Promise((resolve, reject) => {
+      Papa.parse<LabelCsvRow>(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          const parsedItems: LabelFormItem[] = [];
+          const rowErrors: string[] = [];
+
+          results.data.forEach((row, index) => {
+            const normalizedRow = this.normalizeRow(row);
+            const nameValue = normalizedRow[this.productNameKey]?.trim() ?? "";
+            const registrationValue =
+              normalizedRow[this.registrationNumberKey]?.trim() ?? "";
+
+            if (!nameValue || !registrationValue) {
+              rowErrors.push(
+                `Riga ${index + 2}: campi obbligatori mancanti (nome prodotto, numero registrazione)`
+              );
+              return;
+            }
+
+            parsedItems.push(this.createLabelItem(nameValue, registrationValue));
+          });
+
+          if (rowErrors.length > 0) {
+            reject(new Error(rowErrors.join(" | ")));
+            return;
+          }
+
+          if (parsedItems.length === 0) {
+            reject(
+              new Error(
+                "Nessuna etichetta valida trovata. Verifica il formato del file."
+              )
+            );
+            return;
+          }
+
+          resolve(parsedItems);
+        },
+        error: (error) => {
+          reject(error);
+        },
+      });
+    });
+  }
+
+  private normalizeKey(key: string): string {
+    return key.trim().toLowerCase();
+  }
+
+  private normalizeRow(row: LabelCsvRow): Record<string, string> {
+    return Object.entries(row).reduce((acc, [key, value]) => {
+      if (!key) return acc;
+      acc[this.normalizeKey(key)] = (value ?? "").toString();
+      return acc;
+    }, {} as Record<string, string>);
+  }
+
+  private createLabelItem(name: string, regNumber: string): LabelFormItem {
+    return {
+      id: crypto.randomUUID(),
+      name,
+      regNumber,
+    };
+  }
+}
+
 export default function NewLabel(): React.ReactElement {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const csvFileInputRef = useRef<HTMLInputElement>(null);
+  const csvImporter = useMemo(() => new LabelCsvImporter(), []);
 
   const [labelType, setLabelType] = useState<LabelType>("fitofarmaci");
   const [uploadMode, setUploadMode] = useState<UploadMode>("manual");
@@ -48,6 +131,26 @@ export default function NewLabel(): React.ReactElement {
   const [jobsRefreshKey, setJobsRefreshKey] = useState(0);
   const [activeJobsCount, setActiveJobsCount] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
+  const [isCsvImporting, setIsCsvImporting] = useState(false);
+
+  const duplicateItemIds = useMemo(() => {
+    const occurrences = new Map<string, number>();
+    items.forEach((item) => {
+      const normalized = item.regNumber.trim().toLowerCase();
+      if (!normalized) return;
+      occurrences.set(normalized, (occurrences.get(normalized) ?? 0) + 1);
+    });
+
+    const duplicates = new Set<string>();
+    items.forEach((item) => {
+      const normalized = item.regNumber.trim().toLowerCase();
+      if (normalized && (occurrences.get(normalized) ?? 0) > 1) {
+        duplicates.add(item.id);
+      }
+    });
+
+    return duplicates;
+  }, [items]);
 
   // Initialize IndexedDB
   useEffect(() => {
@@ -237,6 +340,49 @@ export default function NewLabel(): React.ReactElement {
       items.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
   };
+
+  const handleCsvImportClick = useCallback(() => {
+    csvFileInputRef.current?.click();
+  }, []);
+
+  const handleCsvFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>): void => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      const input = event.target;
+      setIsCsvImporting(true);
+
+      csvImporter
+        .parse(file)
+        .then((parsedItems) => {
+          setItems((prev) => {
+            const hasOnlyEmptyItem =
+              prev.length === 1 &&
+              prev[0].name.trim() === "" &&
+              prev[0].regNumber.trim() === "";
+
+            return hasOnlyEmptyItem ? parsedItems : [...prev, ...parsedItems];
+          });
+
+          toast.success(
+            `Importazione completata: ${parsedItems.length} etichette aggiunte`
+          );
+        })
+        .catch((error: unknown) => {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Errore sconosciuto durante l'importazione";
+          toast.error(`Errore importazione CSV: ${message}`);
+        })
+        .finally(() => {
+          setIsCsvImporting(false);
+          input.value = "";
+        });
+    },
+    [csvImporter]
+  );
 
   const validatePdfFile = (file: File): boolean => {
     if (file.type !== "application/pdf") {
@@ -438,15 +584,52 @@ export default function NewLabel(): React.ReactElement {
           {uploadMode === "manual" ? (
             <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm">
               <CardHeader className="pb-6">
-                <CardTitle className="text-lg font-medium">
-                  Etichette da Processare
-                </CardTitle>
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <CardTitle className="text-lg font-medium">
+                    Etichette da Processare
+                  </CardTitle>
+                  <div className="flex flex-col gap-2 md:items-end">
+                    <input
+                      ref={csvFileInputRef}
+                      type="file"
+                      accept=".csv"
+                      className="hidden"
+                      onChange={handleCsvFileChange}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCsvImportClick}
+                      disabled={isLoading || isCsvImporting}
+                      className="gap-2"
+                    >
+                      {isCsvImporting ? (
+                        <>
+                          <Spinner size={14} />
+                          Import in corso...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4" />
+                          Importa da CSV
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-gray-500">
+                      Colonne richieste: nome prodotto, numero registrazione
+                    </p>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className="flex gap-6 items-start p-6 border border-gray-200/60 rounded-xl bg-gray-50/50 hover:bg-gray-50 transition-colors"
+                    className={cn(
+                      "flex gap-6 items-start p-6 border border-gray-200/60 rounded-xl bg-gray-50/50 hover:bg-gray-50 transition-colors",
+                      duplicateItemIds.has(item.id) &&
+                        "border-red-300 bg-red-50/80 hover:bg-red-50"
+                    )}
                   >
                     <div className="flex-1 grid grid-cols-2 gap-6">
                       <div className="space-y-2">
@@ -458,6 +641,10 @@ export default function NewLabel(): React.ReactElement {
                           type="text"
                           placeholder="es. REVOLUTION"
                           value={item.name}
+                          className={cn(
+                            duplicateItemIds.has(item.id) &&
+                              "border-red-500 focus-visible:ring-red-500"
+                          )}
                           onChange={(e) =>
                             handleItemChange(item.id, "name", e.target.value)
                           }
@@ -474,6 +661,10 @@ export default function NewLabel(): React.ReactElement {
                           type="text"
                           placeholder="es. 16667"
                           value={item.regNumber}
+                          className={cn(
+                            duplicateItemIds.has(item.id) &&
+                              "border-red-500 focus-visible:ring-red-500"
+                          )}
                           onChange={(e) =>
                             handleItemChange(
                               item.id,
@@ -483,6 +674,11 @@ export default function NewLabel(): React.ReactElement {
                           }
                           required
                         />
+                        {duplicateItemIds.has(item.id) && (
+                          <p className="text-xs text-red-500">
+                            Etichetta già presente
+                          </p>
+                        )}
                       </div>
                     </div>
                     <Button
