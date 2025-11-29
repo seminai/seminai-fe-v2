@@ -11,6 +11,13 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Upload, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
@@ -38,19 +45,26 @@ export function ImportFieldByCsv({
   const [isProcessing, setIsProcessing] = useState(false);
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
 
   /**
    * Gestisce la selezione del file CSV e avvia il processo di importazione
    * Aggiunge i dati alla tabella senza validazioni bloccanti
    */
   const handleFileSelect = async (file: File): Promise<void> => {
+    if (!selectedCompanyId) {
+      toast.error("Seleziona un'azienda prima di importare il file");
+      return;
+    }
+
     setIsProcessing(true);
     setImportErrors([]);
     setImportWarnings([]);
 
     try {
       const mapper = new CsvFieldMapper(companies);
-      const result = await mapper.parseFile(file);
+      // Passa l'ID dell'azienda selezionata al mapper
+      const result = await mapper.parseFile(file, selectedCompanyId);
 
       // Gestisci gli errori bloccanti (es. file vuoto o corrotto)
       if (result.errors.length > 0) {
@@ -78,6 +92,7 @@ export function ImportFieldByCsv({
       setIsDrawerOpen(false);
       setImportErrors([]);
       setImportWarnings([]);
+      setSelectedCompanyId("");
       onCloseParentDrawer?.();
     } catch (err) {
       const errorMessage =
@@ -97,6 +112,7 @@ export function ImportFieldByCsv({
     if (!open) {
       setImportErrors([]);
       setImportWarnings([]);
+      setSelectedCompanyId("");
     }
   };
 
@@ -115,16 +131,48 @@ export function ImportFieldByCsv({
         <DrawerHeader>
           <DrawerTitle>Importa Campi da CSV</DrawerTitle>
           <DrawerDescription>
-            Carica un file CSV con i dati dei campi. Il nome dell'azienda deve
-            corrispondere esattamente a quello presente nel sistema.
+            Seleziona l'azienda e carica un file CSV con i dati dei campi.
           </DrawerDescription>
         </DrawerHeader>
 
-        <div className="space-y-4">
-          <CsvFieldImporter
-            onFileSelect={handleFileSelect}
-            isProcessing={isProcessing}
-          />
+        <div className="space-y-4 p-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Azienda di destinazione
+            </label>
+            <Select
+              value={selectedCompanyId}
+              onValueChange={setSelectedCompanyId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleziona un'azienda" />
+              </SelectTrigger>
+              <SelectContent>
+                {companies.map((company) => (
+                  <SelectItem key={company.id} value={company.id}>
+                    {company.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div
+            className={`transition-opacity duration-200 ${
+              !selectedCompanyId ? "opacity-50 pointer-events-none" : ""
+            }`}
+          >
+            <CsvFieldImporter
+              onFileSelect={handleFileSelect}
+              isProcessing={isProcessing}
+            />
+          </div>
+
+          {!selectedCompanyId && (
+            <p className="text-xs text-muted-foreground text-center">
+              Seleziona un'azienda per abilitare l'upload del file
+            </p>
+          )}
 
           {isProcessing && (
             <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -173,19 +221,18 @@ export function ImportFieldByCsv({
           <div className="bg-gray-50 p-4 rounded-lg">
             <h4 className="font-medium text-sm mb-2">Formato CSV Richiesto:</h4>
             <p className="text-xs text-gray-600 mb-2">
-              Il file deve contenere le seguenti colonne (i nomi possono
-              variare):
+              Il file deve supportare il template AGEA/SIAN con le seguenti
+              colonne (o equivalenti):
             </p>
             <ul className="text-xs text-gray-600 space-y-1 mb-3">
               <li>
-                <strong>Obbligatorie:</strong> Azienda, Nome Campo, Indirizzo,
-                Sezione, Foglio, Particella, Superficie Catastale (mq)
+                <strong>Campi principali:</strong> Unità Produttiva (Nome),
+                Comune Descrizione (Città), Sezione, Foglio, Particella,
+                Superficie Catastale
               </li>
               <li>
-                <strong>Opzionali:</strong> Città, Provincia, Regione, CAP, SAU
-                (Ha), Uso, Tipo Suolo, Mappale, Subalterno, Qualità, CUAA,
-                Superficie GIS (mq), Superficie condotta (mq), pH, Azoto,
-                Fosforo, Potassio, Calcio, Magnesio
+                <strong>Altri campi supportati:</strong> Superficie Agricola,
+                Superficie Grafica, Uso Suolo Primario, Qualità, ecc.
               </li>
             </ul>
             <a
@@ -194,7 +241,7 @@ export function ImportFieldByCsv({
               className="text-xs text-primary hover:underline inline-flex items-center gap-1"
             >
               <Upload className="h-3 w-3" />
-              Scarica template CSV di esempio
+              Scarica template CSV di esempio (Nuovo formato)
             </a>
           </div>
         </div>

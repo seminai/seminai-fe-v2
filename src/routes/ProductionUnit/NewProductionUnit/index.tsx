@@ -3,8 +3,12 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 
 import { Calendar } from "@/components/ui/calendar";
 import { PageHeader } from "@/components/organism/Header";
-import { ProductionUnitCsvImporter } from "@/components/organism/ProductionUnitCsvImporter";
+import {
+  ProductionUnitCsvImporter,
+  type ImportResult,
+} from "@/components/organism/ProductionUnitCsvImporter";
 import { useFieldsAvailability } from "@/hooks/useFieldsAvailability";
+import { useCompanies } from "@/hooks/useCompanies";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +47,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import type { ParsedBulkImport } from "@/utils/csvProductionUnitParser";
 
 import { SingleProductionUnitForm } from "./components/SingleProductionUnitForm";
 import { useCropVarieties } from "./hooks/useCropVarieties";
@@ -57,7 +60,12 @@ import {
   getSplitIndexFromAllocation,
   isSplitAllocationKey,
 } from "./utils";
-import type { DateRange, FieldWithCompany, ProductionUnitInput } from "./types";
+import type {
+  CropVariety,
+  DateRange,
+  FieldWithCompany,
+  ProductionUnitInput,
+} from "./types";
 
 class NavigationManager {
   private readonly navigateFn: NavigateFunction;
@@ -68,6 +76,87 @@ class NavigationManager {
 
   public goBack(): void {
     this.navigateFn(-1);
+  }
+}
+
+class ImportedCropResolver {
+  private readonly varieties: CropVariety[];
+
+  constructor(varieties: CropVariety[]) {
+    this.varieties = varieties;
+  }
+
+  public resolve(unit: ImportResult["productionUnits"][number]): string {
+    for (const label of this.buildCandidateLabels(unit)) {
+      const match = this.findMatch(label);
+      if (match) {
+        return match.code;
+      }
+    }
+    return "";
+  }
+
+  private buildCandidateLabels(
+    unit: ImportResult["productionUnits"][number]
+  ): string[] {
+    const labels = [
+      unit.cropName,
+      unit.cropType,
+      unit.occupazione,
+      unit.name,
+    ];
+    const expanded = new Set<string>();
+
+    labels.forEach((label) => {
+      if (!label) {
+        return;
+      }
+      expanded.add(label);
+      const cleanedParentheses = label.replace(/[()]/g, " ").replace(/\s+/g, " ").trim();
+      if (cleanedParentheses) {
+        expanded.add(cleanedParentheses);
+      }
+      const parenthesisMatches = label.match(/\(([^)]+)\)/g);
+      if (parenthesisMatches) {
+        parenthesisMatches.forEach((match) => {
+          const inner = match.replace(/[()]/g, "").trim();
+          if (inner) {
+            expanded.add(inner);
+          }
+        });
+      }
+    });
+
+    return Array.from(expanded).filter(Boolean);
+  }
+
+  private findMatch(label: string): CropVariety | undefined {
+    const normalizedLabel = this.normalize(label);
+    if (!normalizedLabel) {
+      return undefined;
+    }
+
+    return this.varieties.find((variety) => {
+      const speciesNorm = this.normalize(variety.species);
+      const cropTypeNorm = this.normalize(variety.cropType);
+      return (
+        normalizedLabel.includes(speciesNorm) ||
+        speciesNorm.includes(normalizedLabel) ||
+        normalizedLabel.includes(cropTypeNorm) ||
+        cropTypeNorm.includes(normalizedLabel)
+      );
+    });
+  }
+
+  private normalize(value: string | undefined | null): string {
+    if (!value) {
+      return "";
+    }
+    return value
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
   }
 }
 
@@ -131,6 +220,7 @@ export default function NewProductionUnit(): React.ReactElement {
     isLoading: isLoadingCultivarCatalog,
     error: cultivarCatalogError,
   } = useCultivarHarvestDates();
+  const { companies: registeredCompanies } = useCompanies();
 
   useEffect(() => {
     if (cultivarCatalogError) {
@@ -157,6 +247,34 @@ export default function NewProductionUnit(): React.ReactElement {
       )
       .map((field) => field as FieldWithCompany);
   }, [companies]);
+
+  const importerCompanies = useMemo(() => {
+    if (registeredCompanies.length === 0) {
+      return [];
+    }
+
+    const fieldsByCompanyId = new Map<string, typeof companies[number]["fields"]>();
+    companies.forEach((company) => {
+      fieldsByCompanyId.set(company.companyId, company.fields);
+    });
+
+    return registeredCompanies.map((company) => {
+      const relatedFields = fieldsByCompanyId.get(company.id) ?? [];
+      return {
+        companyId: company.id,
+        companyName: company.name,
+        vatNumber: company.vatNumber,
+        fields: relatedFields.map((field) => ({
+          id: field.id,
+          name: field.name,
+          foglio: field.foglio,
+          particella: field.particella,
+          sezione: field.sezione,
+          areaAvailable: field.areaAvailable,
+        })),
+      };
+    });
+  }, [registeredCompanies, companies]);
 
   const allFieldsWithSplits = useMemo<FieldWithCompany[]>(() => {
     return allFields.flatMap((field) => {
@@ -420,10 +538,72 @@ export default function NewProductionUnit(): React.ReactElement {
     [allocatedFields]
   );
 
-  // Handler per l'importazione CSV
-  const handleCsvImport = (data: ParsedBulkImport[]) => {
-    // Crea direttamente le unità produttive dall'import
-    handleCreateProductionUnitsFromImport(data);
+  // Handler per l'importazione CSV - popola lo stato locale per revisione
+  const handleCsvImport = (result: ImportResult) => {
+    if (result.productionUnits.length === 0) {
+      toast.error("Nessuna unità produttiva trovata nel file.");
+      return;
+    }
+
+    // Filtra per l'azienda selezionata
+    setSelectedCompanyId(result.companyId);
+
+    const cropResolver = new ImportedCropResolver(cropVarieties);
+
+    // Converti le unità importate nel formato ProductionUnitInput
+    const convertedUnits: ProductionUnitInput[] = result.productionUnits.map(
+      (importedUnit) => {
+        const cropCode = cropResolver.resolve(importedUnit);
+
+        return {
+          id: importedUnit.id,
+          name: importedUnit.name,
+          cropCode,
+          cultivarId: null,
+          allocations: importedUnit.allocations,
+          protectionStructure: importedUnit.protectionStructure,
+          occupazione: importedUnit.occupazione,
+          destinazioneDiUso: importedUnit.destinazioneDiUso,
+          acquaTotalePeridoL: importedUnit.acquaTotalePeridoL,
+          customSowingDate: importedUnit.startDate,
+          customFloweringDate: null,
+          customHarvestingDate: importedUnit.endDate,
+        };
+      }
+    );
+
+    // Imposta le unità produttive
+    setProductionUnits(convertedUnits);
+
+    // Mostra messaggi di successo/warning
+    const totalAllocations = convertedUnits.reduce(
+      (sum, u) => sum + u.allocations.size,
+      0
+    );
+    const unitsWithMissingCrop = convertedUnits.filter((u) => !u.cropCode);
+
+    toast.success(
+      `Importate ${convertedUnits.length} unità produttive con ${totalAllocations} allocazioni campi.`
+    );
+
+    if (unitsWithMissingCrop.length > 0) {
+      toast.warning(
+        `${unitsWithMissingCrop.length} unità non hanno una varietà abbinata. Selezionala manualmente.`,
+        { duration: 5000 }
+      );
+    }
+
+    if (result.warnings.length > 0) {
+      console.warn("⚠️ Avvisi import:", result.warnings);
+      toast.warning(
+        `${result.warnings.length} campi non trovati. Controlla la console per i dettagli.`,
+        { duration: 5000 }
+      );
+    }
+
+    // Passa allo step 2 per mostrare la lista
+    setCurrentStep(2);
+    setStep2ShowList(true);
   };
 
   const handleEditUnit = (unitId: string) => {
@@ -442,44 +622,6 @@ export default function NewProductionUnit(): React.ReactElement {
       setEditingUnitId(null);
       setAllocatedFields(new Map());
       setCurrentStep(1);
-    }
-  };
-
-  // Handler per la creazione delle unità produttive da import CSV
-  const handleCreateProductionUnitsFromImport = async (
-    data: ParsedBulkImport[]
-  ) => {
-    setIsCreating(true);
-    try {
-      const { productionUnitApiService } = await import(
-        "@/api/production-unit"
-      );
-
-      // Chiama bulk-import per ogni azienda
-      for (const companyData of data) {
-        await productionUnitApiService.bulkImport(companyData);
-      }
-
-      toast.success(
-        `Importazione completata con successo! ${data.length} ${
-          data.length === 1 ? "azienda" : "aziende"
-        }, ${data.reduce(
-          (sum, d) => sum + d.productionUnits.length,
-          0
-        )} unità produttive.`
-      );
-
-      // Redirect to production units list
-      window.location.href = "/production-unit";
-    } catch (error) {
-      console.error("Errore nell'importazione:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Errore nell'importazione delle unità produttive"
-      );
-    } finally {
-      setIsCreating(false);
     }
   };
 
@@ -859,6 +1001,7 @@ export default function NewProductionUnit(): React.ReactElement {
 
                     <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto md:ml-auto">
                       <ProductionUnitCsvImporter
+                        companies={importerCompanies}
                         onImportSuccess={handleCsvImport}
                       />
                       <div className="w-full sm:w-[240px]">

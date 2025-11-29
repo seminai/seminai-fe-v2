@@ -29,9 +29,9 @@ export class CsvFieldMapper {
   /**
    * Trova l'ID dell'azienda dato il nome (case-insensitive)
    */
-  private findCompanyId(companyName: string): string | null {
+  private findCompanyId(companyName: string): string | undefined {
     const normalizedName = companyName.toLowerCase().trim();
-    return this.companyNameMap.get(normalizedName) || null;
+    return this.companyNameMap.get(normalizedName);
   }
 
   /**
@@ -119,6 +119,14 @@ export class CsvFieldMapper {
       startdate: "inizioConduzione",
       fineconduzione: "fineConduzione",
       enddate: "fineConduzione",
+      // Nuovi alias per il template AGEA/SIAN
+      unitaproduttiva: "name",
+      comunedescrizione: "city",
+      superficieagricola: "sauHa",
+      superficiegrafica: "gisHa",
+      usousosuoloprimario: "uso",
+      qualitausosuoloprimario: "qualita",
+      superficieusosuoloprimario: "superficieUsoSuoloPrimario",
     };
 
     return aliases[normalized] || normalized;
@@ -153,11 +161,12 @@ export class CsvFieldMapper {
    */
   private validateRecord(
     record: Record<string, unknown>,
-    lineNumber: number
+    lineNumber: number,
+    targetCompanyId?: string
   ): { valid: boolean; warnings: string[] } {
     const warnings: string[] = [];
 
-    if (!record.companyName) {
+    if (!targetCompanyId && !record.companyName) {
       warnings.push(`Riga ${lineNumber}: Nome azienda mancante`);
     }
 
@@ -165,13 +174,14 @@ export class CsvFieldMapper {
       warnings.push(`Riga ${lineNumber}: Nome campo mancante`);
     }
 
-    if (!record.address) {
-      warnings.push(`Riga ${lineNumber}: Indirizzo mancante`);
+    // Validazione indirizzo: se non c'è l'indirizzo ma c'è la città, va bene (useremo la città come indirizzo)
+    if (!record.address && !record.city) {
+      warnings.push(`Riga ${lineNumber}: Indirizzo o Città mancante`);
     }
 
-    if (!record.sezione) {
-      warnings.push(`Riga ${lineNumber}: Sezione mancante`);
-    }
+    // if (!record.sezione) {
+    //   warnings.push(`Riga ${lineNumber}: Sezione mancante`);
+    // }
 
     if (!record.foglio) {
       warnings.push(`Riga ${lineNumber}: Foglio mancante`);
@@ -197,25 +207,41 @@ export class CsvFieldMapper {
    */
   private mapRecordToField(
     record: Record<string, unknown>,
-    lineNumber: number
+    lineNumber: number,
+    targetCompanyId?: string
   ): { field: BulkFieldInput | null; warnings: string[] } {
-    const validation = this.validateRecord(record, lineNumber);
+    const validation = this.validateRecord(record, lineNumber, targetCompanyId);
     const warnings: string[] = [...validation.warnings];
 
-    const companyName = String(record.companyName || "");
-    const companyId = this.findCompanyId(companyName);
+    let companyId = targetCompanyId;
+    let companyName = "";
 
-    // Se l'azienda non è trovata, aggiungi un warning ma non bloccare l'importazione
-    if (!companyId && companyName) {
-      warnings.push(
-        `Riga ${lineNumber}: Azienda "${companyName}" non trovata. Seleziona l'azienda corretta nella tabella.`
-      );
+    if (!companyId) {
+      companyName = String(record.companyName || "");
+      companyId = this.findCompanyId(companyName);
+
+      // Se l'azienda non è trovata, aggiungi un warning ma non bloccare l'importazione
+      if (!companyId && companyName) {
+        warnings.push(
+          `Riga ${lineNumber}: Azienda "${companyName}" non trovata. Seleziona l'azienda corretta nella tabella.`
+        );
+      }
+    }
+
+    // Gestione indirizzo: se manca, usa la città o un placeholder
+    let address = String(record.address || "");
+    const city = String(record.city || "");
+
+    if (!address && city) {
+      address = city;
+    } else if (!address) {
+      address = "Indirizzo non disponibile";
     }
 
     const field: BulkFieldInput = {
       companyId: companyId || "", // Usa stringa vuota se non trovato
       name: String(record.name || ""),
-      address: String(record.address || ""),
+      address: address,
       sezione: String(record.sezione || ""),
       foglio: String(record.foglio || ""),
       particella: String(record.particella || ""),
@@ -223,8 +249,24 @@ export class CsvFieldMapper {
     };
 
     // Campi opzionali
-    if (record.city) field.city = String(record.city);
-    if (record.sauHa) field.sauHa = this.parseNumber(record.sauHa);
+    if (city) field.city = city;
+
+    // SAU: se presente, converti da mq a ettari se necessario (simile a GIS)
+    // Fallback: se SAU è vuoto o 0, prova a prendere Superficie Uso Suolo Primario
+    let sauValue = this.parseNumber(record.sauHa);
+    const superficieUsoSuoloPrimario = this.parseNumber(
+      record.superficieUsoSuoloPrimario
+    );
+
+    if ((!sauValue || sauValue === 0) && superficieUsoSuoloPrimario) {
+      sauValue = superficieUsoSuoloPrimario;
+    }
+
+    if (sauValue !== null && sauValue > 0) {
+      // Se il valore è molto grande (> 100), probabilmente è in mq e va convertito
+      field.sauHa = sauValue > 100 ? this.convertMqToHa(sauValue) : sauValue;
+    }
+
     if (record.uso) field.uso = String(record.uso);
     if (record.soilType) field.soilType = String(record.soilType);
     if (record.cap) field.cap = String(record.cap);
@@ -270,7 +312,10 @@ export class CsvFieldMapper {
   /**
    * Parsa un file CSV e restituisce i campi mappati
    */
-  public parseFile(file: File): Promise<{
+  public parseFile(
+    file: File,
+    targetCompanyId?: string
+  ): Promise<{
     fields: BulkFieldInput[];
     errors: string[];
     warnings: string[];
@@ -321,7 +366,11 @@ export class CsvFieldMapper {
 
           mappedData.forEach((record, index) => {
             const lineNumber = index + 2; // +2 perché la riga 1 è l'header
-            const result = this.mapRecordToField(record, lineNumber);
+            const result = this.mapRecordToField(
+              record,
+              lineNumber,
+              targetCompanyId
+            );
 
             // Importa sempre il campo, anche se ha warnings
             if (result.field) {

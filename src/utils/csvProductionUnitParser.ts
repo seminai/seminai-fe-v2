@@ -46,7 +46,7 @@ export type ParsedProductionUnit = {
   variety: string;
   protocoll: string;
   protectionStructure: string;
-  startDate: string; // ISO format
+  startDate?: string; // ISO format
   floweringDate?: string; // ISO format
   harvestingDate?: string; // ISO format
   endDate?: string; // ISO format
@@ -69,6 +69,393 @@ export type ParsedBulkImport = {
   fields: Array<Omit<ParsedField, "companyName" | "vatNumber">>;
   productionUnits: ParsedProductionUnit[];
 };
+
+type CropVarietySummary = {
+  code: string;
+  species: string;
+  cropType: string;
+};
+
+export type ProductionUnitParserOptions = {
+  cropVarieties?: CropVarietySummary[];
+};
+
+class NumberParser {
+  public static parse(value: string | undefined): number | null {
+    if (!value) {
+      return null;
+    }
+
+    let sanitized = value.replace(/\s+/g, "").replace(/\u00a0/g, "");
+    if (sanitized.includes(",")) {
+      sanitized = sanitized.replace(/\./g, "").replace(",", ".");
+    }
+    sanitized = sanitized.replace(/[^0-9.-]/g, "");
+
+    const parsed = Number(sanitized);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+}
+
+class DateParser {
+  public static toIso(value: string | undefined): string | undefined {
+    if (!value) {
+      return undefined;
+    }
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+
+    const normalized = trimmed.replace(/\./g, "/");
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(normalized)) {
+      const [day, month, year] = normalized.split("/");
+      const isoDate = new Date(
+        Date.UTC(Number(year), Number(month) - 1, Number(day))
+      );
+      return isNaN(isoDate.getTime()) ? undefined : isoDate.toISOString();
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+      const isoDate = new Date(`${normalized}T00:00:00Z`);
+      return isNaN(isoDate.getTime()) ? undefined : isoDate.toISOString();
+    }
+
+    const date = new Date(trimmed);
+    return isNaN(date.getTime()) ? undefined : date.toISOString();
+  }
+}
+
+class TextFormatter {
+  public static cleanLabel(value: string | undefined): string {
+    if (!value) {
+      return "";
+    }
+    return value
+      .replace(/\[[^\]]+\]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  public static normalize(value: string | undefined): string {
+    return TextFormatter.cleanLabel(value)
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+}
+
+class CropMatcher {
+  private readonly catalog: CropVarietySummary[];
+
+  constructor(catalog: CropVarietySummary[] = []) {
+    this.catalog = catalog;
+  }
+
+  public resolve(
+    occupazione: string | undefined
+  ): { cropName: string; cropType: string; variety: string } {
+    const cleaned = TextFormatter.cleanLabel(occupazione);
+    const normalizedOccupazione = TextFormatter.normalize(occupazione);
+
+    if (normalizedOccupazione) {
+      const match = this.catalog.find((entry) => {
+        const speciesNorm = TextFormatter.normalize(entry.species);
+        const cropTypeNorm = TextFormatter.normalize(entry.cropType);
+        return (
+          normalizedOccupazione.includes(speciesNorm) ||
+          speciesNorm.includes(normalizedOccupazione) ||
+          normalizedOccupazione.includes(cropTypeNorm) ||
+          cropTypeNorm.includes(normalizedOccupazione)
+        );
+      });
+
+      if (match) {
+        return {
+          cropName: match.species,
+          cropType: match.cropType,
+          variety: match.code,
+        };
+      }
+    }
+
+    const fallbackLabel = cleaned || "Coltura non specificata";
+    return {
+      cropName: fallbackLabel,
+      cropType: fallbackLabel,
+      variety: fallbackLabel.replace(/\s+/g, "_").toUpperCase(),
+    };
+  }
+}
+
+type AgeaCompanyProfile = {
+  companyName: string;
+  vatNumber: string;
+};
+
+type AgeaRow = Record<string, string>;
+
+class AggregatedProductionUnit {
+  private readonly fieldAllocations = new Map<
+    string,
+    {
+      fieldName: string;
+      sezione?: string;
+      foglio?: string;
+      particella?: string;
+      subalterno?: string;
+      areaHa: number;
+    }
+  >();
+  private startDate?: string;
+  private endDate?: string;
+
+  constructor(
+    private readonly baseData: {
+      name: string;
+      cropName: string;
+      cropType: string;
+      variety: string;
+      protocoll: string;
+      protectionStructure: string;
+      startDate?: string;
+      endDate?: string;
+      occupazione?: string;
+      destinazioneDiUso?: string;
+    }
+  ) {
+    this.startDate = baseData.startDate;
+    this.endDate = baseData.endDate;
+  }
+
+  public mergePeriod(startDate?: string, endDate?: string): void {
+    if (startDate) {
+      if (!this.startDate || startDate < this.startDate) {
+        this.startDate = startDate;
+      }
+    }
+    if (endDate) {
+      if (!this.endDate || endDate > this.endDate) {
+        this.endDate = endDate;
+      }
+    }
+  }
+
+  public addAllocation(field: ParsedField, areaHa: number): void {
+    const key =
+      field.name && field.name.trim().length > 0
+        ? field.name
+        : `${field.foglio ?? ""}-${field.particella ?? ""}`;
+
+    const allocation =
+      this.fieldAllocations.get(key) ??
+      {
+        fieldName: field.name,
+        sezione: field.sezione,
+        foglio: field.foglio,
+        particella: field.particella,
+        subalterno: field.subalterno,
+        areaHa: 0,
+      };
+
+    allocation.areaHa = parseFloat(
+      (allocation.areaHa + areaHa).toFixed(4)
+    );
+    this.fieldAllocations.set(key, allocation);
+  }
+
+  public toParsedProductionUnit(): ParsedProductionUnit {
+    return {
+      name: this.baseData.name,
+      cropName: this.baseData.cropName,
+      cropType: this.baseData.cropType,
+      variety: this.baseData.variety,
+      protocoll: this.baseData.protocoll,
+      protectionStructure: this.baseData.protectionStructure,
+      startDate: this.startDate,
+      floweringDate: undefined,
+      harvestingDate: undefined,
+      endDate: this.endDate,
+      occupazione: this.baseData.occupazione,
+      destinazioneDiUso: this.baseData.destinazioneDiUso,
+      acquaTotalePeridoL: undefined,
+      fieldAllocations: Array.from(this.fieldAllocations.values()),
+    };
+  }
+}
+
+class AgeaCompanyGroup {
+  private readonly fields = new Map<string, ParsedField>();
+  private readonly productionUnits = new Map<string, AggregatedProductionUnit>();
+
+  constructor(private readonly profile: AgeaCompanyProfile) {}
+
+  public addField(field: ParsedField): void {
+    const key = [
+      field.name,
+      field.sezione ?? "",
+      field.foglio ?? "",
+      field.particella ?? "",
+    ]
+      .join("|")
+      .toLowerCase();
+
+    if (!this.fields.has(key)) {
+      this.fields.set(key, field);
+    }
+  }
+
+  public getOrCreateProductionUnit(
+    key: string,
+    factory: () => AggregatedProductionUnit
+  ): AggregatedProductionUnit {
+    if (!this.productionUnits.has(key)) {
+      this.productionUnits.set(key, factory());
+    }
+    return this.productionUnits.get(key)!;
+  }
+
+  public toParsedBulkImport(): ParsedBulkImport {
+    return {
+      companyName: this.profile.companyName,
+      vatNumber: this.profile.vatNumber,
+      fields: Array.from(this.fields.values()).map((field) => {
+        const { companyName, vatNumber, ...fieldData } = field;
+        return fieldData;
+      }),
+      productionUnits: Array.from(this.productionUnits.values()).map((unit) =>
+        unit.toParsedProductionUnit()
+      ),
+    };
+  }
+}
+
+class AgeaProductionUnitBuilder {
+  private readonly groups = new Map<string, AgeaCompanyGroup>();
+
+  constructor(
+    private readonly rows: AgeaRow[],
+    private readonly cropMatcher: CropMatcher
+  ) {}
+
+  public build(): ParsedBulkImport[] {
+    this.rows.forEach((row, index) => {
+      const company = this.resolveCompany(row, index);
+      const groupKey = `${company.companyName}|${company.vatNumber}`;
+      const group =
+        this.groups.get(groupKey) ?? new AgeaCompanyGroup(company);
+      this.groups.set(groupKey, group);
+
+      const field = this.buildField(row, company, index);
+      group.addField(field);
+      this.addAllocation(group, field, row);
+    });
+
+    return Array.from(this.groups.values()).map((group) =>
+      group.toParsedBulkImport()
+    );
+  }
+
+  private resolveCompany(row: AgeaRow, index: number): AgeaCompanyProfile {
+    const fallbackName = `Azienda import ${index + 1}`;
+    const companyName =
+      TextFormatter.cleanLabel(row["Conduttore"]) ||
+      TextFormatter.cleanLabel(row["Az cond asservimento"]) ||
+      fallbackName;
+    const vatNumber =
+      TextFormatter.cleanLabel(row["Az cond asservimento"]) ||
+      TextFormatter.cleanLabel(row["Id appezzamento AGEA"]) ||
+      TextFormatter.cleanLabel(row["Id appezzamento"]) ||
+      companyName;
+
+    return { companyName, vatNumber };
+  }
+
+  private buildField(
+    row: AgeaRow,
+    company: AgeaCompanyProfile,
+    index: number
+  ): ParsedField {
+    const sau = NumberParser.parse(row["Superficie Agricola"]);
+    const gis = NumberParser.parse(row["Superficie Grafica"]);
+    const catastale = NumberParser.parse(row["Superficie Catastale"]);
+    const eleggibileNetta = NumberParser.parse(
+      row["Superficie Eleggibile Netta"]
+    );
+
+    const fieldName =
+      TextFormatter.cleanLabel(row["Unita produttiva"]) ||
+      TextFormatter.cleanLabel(row["Comune Descrizione"]) ||
+      `Campo import ${index + 1}`;
+
+    return {
+      companyName: company.companyName,
+      vatNumber: company.vatNumber,
+      name: fieldName,
+      sauHa: sau ?? undefined,
+      gisHa: gis ?? undefined,
+      superficieCatastaleMq: catastale ?? undefined,
+      sezione: TextFormatter.cleanLabel(row["Sezione"]),
+      foglio: TextFormatter.cleanLabel(row["Foglio"]),
+      particella: TextFormatter.cleanLabel(row["Particella"]),
+      subalterno: TextFormatter.cleanLabel(row["Subalterno"]),
+      uso: TextFormatter.cleanLabel(row["Uso Uso Suolo Primario"]),
+      qualita: TextFormatter.cleanLabel(row["Qualita Uso Suolo Primario"]),
+      address: TextFormatter.cleanLabel(row["Comune Descrizione"]),
+      city: TextFormatter.cleanLabel(row["Comune Descrizione"]),
+      variazioneMq: eleggibileNetta ?? undefined,
+      nation: "Italia",
+      region: TextFormatter.cleanLabel(row["Zona Alt"]),
+    };
+  }
+
+  private addAllocation(
+    group: AgeaCompanyGroup,
+    field: ParsedField,
+    row: AgeaRow
+  ): void {
+    const occupazione = TextFormatter.cleanLabel(
+      row["Occupazione Suolo Uso Suolo Primario"]
+    );
+    const area = NumberParser.parse(row["Superficie Uso Suolo Primario"]);
+
+    if (!occupazione || !area || area <= 0) {
+      return;
+    }
+
+    const startDateIso = DateParser.toIso(row["Data inizio Semina Primario"]);
+    const endDateIso = DateParser.toIso(row["Data fine Semina Primario"]);
+    const key = [
+      TextFormatter.normalize(occupazione),
+      startDateIso ?? "__no_start__",
+      endDateIso ?? "__no_end__",
+    ].join("|");
+
+    const cropInfo = this.cropMatcher.resolve(occupazione);
+    const unit = group.getOrCreateProductionUnit(key, () => {
+      return new AggregatedProductionUnit({
+        name: occupazione,
+        cropName: cropInfo.cropName,
+        cropType: cropInfo.cropType,
+        variety: cropInfo.variety,
+        protocoll:
+          TextFormatter.cleanLabel(row["Rotazione colturale"]) || "AGEA",
+        protectionStructure:
+          TextFormatter.cleanLabel(row["Tipo Semina Primario"]) ||
+          "Non specificato",
+        startDate: startDateIso,
+        endDate: endDateIso,
+        occupazione,
+        destinazioneDiUso: TextFormatter.cleanLabel(
+          row["Destinazione Uso Suolo Primario"]
+        ),
+      });
+    });
+
+    unit.mergePeriod(startDateIso, endDateIso);
+    unit.addAllocation(field, area);
+  }
+}
 
 // Helper per convertire una data in formato ISO
 const parseDate = (dateStr: string | undefined): string | undefined => {
@@ -190,7 +577,10 @@ export function parseCSV(csvText: string): Record<string, string>[] {
 }
 
 // Funzione principale per parsare il CSV e creare la struttura per il bulk-import
-export function parseProductionUnitCSV(csvText: string): ParsedBulkImport[] {
+export function parseProductionUnitCSV(
+  csvText: string,
+  options?: ProductionUnitParserOptions
+): ParsedBulkImport[] {
   const rows = parseCSV(csvText);
 
   console.log("🔍 CSV Parser - Righe parsate:", rows.length);
@@ -203,6 +593,25 @@ export function parseProductionUnitCSV(csvText: string): ParsedBulkImport[] {
     throw new Error("Il file CSV è vuoto o non valido");
   }
 
+  if (isAgeaFormat(rows[0])) {
+    console.log("🔍 CSV Parser - Rilevato formato AGEA/SIAN");
+    const cropMatcher = new CropMatcher(options?.cropVarieties ?? []);
+    return new AgeaProductionUnitBuilder(rows, cropMatcher).build();
+  }
+
+  return parseLegacyProductionUnits(rows);
+}
+
+function isAgeaFormat(row: Record<string, string>): boolean {
+  const headers = Object.keys(row).map((header) =>
+    header.trim().toLowerCase()
+  );
+  return headers.includes("occupazione suolo uso suolo primario".toLowerCase());
+}
+
+function parseLegacyProductionUnits(
+  rows: Record<string, string>[]
+): ParsedBulkImport[] {
   // Raggruppa le righe per companyName e vatNumber
   const groupedByCompany = new Map<
     string,

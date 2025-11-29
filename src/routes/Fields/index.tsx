@@ -99,7 +99,7 @@ const buildFieldsEditColumns = (companies: Company[]): EditableColumn[] => {
       id: "sezione",
       title: "Sezione",
       type: "text",
-      required: true,
+      required: false,
       placeholder: "es. A",
     },
     {
@@ -179,8 +179,14 @@ const buildFieldsEditColumns = (companies: Company[]): EditableColumn[] => {
 export default function Fields(): React.ReactElement {
   const tableRef = useRef<EditableTable>(null);
 
-  const { fields, isLoading, error, createFields, updateFields, isUpdating } =
-    useFields();
+  const {
+    fields,
+    isLoading,
+    error,
+    createFieldsAsync,
+    updateFieldsAsync,
+    isUpdating,
+  } = useFields();
   const { companies, isLoading: isLoadingCompanies } = useCompanies();
 
   const rowsWithActiveUnits = useMemo(() => {
@@ -199,7 +205,7 @@ export default function Fields(): React.ReactElement {
       fields.find((f) => f.id === fieldId) || (row as unknown as Field);
 
     const handleUpdate = (update: BulkFieldUpdateInput): void => {
-      updateFields([update]);
+      updateFieldsAsync([update]);
     };
 
     // Usa updatedAt come key per forzare il re-render quando i dati cambiano
@@ -251,7 +257,7 @@ export default function Fields(): React.ReactElement {
     );
   };
 
-  const handleSave = (payload: {
+  const handleSave = async (payload: {
     created: Array<Record<string, unknown>>;
     updated: Array<Record<string, unknown>>;
   }) => {
@@ -265,7 +271,7 @@ export default function Fields(): React.ReactElement {
           fieldsWithoutCompany.length === 1 ? "il campo" : "i campi"
         } da creare`
       );
-      return;
+      throw new Error("Azienda mancante per i nuovi campi");
     }
 
     const fieldsToCreate = payload.created.map((field) => {
@@ -316,12 +322,23 @@ export default function Fields(): React.ReactElement {
       return;
     }
 
-    if (fieldsToCreate.length > 0) {
-      createFields(fieldsToCreate);
-    }
+    try {
+      const promises = [];
 
-    if (fieldsToUpdate.length > 0) {
-      updateFields(fieldsToUpdate as BulkFieldUpdateInput[]);
+      if (fieldsToCreate.length > 0) {
+        promises.push(createFieldsAsync(fieldsToCreate));
+      }
+
+      if (fieldsToUpdate.length > 0) {
+        promises.push(
+          updateFieldsAsync(fieldsToUpdate as BulkFieldUpdateInput[])
+        );
+      }
+
+      await Promise.all(promises);
+    } catch (err) {
+      // Rilancia l'errore per permettere alla tabella di non resettare lo stato
+      throw err;
     }
   };
 

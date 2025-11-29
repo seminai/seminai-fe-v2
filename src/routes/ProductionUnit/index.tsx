@@ -315,7 +315,6 @@ class CompanyDirectory {
 
 const buildProductionUnitColumns = (
   catalog: CropCatalog | null,
-  onFieldClick: (field: FieldInfo) => void,
   directory: CompanyDirectory | null
 ): EditableColumn[] => {
   const speciesOptions = catalog?.getSpeciesOptions() ?? [];
@@ -502,25 +501,10 @@ const buildProductionUnitColumns = (
       render: (_value: unknown, rowData: Record<string, unknown>) => {
         const fields = rowData.fields as FieldInfo[] | undefined;
         if (!fields || fields.length === 0) {
-          return <span className="text-gray-400">-</span>;
+          return <span className="text-gray-400">0 campi</span>;
         }
-        return (
-          <div className="flex flex-wrap gap-1">
-            {fields.map((field) => (
-              <Badge
-                key={field.id}
-                variant="secondary"
-                className="cursor-pointer hover:bg-blue-100 transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onFieldClick(field);
-                }}
-              >
-                {field.name}
-              </Badge>
-            ))}
-          </div>
-        );
+        const countLabel = fields.length === 1 ? "1 campo" : `${fields.length} campi`;
+        return <Badge variant="secondary">{countLabel}</Badge>;
       },
       onValueChange: ({ value, rowData }) => {
         const sanitizedValue =
@@ -1308,13 +1292,8 @@ export default function ProductionUnit(): React.ReactElement {
   };
 
   const columns = useMemo(
-    () =>
-      buildProductionUnitColumns(
-        cropCatalog,
-        handleFieldClick,
-        companyDirectory
-      ),
-    [cropCatalog, handleFieldClick, companyDirectory]
+    () => buildProductionUnitColumns(cropCatalog, companyDirectory),
+    [cropCatalog, companyDirectory]
   );
 
   return (

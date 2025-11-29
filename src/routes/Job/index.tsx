@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import { useJobs } from "@/hooks/useJobs";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLabelsSummary } from "@/hooks/useLabelsSummary";
+import { useLabel } from "@/hooks/useLabel";
 import { PageHeader } from "@/components/organism/Header";
 import {
   EditableTable,
@@ -37,6 +39,7 @@ import {
   ChevronLeft,
   Package,
   Sprout,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -46,6 +49,7 @@ interface JobHistorySheetProps {
   onOpenChange: (open: boolean) => void;
   history: JobHistoryEntry[];
   jobCode: string;
+  onProductClick?: (productName: string, registrationNumber?: string) => void;
 }
 
 class HistoryEntryFormatter {
@@ -101,6 +105,7 @@ function JobHistorySheet({
   onOpenChange,
   history,
   jobCode,
+  onProductClick,
 }: JobHistorySheetProps) {
   const { productionUnits } = useProductionUnit();
 
@@ -171,6 +176,7 @@ function JobHistorySheet({
                         entry={entry}
                         productionUnits={productionUnits}
                         variant="default"
+                        onProductClick={onProductClick}
                       />
                       <span className="text-xs text-muted-foreground/60">
                         {HistoryEntryFormatter.formatTimestamp(entry.timestamp)}
@@ -192,6 +198,208 @@ function JobHistorySheet({
   );
 }
 
+// Componente per mostrare i dettagli dell'etichetta in un Sheet
+interface LabelDetailSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  labelId: string | null;
+}
+
+function LabelDetailSheet({
+  open,
+  onOpenChange,
+  labelId,
+}: LabelDetailSheetProps) {
+  const { detail, isLoading, error } = useLabel({
+    id: labelId ?? "",
+  });
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-2xl bg-white flex flex-col h-full overflow-hidden"
+      >
+        <SheetHeader className="flex-shrink-0">
+          <SheetTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Dettagli Etichetta
+          </SheetTitle>
+          <SheetDescription>
+            {detail?.productName && (
+              <div className="mt-2">
+                <Badge variant="outline" className="mr-2">
+                  {detail.productName}
+                </Badge>
+                {detail.registrationNumber && (
+                  <Badge variant="outline" className="font-mono">
+                    Reg. {detail.registrationNumber}
+                  </Badge>
+                )}
+              </div>
+            )}
+          </SheetDescription>
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto mt-4 p-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Spinner ariaLabel="Caricamento etichetta" />
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+              <p className="font-semibold">
+                Errore nel caricamento dell'etichetta
+              </p>
+              <p className="text-sm mt-1">
+                {error instanceof Error ? error.message : "Errore sconosciuto"}
+              </p>
+            </div>
+          ) : detail ? (
+            <div className="space-y-6">
+              {/* Informazioni principali */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-foreground border-b pb-2">
+                  Informazioni Prodotto
+                </h3>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="font-medium text-slate-600">Nome:</span>
+                    <p className="text-slate-800">{detail.productName}</p>
+                  </div>
+                  {detail.registrationNumber && (
+                    <div>
+                      <span className="font-medium text-slate-600">
+                        Numero Registrazione:
+                      </span>
+                      <p className="text-slate-800 font-mono">
+                        {detail.registrationNumber}
+                      </p>
+                    </div>
+                  )}
+                  {detail.label?.categoria && (
+                    <div>
+                      <span className="font-medium text-slate-600">
+                        Categoria:
+                      </span>
+                      <p className="text-slate-800">{detail.label.categoria}</p>
+                    </div>
+                  )}
+                  {detail.label?.formulazione && (
+                    <div>
+                      <span className="font-medium text-slate-600">
+                        Formulazione:
+                      </span>
+                      <p className="text-slate-800">
+                        {detail.label.formulazione}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Principio attivo */}
+              {detail.label?.principio_attivo && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-foreground border-b pb-2">
+                    Principio Attivo
+                  </h3>
+                  <p className="text-sm text-slate-700">
+                    {detail.label.principio_attivo}
+                  </p>
+                </div>
+              )}
+
+              {/* Colture target */}
+              {detail.label?.colture_target &&
+                detail.label.colture_target.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold text-foreground border-b pb-2">
+                      Colture Target
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {detail.label.colture_target.map((coltura, idx) => (
+                        <Badge key={idx} variant="secondary">
+                          {coltura}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* Malattie */}
+              {detail.label?.malattie && detail.label.malattie.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-foreground border-b pb-2">
+                    Malattie
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {detail.label.malattie.map((malattia, idx) => (
+                      <Badge key={idx} variant="outline">
+                        {malattia}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Dosaggi dettagliati */}
+              {detail.label?.dosaggi_dettagliati &&
+                detail.label.dosaggi_dettagliati.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-foreground border-b pb-2">
+                      Dosaggi
+                    </h3>
+                    <div className="space-y-3">
+                      {detail.label.dosaggi_dettagliati.map((dosaggio, idx) => (
+                        <div
+                          key={idx}
+                          className="border rounded-lg p-3 bg-slate-50"
+                        >
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            {dosaggio.coltura && (
+                              <div>
+                                <span className="font-medium">Coltura:</span>{" "}
+                                {dosaggio.coltura}
+                              </div>
+                            )}
+                            {dosaggio.malattia && (
+                              <div>
+                                <span className="font-medium">Malattia:</span>{" "}
+                                {dosaggio.malattia}
+                              </div>
+                            )}
+                            {dosaggio.dose_minima !== undefined &&
+                              dosaggio.dose_massima !== undefined && (
+                                <div>
+                                  <span className="font-medium">Dose:</span>{" "}
+                                  {dosaggio.dose_minima} -{" "}
+                                  {dosaggio.dose_massima} {dosaggio.dose_um}
+                                </div>
+                              )}
+                            {dosaggio.epoca_impiego && (
+                              <div>
+                                <span className="font-medium">Epoca:</span>{" "}
+                                {dosaggio.epoca_impiego}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              Nessun dettaglio disponibile per questa etichetta.
+            </div>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 // Componente helper per mostrare i dettagli del prodotto e dell'unità produttiva
 interface HistoryEntryDetailsProps {
   entry: JobHistoryEntry;
@@ -199,12 +407,14 @@ interface HistoryEntryDetailsProps {
     productionUnit: { id: string; name: string };
   }>;
   variant?: "compact" | "default";
+  onProductClick?: (productName: string, registrationNumber?: string) => void;
 }
 
 function HistoryEntryDetails({
   entry,
   productionUnits,
   variant = "compact",
+  onProductClick,
 }: HistoryEntryDetailsProps) {
   const metadata = entry.metadata;
   if (!metadata) return null;
@@ -239,14 +449,21 @@ function HistoryEntryDetails({
             <button
               className="text-slate-700 hover:text-slate-900 hover:underline font-medium"
               onClick={() => {
-                const details = [];
-                details.push(metadata.productName!);
-                if (metadata.productRegistrationNumber) {
-                  details.push(`Reg. ${metadata.productRegistrationNumber}`);
+                if (onProductClick) {
+                  onProductClick(
+                    metadata.productName!,
+                    metadata.productRegistrationNumber
+                  );
+                } else {
+                  const details = [];
+                  details.push(metadata.productName!);
+                  if (metadata.productRegistrationNumber) {
+                    details.push(`Reg. ${metadata.productRegistrationNumber}`);
+                  }
+                  toast.info("Prodotto", {
+                    description: details.join(" | "),
+                  });
                 }
-                toast.info("Prodotto", {
-                  description: details.join(" | "),
-                });
               }}
             >
               {metadata.productName}
@@ -260,9 +477,16 @@ function HistoryEntryDetails({
               <button
                 className="text-slate-600 hover:text-slate-800 hover:underline font-mono"
                 onClick={() => {
-                  toast.info("Numero Registrazione", {
-                    description: metadata.productRegistrationNumber,
-                  });
+                  if (onProductClick && metadata.productName) {
+                    onProductClick(
+                      metadata.productName,
+                      metadata.productRegistrationNumber
+                    );
+                  } else {
+                    toast.info("Numero Registrazione", {
+                      description: metadata.productRegistrationNumber,
+                    });
+                  }
                 }}
               >
                 Reg. {metadata.productRegistrationNumber}
@@ -320,9 +544,10 @@ function HistoryEntryDetails({
 interface HistoryPanelProps {
   history: JobHistoryEntry[];
   jobCode: string;
+  onProductClick?: (productName: string, registrationNumber?: string) => void;
 }
 
-function HistoryPanel({ history, jobCode }: HistoryPanelProps) {
+function HistoryPanel({ history, jobCode, onProductClick }: HistoryPanelProps) {
   const { productionUnits } = useProductionUnit();
 
   const groupedHistory = useMemo(() => {
@@ -388,6 +613,7 @@ function HistoryPanel({ history, jobCode }: HistoryPanelProps) {
                     <HistoryEntryDetails
                       entry={entry}
                       productionUnits={productionUnits}
+                      onProductClick={onProductClick}
                     />
                   </div>
                 ))}
@@ -640,15 +866,61 @@ export default function JobPage() {
     EditableTableRowData[]
   >([]);
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState<boolean>(false);
+  const [labelSheetOpen, setLabelSheetOpen] = useState<boolean>(false);
+  const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
 
   const isMobile = useIsMobile();
   const { jobs, isLoading, error, refetch } = useJobs();
+  const { labels } = useLabelsSummary();
   const bulkVerifier = useMemo(() => new JobBulkVerifier(jobsApiService), []);
 
   const handleOpenHistory = (row: Record<string, unknown>) => {
     setSelectedJobHistory(row._history as JobHistoryEntry[]);
     setSelectedJobCode(row.jobCode as string);
     setHistorySheetOpen(true);
+  };
+
+  // Funzione per trovare l'etichetta per nome prodotto e numero di registrazione
+  const findLabelByProduct = (
+    productName: string,
+    registrationNumber?: string
+  ): string | null => {
+    const normalizedProductName = productName.trim().toLowerCase();
+    const normalizedRegNumber = registrationNumber?.trim();
+
+    const foundLabel = labels.find((label) => {
+      const labelName = label.productName.trim().toLowerCase();
+      // Cerca corrispondenza esatta o parziale
+      const nameMatch =
+        labelName === normalizedProductName ||
+        labelName.includes(normalizedProductName) ||
+        normalizedProductName.includes(labelName);
+
+      const regMatch = normalizedRegNumber
+        ? label.registrationNumber === normalizedRegNumber
+        : true;
+
+      return nameMatch && regMatch;
+    });
+    return foundLabel?.id ?? null;
+  };
+
+  // Handler per aprire il drawer dell'etichetta
+  const handleOpenLabel = (
+    productName: string,
+    registrationNumber?: string
+  ) => {
+    const labelId = findLabelByProduct(productName, registrationNumber);
+    if (labelId) {
+      setSelectedLabelId(labelId);
+      setLabelSheetOpen(true);
+    } else {
+      toast.info("Etichetta non trovata", {
+        description: registrationNumber
+          ? `${productName} (Reg. ${registrationNumber})`
+          : productName,
+      });
+    }
   };
 
   // Converte i jobs in formato per la tabella
@@ -1265,6 +1537,7 @@ export default function JobPage() {
               <HistoryPanel
                 history={selectedGroup.history}
                 jobCode={selectedGroup.jobCode}
+                onProductClick={handleOpenLabel}
               />
             </SheetContent>
           </Sheet>
@@ -1440,6 +1713,14 @@ export default function JobPage() {
         onOpenChange={setHistorySheetOpen}
         history={selectedJobHistory}
         jobCode={selectedJobCode}
+        onProductClick={handleOpenLabel}
+      />
+
+      {/* Label Detail Sheet */}
+      <LabelDetailSheet
+        open={labelSheetOpen}
+        onOpenChange={setLabelSheetOpen}
+        labelId={selectedLabelId}
       />
     </div>
   );

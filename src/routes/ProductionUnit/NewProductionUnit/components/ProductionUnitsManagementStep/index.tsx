@@ -71,6 +71,26 @@ const ProductionUnitsManagementStep: React.FC<
   );
   const [showForm, setShowForm] = useState(false);
 
+  const unitIssuesMap = useMemo(() => {
+    const issues = new Map<string, string[]>();
+    productionUnits.forEach((unit) => {
+      const unitIssues: string[] = [];
+      if (!unit.name?.trim()) {
+        unitIssues.push("Nome dell'unità mancante");
+      }
+      if (!unit.cropCode?.trim()) {
+        unitIssues.push("Coltura non selezionata");
+      }
+      if (unit.allocations.size === 0) {
+        unitIssues.push("Nessun campo allocato");
+      }
+      if (unitIssues.length > 0) {
+        issues.set(unit.id, unitIssues);
+      }
+    });
+    return issues;
+  }, [productionUnits]);
+
   const addNewUnit = () => {
     const newUnit: ProductionUnitInput = {
       id: `pu-${Date.now()}`,
@@ -151,6 +171,7 @@ const ProductionUnitsManagementStep: React.FC<
                 (sum, area) => sum + area,
                 0
               );
+              const issues = unitIssuesMap.get(unit.id) ?? [];
 
               return (
                 <Card key={unit.id}>
@@ -185,6 +206,18 @@ const ProductionUnitsManagementStep: React.FC<
                     </div>
                   </CardHeader>
                   <CardContent>
+                    {issues.length > 0 && (
+                      <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                        <p className="font-semibold text-sm mb-1">
+                          Completa questi campi:
+                        </p>
+                        <ul className="list-disc list-inside space-y-0.5">
+                          {issues.map((issue, idx) => (
+                            <li key={idx}>{issue}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
                         <span className="font-medium text-gray-700">
