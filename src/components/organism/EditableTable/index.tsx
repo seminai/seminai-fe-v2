@@ -1476,7 +1476,7 @@ export class EditableTable extends React.Component<
     );
   }
 
-  private handleSave = (): void => {
+  private handleSave = async (): Promise<void> => {
     if (!this.props.onSave) return;
     const created = this.state.rows.filter((r) => r.isNew);
     const updated = this.state.rows.filter((r) => r.isDirty && !r.isNew);
@@ -1485,16 +1485,23 @@ export class EditableTable extends React.Component<
       (r) => Object.keys(this.validateRow(r)).length > 0
     );
     if (invalid) return;
-    this.props.onSave({
-      created: created.map((r) => r.data),
-      updated: updated.map((r) => r.data),
-    });
-    // Reset dirty flags and editing state
-    this.setState((prev) => ({
-      rows: prev.rows.map((r) => ({ ...r, isDirty: false, isNew: false })),
-      touched: {},
-      isEditMode: false,
-    }));
+
+    try {
+      await this.props.onSave({
+        created: created.map((r) => r.data),
+        updated: updated.map((r) => r.data),
+      });
+
+      // Reset dirty flags and editing state only on success
+      this.setState((prev) => ({
+        rows: prev.rows.map((r) => ({ ...r, isDirty: false, isNew: false })),
+        touched: {},
+        isEditMode: false,
+      }));
+    } catch (error) {
+      console.error("Error saving table data:", error);
+      // Keep dirty state so user can retry
+    }
   };
 
   private formatDefaultCellValue(col: EditableColumn, value: unknown): string {

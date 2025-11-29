@@ -279,6 +279,15 @@
     "estimatedYield": { "min": 1500, "max": 3000 }
   },
   {
+    "code": "CICER_ARI",
+    "species": "Cicer arietinum",
+    "cropType": "cece",
+    "sowingPeriod": { "minDate": "15-11", "maxDate": "15-02" },
+    "floweringPeriod": { "minDate": "15-04", "maxDate": "31-05" },
+    "harvestPeriod": { "minDate": "15-06", "maxDate": "31-07" },
+    "estimatedYield": { "min": 1500, "max": 2500 }
+  },
+  {
     "code": "CICHO_END",
     "species": "Cichorium endivia",
     "cropType": "indivia",
@@ -304,6 +313,15 @@
     "floweringPeriod": { "minDate": "15-08", "maxDate": "30-10" },
     "harvestPeriod": { "minDate": "15-10", "maxDate": "31-12" },
     "estimatedYield": { "min": 18000, "max": 35000 }
+  },
+  {
+    "code": "CORIA_SAT",
+    "species": "Coriandrum sativum",
+    "cropType": "coriandolo",
+    "sowingPeriod": { "minDate": "15-03", "maxDate": "15-05" },
+    "floweringPeriod": { "minDate": "15-05", "maxDate": "30-06" },
+    "harvestPeriod": { "minDate": "15-07", "maxDate": "31-08" },
+    "estimatedYield": { "min": 1200, "max": 2500 }
   },
   {
     "code": "CTRLS_LAN",

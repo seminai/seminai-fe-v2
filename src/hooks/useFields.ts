@@ -123,10 +123,12 @@ export function useFields(options?: UseFieldsOptions) {
 
     // Mutation per creare campi
     createFields: createMutation.mutate,
+    createFieldsAsync: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
 
     // Mutation per aggiornare campi
     updateFields: updateMutation.mutate,
+    updateFieldsAsync: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
 
     // Utility per refetch
