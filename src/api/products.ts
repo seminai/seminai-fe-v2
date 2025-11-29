@@ -146,6 +146,7 @@ export type BulkProductStockPayload = {
   type?: "IN" | "OUT";
   ddtCode?: string;
   companySupplierName?: string;
+  invoiceDate?: string;
 };
 
 export type BulkProductPayload = {
@@ -176,6 +177,16 @@ export type BulkImportProductsResponse = {
       message: string;
     }>;
   };
+};
+
+export type BulkDeleteProductsPayload = {
+  companyId: string;
+  ids: string[];
+};
+
+export type BulkDeleteProductsResponse = {
+  status: "success" | string;
+  data?: unknown;
 };
 
 export async function getProducts(
@@ -311,6 +322,67 @@ export async function bulkImportProducts(
   return (await response.json()) as BulkImportProductsResponse;
 }
 
+export async function bulkDeleteProducts(
+  payload: BulkDeleteProductsPayload,
+  baseUrl: string = BASE_URL
+): Promise<BulkDeleteProductsResponse> {
+  if (!payload?.companyId) {
+    throw new Error("Company identifier is required");
+  }
+
+  if (!Array.isArray(payload.ids) || payload.ids.length === 0) {
+    throw new Error("At least one product ID is required for bulk delete");
+  }
+
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/products/bulk`,
+    {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Bulk delete failed");
+  }
+
+  // Gestisci risposte vuote (204 No Content o body vuoto)
+  const contentType = response.headers.get("content-type");
+  const contentLength = response.headers.get("content-length");
+  
+  if (
+    response.status === 204 ||
+    contentLength === "0" ||
+    !contentType?.includes("application/json")
+  ) {
+    return {
+      status: "success",
+    } as BulkDeleteProductsResponse;
+  }
+
+  // Prova a leggere il body come testo per verificare se è vuoto
+  const text = await response.text();
+  if (!text || text.trim() === "") {
+    return {
+      status: "success",
+    } as BulkDeleteProductsResponse;
+  }
+
+  try {
+    return JSON.parse(text) as BulkDeleteProductsResponse;
+  } catch {
+    // Se il parsing fallisce, restituisci una risposta di successo di default
+    return {
+      status: "success",
+    } as BulkDeleteProductsResponse;
+  }
+}
+
 class ProductsApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -342,6 +414,12 @@ class ProductsApiService {
     payload: BulkImportProductsPayload
   ): Promise<BulkImportProductsResponse> {
     return await bulkImportProducts(payload, this.baseUrl);
+  }
+
+  public async bulkDelete(
+    payload: BulkDeleteProductsPayload
+  ): Promise<BulkDeleteProductsResponse> {
+    return await bulkDeleteProducts(payload, this.baseUrl);
   }
 }
 

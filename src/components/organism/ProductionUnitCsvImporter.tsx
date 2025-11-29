@@ -2,13 +2,14 @@ import * as React from "react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+  DrawerClose,
+} from "@/components/ui/drawer";
 import {
   Select,
   SelectContent,
@@ -23,6 +24,7 @@ import {
   AlertCircle,
   CheckCircle,
   Building2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -471,23 +473,32 @@ export const ProductionUnitCsvImporter: React.FC<
   const previewResult = parsedData ? buildImportResult() : null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
+    <Drawer open={isOpen} onOpenChange={setIsOpen}>
+      <DrawerTrigger asChild>
         <Button variant="outline" className="gap-2">
           <Upload className="h-4 w-4" />
           Importa file
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white">
-        <DialogHeader>
-          <DialogTitle>Importa Unità Produttive da CSV/Excel</DialogTitle>
-          <DialogDescription>
-            Seleziona l'azienda di destinazione e carica un file CSV o Excel per
-            importare le unità produttive.
-          </DialogDescription>
-        </DialogHeader>
+      </DrawerTrigger>
+      <DrawerContent data-vaul-drawer-direction="right" className="max-h-[100vh] overflow-y-auto">
+        <DrawerHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <DrawerTitle>Importa Unità Produttive da CSV/Excel</DrawerTitle>
+              <DrawerDescription>
+                Seleziona l'azienda di destinazione e carica un file CSV o Excel per
+                importare le unità produttive.
+              </DrawerDescription>
+            </div>
+            <DrawerClose asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <X className="h-4 w-4" />
+              </Button>
+            </DrawerClose>
+          </div>
+        </DrawerHeader>
 
-        <div className="space-y-4 mt-4">
+        <div className="space-y-4 px-6 pb-6">
           {/* Company select */}
           <div className="space-y-2">
             <label className="text-sm font-medium flex items-center gap-2">
@@ -719,9 +730,9 @@ export const ProductionUnitCsvImporter: React.FC<
 
           {/* Actions */}
           {previewResult && validationErrors.length === 0 && (
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={handleCancel}>
-                Annulla
+            <div className="flex justify-end gap-3 pt-4 border-t mt-6">
+              <Button variant="outline" onClick={handleCancel} asChild>
+                <DrawerClose>Annulla</DrawerClose>
               </Button>
               <Button
                 onClick={handleImport}
@@ -733,7 +744,7 @@ export const ProductionUnitCsvImporter: React.FC<
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 };
