@@ -29,6 +29,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCompanyUsers } from "@/hooks/useCompanyUsers";
 import { useCompanyWarehouses } from "@/hooks/useCompanyWarehouses";
+import { useFiles } from "@/hooks/useFiles";
+import { filesApiService } from "@/api/files";
 import {
   type UserOnCompany,
   type UserOnCompanyRole,
@@ -46,8 +48,11 @@ import {
   Warehouse as WarehouseIcon,
   PlusCircle,
   Save,
+  FileText,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { CompanyFilesPanel } from "./CompanyFilesPanel";
+import { toast } from "sonner";
 
 interface DrawerCompanyContentProps {
   company: Company;
@@ -69,7 +74,7 @@ export function DrawerCompanyContent({
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "details" | "users" | "warehouses"
+    "details" | "users" | "warehouses" | "files"
   >("details");
   const [editedData, setEditedData] = useState<Partial<Company>>({
     name: company.name,
@@ -85,6 +90,8 @@ export function DrawerCompanyContent({
     website: company.website || "",
     logoUrl: company.logoUrl || "",
   });
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const logoFileInputRef = React.useRef<HTMLInputElement>(null);
 
   const {
     users: companyUsers,
@@ -113,6 +120,16 @@ export function DrawerCompanyContent({
     deleteWarehouse,
     isDeleting: isDeletingWarehouse,
   } = useCompanyWarehouses(company.id);
+
+  const {
+    files: companyFiles,
+    isLoading: isLoadingFiles,
+    isError: isFilesError,
+    error: filesError,
+    refetch: refetchCompanyFiles,
+    uploadFile: uploadCompanyFile,
+    isUploading: isUploadingFile,
+  } = useFiles(company.id);
 
   // Aggiorna i dati quando la company cambia (dopo un update)
   useEffect(() => {
@@ -195,6 +212,57 @@ export function DrawerCompanyContent({
       logoUrl: company.logoUrl || "",
     });
     setIsEditing(false);
+    if (logoFileInputRef.current) {
+      logoFileInputRef.current.value = "";
+    }
+  };
+
+  const handleLogoFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ): Promise<void> => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    // Verifica che il file sia un'immagine
+    if (!file.type.startsWith("image/")) {
+      toast.error("Seleziona un file immagine (PNG, JPG, etc.)");
+      if (logoFileInputRef.current) {
+        logoFileInputRef.current.value = "";
+      }
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    try {
+      // Usa direttamente filesApiService per ottenere la risposta completa con l'URL
+      const response = await filesApiService.uploadFile({
+        file,
+        companyId: company.id,
+        path: "logos",
+        type: "logo",
+      });
+
+      // Estrai l'URL dal file caricato
+      const uploadedFileUrl = response.data.file.url;
+      setEditedData({ ...editedData, logoUrl: uploadedFileUrl });
+      toast.success("Logo caricato con successo");
+      
+      // Aggiorna anche la lista dei file
+      await refetchCompanyFiles();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Errore nel caricamento del logo";
+      toast.error(message);
+    } finally {
+      setIsUploadingLogo(false);
+      if (logoFileInputRef.current) {
+        logoFileInputRef.current.value = "";
+      }
+    }
   };
 
   const renderGeneralInfo = (): React.ReactNode => {
@@ -224,34 +292,69 @@ export function DrawerCompanyContent({
               </p>
             )}
           </div>
-          {(company.logoUrl || isEditing) && (
-            <div>
-              <p className="text-xs font-medium text-agri-green-600 mb-1.5">
-                Logo
-              </p>
-              {isEditing ? (
-                <Input
-                  value={editedData.logoUrl || ""}
-                  onChange={(e) =>
-                    setEditedData({ ...editedData, logoUrl: e.target.value })
-                  }
-                  className="bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
-                  placeholder="URL Logo"
-                />
-              ) : (
-                company.logoUrl && (
-                  <img
-                    src={company.logoUrl}
-                    alt={`Logo ${company.name}`}
-                    className="h-12 object-contain rounded-lg shadow-sm"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
+          <div>
+            <p className="text-xs font-medium text-agri-green-600 mb-1.5">
+              Logo
+            </p>
+            {isEditing ? (
+              <div className="space-y-2">
+                {(editedData.logoUrl || company.logoUrl) && (
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={editedData.logoUrl || company.logoUrl || ""}
+                      alt={`Logo ${company.name}`}
+                      className="h-16 w-16 object-contain rounded-lg border border-agri-green-200 shadow-sm bg-white p-1"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                    {editedData.logoUrl && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditedData({ ...editedData, logoUrl: "" });
+                        }}
+                        className="h-8 px-3 rounded-full text-red-600 hover:bg-red-50"
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Rimuovi
+                      </Button>
+                    )}
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Input
+                    ref={logoFileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                    onChange={handleLogoFileSelect}
+                    disabled={isUploadingLogo || isUpdating}
+                    className="bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10 cursor-pointer file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-agri-green-50 file:text-agri-green-700 hover:file:bg-agri-green-100"
                   />
-                )
-              )}
-            </div>
-          )}
+                  {isUploadingLogo && (
+                    <Spinner size={20} ariaLabel="Caricamento logo" />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Seleziona un file immagine (PNG, JPG) per caricare il logo
+                  aziendale
+                </p>
+              </div>
+            ) : (
+              company.logoUrl && (
+                <img
+                  src={company.logoUrl}
+                  alt={`Logo ${company.name}`}
+                  className="h-16 w-16 object-contain rounded-lg border border-agri-green-200 shadow-sm bg-white p-1"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              )
+            )}
+          </div>
         </div>
       </div>
     );
@@ -534,6 +637,7 @@ export function DrawerCompanyContent({
   const isDetailsTab = activeTab === "details";
   const isUsersTab = activeTab === "users";
   const isWarehousesTab = activeTab === "warehouses";
+  const isFilesTab = activeTab === "files";
 
   const headerTitle = isDetailsTab
     ? isEditing
@@ -541,7 +645,9 @@ export function DrawerCompanyContent({
       : "Dettagli Azienda"
     : isUsersTab
     ? "Gestione Utenti"
-    : "Gestione Magazzini";
+    : isWarehousesTab
+    ? "Gestione Magazzini"
+    : "Gestione File";
 
   const headerSubtitle: string | null =
     isDetailsTab && !isEditing
@@ -550,13 +656,15 @@ export function DrawerCompanyContent({
       ? "Gestisci gli utenti associati all'azienda"
       : isWarehousesTab
       ? "Gestisci i magazzini dell'azienda"
+      : isFilesTab
+      ? "Carica e gestisci i file dell'azienda"
       : null;
 
   return (
     <Tabs
       value={activeTab}
       onValueChange={(value) =>
-        setActiveTab(value as "details" | "users" | "warehouses")
+        setActiveTab(value as "details" | "users" | "warehouses" | "files")
       }
       className="space-y-6"
     >
@@ -570,6 +678,7 @@ export function DrawerCompanyContent({
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                 {isUsersTab && <Users className="h-3 w-3" />}
                 {isWarehousesTab && <WarehouseIcon className="h-3 w-3" />}
+                {isFilesTab && <FileText className="h-3 w-3" />}
                 {headerSubtitle}
               </p>
             )}
@@ -579,6 +688,7 @@ export function DrawerCompanyContent({
               <TabsTrigger value="details">Dettagli</TabsTrigger>
               <TabsTrigger value="users">Utenti</TabsTrigger>
               <TabsTrigger value="warehouses">Magazzini</TabsTrigger>
+              <TabsTrigger value="files">File</TabsTrigger>
             </TabsList>
             {isDetailsTab &&
               (isEditing ? (
@@ -665,6 +775,20 @@ export function DrawerCompanyContent({
           isUpdating={isUpdatingWarehouse}
           onDelete={deleteWarehouse}
           isDeleting={isDeletingWarehouse}
+        />
+      </TabsContent>
+
+      <TabsContent value="files" className="mt-4">
+        <CompanyFilesPanel
+          companyId={company.id}
+          companyName={company.name}
+          files={companyFiles}
+          isLoading={isLoadingFiles}
+          isError={isFilesError}
+          error={filesError}
+          onRetry={refetchCompanyFiles}
+          onUpload={uploadCompanyFile}
+          isUploading={isUploadingFile}
         />
       </TabsContent>
     </Tabs>
