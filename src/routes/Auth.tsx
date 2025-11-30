@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLogin, useRegister, useMe, useWakeUp } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import createAuthPollingService, {
+  type AuthPollingService,
+} from "@/utils/auth_polling";
 
 class RegistrationUnlockService {
   private static readonly envCode =
@@ -39,16 +42,49 @@ export default function Auth() {
   const loginMutation = useLogin();
   const registerMutation = useRegister();
 
-  const { data: meData } = useMe();
+  const { data: meData, refetch: refetchMe } = useMe();
+  const { isSuccess: isWakeUpSuccess } = useWakeUp();
 
-  // Esegue la chiamata di "wake-up" al backend all'avvio del componente
-  useWakeUp();
+  // Istanza del servizio di polling per l'autenticazione
+  const authPollingServiceRef = useRef<AuthPollingService | null>(null);
 
+  // Inizializza il servizio di polling al mount del componente
   useEffect(() => {
-    if (meData) {
+    authPollingServiceRef.current = createAuthPollingService();
+    authPollingServiceRef.current.setRefetchFunction(refetchMe);
+    authPollingServiceRef.current.setOnAuthenticatedCallback(() => {
       navigate("/dashboard", { replace: true });
+    });
+
+    // Cleanup al dismount
+    return () => {
+      if (authPollingServiceRef.current) {
+        authPollingServiceRef.current.cleanup();
+        authPollingServiceRef.current = null;
+      }
+    };
+  }, [refetchMe, navigate]);
+
+  // Gestisce il successo del wake-up del backend
+  useEffect(() => {
+    if (isWakeUpSuccess && authPollingServiceRef.current) {
+      authPollingServiceRef.current.handleWakeUpSuccess();
     }
-  }, [meData, navigate]);
+  }, [isWakeUpSuccess]);
+
+  // Reindirizza immediatamente se l'utente è autenticato
+  useEffect(() => {
+    if (meData && authPollingServiceRef.current) {
+      authPollingServiceRef.current.handleAuthenticationSuccess();
+    }
+  }, [meData]);
+
+  // Avvia il polling se necessario (token presente ma dati utente non disponibili)
+  useEffect(() => {
+    if (authPollingServiceRef.current) {
+      authPollingServiceRef.current.startPolling(!!meData);
+    }
+  }, [meData]);
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");

@@ -59,6 +59,7 @@ interface DrawerCompanyContentProps {
   onUpdate?: (update: BulkCompanyUpdateInput) => void;
   isUpdating?: boolean;
   onUpdateSuccess?: () => void;
+  onTabChange?: (tab: "details" | "users" | "warehouses" | "files") => void;
 }
 
 /**
@@ -70,6 +71,7 @@ export function DrawerCompanyContent({
   onUpdate,
   isUpdating = false,
   onUpdateSuccess,
+  onTabChange,
 }: DrawerCompanyContentProps): React.ReactElement {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
@@ -159,6 +161,11 @@ export function DrawerCompanyContent({
       onUpdateSuccess?.();
     }
   }, [isUpdating, isEditing, onUpdateSuccess]);
+
+  // Notifica il tab iniziale al componente padre per il breadcrumb
+  useEffect(() => {
+    onTabChange?.(activeTab);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = (): void => {
     if (!onUpdate) return;
@@ -663,9 +670,11 @@ export function DrawerCompanyContent({
   return (
     <Tabs
       value={activeTab}
-      onValueChange={(value) =>
-        setActiveTab(value as "details" | "users" | "warehouses" | "files")
-      }
+      onValueChange={(value) => {
+        const tab = value as "details" | "users" | "warehouses" | "files";
+        setActiveTab(tab);
+        onTabChange?.(tab);
+      }}
       className="space-y-6"
     >
       <div className="flex flex-col gap-4">

@@ -20,8 +20,16 @@ interface BreadcrumbNode {
   isCurrent?: boolean;
 }
 
+type ActiveTab = "details" | "users" | "warehouses" | "files";
+
 class CompanyDetailPageController {
   private readonly companyId: string;
+  private readonly tabLabels: Record<ActiveTab, string> = {
+    details: "Dettagli",
+    users: "Utenti",
+    warehouses: "Magazzini",
+    files: "File",
+  };
 
   public constructor(companyId: string) {
     this.companyId = companyId;
@@ -31,11 +39,34 @@ class CompanyDetailPageController {
     return companies.find((company) => company.id === this.companyId);
   }
 
-  public buildBreadcrumbNodes(company?: Company): BreadcrumbNode[] {
-    return [
+  public buildBreadcrumbNodes(
+    company?: Company,
+    activeTab?: ActiveTab
+  ): BreadcrumbNode[] {
+    const nodes: BreadcrumbNode[] = [
       { label: "Aziende", href: "/company" },
-      { label: company?.name ?? "Dettaglio", isCurrent: true },
     ];
+
+    if (activeTab && activeTab !== "details") {
+      // Se siamo su un tab diverso da "details", il nome azienda è cliccabile
+      nodes.push({
+        label: company?.name ?? "Dettaglio",
+        href: `/company/${this.companyId}`,
+      });
+      // E aggiungiamo il tab corrente
+      nodes.push({
+        label: this.tabLabels[activeTab],
+        isCurrent: true,
+      });
+    } else {
+      // Se siamo su "details", il nome azienda è la pagina corrente
+      nodes.push({
+        label: company?.name ?? "Dettaglio",
+        isCurrent: true,
+      });
+    }
+
+    return nodes;
   }
 
   public getPageTitle(company?: Company): string {
@@ -64,13 +95,15 @@ export default function CompanyDetailPage(): React.ReactElement {
   const { companies, isLoading, error, updateCompanies, isUpdating, refetch } =
     useCompanies();
 
+  const [activeTab, setActiveTab] = React.useState<ActiveTab>("details");
+
   const company = React.useMemo(
     () => controller.findCompany(companies),
     [controller, companies]
   );
   const breadcrumbNodes = React.useMemo(
-    () => controller.buildBreadcrumbNodes(company),
-    [controller, company]
+    () => controller.buildBreadcrumbNodes(company, activeTab),
+    [controller, company, activeTab]
   );
   const pageTitle = controller.getPageTitle(company);
 
@@ -80,6 +113,10 @@ export default function CompanyDetailPage(): React.ReactElement {
     },
     [controller, updateCompanies]
   );
+
+  const handleTabChange = React.useCallback((tab: ActiveTab): void => {
+    setActiveTab(tab);
+  }, []);
 
   const glassPanelClass =
     "rounded-[32px] border border-white/60 bg-white/80 shadow-[0_30px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl p-8";
@@ -161,6 +198,7 @@ export default function CompanyDetailPage(): React.ReactElement {
                 onUpdateSuccess={() => {
                   void refetch();
                 }}
+                onTabChange={handleTabChange}
               />
             </div>
           )}
