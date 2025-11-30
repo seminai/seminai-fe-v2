@@ -1,5 +1,4 @@
 import * as React from "react";
-import { useState, useRef } from "react";
 import { type CompanyFile } from "@/api/files";
 import { filesApiService } from "@/api/files";
 import { Button } from "@/components/ui/button";
@@ -201,7 +200,7 @@ interface EditFileDrawerState {
   fileName: string;
   filePath: string;
   fileType: string;
-  metadata: Record<string, string>;
+  metadata: Record<string, unknown>;
   isCreatingNewPath: boolean;
   newPathInput: string;
   metadataKey: string;
@@ -629,7 +628,7 @@ class CompanyFilesPanel extends React.Component<
         title: "Nome",
         type: "text",
         readOnly: true,
-        render: (value, row) => {
+        render: (_value, row) => {
           const file = row as unknown as CompanyFile;
           return (
             <div className="flex items-center gap-2">
@@ -655,7 +654,7 @@ class CompanyFilesPanel extends React.Component<
         title: "Dimensione",
         type: "text",
         readOnly: true,
-        render: (value, row) => {
+        render: (_value, row) => {
           const file = row as unknown as CompanyFile;
           return (
             <span className="text-sm text-muted-foreground">
@@ -906,7 +905,7 @@ class EditFileDrawer extends React.Component<
       fileName: props.file.name,
       filePath: props.file.path || "",
       fileType: props.file.type || "document",
-      metadata: { ...props.file.metadata } as Record<string, string>,
+      metadata: { ...props.file.metadata } as Record<string, unknown>,
       isCreatingNewPath: false,
       newPathInput: "",
       metadataKey: "",
@@ -920,7 +919,7 @@ class EditFileDrawer extends React.Component<
         fileName: this.props.file.name,
         filePath: this.props.file.path || "",
         fileType: this.props.file.type || "document",
-        metadata: { ...this.props.file.metadata } as Record<string, string>,
+        metadata: { ...this.props.file.metadata } as Record<string, unknown>,
         isCreatingNewPath: false,
         newPathInput: "",
         metadataKey: "",
