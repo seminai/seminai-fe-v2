@@ -178,7 +178,6 @@ const buildFieldsEditColumns = (companies: Company[]): EditableColumn[] => {
 
 export default function Fields(): React.ReactElement {
   const tableRef = useRef<EditableTable>(null);
-  const [isDeleting, setIsDeleting] = React.useState(false);
 
   const {
     fields,
@@ -351,7 +350,6 @@ export default function Fields(): React.ReactElement {
       return;
     }
 
-    setIsDeleting(true);
     try {
       const { fieldsApiService } = await import("@/api/fields");
 
@@ -381,8 +379,6 @@ export default function Fields(): React.ReactElement {
         description:
           error instanceof Error ? error.message : "Riprova più tardi",
       });
-    } finally {
-      setIsDeleting(false);
     }
   };
 
