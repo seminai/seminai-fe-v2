@@ -1252,7 +1252,14 @@ export default function DosageManager() {
 
     if (activeJobs.length === 0) return;
 
+    // Optimization: prevent polling when tab is backgrounded
+    const POLLING_INTERVAL_MS = 10000;
+
     const interval = setInterval(async () => {
+      if (document.visibilityState === "hidden") {
+        return;
+      }
+
       for (const job of activeJobs) {
         try {
           const response = await dosageAgentApiService.getJobStatus(job.id);
@@ -1284,7 +1291,7 @@ export default function DosageManager() {
           console.error(`Error polling job ${job.id}:`, error);
         }
       }
-    }, 3000); // Poll every 3 seconds
+    }, POLLING_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, [jobs]);

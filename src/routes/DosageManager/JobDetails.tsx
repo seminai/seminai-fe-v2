@@ -66,17 +66,12 @@ export function JobDetails({
                         <span className="font-medium">{job.unitsCount}</span>
                       </div>
                     </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="text-neutral-600">Progresso</span>
-                        <span className="font-medium">{job.progress}%</span>
-                      </div>
-                      <div className="w-full bg-neutral-100 rounded-full h-2">
-                        <div
-                          className="bg-neutral-900 h-2 rounded-full transition-all"
-                          style={{ width: `${job.progress}%` }}
-                        />
-                      </div>
+                    <div className="flex items-start gap-3 pt-2">
+                      <Loader2 className="h-5 w-5 animate-spin text-neutral-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-neutral-600 leading-tight">
+                        Ci vorranno da 1 a massimo 10 minuti per elaborare i
+                        dosaggi. Attendi...
+                      </p>
                     </div>
                   </div>
                 ))
