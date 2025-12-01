@@ -1530,6 +1530,13 @@ export default function DosageManager() {
         description: `Job ID: ${jobId}`,
       });
 
+      // Reset form fields
+      setSelectedCompanyId("");
+      setProducts([]);
+      setStrategy("avg");
+      setSelectedUnitIds([]);
+      setSearchQuery("");
+
       // Show jobs panel
       setShowJobsPanel(true);
     } catch (error) {
