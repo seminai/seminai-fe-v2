@@ -1,6 +1,5 @@
 import * as React from "react";
 import { useRef } from "react";
-import { type Machine } from "@/api/machines";
 import { useMachines } from "@/hooks/useMachines";
 import {
   EditableTable,
@@ -71,11 +70,8 @@ export function CompanyMachinesPanel({
     error,
     refetch,
     bulkCreate,
-    isCreating,
     updateMachine,
-    isUpdating,
     bulkDelete,
-    isDeleting,
   } = useMachines(companyId);
 
   const columns = React.useMemo(() => buildMachinesColumns(), []);
