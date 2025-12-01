@@ -1343,6 +1343,14 @@ export default function DosageManager() {
       return;
     }
 
+    if (!selectedCompanyId) {
+      toast.error("Nessuna azienda selezionata", {
+        description:
+          "Seleziona un'azienda prima di importare i prodotti dal magazzino.",
+      });
+      return;
+    }
+
     if (!warehouseInventory || warehouseInventory.length === 0) {
       toast.info("Nessun prodotto disponibile in magazzino", {
         description: "Aggiungi prodotti in magazzino prima di importarli.",
@@ -1350,10 +1358,23 @@ export default function DosageManager() {
       return;
     }
 
+    // Filter products by selected company
+    const companyProducts = warehouseInventory.filter(
+      (product) => product.warehouse.company.id === selectedCompanyId
+    );
+
+    if (companyProducts.length === 0) {
+      toast.info("Nessun prodotto disponibile per questa azienda", {
+        description:
+          "Non ci sono prodotti in magazzino per l'azienda selezionata.",
+      });
+      return;
+    }
+
     let mappedProducts: DosageProduct[] = [];
     try {
       mappedProducts = await WarehouseProductsMapper.toDosageProducts(
-        warehouseInventory
+        companyProducts
       );
     } catch (error) {
       console.error("Failed to import warehouse products:", error);
@@ -1399,7 +1420,7 @@ export default function DosageManager() {
     toast.success("Prodotti importati dal magazzino", {
       description: `${importedCount} prodotti aggiunti alla tabella`,
     });
-  }, [isWarehouseProductsLoading, warehouseInventory]);
+  }, [isWarehouseProductsLoading, warehouseInventory, selectedCompanyId]);
 
   const selectedCompanyName = useMemo(() => {
     if (!selectedCompanyId) {

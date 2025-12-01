@@ -21,6 +21,14 @@ import { stocksApiService, type CreateStockPayload } from "@/api/stocks";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -40,6 +48,8 @@ import {
   Package,
   Sprout,
   FileText,
+  Search,
+  Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -549,31 +559,59 @@ interface HistoryPanelProps {
 
 function HistoryPanel({ history, jobCode, onProductClick }: HistoryPanelProps) {
   const { productionUnits } = useProductionUnit();
+  const [filterText, setFilterText] = useState<string>("");
 
   const groupedHistory = useMemo(() => {
     const groups: Record<string, JobHistoryEntry[]> = {};
-    history.forEach((entry) => {
+    
+    // Filtra le history in base al testo di ricerca
+    const filteredHistory = filterText
+      ? history.filter((entry) => {
+          const searchText = filterText.toLowerCase();
+          return (
+            entry.title.toLowerCase().includes(searchText) ||
+            String(entry.value).toLowerCase().includes(searchText) ||
+            entry.metadata?.description?.toLowerCase().includes(searchText) ||
+            entry.metadata?.productName?.toLowerCase().includes(searchText) ||
+            entry.metadata?.productRegistrationNumber?.toLowerCase().includes(searchText) ||
+            entry.metadata?.productionUnitName?.toLowerCase().includes(searchText) ||
+            entry.metadata?.cropName?.toLowerCase().includes(searchText)
+          );
+        })
+      : history;
+
+    filteredHistory.forEach((entry) => {
       if (!groups[entry.step]) {
         groups[entry.step] = [];
       }
       groups[entry.step].push(entry);
     });
     return groups;
-  }, [history]);
+  }, [history, filterText]);
 
   return (
     <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
       <div className="flex-shrink-0 p-4 bg-white">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mb-3">
           <History className="h-4 w-4 text-slate-500" />
           <span className="text-sm font-medium text-slate-700">
             Storico Operazione
           </span>
         </div>
-        <div className="mt-1">
-          <Badge variant="outline" className="font-mono text-xs">
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="font-mono text-xs shrink-0">
             {jobCode}
           </Badge>
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              type="text"
+              placeholder="Cerca nello storico..."
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              className="pl-8 text-sm"
+            />
+          </div>
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-3 min-h-0">
@@ -620,9 +658,11 @@ function HistoryPanel({ history, jobCode, onProductClick }: HistoryPanelProps) {
               </div>
             </div>
           ))}
-          {history.length === 0 && (
+          {Object.keys(groupedHistory).length === 0 && (
             <div className="text-center py-6 text-slate-400 text-xs">
-              Nessuno storico disponibile
+              {filterText
+                ? "Nessun risultato trovato"
+                : "Nessuno storico disponibile"}
             </div>
           )}
         </div>
@@ -803,21 +843,35 @@ class JobGroupBuilder {
         group.unverifiedCount++;
       }
 
-      // Usa lo storico più recente se disponibile
-      if (
-        job.history &&
-        job.history.length > 0 &&
-        job.history.length > group.history.length
-      ) {
-        group.history = job.history;
+      // Unisci tutte le history di tutti i job del gruppo
+      if (job.history && job.history.length > 0) {
+        group.history = [...group.history, ...job.history];
       }
     });
 
     // Ordina per data di creazione (più recenti prima)
-    return Array.from(groupsMap.values()).sort(
+    const sortedGroups = Array.from(groupsMap.values()).sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
+
+    // Rimuovi duplicati dalle history e ordina per timestamp
+    sortedGroups.forEach((group) => {
+      const uniqueHistory = new Map<string, JobHistoryEntry>();
+      group.history.forEach((entry) => {
+        // Usa una chiave unica basata su step, title, value e timestamp
+        const key = `${entry.step}-${entry.title}-${entry.value}-${entry.timestamp}`;
+        if (!uniqueHistory.has(key)) {
+          uniqueHistory.set(key, entry);
+        }
+      });
+      group.history = Array.from(uniqueHistory.values()).sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+    });
+
+    return sortedGroups;
   }
 }
 
@@ -868,6 +922,7 @@ export default function JobPage() {
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState<boolean>(false);
   const [labelSheetOpen, setLabelSheetOpen] = useState<boolean>(false);
   const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
+  const [productFilter, setProductFilter] = useState<string>("all");
 
   const isMobile = useIsMobile();
   const { jobs, isLoading, error, refetch } = useJobs();
@@ -947,12 +1002,49 @@ export default function JobPage() {
     return jobGroups[0] ?? null;
   }, [jobGroups, selectedGroupCode]);
 
-  // Rows per il gruppo selezionato
+  // Rows per il gruppo selezionato con filtro per productName
   const selectedGroupRows = useMemo(() => {
     if (!selectedGroup) return [];
-    return selectedGroup.jobs.map((jobWithRelations) =>
+    const rows = selectedGroup.jobs.map((jobWithRelations) =>
       new JobTableRowBuilder(jobWithRelations).build()
     );
+    
+    if (productFilter === "all") {
+      return rows;
+    }
+    
+    return rows.filter((row) => {
+      const productName = String(row.productName || "").toLowerCase();
+      const filterLower = productFilter.toLowerCase();
+      // Estrai i singoli prodotti e verifica se uno di essi corrisponde
+      const individualProducts = productName
+        .split(",")
+        .map((p) => p.trim())
+        .filter((p) => p.length > 0);
+      // Verifica se il filtro corrisponde esattamente a uno dei prodotti o è contenuto in uno di essi
+      return individualProducts.some(
+        (p) => p === filterLower || p.includes(filterLower)
+      );
+    });
+  }, [selectedGroup, productFilter]);
+
+  // Lista unica di prodotti per il filtro (estrai i singoli prodotti)
+  const availableProducts = useMemo(() => {
+    if (!selectedGroup) return [];
+    const products = new Set<string>();
+    selectedGroup.jobs.forEach((jobWithRelations) => {
+      const row = new JobTableRowBuilder(jobWithRelations).build();
+      const productName = String(row.productName || "");
+      if (productName && productName !== "-") {
+        // Se ci sono più prodotti separati da virgola, estrai i singoli
+        const individualProducts = productName
+          .split(",")
+          .map((p) => p.trim())
+          .filter((p) => p.length > 0);
+        individualProducts.forEach((p) => products.add(p));
+      }
+    });
+    return Array.from(products).sort();
   }, [selectedGroup]);
 
   // Indice del gruppo selezionato e navigazione tra gruppi
@@ -969,6 +1061,7 @@ export default function JobPage() {
     if (canGoToPreviousGroup) {
       setSelectedGroupCode(jobGroups[currentGroupIndex - 1].jobCode);
       setSelectedReviewRows([]);
+      setProductFilter("all");
     }
   };
 
@@ -976,6 +1069,7 @@ export default function JobPage() {
     if (canGoToNextGroup) {
       setSelectedGroupCode(jobGroups[currentGroupIndex + 1].jobCode);
       setSelectedReviewRows([]);
+      setProductFilter("all");
     }
   };
 
@@ -1421,6 +1515,7 @@ export default function JobPage() {
                     onClick={() => {
                       setSelectedGroupCode(group.jobCode);
                       setSelectedReviewRows([]);
+                      setProductFilter("all");
                     }}
                   />
                 ))
@@ -1479,7 +1574,7 @@ export default function JobPage() {
                 <History className="h-4 w-4" />
               </Button>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-3">
               {selectedReviewRows.length > 0 && (
                 <Button
                   variant="default"
@@ -1514,6 +1609,22 @@ export default function JobPage() {
                 Verifica Tutti
               </Button>
             </div>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-slate-400" />
+              <Select value={productFilter} onValueChange={setProductFilter}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Filtra per fitofarmaco" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti i fitofarmaci</SelectItem>
+                  {availableProducts.map((product) => (
+                    <SelectItem key={product} value={product}>
+                      {product}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Tabella mobile */}
@@ -1534,11 +1645,13 @@ export default function JobPage() {
           {/* Sheet storico mobile */}
           <Sheet open={mobileHistoryOpen} onOpenChange={setMobileHistoryOpen}>
             <SheetContent side="bottom" className="h-[70vh] p-0">
-              <HistoryPanel
-                history={selectedGroup.history}
-                jobCode={selectedGroup.jobCode}
-                onProductClick={handleOpenLabel}
-              />
+              {selectedGroup && (
+                <HistoryPanel
+                  history={selectedGroup.history}
+                  jobCode={selectedGroup.jobCode}
+                  onProductClick={handleOpenLabel}
+                />
+              )}
             </SheetContent>
           </Sheet>
         </div>
@@ -1587,15 +1700,15 @@ export default function JobPage() {
           {selectedGroup ? (
             <>
               <div className="flex-shrink-0 p-4 bg-white">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-3">
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg font-semibold text-slate-800">
                         Operazione #{selectedGroup.jobCode}
                       </h3>
                       <Badge variant="outline">
-                        {selectedGroup.jobs.length} trattament
-                        {selectedGroup.jobs.length === 1 ? "o" : "i"}
+                        {selectedGroupRows.length} trattament
+                        {selectedGroupRows.length === 1 ? "o" : "i"}
                       </Badge>
                     </div>
                     <p className="text-sm text-slate-500 mt-0.5">
@@ -1637,6 +1750,24 @@ export default function JobPage() {
                     </Button>
                   </div>
                 </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-1">
+                    <Filter className="h-4 w-4 text-slate-400" />
+                    <Select value={productFilter} onValueChange={setProductFilter}>
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Filtra per fitofarmaco" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tutti i fitofarmaci</SelectItem>
+                        {availableProducts.map((product) => (
+                          <SelectItem key={product} value={product}>
+                            {product}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto p-4 min-h-0">
                 <div className="h-full [&>div>div:last-child]:max-h-full">
@@ -1670,6 +1801,7 @@ export default function JobPage() {
             <HistoryPanel
               history={selectedGroup.history}
               jobCode={selectedGroup.jobCode}
+              onProductClick={handleOpenLabel}
             />
           </div>
         )}
