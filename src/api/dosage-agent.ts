@@ -126,6 +126,15 @@ export type DosageJobStatusResponse = {
   data: DosageJobStatus;
 };
 
+export type CancelDosageJobsRequest = {
+  jobIds: string[];
+};
+
+export type CancelDosageJobsResponse = {
+  status: "success" | string;
+  data?: unknown;
+};
+
 async function safeReadText(response: Response): Promise<string> {
   try {
     return await response.text();
@@ -183,6 +192,38 @@ export async function getDosageJobStatus(
   return (await response.json()) as DosageJobStatusResponse;
 }
 
+export async function cancelDosageJobs(
+  payload: CancelDosageJobsRequest,
+  baseUrl: string = BASE_URL
+): Promise<CancelDosageJobsResponse> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/jobs/bulk`,
+    {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to cancel jobs");
+  }
+
+  if (response.status === 204) {
+    return { status: "success" };
+  }
+
+  try {
+    return (await response.json()) as CancelDosageJobsResponse;
+  } catch {
+    return { status: "success" };
+  }
+}
+
 class DosageAgentApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -197,6 +238,10 @@ class DosageAgentApiService {
 
   public async getJobStatus(jobId: string): Promise<DosageJobStatusResponse> {
     return await getDosageJobStatus(jobId, this.baseUrl);
+  }
+
+  public async cancelJobs(jobIds: string[]): Promise<CancelDosageJobsResponse> {
+    return await cancelDosageJobs({ jobIds }, this.baseUrl);
   }
 }
 

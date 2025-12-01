@@ -12,14 +12,6 @@ import {
   type EditableColumn,
 } from "@/components/organism/EditableTable";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -35,10 +27,12 @@ import {
   Calculator,
   CheckCircle2,
   Clock,
-  Activity,
   Apple,
   Package,
   FileText,
+  Trash2,
+  Octagon,
+  ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -63,6 +57,14 @@ import {
   type FitosanitariDatasetRecord,
   findRegNumberByName,
 } from "@/services/fitosanitariRegistry";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Drawer,
   DrawerClose,
@@ -131,6 +133,243 @@ class DosageJobDetailsManager {
 }
 
 const dosageJobDetailsManager = new DosageJobDetailsManager();
+
+class DosageJobCancellationService {
+  private readonly api: typeof dosageAgentApiService;
+  private readonly storage = dosageJobsIndexDBManager;
+
+  constructor(api: typeof dosageAgentApiService = dosageAgentApiService) {
+    this.api = api;
+  }
+
+  public async cancel(jobIds: string[]): Promise<DosageJob[]> {
+    const uniqueIds = [...new Set(jobIds.filter((id) => Boolean(id)))];
+
+    if (uniqueIds.length === 0) {
+      return await this.storage.getAllJobs();
+    }
+
+    await this.api.cancelJobs(uniqueIds);
+
+    await Promise.all(
+      uniqueIds.map(async (jobId) => {
+        try {
+          await this.storage.deleteJob(jobId);
+        } catch (error) {
+          console.error(
+            `Failed to remove job ${jobId} from IndexedDB after cancellation`,
+            error
+          );
+        }
+      })
+    );
+
+    return await this.storage.getAllJobs();
+  }
+}
+
+const dosageJobCancellationService = new DosageJobCancellationService();
+
+type BadgeVariant = React.ComponentProps<typeof Badge>["variant"];
+
+interface ActiveJobTableRow extends Record<string, unknown> {
+  id: string;
+  jobId: string;
+  createdAtLabel: string;
+  state: DosageJob["state"];
+  stateLabel: string;
+  stateBadgeVariant: BadgeVariant;
+  progress: number;
+  progressLabel: string;
+  productsCount: number;
+  unitsCount: number;
+}
+
+class ActiveJobStateDescriptor {
+  private static readonly variants: Record<
+    DosageJob["state"],
+    { label: string; variant: BadgeVariant }
+  > = {
+    waiting: { label: "In attesa", variant: "secondary" },
+    active: { label: "In esecuzione", variant: "default" },
+    completed: { label: "Completato", variant: "default" },
+    failed: { label: "Fallito", variant: "destructive" },
+  };
+
+  public static describe(state: DosageJob["state"]): {
+    label: string;
+    variant: BadgeVariant;
+  } {
+    return this.variants[state] ?? { label: state, variant: "secondary" };
+  }
+}
+
+class ActiveJobsTableRowBuilder {
+  public static build(jobs: DosageJob[]): ActiveJobTableRow[] {
+    return jobs.map((job) => {
+      const descriptor = ActiveJobStateDescriptor.describe(job.state);
+      const createdAt =
+        job.createdAt instanceof Date ? job.createdAt : new Date(job.createdAt);
+
+      return {
+        id: job.id,
+        jobId: job.id,
+        state: job.state,
+        createdAtLabel: createdAt.toLocaleString("it-IT", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        stateLabel: descriptor.label,
+        stateBadgeVariant: descriptor.variant,
+        progress: job.progress,
+        progressLabel: `${job.progress}%`,
+        productsCount: job.productsCount,
+        unitsCount: job.unitsCount,
+      };
+    });
+  }
+
+  public static extractId(row: Record<string, unknown>): string {
+    const data = row as ActiveJobTableRow;
+    return data.jobId || data.id;
+  }
+}
+
+class JobStateBadgeRenderer {
+  public static render(row: Record<string, unknown>): ReactElement {
+    const data = row as {
+      stateLabel: string;
+      stateBadgeVariant: BadgeVariant;
+    };
+    return (
+      <Badge variant={data.stateBadgeVariant}>
+        <span className="text-xs font-medium">{data.stateLabel}</span>
+      </Badge>
+    );
+  }
+}
+
+class JobProgressIndicatorRenderer {
+  public static render(row: Record<string, unknown>): ReactElement {
+    const data = row as {
+      state: DosageJob["state"];
+      progressLabel: string;
+    };
+
+    if (data.state === "waiting" || data.state === "active") {
+      return (
+        <span className="flex items-center gap-2 text-sm text-blue-600">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>{data.progressLabel}</span>
+        </span>
+      );
+    }
+
+    if (data.state === "failed") {
+      return (
+        <span className="flex items-center gap-2 text-sm text-red-600">
+          <Octagon className="h-4 w-4" />
+          <span>STOP</span>
+        </span>
+      );
+    }
+
+    return (
+      <span className="flex items-center gap-2 text-sm text-green-600">
+        <CheckCircle2 className="h-4 w-4" />
+        <span>Completato</span>
+      </span>
+    );
+  }
+}
+
+class ActiveJobsTableColumnsFactory {
+  public static create(): EditableColumn[] {
+    return [
+      {
+        id: "jobId",
+        title: "Job ID",
+        width: "200px",
+        type: "text",
+      },
+      {
+        id: "createdAtLabel",
+        title: "Creato il",
+        width: "180px",
+        type: "text",
+      },
+      {
+        id: "stateLabel",
+        title: "Stato",
+        width: "160px",
+        render: (_value, row) => JobStateBadgeRenderer.render(row),
+      },
+      {
+        id: "progress",
+        title: "Progresso",
+        width: "240px",
+        type: "number",
+        render: (_value, row) => JobProgressIndicatorRenderer.render(row),
+      },
+      {
+        id: "productsCount",
+        title: "Prodotti",
+        width: "120px",
+        type: "number",
+      },
+      {
+        id: "unitsCount",
+        title: "Unità",
+        width: "120px",
+        type: "number",
+      },
+    ];
+  }
+}
+
+interface JobHistoryTableRow extends ActiveJobTableRow {
+  job: DosageJob;
+}
+
+class JobHistoryTableRowBuilder {
+  public static build(jobs: DosageJob[]): JobHistoryTableRow[] {
+    return [...jobs]
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+      .map((job) => {
+        const descriptor = ActiveJobStateDescriptor.describe(job.state);
+        const createdAt =
+          job.createdAt instanceof Date
+            ? job.createdAt
+            : new Date(job.createdAt);
+
+        return {
+          id: job.id,
+          jobId: job.id,
+          state: job.state,
+          createdAtLabel: createdAt.toLocaleString("it-IT", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          stateLabel: descriptor.label,
+          stateBadgeVariant: descriptor.variant,
+          progress: job.progress,
+          progressLabel: `${job.progress}%`,
+          productsCount: job.productsCount,
+          unitsCount: job.unitsCount,
+          job,
+        };
+      });
+  }
+}
 
 class DosagePlaceholderRenderer {
   public renderEmptyProductsPlaceholder(): ReactElement {
@@ -839,8 +1078,11 @@ export default function DosageManager() {
 
   const [jobs, setJobs] = useState<DosageJob[]>([]);
   const [selectedJob, setSelectedJob] = useState<DosageJob | null>(null);
-  const [showJobsPanel, setShowJobsPanel] = useState(false);
   const [isJobDetailsLoading, setIsJobDetailsLoading] = useState(false);
+  const [isCancellingJobs, setIsCancellingJobs] = useState(false);
+  const [selectedActiveJobIds, setSelectedActiveJobIds] = useState<string[]>(
+    []
+  );
   const [isLabelDrawerOpen, setIsLabelDrawerOpen] = useState(false);
   const [labelReference, setLabelReference] =
     useState<ProductLabelReference | null>(null);
@@ -1230,6 +1472,33 @@ export default function DosageManager() {
     [handleOpenProductLabel]
   );
 
+  const activeJobs = useMemo(
+    () =>
+      jobs.filter((job) => job.state === "waiting" || job.state === "active"),
+    [jobs]
+  );
+  const activeJobColumns = useMemo(
+    () => ActiveJobsTableColumnsFactory.create(),
+    []
+  );
+  const activeJobRows = useMemo(
+    () => ActiveJobsTableRowBuilder.build(activeJobs),
+    [activeJobs]
+  );
+  const historyJobRows = useMemo(
+    () => JobHistoryTableRowBuilder.build(jobs),
+    [jobs]
+  );
+  const activeSelectionLabel = useMemo(() => {
+    if (selectedActiveJobIds.length === 0) {
+      return "Nessun job selezionato";
+    }
+    if (selectedActiveJobIds.length === 1) {
+      return "1 job selezionato";
+    }
+    return `${selectedActiveJobIds.length} job selezionati`;
+  }, [selectedActiveJobIds]);
+
   // Load jobs from IndexedDB on mount
   useEffect(() => {
     const loadJobs = async () => {
@@ -1296,6 +1565,17 @@ export default function DosageManager() {
     return () => clearInterval(interval);
   }, [jobs]);
 
+  useEffect(() => {
+    setSelectedActiveJobIds((prev) => {
+      if (prev.length === 0) {
+        return prev;
+      }
+      const availableIds = new Set(activeJobs.map((job) => job.id));
+      const filtered = prev.filter((id) => availableIds.has(id));
+      return filtered.length === prev.length ? prev : filtered;
+    });
+  }, [activeJobs]);
+
   // Filter production units by selected company and search query
   const filteredUnits = useMemo(() => {
     if (!selectedCompanyId) return [];
@@ -1341,6 +1621,14 @@ export default function DosageManager() {
         })
         .filter((id): id is string => Boolean(id));
       setSelectedUnitIds(ids);
+    },
+    []
+  );
+
+  const handleActiveJobsSelectionChange = useCallback(
+    (rows: Array<Record<string, unknown>>) => {
+      const ids = rows.map((row) => ActiveJobsTableRowBuilder.extractId(row));
+      setSelectedActiveJobIds(ids);
     },
     []
   );
@@ -1486,6 +1774,109 @@ export default function DosageManager() {
     [isJobDetailsLoading, selectedJob]
   );
 
+  const historyJobColumns = useMemo<EditableColumn[]>(() => {
+    return [
+      {
+        id: "jobId",
+        title: "Job ID",
+        width: "200px",
+        type: "text",
+      },
+      {
+        id: "createdAtLabel",
+        title: "Data Creazione",
+        width: "220px",
+        type: "text",
+      },
+      {
+        id: "stateLabel",
+        title: "Stato",
+        width: "160px",
+        render: (_value, row) => JobStateBadgeRenderer.render(row),
+      },
+      {
+        id: "progress",
+        title: "Avanzamento",
+        width: "220px",
+        render: (_value, row) => JobProgressIndicatorRenderer.render(row),
+      },
+      {
+        id: "productsCount",
+        title: "Prodotti",
+        width: "140px",
+        type: "number",
+      },
+      {
+        id: "unitsCount",
+        title: "Unità",
+        width: "120px",
+        type: "number",
+      },
+      {
+        id: "actions",
+        title: "Azioni",
+        width: "140px",
+        render: (_value, row) => {
+          const typedRow = row as JobHistoryTableRow;
+          return (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-neutral-600 hover:text-neutral-900"
+              onClick={(event) => {
+                event.stopPropagation();
+                void handleShowJobDetails(typedRow.job);
+              }}
+            >
+              Dettagli
+            </Button>
+          );
+        },
+      },
+    ];
+  }, [handleShowJobDetails]);
+
+  const handleCancelJobs = useCallback(
+    async (jobIds: string[]) => {
+      const uniqueIds = [...new Set(jobIds.filter((jobId) => Boolean(jobId)))];
+      if (uniqueIds.length === 0) {
+        return;
+      }
+
+      setIsCancellingJobs(true);
+
+      try {
+        const updatedJobs = await dosageJobCancellationService.cancel(
+          uniqueIds
+        );
+        setJobs(updatedJobs);
+
+        if (selectedJob && uniqueIds.includes(selectedJob.id)) {
+          setSelectedJob(null);
+        }
+
+        toast.success("Elaborazioni annullate", {
+          description: `${uniqueIds.length} job annullati correttamente`,
+        });
+      } catch (error) {
+        toast.error("Impossibile annullare i job", {
+          description:
+            error instanceof Error ? error.message : "Riprova più tardi",
+        });
+      } finally {
+        setIsCancellingJobs(false);
+      }
+    },
+    [selectedJob]
+  );
+
+  const handleCancelSelectedActiveJobs = useCallback(() => {
+    if (selectedActiveJobIds.length === 0 || isCancellingJobs) {
+      return;
+    }
+    void handleCancelJobs(selectedActiveJobIds);
+  }, [handleCancelJobs, isCancellingJobs, selectedActiveJobIds]);
+
   const handleCalculateDosages = async () => {
     if (products.length === 0) {
       toast.error("Nessun prodotto caricato", {
@@ -1564,9 +1955,6 @@ export default function DosageManager() {
       setStrategy("avg");
       setSelectedUnitIds([]);
       setSearchQuery("");
-
-      // Show jobs panel
-      setShowJobsPanel(true);
     } catch (error) {
       toast.error("Errore durante l'avvio del calcolo", {
         description:
@@ -1576,10 +1964,6 @@ export default function DosageManager() {
       setIsSubmitting(false);
     }
   };
-
-  const activeJobs = jobs.filter(
-    (job) => job.state === "waiting" || job.state === "active"
-  );
 
   const totalUnits = productionUnits.filter(
     (unit) => !selectedCompanyId || unit.companyId === selectedCompanyId
@@ -1591,25 +1975,21 @@ export default function DosageManager() {
         title="Gestione Dosaggi"
         totalItems={totalUnits}
         filteredItems={filteredUnits.length}
-        rightElement={
-          activeJobs.length > 0 && (
-            <Button
-              variant="outline"
-              onClick={() => setShowJobsPanel(true)}
-              className="gap-2 w-full md:w-auto"
-            >
-              <Activity className="h-4 w-4 animate-pulse" />
-              <span className="md:inline">{activeJobs.length} Job attivi</span>
-            </Button>
-          )
-        }
       >
         <Button
-          variant="ghost"
+          variant={isHistoryPage ? "default" : "ghost"}
           onClick={historyButtonAction}
-          className="gap-2 text-neutral-500 hover:text-neutral-700"
+          className={
+            isHistoryPage
+              ? "gap-2 bg-blue-600 text-white hover:bg-blue-700"
+              : "gap-2 text-neutral-500 hover:text-neutral-700"
+          }
         >
-          <Clock className="h-4 w-4" />
+          {isHistoryPage ? (
+            <ArrowLeft className="h-4 w-4" />
+          ) : (
+            <Clock className="h-4 w-4" />
+          )}
           <span>{historyButtonLabel}</span>
         </Button>
       </PageHeader>
@@ -1801,142 +2181,84 @@ export default function DosageManager() {
             </div>
           </div>
         ) : (
-          <div className="mx-auto space-y-4 md:space-y-6">
-            {/* History View */}
+          <div className="mx-auto space-y-6">
             <div className="space-y-4 md:space-y-6">
-              <h2 className="text-lg md:text-xl font-medium text-neutral-900">
-                Storico Calcoli Dosaggi
-              </h2>
-
-              {jobs.length === 0 ? (
-                <div className="text-center py-16 text-neutral-500">
-                  <Clock className="h-12 w-12 mx-auto mb-3 text-neutral-300" />
-                  <p>Nessun calcolo effettuato</p>
-                </div>
-              ) : (
-                <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-neutral-50">
-                        <TableHead className="font-semibold">Job ID</TableHead>
-                        <TableHead className="font-semibold">
-                          Data Creazione
-                        </TableHead>
-                        <TableHead className="font-semibold">Stato</TableHead>
-                        <TableHead className="font-semibold">
-                          Progresso
-                        </TableHead>
-                        <TableHead className="font-semibold">
-                          Prodotti
-                        </TableHead>
-                        <TableHead className="font-semibold">Unità</TableHead>
-                        <TableHead className="font-semibold">Azioni</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {jobs
-                        .sort(
-                          (a, b) =>
-                            new Date(b.createdAt).getTime() -
-                            new Date(a.createdAt).getTime()
-                        )
-                        .map((job) => (
-                          <TableRow
-                            key={job.id}
-                            className="hover:bg-neutral-50 cursor-pointer"
-                            onClick={() => {
-                              void handleShowJobDetails(job);
-                            }}
-                          >
-                            <TableCell className="font-medium">
-                              {job.id}
-                            </TableCell>
-                            <TableCell className="text-neutral-600">
-                              {new Date(job.createdAt).toLocaleDateString(
-                                "it-IT",
-                                {
-                                  day: "2-digit",
-                                  month: "2-digit",
-                                  year: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                {job.state === "completed" && (
-                                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                )}
-                                {(job.state === "waiting" ||
-                                  job.state === "active") && (
-                                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                                )}
-                                {job.state === "failed" && (
-                                  <Activity className="h-4 w-4 text-red-600" />
-                                )}
-                                <Badge
-                                  variant={
-                                    job.state === "completed"
-                                      ? "default"
-                                      : job.state === "failed"
-                                      ? "destructive"
-                                      : "secondary"
-                                  }
-                                  className="text-xs"
-                                >
-                                  {job.state === "completed"
-                                    ? "Completato"
-                                    : job.state === "failed"
-                                    ? "Fallito"
-                                    : job.state === "waiting"
-                                    ? "In Attesa"
-                                    : "Attivo"}
-                                </Badge>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <div className="w-16 bg-neutral-200 rounded-full h-2">
-                                  <div
-                                    className="bg-neutral-900 h-2 rounded-full transition-all"
-                                    style={{ width: `${job.progress}%` }}
-                                  />
-                                </div>
-                                <span className="text-sm text-neutral-600">
-                                  {job.progress}%
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-neutral-600">
-                              {job.productsCount}
-                            </TableCell>
-                            <TableCell className="text-neutral-600">
-                              {job.unitsCount}
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void handleShowJobDetails(job);
-                                }}
-                                disabled={
-                                  isJobDetailsLoading &&
-                                  selectedJob?.id === job.id
-                                }
-                                className="text-neutral-600 hover:text-neutral-900"
-                              >
-                                Dettagli
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </div>
+              {activeJobs.length > 0 && (
+                <section className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold text-neutral-900">
+                        Job attivi ({activeJobs.length})
+                      </h3>
+                      <p className="text-sm text-neutral-500">
+                        {activeSelectionLabel}
+                      </p>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="gap-2 self-start lg:self-auto"
+                      disabled={
+                        selectedActiveJobIds.length === 0 || isCancellingJobs
+                      }
+                      onClick={handleCancelSelectedActiveJobs}
+                    >
+                      {isCancellingJobs ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Annullamento...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="h-4 w-4" />
+                          <span>Annulla selezionati</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <EditableTable
+                    columns={activeJobColumns}
+                    rows={activeJobRows}
+                    isModify={false}
+                    addButton={false}
+                    showDeleteAction={false}
+                    onSelectionChange={handleActiveJobsSelectionChange}
+                    getRowId={(row) => ActiveJobsTableRowBuilder.extractId(row)}
+                    className="bg-white"
+                  />
+                  <div className="flex items-start gap-3 rounded-xl border border-neutral-100 bg-neutral-50 p-4">
+                    <Loader2 className="h-4 w-4 animate-spin text-neutral-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-neutral-600 leading-tight">
+                      Ci vorranno da 1 a massimo 10 minuti per elaborare i
+                      dosaggi. Puoi annullare i job selezionandoli nella
+                      tabella.
+                    </p>
+                  </div>
+                </section>
               )}
+
+              <section className="space-y-4">
+                {jobs.length === 0 ? (
+                  <div className="text-center py-16 text-neutral-500 bg-white rounded-2xl border border-neutral-200">
+                    <Clock className="h-12 w-12 mx-auto mb-3 text-neutral-300" />
+                    <p>Nessun calcolo effettuato</p>
+                  </div>
+                ) : (
+                  <EditableTable
+                    columns={historyJobColumns}
+                    rows={historyJobRows}
+                    isModify={false}
+                    addButton={false}
+                    showDeleteAction={false}
+                    getRowId={(row) => (row as JobHistoryTableRow).id}
+                    onOpenDetails={(row) => {
+                      const typedRow = row as JobHistoryTableRow;
+                      void handleShowJobDetails(typedRow.job);
+                    }}
+                    className="bg-white rounded-2xl border border-neutral-200"
+                  />
+                )}
+              </section>
             </div>
           </div>
         )}
@@ -2408,9 +2730,6 @@ export default function DosageManager() {
       </Drawer>
 
       <JobDetails
-        showPanel={showJobsPanel}
-        onPanelChange={setShowJobsPanel}
-        activeJobs={activeJobs}
         selectedJob={selectedJob}
         onSelectedJobChange={setSelectedJob}
         jobDetailsLoading={isJobDetailsLoading}
