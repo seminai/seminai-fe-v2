@@ -178,6 +178,7 @@ const buildFieldsEditColumns = (companies: Company[]): EditableColumn[] => {
 
 export default function Fields(): React.ReactElement {
   const tableRef = useRef<EditableTable>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   const {
     fields,
@@ -186,6 +187,7 @@ export default function Fields(): React.ReactElement {
     createFieldsAsync,
     updateFieldsAsync,
     isUpdating,
+    refetch,
   } = useFields();
   const { companies, isLoading: isLoadingCompanies } = useCompanies();
 
@@ -342,6 +344,48 @@ export default function Fields(): React.ReactElement {
     }
   };
 
+  const handleDeleteSelected = async (
+    removed: Array<Record<string, unknown>>
+  ) => {
+    if (removed.length === 0) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const { fieldsApiService } = await import("@/api/fields");
+
+      const ids = removed
+        .map((row) => {
+          const id = row.id;
+          return typeof id === "string" ? id : String(id ?? "");
+        })
+        .filter((id) => id.length > 0);
+
+      if (ids.length === 0) {
+        toast.error("Nessun ID valido trovato per l'eliminazione");
+        return;
+      }
+
+      await fieldsApiService.bulkDelete({ ids });
+
+      toast.success("Campi eliminati", {
+        description: `${ids.length} camp${ids.length === 1 ? "o" : "i"} eliminat${
+          ids.length === 1 ? "o" : "i"
+        } con successo`,
+      });
+      refetch();
+    } catch (error) {
+      console.error("Errore nell'eliminazione bulk:", error);
+      toast.error("Errore durante l'eliminazione", {
+        description:
+          error instanceof Error ? error.message : "Riprova più tardi",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Colonne unificate per view e edit
   const columns = buildFieldsEditColumns(companies);
 
@@ -379,6 +423,8 @@ export default function Fields(): React.ReactElement {
               (typeof row.id === "string" && row.id) || index
             }
             onSave={handleSave}
+            onDeleteSelected={handleDeleteSelected}
+            showDeleteAction={true}
             newRowDefaults={{
               companyName: "",
               name: "",

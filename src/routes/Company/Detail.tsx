@@ -20,7 +20,7 @@ interface BreadcrumbNode {
   isCurrent?: boolean;
 }
 
-type ActiveTab = "details" | "users" | "warehouses" | "files";
+type ActiveTab = "details" | "users" | "warehouses" | "files" | "machines";
 
 class CompanyDetailPageController {
   private readonly companyId: string;
@@ -29,6 +29,7 @@ class CompanyDetailPageController {
     users: "Utenti",
     warehouses: "Magazzini",
     files: "File",
+    machines: "Macchine",
   };
 
   public constructor(companyId: string) {

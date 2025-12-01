@@ -49,9 +49,11 @@ import {
   PlusCircle,
   Save,
   FileText,
+  Wrench,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CompanyFilesPanel } from "./CompanyFilesPanel";
+import { CompanyMachinesPanel } from "./CompanyMachinesPanel";
 import { toast } from "sonner";
 
 interface DrawerCompanyContentProps {
@@ -59,7 +61,7 @@ interface DrawerCompanyContentProps {
   onUpdate?: (update: BulkCompanyUpdateInput) => void;
   isUpdating?: boolean;
   onUpdateSuccess?: () => void;
-  onTabChange?: (tab: "details" | "users" | "warehouses" | "files") => void;
+  onTabChange?: (tab: "details" | "users" | "warehouses" | "files" | "machines") => void;
 }
 
 /**
@@ -76,7 +78,7 @@ export function DrawerCompanyContent({
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "details" | "users" | "warehouses" | "files"
+    "details" | "users" | "warehouses" | "files" | "machines"
   >("details");
   const [editedData, setEditedData] = useState<Partial<Company>>({
     name: company.name,
@@ -645,6 +647,7 @@ export function DrawerCompanyContent({
   const isUsersTab = activeTab === "users";
   const isWarehousesTab = activeTab === "warehouses";
   const isFilesTab = activeTab === "files";
+  const isMachinesTab = activeTab === "machines";
 
   const headerTitle = isDetailsTab
     ? isEditing
@@ -654,7 +657,9 @@ export function DrawerCompanyContent({
     ? "Gestione Utenti"
     : isWarehousesTab
     ? "Gestione Magazzini"
-    : "Gestione File";
+    : isFilesTab
+    ? "Gestione File"
+    : "Gestione Macchine";
 
   const headerSubtitle: string | null =
     isDetailsTab && !isEditing
@@ -665,13 +670,15 @@ export function DrawerCompanyContent({
       ? "Gestisci i magazzini dell'azienda"
       : isFilesTab
       ? "Carica e gestisci i file dell'azienda"
+      : isMachinesTab
+      ? "Gestisci il parco macchine dell'azienda"
       : null;
 
   return (
     <Tabs
       value={activeTab}
       onValueChange={(value) => {
-        const tab = value as "details" | "users" | "warehouses" | "files";
+        const tab = value as "details" | "users" | "warehouses" | "files" | "machines";
         setActiveTab(tab);
         onTabChange?.(tab);
       }}
@@ -688,6 +695,7 @@ export function DrawerCompanyContent({
                 {isUsersTab && <Users className="h-3 w-3" />}
                 {isWarehousesTab && <WarehouseIcon className="h-3 w-3" />}
                 {isFilesTab && <FileText className="h-3 w-3" />}
+                {isMachinesTab && <Wrench className="h-3 w-3" />}
                 {headerSubtitle}
               </p>
             )}
@@ -698,6 +706,7 @@ export function DrawerCompanyContent({
               <TabsTrigger value="users">Utenti</TabsTrigger>
               <TabsTrigger value="warehouses">Magazzini</TabsTrigger>
               <TabsTrigger value="files">File</TabsTrigger>
+              <TabsTrigger value="machines">Macchine</TabsTrigger>
             </TabsList>
             {isDetailsTab &&
               (isEditing ? (
@@ -798,6 +807,13 @@ export function DrawerCompanyContent({
           onRetry={refetchCompanyFiles}
           onUpload={uploadCompanyFile}
           isUploading={isUploadingFile}
+        />
+      </TabsContent>
+
+      <TabsContent value="machines" className="mt-4">
+        <CompanyMachinesPanel
+          companyId={company.id}
+          companyName={company.name}
         />
       </TabsContent>
     </Tabs>
