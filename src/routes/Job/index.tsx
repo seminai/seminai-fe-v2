@@ -776,7 +776,7 @@ class JobTableRowBuilder {
     return {
       id: job.id,
       jobCode: job.jobId ?? "-",
-      dateOfOpeation: new Date(job.dateOfOpeation).toLocaleDateString("it-IT"),
+      dateOfOpeation: new Date(job.dateOfOpeation),
       companyName: company.name,
       productionUnitName: productionUnit.name,
       cropName: productionUnit.cropName,
@@ -1166,9 +1166,14 @@ export default function JobPage() {
     {
       id: "dateOfOpeation",
       title: "Data Operazione",
-      type: "text",
+      type: "date",
       width: "150px",
       readOnly: true,
+      render: (value) => {
+        if (!value) return "-";
+        const date = value instanceof Date ? value : new Date(value as string);
+        return date.toLocaleDateString("it-IT");
+      },
     },
     {
       id: "companyName",
@@ -1279,9 +1284,14 @@ export default function JobPage() {
     {
       id: "dateOfOpeation",
       title: "Data",
-      type: "text",
+      type: "date",
       width: "100px",
       readOnly: true,
+      render: (value) => {
+        if (!value) return "-";
+        const date = value instanceof Date ? value : new Date(value as string);
+        return date.toLocaleDateString("it-IT");
+      },
     },
     {
       id: "productionUnitName",
