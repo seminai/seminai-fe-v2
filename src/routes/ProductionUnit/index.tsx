@@ -848,6 +848,51 @@ export default function ProductionUnit(): React.ReactElement {
     }
   };
 
+  const handleDeleteSelected = async (
+    removed: Array<Record<string, unknown>>
+  ) => {
+    if (removed.length === 0) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const { productionUnitApiService } = await import(
+        "@/api/production-unit"
+      );
+
+      const ids = removed
+        .map((row) => {
+          const id = row.id;
+          return typeof id === "string" ? id : String(id ?? "");
+        })
+        .filter((id) => id.length > 0);
+
+      if (ids.length === 0) {
+        toast.error("Nessun ID valido trovato per l'eliminazione");
+        return;
+      }
+
+      await productionUnitApiService.bulkDelete({ ids });
+
+      toast.success("Unità produttive eliminate", {
+        description: `${ids.length} unità produttiva${
+          ids.length === 1 ? "" : "e"
+        } eliminata${ids.length === 1 ? "" : "e"} con successo`,
+      });
+      refetch();
+    } catch (error) {
+      console.error("Errore nell'eliminazione bulk:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Errore nell'eliminazione delle unità produttive"
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const renderDetails = (row: Record<string, unknown>): React.ReactNode => {
     const productionUnit = row.productionUnit as ProductionUnit;
     if (!productionUnit) {
@@ -1327,6 +1372,8 @@ export default function ProductionUnit(): React.ReactElement {
                 (typeof row.id === "string" && row.id) || index
               }
               onSave={handleBulkSave}
+              onDeleteSelected={handleDeleteSelected}
+              showDeleteAction={true}
               detailsRenderer={renderDetails}
               detailsTitle="Dettagli Unità Produttiva"
               className="bg-background"

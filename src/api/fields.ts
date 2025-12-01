@@ -204,6 +204,70 @@ export async function bulkUpdateFields(
   return (await response.json()) as BulkFieldsResponse;
 }
 
+// Types for bulk delete
+export type BulkDeleteFieldsRequest = {
+  ids: string[];
+};
+
+export type BulkDeleteFieldsResponse = {
+  status: "success";
+  data?: unknown;
+};
+
+// API function for bulk delete
+export async function bulkDeleteFields(
+  request: BulkDeleteFieldsRequest,
+  baseUrl: string = BASE_URL
+): Promise<BulkDeleteFieldsResponse> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/fields/bulk`,
+    {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to bulk delete fields");
+  }
+
+  // Gestisci risposte vuote (204 No Content o body vuoto)
+  const contentType = response.headers.get("content-type");
+  const contentLength = response.headers.get("content-length");
+
+  if (
+    response.status === 204 ||
+    contentLength === "0" ||
+    !contentType?.includes("application/json")
+  ) {
+    return {
+      status: "success",
+    } as BulkDeleteFieldsResponse;
+  }
+
+  // Prova a leggere il body come testo per verificare se è vuoto
+  const text = await response.text();
+  if (!text || text.trim() === "") {
+    return {
+      status: "success",
+    } as BulkDeleteFieldsResponse;
+  }
+
+  try {
+    return JSON.parse(text) as BulkDeleteFieldsResponse;
+  } catch {
+    // Se il parsing fallisce, restituisci una risposta di successo di default
+    return {
+      status: "success",
+    } as BulkDeleteFieldsResponse;
+  }
+}
+
 class FieldsApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -224,6 +288,12 @@ class FieldsApiService {
     request: BulkFieldsUpdateRequest
   ): Promise<BulkFieldsResponse> {
     return await bulkUpdateFields(request, this.baseUrl);
+  }
+
+  public async bulkDelete(
+    request: BulkDeleteFieldsRequest
+  ): Promise<BulkDeleteFieldsResponse> {
+    return await bulkDeleteFields(request, this.baseUrl);
   }
 }
 
