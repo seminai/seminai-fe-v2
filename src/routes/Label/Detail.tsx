@@ -1,6 +1,10 @@
 import * as React from "react";
 import { Link, useParams } from "react-router-dom";
-import { type LabelDetail, type LabelDosaggioDettagliato } from "@/api/labels";
+import {
+  type LabelDetail,
+  type LabelDosaggioDettagliato,
+  type LabelInner,
+} from "@/api/labels";
 import { useLabel } from "@/hooks/useLabel";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,9 +53,49 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 type LabelData = LabelDetail["label"];
 
+// Tipo per dosaggio fertilizzante
+type FertilizerDosage = {
+  coltura?: string;
+  fase_fenologica?: string;
+  dose_kg_ha?: number;
+  dose_kg_ha_min?: number;
+  dose_kg_ha_max?: number;
+  [key: string]: unknown;
+};
+
+// Tipo per label che può contenere dati fertilizzanti
+type LabelWithFertilizer = LabelInner & {
+  prodotto_fertilizzante_ue?: {
+    identificazione_prodotto?: Record<string, unknown>;
+    composizione_garantita?: {
+      analisi_principale_NPK_percentuale_peso?: Record<string, unknown>;
+      meso_elementi_percentuale_peso?: Record<string, unknown>;
+      solubilita_fosforo?: Record<string, unknown>;
+      parametri_organici_biologici?: Record<string, unknown>;
+      forme_azoto?: unknown[];
+      micronutrienti?: unknown[];
+    };
+    istruzioni_uso_agronomiche?: {
+      uso_previsto?: string;
+      frequenza?: string;
+      condizioni_stoccaggio?: string;
+      dosi_applicazione?: {
+        specifiche_coltura?: FertilizerDosage[];
+      };
+    };
+    informazioni_sicurezza_clp?: {
+      avvertenza?: string;
+      note_mediche?: string;
+      pittogrammi_pericolo?: unknown[];
+      indicazioni_pericolo_H?: unknown[];
+      consigli_prudenza_P?: unknown[];
+    };
+  };
+};
+
 // Fertilizer specific columns
 const buildFertilizerColumns = (): EditableColumn[] =>
-  buildColumns<any>([
+  buildColumns<Record<string, unknown>>([
     // Identificazione Prodotto
     { id: "nome_commerciale", title: "Nome Commerciale", type: "text" },
     { id: "funzione_categoria", title: "Funzione/Categoria", type: "text" },
@@ -116,7 +160,8 @@ const buildFertilizerColumns = (): EditableColumn[] =>
   ]);
 
 const toFertilizerRow = (detail: LabelDetail): Record<string, unknown> => {
-  const fert = (detail as any).label?.prodotto_fertilizzante_ue || {};
+  const fert =
+    (detail.label as LabelWithFertilizer)?.prodotto_fertilizzante_ue || {};
   const ident = fert.identificazione_prodotto || {};
   const comp = fert.composizione_garantita || {};
   const npk = comp.analisi_principale_NPK_percentuale_peso || {};
@@ -127,19 +172,20 @@ const toFertilizerRow = (detail: LabelDetail): Record<string, unknown> => {
   const sicurezza = fert.informazioni_sicurezza_clp || {};
 
   // Helper per formattare array come stringa
-  const formatArray = (arr: any[] | null | undefined): string => {
+  const formatArray = (arr: unknown[] | null | undefined): string => {
     if (!arr || !Array.isArray(arr) || arr.length === 0) return "";
     return arr
       .map((item) => {
         if (typeof item === "string") return item;
-        if (typeof item === "object") {
+        if (typeof item === "object" && item !== null) {
+          const obj = item as Record<string, unknown>;
           // Per forme_azoto: { tipo, percentuale }
-          if (item.tipo && item.percentuale !== undefined) {
-            return `${item.tipo}: ${item.percentuale}%`;
+          if (obj.tipo && obj.percentuale !== undefined) {
+            return `${obj.tipo}: ${obj.percentuale}%`;
           }
           // Per micronutrienti: { elemento, percentuale }
-          if (item.elemento && item.percentuale !== undefined) {
-            return `${item.elemento}: ${item.percentuale}%`;
+          if (obj.elemento && obj.percentuale !== undefined) {
+            return `${obj.elemento}: ${obj.percentuale}%`;
           }
           return JSON.stringify(item);
         }
@@ -149,9 +195,12 @@ const toFertilizerRow = (detail: LabelDetail): Record<string, unknown> => {
   };
 
   // Helper per quantità nominale
-  const formatQuantitaNominale = (qn: any): string => {
-    if (!qn) return "";
-    if (qn.valore && qn.unita) return `${qn.valore} ${qn.unita}`;
+  const formatQuantitaNominale = (qn: unknown): string => {
+    if (!qn || typeof qn !== "object") return "";
+    const qnObj = qn as Record<string, unknown>;
+    if (qnObj.valore && qnObj.unita) {
+      return `${qnObj.valore} ${qnObj.unita}`;
+    }
     return "";
   };
 
@@ -161,7 +210,11 @@ const toFertilizerRow = (detail: LabelDetail): Record<string, unknown> => {
     funzione_categoria: ident.funzione_categoria_prodotto ?? "",
     numero_lotto: ident.numero_lotto ?? "",
     stato_fisico: ident.stato_fisico ?? "",
-    confezioni_disponibili: formatArray(ident.confezioni_disponibili),
+    confezioni_disponibili: formatArray(
+      Array.isArray(ident.confezioni_disponibili)
+        ? ident.confezioni_disponibili
+        : undefined
+    ),
     quantita_nominale: formatQuantitaNominale(ident.quantita_nominale),
     // NPK
     n_totale: npk.N_totale ?? "",
@@ -297,7 +350,9 @@ export default function LabelDetailPage(): React.ReactElement {
     setEditedDosaggi(detail.label?.dosaggi_dettagliati ?? []);
   }, [detail]);
 
-  const isFertilizer = (detail as any)?.category === "FERTILIZER";
+  const isFertilizer = Boolean(
+    detail && (detail.label as LabelWithFertilizer)?.prodotto_fertilizzante_ue
+  );
 
   const columns = React.useMemo(
     () => (isFertilizer ? buildFertilizerColumns() : buildLabelColumns()),
@@ -310,12 +365,16 @@ export default function LabelDetailPage(): React.ReactElement {
   }, [detail, isFertilizer]);
 
   // Fertilizer Dosages
-  const fertilizerDosages =
-    (detail as any)?.label?.prodotto_fertilizzante_ue
-      ?.istruzioni_uso_agronomiche?.dosi_applicazione?.specifiche_coltura ?? [];
+  const fertilizerDosages = React.useMemo(
+    () =>
+      (detail?.label as LabelWithFertilizer)?.prodotto_fertilizzante_ue
+        ?.istruzioni_uso_agronomiche?.dosi_applicazione?.specifiche_coltura ??
+      [],
+    [detail]
+  );
 
   const [editedFertilizerDosages, setEditedFertilizerDosages] = React.useState<
-    any[]
+    FertilizerDosage[]
   >([]);
 
   React.useEffect(() => {
@@ -330,7 +389,7 @@ export default function LabelDetailPage(): React.ReactElement {
     if (isFertilizer) {
       setEditedFertilizerDosages(fertilizerDosages);
     }
-  }, [detail, isFertilizer]);
+  }, [detail, isFertilizer, fertilizerDosages]);
 
   return (
     <div className="p-4 md:p-6 h-screen overflow-hidden flex flex-col">
@@ -507,7 +566,8 @@ export default function LabelDetailPage(): React.ReactElement {
                       const row = updated?.[0] ?? {};
 
                       if (isFertilizer) {
-                        const currentLabel = detail.label as any;
+                        const currentLabel =
+                          detail.label as LabelWithFertilizer;
                         const fert =
                           currentLabel.prodotto_fertilizzante_ue || {};
                         const ident = fert.identificazione_prodotto || {};
@@ -522,7 +582,9 @@ export default function LabelDetailPage(): React.ReactElement {
                         const sicurezza = fert.informazioni_sicurezza_clp || {};
 
                         // Helper per convertire in numero o null
-                        const toNumberOrNull = (val: any): number | null => {
+                        const toNumberOrNull = (
+                          val: unknown
+                        ): number | null => {
                           if (val === "" || val === null || val === undefined)
                             return null;
                           const num = Number(val);
@@ -531,8 +593,11 @@ export default function LabelDetailPage(): React.ReactElement {
 
                         // Helper per convertire stringa in array
                         const parseConfezioni = (val: string): string[] => {
-                          if (!val || typeof val !== "string")
-                            return ident.confezioni_disponibili || [];
+                          if (!val || typeof val !== "string") {
+                            return Array.isArray(ident.confezioni_disponibili)
+                              ? (ident.confezioni_disponibili as string[])
+                              : [];
+                          }
                           return val
                             .split(",")
                             .map((s) => s.trim())
@@ -737,7 +802,8 @@ export default function LabelDetailPage(): React.ReactElement {
                           className="w-full sm:w-auto"
                           onClick={async () => {
                             try {
-                              const currentLabel = detail.label as any;
+                              const currentLabel =
+                                detail.label as LabelWithFertilizer;
                               const fert =
                                 currentLabel.prodotto_fertilizzante_ue || {};
                               const instr =
