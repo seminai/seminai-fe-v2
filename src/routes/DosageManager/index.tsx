@@ -261,9 +261,12 @@ class JobProgressIndicatorRenderer {
 
     if (data.state === "waiting" || data.state === "active") {
       return (
-        <span className="flex items-center gap-2 text-sm text-blue-600">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>{data.progressLabel}</span>
+        <span className="flex items-center justify-center">
+          <img
+            src="/logo.png"
+            alt="Seminai Logo"
+            className="h-6 w-6 animate-spin"
+          />
         </span>
       );
     }
@@ -2116,8 +2119,8 @@ export default function DosageManager() {
                   addButton={true}
                   onSave={handleSaveProducts}
                   onDeleteSelected={handleDeleteProducts}
-                  getRowId={(row) =>
-                    `${row.productName}-${row.registrationNumber}`
+                  getRowId={(row, index) =>
+                    `${row.productName}-${row.registrationNumber}-${index}`
                   }
                   lastComponent={renderProductLabelAction}
                 >

@@ -572,6 +572,24 @@ export default function NewProductionUnit(): React.ReactElement {
       }
     );
 
+    const importedStartDates = convertedUnits
+      .map((unit) => unit.customSowingDate)
+      .filter((date): date is Date => Boolean(date));
+    const importedEndDates = convertedUnits
+      .map((unit) => unit.customHarvestingDate)
+      .filter((date): date is Date => Boolean(date));
+
+    if (importedStartDates.length > 0 && importedEndDates.length > 0) {
+      const minStart = new Date(
+        Math.min(...importedStartDates.map((date) => date.getTime()))
+      );
+      const maxEnd = new Date(
+        Math.max(...importedEndDates.map((date) => date.getTime()))
+      );
+      setDateRange({ start: minStart, end: maxEnd });
+      setTempDateRange({ start: minStart, end: maxEnd });
+    }
+
     // Imposta le unità produttive
     setProductionUnits(convertedUnits);
 
@@ -705,7 +723,7 @@ export default function NewProductionUnit(): React.ReactElement {
             startDate: finalSowingDate.toISOString(),
             floweringDate: finalFloweringDate.toISOString(),
             harvestingDate: finalHarvestingDate.toISOString(),
-            endDate: dateRange.end.toISOString(),
+            endDate: finalHarvestingDate.toISOString(),
             occupazione: unit.occupazione || null,
             destinazioneDiUso: unit.destinazioneDiUso || null,
             acquaTotalePeridoL: unit.acquaTotalePeridoL || null,
