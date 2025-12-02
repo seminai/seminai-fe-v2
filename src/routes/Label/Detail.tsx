@@ -50,6 +50,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { RefreshCcw } from "lucide-react";
 
 type LabelData = LabelDetail["label"];
 
@@ -265,6 +266,11 @@ const buildLabelColumns = (): EditableColumn[] =>
     { id: "malattie", title: "Malattie", type: "text" },
     { id: "specie", title: "Specie", type: "text" },
     { id: "colture_target", title: "Colture target", type: "text" },
+    {
+      id: "colture_target_fuori_periodo_di_prodizione",
+      title: "Colture target fuori periodo di produzione",
+      type: "text",
+    },
     { id: "numero_registrazione", title: "N. registrazione", type: "text" },
     { id: "titolare", title: "Titolare", type: "text" },
     { id: "stabilimento", title: "Stabilimento", type: "text" },
@@ -283,6 +289,9 @@ const toLabelRow = (detail: LabelDetail): Record<string, unknown> => {
     malattie: toList(l.malattie),
     specie: toList(l.specie),
     colture_target: toList(l.colture_target),
+    colture_target_fuori_periodo_di_prodizione: toList(
+      l.colture_target_fuori_periodo_di_prodizione
+    ),
     numero_registrazione: String(
       l.numero_registrazione ?? detail.registrationNumber ?? ""
     ),
@@ -331,6 +340,8 @@ export default function LabelDetailPage(): React.ReactElement {
     isSaving,
     verifyAsync,
     isVerifying,
+    confirmAsync,
+    isConfirming,
   } = useLabel({ id });
 
   const [labelJson, setLabelJson] = React.useState<string>("{}");
@@ -509,6 +520,26 @@ export default function LabelDetailPage(): React.ReactElement {
               Dosaggi
             </button>
           </div>
+          <Button
+            onClick={async () => {
+              try {
+                await confirmAsync();
+              } catch {
+                /* handled in mutation */
+              }
+            }}
+            disabled={isConfirming || !detail}
+            className="ml-auto"
+          >
+            {isConfirming ? (
+              <Spinner size={16} ariaLabel="Aggiornamento in corso" />
+            ) : (
+              <>
+                <RefreshCcw className="h-4 w-4 mr-2" />
+                Aggiorna
+              </>
+            )}
+          </Button>
         </div>
       </div>
 
@@ -729,6 +760,13 @@ export default function LabelDetailPage(): React.ReactElement {
                           parseList(row.colture_target) ??
                           detail.label?.colture_target ??
                           [],
+                        colture_target_fuori_periodo_di_prodizione:
+                          parseList(
+                            row.colture_target_fuori_periodo_di_prodizione
+                          ) ??
+                          detail.label
+                            ?.colture_target_fuori_periodo_di_prodizione ??
+                          null,
                         numero_registrazione: String(
                           row.numero_registrazione ??
                             detail.label?.numero_registrazione ??

@@ -44,6 +44,7 @@ export type LabelInner = {
   malattie?: string[];
   specie?: string[];
   colture_target?: string[];
+  colture_target_fuori_periodo_di_prodizione?: string[] | null;
   dosaggi_dettagliati?: LabelDosaggioDettagliato[];
   fasce_di_rispetto_e_deriva?: unknown[];
   avvertenze?: unknown[];
@@ -272,6 +273,29 @@ async function verifyLabel(
   return (await response.json()) as VerifyLabelResponse;
 }
 
+async function updateLabelOverwrite(
+  id: string,
+  baseUrl: string
+): Promise<UpdateLabelResponse> {
+  const response = await fetch(
+    `${baseUrl}/labels/update-label/${encodeURIComponent(id)}`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+      },
+      credentials: "include",
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to update label");
+  }
+
+  return (await response.json()) as UpdateLabelResponse;
+}
+
 class LabelsApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -308,6 +332,10 @@ class LabelsApiService {
     payload: VerifyLabelPayload
   ): Promise<VerifyLabelResponse> {
     return await verifyLabel(id, payload, this.baseUrl);
+  }
+
+  public async updateOverwrite(id: string): Promise<UpdateLabelResponse> {
+    return await updateLabelOverwrite(id, this.baseUrl);
   }
 }
 
