@@ -1974,6 +1974,8 @@ export class EditableTable extends React.Component<
     const bulkVerifyLabel =
       this.props.bulkVerifyButtonLabel ?? "Verify selected";
 
+    const isFlexLayout = className?.includes("flex flex-col");
+    
     return (
       <div
         data-slot="table-wrapper"
@@ -1981,7 +1983,10 @@ export class EditableTable extends React.Component<
       >
         {this.renderDeleteConfirmationDialog()}
         {/* Top action bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-agri-green-50 bg-agri-green-50 rounded-t-lg sticky top-0 left-0 right-0 z-10">
+        <div className={cn(
+          "flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-agri-green-50 bg-agri-green-50 rounded-t-lg z-10",
+          isFlexLayout ? "flex-shrink-0" : "sticky top-0 left-0 right-0"
+        )}>
           <div className="flex flex-wrap items-center gap-2">
             {!showEditActions && !anySelected && leftActions}
             {!showEditActions && !anySelected && (
@@ -2119,7 +2124,10 @@ export class EditableTable extends React.Component<
           </div>
         </div>
 
-        <div className="w-full overflow-auto max-h-[calc(100vh-300px)]">
+        <div className={cn(
+          "w-full overflow-auto",
+          isFlexLayout ? "flex-1 min-h-0" : "max-h-[calc(100vh-300px)]"
+        )}>
           <table
             data-slot="table"
             className={cn("w-full caption-bottom text-sm relative")}
