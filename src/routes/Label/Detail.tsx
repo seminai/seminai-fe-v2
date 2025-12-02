@@ -36,6 +36,16 @@ import {
 } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type LabelData = LabelDetail["label"];
 
@@ -47,7 +57,11 @@ const buildFertilizerColumns = (): EditableColumn[] =>
     { id: "funzione_categoria", title: "Funzione/Categoria", type: "text" },
     { id: "numero_lotto", title: "Numero Lotto", type: "text" },
     { id: "stato_fisico", title: "Stato Fisico", type: "text" },
-    { id: "confezioni_disponibili", title: "Confezioni Disponibili", type: "text" },
+    {
+      id: "confezioni_disponibili",
+      title: "Confezioni Disponibili",
+      type: "text",
+    },
     { id: "quantita_nominale", title: "Quantità Nominale", type: "text" },
     // NPK
     { id: "n_totale", title: "N Totale (%)", type: "number" },
@@ -61,22 +75,42 @@ const buildFertilizerColumns = (): EditableColumn[] =>
     // Forme Azoto
     { id: "forme_azoto", title: "Forme Azoto", type: "text" },
     // Solubilità Fosforo
-    { id: "p2o5_solubile_acqua", title: "P2O5 Solubile Acqua (%)", type: "number" },
-    { id: "p2o5_solubile_citrato", title: "P2O5 Solubile Citrato (%)", type: "number" },
+    {
+      id: "p2o5_solubile_acqua",
+      title: "P2O5 Solubile Acqua (%)",
+      type: "number",
+    },
+    {
+      id: "p2o5_solubile_citrato",
+      title: "P2O5 Solubile Citrato (%)",
+      type: "number",
+    },
     // Micronutrienti
     { id: "micronutrienti", title: "Micronutrienti", type: "text" },
     // Parametri organici
     { id: "carbonio_organico", title: "Carbonio Organico (%)", type: "number" },
-    { id: "acidi_umici_fulvici", title: "Acidi Umici/Fulvici (%)", type: "number" },
+    {
+      id: "acidi_umici_fulvici",
+      title: "Acidi Umici/Fulvici (%)",
+      type: "number",
+    },
     { id: "sostanza_organica", title: "Sostanza Organica (%)", type: "number" },
     // Istruzioni uso
     { id: "uso_previsto", title: "Uso Previsto", type: "text" },
     { id: "frequenza", title: "Frequenza", type: "text" },
-    { id: "condizioni_stoccaggio", title: "Condizioni Stoccaggio", type: "text" },
+    {
+      id: "condizioni_stoccaggio",
+      title: "Condizioni Stoccaggio",
+      type: "text",
+    },
     // Sicurezza
     { id: "avvertenza", title: "Avvertenza", type: "text" },
     { id: "pittogrammi_pericolo", title: "Pittogrammi Pericolo", type: "text" },
-    { id: "indicazioni_pericolo", title: "Indicazioni Pericolo (H)", type: "text" },
+    {
+      id: "indicazioni_pericolo",
+      title: "Indicazioni Pericolo (H)",
+      type: "text",
+    },
     { id: "consigli_prudenza", title: "Consigli Prudenza (P)", type: "text" },
     { id: "note_mediche", title: "Note Mediche", type: "text" },
   ]);
@@ -95,21 +129,23 @@ const toFertilizerRow = (detail: LabelDetail): Record<string, unknown> => {
   // Helper per formattare array come stringa
   const formatArray = (arr: any[] | null | undefined): string => {
     if (!arr || !Array.isArray(arr) || arr.length === 0) return "";
-    return arr.map((item) => {
-      if (typeof item === "string") return item;
-      if (typeof item === "object") {
-        // Per forme_azoto: { tipo, percentuale }
-        if (item.tipo && item.percentuale !== undefined) {
-          return `${item.tipo}: ${item.percentuale}%`;
+    return arr
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (typeof item === "object") {
+          // Per forme_azoto: { tipo, percentuale }
+          if (item.tipo && item.percentuale !== undefined) {
+            return `${item.tipo}: ${item.percentuale}%`;
+          }
+          // Per micronutrienti: { elemento, percentuale }
+          if (item.elemento && item.percentuale !== undefined) {
+            return `${item.elemento}: ${item.percentuale}%`;
+          }
+          return JSON.stringify(item);
         }
-        // Per micronutrienti: { elemento, percentuale }
-        if (item.elemento && item.percentuale !== undefined) {
-          return `${item.elemento}: ${item.percentuale}%`;
-        }
-        return JSON.stringify(item);
-      }
-      return String(item);
-    }).join(", ");
+        return String(item);
+      })
+      .join(", ");
   };
 
   // Helper per quantità nominale
@@ -140,7 +176,8 @@ const toFertilizerRow = (detail: LabelDetail): Record<string, unknown> => {
     forme_azoto: formatArray(comp.forme_azoto),
     // Solubilità Fosforo
     p2o5_solubile_acqua: solFosforo.P2O5_solubile_acqua ?? "",
-    p2o5_solubile_citrato: solFosforo.P2O5_solubile_citrato_ammonio_neutro ?? "",
+    p2o5_solubile_citrato:
+      solFosforo.P2O5_solubile_citrato_ammonio_neutro ?? "",
     // Micronutrienti
     micronutrienti: formatArray(comp.micronutrienti),
     // Parametri organici
@@ -316,35 +353,64 @@ export default function LabelDetailPage(): React.ReactElement {
       {/* Header section - stacked on mobile */}
       <div className="flex flex-col gap-3 mb-4">
         {/* Title and verification status */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-          <h1 className="text-lg sm:text-xl md:text-2xl font-semibold leading-tight">
-            {detail
-              ? `${detail.productName} - no. ${detail.registrationNumber}`
-              : ""}
-          </h1>
-          {detail ? (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200 self-start">
-              <Checkbox
-                id="is-verified"
-                checked={detail.isVerified}
-                disabled={isVerifying}
-                onCheckedChange={async (checked) => {
-                  try {
-                    await verifyAsync(Boolean(checked));
-                  } catch {
-                    /* handled in mutation */
-                  }
-                }}
-              />
-              <label
-                htmlFor="is-verified"
-                className={`text-sm font-medium cursor-pointer whitespace-nowrap ${
-                  detail.isVerified ? "text-green-700" : "text-gray-600"
-                }`}
-              >
-                {detail.isVerified ? "✓ Verificata" : "Non verificata"}
-              </label>
-            </div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-semibold leading-tight">
+              {detail
+                ? `${detail.productName} - no. ${detail.registrationNumber}`
+                : ""}
+            </h1>
+            {detail ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200 self-start">
+                <Checkbox
+                  id="is-verified"
+                  checked={detail.isVerified}
+                  disabled={isVerifying}
+                  onCheckedChange={async (checked) => {
+                    try {
+                      await verifyAsync(Boolean(checked));
+                    } catch {
+                      /* handled in mutation */
+                    }
+                  }}
+                />
+                <label
+                  htmlFor="is-verified"
+                  className={`text-sm font-medium cursor-pointer whitespace-nowrap ${
+                    detail.isVerified ? "text-green-700" : "text-gray-600"
+                  }`}
+                >
+                  {detail.isVerified ? "✓ Verificata" : "Non verificata"}
+                </label>
+              </div>
+            ) : null}
+          </div>
+          {detail?.rawText ? (
+            <Drawer direction="right">
+              <DrawerTrigger asChild>
+                <button className="text-xs cursor-pointer text-gray-500 hover:text-gray-700 underline self-start sm:self-auto">
+                  Estratto
+                </button>
+              </DrawerTrigger>
+              <DrawerContent className="max-w-[900px] h-full flex flex-col">
+                <DrawerHeader className="border-b shrink-0">
+                  <DrawerTitle>Testo estratto</DrawerTitle>
+                  <DrawerDescription>
+                    Testo grezzo estratto dall&apos;etichetta
+                  </DrawerDescription>
+                </DrawerHeader>
+                <ScrollArea className="flex-1 p-4 min-h-0">
+                  <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed break-words">
+                    {detail.rawText}
+                  </pre>
+                </ScrollArea>
+                <div className="border-t p-4 flex justify-end shrink-0">
+                  <DrawerClose asChild>
+                    <Button variant="outline">Chiudi</Button>
+                  </DrawerClose>
+                </div>
+              </DrawerContent>
+            </Drawer>
           ) : null}
         </div>
 
@@ -403,7 +469,9 @@ export default function LabelDetailPage(): React.ReactElement {
             <Accordion type="single" collapsible>
               <AccordionItem value="pdf" className="border rounded-lg">
                 <AccordionTrigger className="px-4 hover:no-underline">
-                  <span className="text-sm font-medium">📄 Visualizza PDF etichetta</span>
+                  <span className="text-sm font-medium">
+                    📄 Visualizza PDF etichetta
+                  </span>
                 </AccordionTrigger>
                 <AccordionContent>
                   {String(detail.sourceUrl || "").length > 0 ? (
@@ -440,27 +508,35 @@ export default function LabelDetailPage(): React.ReactElement {
 
                       if (isFertilizer) {
                         const currentLabel = detail.label as any;
-                        const fert = currentLabel.prodotto_fertilizzante_ue || {};
+                        const fert =
+                          currentLabel.prodotto_fertilizzante_ue || {};
                         const ident = fert.identificazione_prodotto || {};
                         const comp = fert.composizione_garantita || {};
-                        const npk = comp.analisi_principale_NPK_percentuale_peso || {};
+                        const npk =
+                          comp.analisi_principale_NPK_percentuale_peso || {};
                         const meso = comp.meso_elementi_percentuale_peso || {};
                         const solFosforo = comp.solubilita_fosforo || {};
-                        const paramOrg = comp.parametri_organici_biologici || {};
+                        const paramOrg =
+                          comp.parametri_organici_biologici || {};
                         const instr = fert.istruzioni_uso_agronomiche || {};
                         const sicurezza = fert.informazioni_sicurezza_clp || {};
 
                         // Helper per convertire in numero o null
                         const toNumberOrNull = (val: any): number | null => {
-                          if (val === "" || val === null || val === undefined) return null;
+                          if (val === "" || val === null || val === undefined)
+                            return null;
                           const num = Number(val);
                           return isNaN(num) ? null : num;
                         };
 
                         // Helper per convertire stringa in array
                         const parseConfezioni = (val: string): string[] => {
-                          if (!val || typeof val !== "string") return ident.confezioni_disponibili || [];
-                          return val.split(",").map((s) => s.trim()).filter(Boolean);
+                          if (!val || typeof val !== "string")
+                            return ident.confezioni_disponibili || [];
+                          return val
+                            .split(",")
+                            .map((s) => s.trim())
+                            .filter(Boolean);
                         };
 
                         const payloadLabel = {
@@ -469,49 +545,84 @@ export default function LabelDetailPage(): React.ReactElement {
                             ...fert,
                             identificazione_prodotto: {
                               ...ident,
-                              nome_commerciale: row.nome_commerciale ?? ident.nome_commerciale,
-                              funzione_categoria_prodotto: row.funzione_categoria ?? ident.funzione_categoria_prodotto,
-                              numero_lotto: row.numero_lotto || ident.numero_lotto,
-                              stato_fisico: row.stato_fisico || ident.stato_fisico,
-                              confezioni_disponibili: parseConfezioni(row.confezioni_disponibili as string),
+                              nome_commerciale:
+                                row.nome_commerciale ?? ident.nome_commerciale,
+                              funzione_categoria_prodotto:
+                                row.funzione_categoria ??
+                                ident.funzione_categoria_prodotto,
+                              numero_lotto:
+                                row.numero_lotto || ident.numero_lotto,
+                              stato_fisico:
+                                row.stato_fisico || ident.stato_fisico,
+                              confezioni_disponibili: parseConfezioni(
+                                row.confezioni_disponibili as string
+                              ),
                             },
                             composizione_garantita: {
                               ...comp,
                               analisi_principale_NPK_percentuale_peso: {
                                 ...npk,
-                                N_totale: toNumberOrNull(row.n_totale) ?? npk.N_totale,
-                                P2O5_totale: toNumberOrNull(row.p2o5_totale) ?? npk.P2O5_totale,
-                                K2O_totale: toNumberOrNull(row.k2o_totale) ?? npk.K2O_totale,
+                                N_totale:
+                                  toNumberOrNull(row.n_totale) ?? npk.N_totale,
+                                P2O5_totale:
+                                  toNumberOrNull(row.p2o5_totale) ??
+                                  npk.P2O5_totale,
+                                K2O_totale:
+                                  toNumberOrNull(row.k2o_totale) ??
+                                  npk.K2O_totale,
                               },
                               meso_elementi_percentuale_peso: {
                                 ...meso,
-                                CaO_totale: toNumberOrNull(row.cao_totale) ?? meso.CaO_totale,
-                                MgO_totale: toNumberOrNull(row.mgo_totale) ?? meso.MgO_totale,
-                                SO3_totale: toNumberOrNull(row.so3_totale) ?? meso.SO3_totale,
-                                Na2O_totale: toNumberOrNull(row.na2o_totale) ?? meso.Na2O_totale,
+                                CaO_totale:
+                                  toNumberOrNull(row.cao_totale) ??
+                                  meso.CaO_totale,
+                                MgO_totale:
+                                  toNumberOrNull(row.mgo_totale) ??
+                                  meso.MgO_totale,
+                                SO3_totale:
+                                  toNumberOrNull(row.so3_totale) ??
+                                  meso.SO3_totale,
+                                Na2O_totale:
+                                  toNumberOrNull(row.na2o_totale) ??
+                                  meso.Na2O_totale,
                               },
                               solubilita_fosforo: {
                                 ...solFosforo,
-                                P2O5_solubile_acqua: toNumberOrNull(row.p2o5_solubile_acqua) ?? solFosforo.P2O5_solubile_acqua,
-                                P2O5_solubile_citrato_ammonio_neutro: toNumberOrNull(row.p2o5_solubile_citrato) ?? solFosforo.P2O5_solubile_citrato_ammonio_neutro,
+                                P2O5_solubile_acqua:
+                                  toNumberOrNull(row.p2o5_solubile_acqua) ??
+                                  solFosforo.P2O5_solubile_acqua,
+                                P2O5_solubile_citrato_ammonio_neutro:
+                                  toNumberOrNull(row.p2o5_solubile_citrato) ??
+                                  solFosforo.P2O5_solubile_citrato_ammonio_neutro,
                               },
                               parametri_organici_biologici: {
                                 ...paramOrg,
-                                carbonio_organico_biologico: toNumberOrNull(row.carbonio_organico) ?? paramOrg.carbonio_organico_biologico,
-                                acidi_umici_fulvici: toNumberOrNull(row.acidi_umici_fulvici) ?? paramOrg.acidi_umici_fulvici,
-                                sostanza_organica: toNumberOrNull(row.sostanza_organica) ?? paramOrg.sostanza_organica,
+                                carbonio_organico_biologico:
+                                  toNumberOrNull(row.carbonio_organico) ??
+                                  paramOrg.carbonio_organico_biologico,
+                                acidi_umici_fulvici:
+                                  toNumberOrNull(row.acidi_umici_fulvici) ??
+                                  paramOrg.acidi_umici_fulvici,
+                                sostanza_organica:
+                                  toNumberOrNull(row.sostanza_organica) ??
+                                  paramOrg.sostanza_organica,
                               },
                             },
                             istruzioni_uso_agronomiche: {
                               ...instr,
-                              uso_previsto: row.uso_previsto ?? instr.uso_previsto,
+                              uso_previsto:
+                                row.uso_previsto ?? instr.uso_previsto,
                               frequenza: row.frequenza ?? instr.frequenza,
-                              condizioni_stoccaggio: row.condizioni_stoccaggio ?? instr.condizioni_stoccaggio,
+                              condizioni_stoccaggio:
+                                row.condizioni_stoccaggio ??
+                                instr.condizioni_stoccaggio,
                             },
                             informazioni_sicurezza_clp: {
                               ...sicurezza,
-                              avvertenza: row.avvertenza ?? sicurezza.avvertenza,
-                              note_mediche: row.note_mediche || sicurezza.note_mediche,
+                              avvertenza:
+                                row.avvertenza ?? sicurezza.avvertenza,
+                              note_mediche:
+                                row.note_mediche || sicurezza.note_mediche,
                             },
                           },
                         };
@@ -683,11 +794,16 @@ export default function LabelDetailPage(): React.ReactElement {
                                   {d.fase_fenologica ||
                                     "Fase non specificata"}{" "}
                                   <span className="text-agri-green-700 font-bold">
-                                    ({d.dose_kg_ha != null
+                                    (
+                                    {d.dose_kg_ha != null
                                       ? `${d.dose_kg_ha} kg/ha`
-                                      : d.dose_kg_ha_min != null || d.dose_kg_ha_max != null
-                                      ? `${d.dose_kg_ha_min ?? "-"}-${d.dose_kg_ha_max ?? "-"} kg/ha`
-                                      : "-"})
+                                      : d.dose_kg_ha_min != null ||
+                                        d.dose_kg_ha_max != null
+                                      ? `${d.dose_kg_ha_min ?? "-"}-${
+                                          d.dose_kg_ha_max ?? "-"
+                                        } kg/ha`
+                                      : "-"}
+                                    )
                                   </span>
                                 </span>
                               </span>
@@ -733,7 +849,9 @@ export default function LabelDetailPage(): React.ReactElement {
                                             ];
                                             newDosaggi[idx] = {
                                               ...newDosaggi[idx],
-                                              dose_kg_ha: Number(e.target.value),
+                                              dose_kg_ha: Number(
+                                                e.target.value
+                                              ),
                                             };
                                             setEditedFertilizerDosages(
                                               newDosaggi
@@ -744,7 +862,9 @@ export default function LabelDetailPage(): React.ReactElement {
                                     ) : (
                                       <>
                                         <div className="space-y-2">
-                                          <Label htmlFor={`dose-kg-ha-min-${idx}`}>
+                                          <Label
+                                            htmlFor={`dose-kg-ha-min-${idx}`}
+                                          >
                                             Dose Min (kg/ha)
                                           </Label>
                                           <Input
@@ -757,7 +877,9 @@ export default function LabelDetailPage(): React.ReactElement {
                                               ];
                                               newDosaggi[idx] = {
                                                 ...newDosaggi[idx],
-                                                dose_kg_ha_min: Number(e.target.value),
+                                                dose_kg_ha_min: Number(
+                                                  e.target.value
+                                                ),
                                               };
                                               setEditedFertilizerDosages(
                                                 newDosaggi
@@ -766,7 +888,9 @@ export default function LabelDetailPage(): React.ReactElement {
                                           />
                                         </div>
                                         <div className="space-y-2">
-                                          <Label htmlFor={`dose-kg-ha-max-${idx}`}>
+                                          <Label
+                                            htmlFor={`dose-kg-ha-max-${idx}`}
+                                          >
                                             Dose Max (kg/ha)
                                           </Label>
                                           <Input
@@ -779,7 +903,9 @@ export default function LabelDetailPage(): React.ReactElement {
                                               ];
                                               newDosaggi[idx] = {
                                                 ...newDosaggi[idx],
-                                                dose_kg_ha_max: Number(e.target.value),
+                                                dose_kg_ha_max: Number(
+                                                  e.target.value
+                                                ),
                                               };
                                               setEditedFertilizerDosages(
                                                 newDosaggi
@@ -897,7 +1023,9 @@ export default function LabelDetailPage(): React.ReactElement {
                           <AccordionTrigger className="hover:no-underline py-3">
                             <span className="text-left flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0">
                               <span>
-                                <span className="font-semibold">#{idx + 1}</span>{" "}
+                                <span className="font-semibold">
+                                  #{idx + 1}
+                                </span>{" "}
                                 <span className="hidden sm:inline">-</span>{" "}
                                 <span className="block sm:inline truncate max-w-[200px] sm:max-w-none">
                                   {d.coltura || "Coltura non specificata"}
