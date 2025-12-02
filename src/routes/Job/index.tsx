@@ -1849,18 +1849,21 @@ export default function JobPage() {
           </div>
 
           {/* Tabella mobile */}
-          <div className="flex-1 overflow-y-auto p-2 min-h-0">
-            <EditableTable
-              columns={reviewColumns}
-              rows={selectedGroupRows}
-              isModify={true}
-              onSave={handleSave}
-              onDeleteSelected={handleDeleteSelected}
-              onSelectionChange={(selectedRows) => {
-                setSelectedReviewRows(selectedRows);
-              }}
-              getRowId={(row) => row.id as string}
-            />
+          <div className="flex-1 flex flex-col min-h-0 p-2">
+            <div className="flex-1 min-h-0 [&>div]:h-full [&>div]:flex [&>div]:flex-col">
+              <EditableTable
+                columns={reviewColumns}
+                rows={selectedGroupRows}
+                isModify={true}
+                onSave={handleSave}
+                onDeleteSelected={handleDeleteSelected}
+                onSelectionChange={(selectedRows) => {
+                  setSelectedReviewRows(selectedRows);
+                }}
+                getRowId={(row) => row.id as string}
+                className="flex-1 flex flex-col min-h-0"
+              />
+            </div>
           </div>
 
           {/* Sheet storico mobile */}
@@ -2083,8 +2086,8 @@ export default function JobPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 min-h-0">
-                <div className="h-full [&>div>div:last-child]:max-h-full">
+              <div className="flex-1 flex flex-col min-h-0 p-4">
+                <div className="flex-1 min-h-0 [&>div]:h-full [&>div]:flex [&>div]:flex-col">
                   <EditableTable
                     columns={reviewColumns}
                     rows={selectedGroupRows}
@@ -2095,6 +2098,7 @@ export default function JobPage() {
                       setSelectedReviewRows(selectedRows);
                     }}
                     getRowId={(row) => row.id as string}
+                    className="flex-1 flex flex-col min-h-0"
                   />
                 </div>
               </div>
