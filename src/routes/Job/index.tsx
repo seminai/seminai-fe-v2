@@ -46,6 +46,8 @@ import {
   FileText,
   Search,
   GripVertical,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -958,10 +960,12 @@ export default function JobPage() {
   const [historyPanelWidth, setHistoryPanelWidth] = useState<number>(320); // Default: 320px (w-80)
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState<boolean>(true);
+  const [isGroupsSidebarOpen, setIsGroupsSidebarOpen] = useState<boolean>(true);
+  const [groupsSidebarWidth, setGroupsSidebarWidth] = useState<number>(288); // Default: 288px (w-72)
 
   const isMobile = useIsMobile();
 
-  // Carica la larghezza salvata da IndexedDB all'inizializzazione
+  // Carica le impostazioni salvate da IndexedDB all'inizializzazione
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -973,6 +977,25 @@ export default function JobPage() {
         if (savedWidth && typeof savedWidth === "number") {
           setHistoryPanelWidth(savedWidth);
         }
+        const savedGroupsSidebarOpen =
+          await userSettingsIndexDBManager.getSetting<boolean>(
+            "job",
+            "groupsSidebarOpen"
+          );
+        if (typeof savedGroupsSidebarOpen === "boolean") {
+          setIsGroupsSidebarOpen(savedGroupsSidebarOpen);
+        }
+        const savedGroupsSidebarWidth =
+          await userSettingsIndexDBManager.getSetting<number>(
+            "job",
+            "groupsSidebarWidth"
+          );
+        if (
+          savedGroupsSidebarWidth &&
+          typeof savedGroupsSidebarWidth === "number"
+        ) {
+          setGroupsSidebarWidth(savedGroupsSidebarWidth);
+        }
       } catch (error) {
         console.error("Failed to load settings from IndexedDB:", error);
       } finally {
@@ -983,7 +1006,7 @@ export default function JobPage() {
     loadSettings();
   }, []);
 
-  // Salva la larghezza in IndexedDB quando cambia (con debounce)
+  // Salva le impostazioni in IndexedDB quando cambiano (con debounce)
   useEffect(() => {
     if (isLoadingSettings) return; // Non salvare durante il caricamento iniziale
 
@@ -1001,6 +1024,44 @@ export default function JobPage() {
 
     return () => clearTimeout(timeoutId);
   }, [historyPanelWidth, isLoadingSettings]);
+
+  // Salva lo stato di apertura/chiusura della sidebar gruppi
+  useEffect(() => {
+    if (isLoadingSettings) return;
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        await userSettingsIndexDBManager.saveSetting(
+          "job",
+          "groupsSidebarOpen",
+          isGroupsSidebarOpen
+        );
+      } catch (error) {
+        console.error("Failed to save settings to IndexedDB:", error);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [isGroupsSidebarOpen, isLoadingSettings]);
+
+  // Salva la larghezza della sidebar gruppi
+  useEffect(() => {
+    if (isLoadingSettings) return;
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        await userSettingsIndexDBManager.saveSetting(
+          "job",
+          "groupsSidebarWidth",
+          groupsSidebarWidth
+        );
+      } catch (error) {
+        console.error("Failed to save settings to IndexedDB:", error);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [groupsSidebarWidth, isLoadingSettings]);
 
   // Handler per il resize del pannello storico
   const handleResizeStart = useMemo(
@@ -1033,6 +1094,40 @@ export default function JobPage() {
       document.addEventListener("mouseup", handleMouseUp);
     },
     [historyPanelWidth]
+  );
+
+  // Handler per il resize della sidebar gruppi
+  const [isResizingGroupsSidebar, setIsResizingGroupsSidebar] =
+    useState<boolean>(false);
+  const handleGroupsSidebarResizeStart = useMemo(
+    () => (e: React.MouseEvent) => {
+      e.preventDefault();
+      setIsResizingGroupsSidebar(true);
+
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+
+      const startX = e.clientX;
+      const startWidth = groupsSidebarWidth;
+
+      const handleMouseMove = (e: MouseEvent) => {
+        const deltaX = e.clientX - startX; // Normale perché il pannello è a sinistra
+        const newWidth = Math.max(200, Math.min(600, startWidth + deltaX));
+        setGroupsSidebarWidth(newWidth);
+      };
+
+      const handleMouseUp = () => {
+        setIsResizingGroupsSidebar(false);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    },
+    [groupsSidebarWidth]
   );
   const { jobs, isLoading, error, refetch } = useJobs();
   const { labels } = useLabelsSummary();
@@ -1789,38 +1884,134 @@ export default function JobPage() {
     return (
       <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Sidebar sinistra - Lista gruppi */}
-        <div className="w-72 flex-shrink-0 bg-slate-50 flex flex-col overflow-hidden">
-          <div className="p-3 bg-white flex-shrink-0">
-            <h3 className="text-sm font-medium text-slate-700">
-              Gruppi da verificare
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {jobGroups.length} grupp{jobGroups.length === 1 ? "o" : "i"} •{" "}
-              {unverifiedJobs.length} operazion
-              {unverifiedJobs.length === 1 ? "e" : "i"}
-            </p>
-          </div>
-          <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
-            {jobGroups.length === 0 ? (
-              <div className="text-center py-8 text-slate-400 text-sm">
-                <ClipboardCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>Nessuna operazione da verificare</p>
+        {isGroupsSidebarOpen && (
+          <>
+            <div
+              className="flex-shrink-0 bg-slate-50 flex flex-col overflow-hidden"
+              style={{ width: `${groupsSidebarWidth}px` }}
+            >
+              <div className="p-3 bg-white flex-shrink-0">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-slate-700">
+                      Gruppi da verificare
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {jobGroups.length} grupp
+                      {jobGroups.length === 1 ? "o" : "i"} •{" "}
+                      {unverifiedJobs.length} operazion
+                      {unverifiedJobs.length === 1 ? "e" : "i"}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsGroupsSidebarOpen(false)}
+                    className="h-7 w-7 p-0 shrink-0"
+                    title="Chiudi elenco gruppi"
+                  >
+                    <PanelLeftClose className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            ) : (
-              jobGroups.map((group) => (
-                <JobGroupCard
-                  key={group.jobCode}
-                  group={group}
-                  isSelected={selectedGroup?.jobCode === group.jobCode}
-                  onClick={() => {
-                    setSelectedGroupCode(group.jobCode);
-                    setSelectedReviewRows([]);
-                  }}
-                />
-              ))
-            )}
+              <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
+                {jobGroups.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400 text-sm">
+                    <ClipboardCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>Nessuna operazione da verificare</p>
+                  </div>
+                ) : (
+                  jobGroups.map((group) => (
+                    <JobGroupCard
+                      key={group.jobCode}
+                      group={group}
+                      isSelected={selectedGroup?.jobCode === group.jobCode}
+                      onClick={() => {
+                        setSelectedGroupCode(group.jobCode);
+                        setSelectedReviewRows([]);
+                      }}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+            {/* Resize Handle per la sidebar gruppi */}
+            <div
+              onMouseDown={handleGroupsSidebarResizeStart}
+              className={cn(
+                "w-1 flex-shrink-0 cursor-col-resize bg-slate-200 hover:bg-slate-300 transition-colors relative group",
+                isResizingGroupsSidebar && "bg-slate-400"
+              )}
+              style={{ userSelect: "none" }}
+            >
+              <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <GripVertical className="h-4 w-4 text-slate-500" />
+              </div>
+            </div>
+          </>
+        )}
+        {!isGroupsSidebarOpen && (
+          <div className="flex-shrink-0 bg-slate-50 border-r border-slate-200 flex flex-col overflow-hidden w-16 rounded-md">
+            {/* Header con pulsante per aprire */}
+            <div className="p-2 bg-white flex-shrink-0 border-b border-slate-200">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsGroupsSidebarOpen(true)}
+                className="h-7 w-full p-0"
+                title="Apri elenco gruppi"
+              >
+                <PanelLeftOpen className="h-4 w-4" />
+              </Button>
+            </div>
+            {/* Lista compatta dei jobId */}
+            <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
+              {jobGroups.length === 0 ? (
+                <div className="text-center py-4 text-slate-400 text-[10px]">
+                  <ClipboardCheck className="h-4 w-4 mx-auto mb-1 opacity-50" />
+                  <p>Nessuna</p>
+                </div>
+              ) : (
+                jobGroups.map((group) => (
+                  <button
+                    key={group.jobCode}
+                    type="button"
+                    onClick={() => {
+                      setSelectedGroupCode(group.jobCode);
+                      setSelectedReviewRows([]);
+                    }}
+                    className={cn(
+                      "w-full p-1.5 rounded-md transition-all text-center",
+                      selectedGroup?.jobCode === group.jobCode
+                        ? "bg-agri-green-100 border border-agri-green-300 ring-1 ring-agri-green-200"
+                        : "bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                    )}
+                    title={`Operazione #${group.jobCode} - ${group.jobs.length} operazioni`}
+                  >
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "font-mono text-xs w-full justify-center",
+                        selectedGroup?.jobCode === group.jobCode &&
+                          "border-agri-green-400 text-agri-green-700"
+                      )}
+                    >
+                      #{group.jobCode}
+                    </Badge>
+                    {group.unverifiedCount > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="mt-1 h-4 min-w-4 px-1 text-[10px] block mx-auto"
+                      >
+                        {group.unverifiedCount}
+                      </Badge>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Centro - Tabella del gruppo selezionato */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
