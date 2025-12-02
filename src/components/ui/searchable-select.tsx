@@ -28,6 +28,7 @@ export interface SearchableSelectProps {
   wrapperClassName?: string;
   contentClassName?: string;
   maxVisibleOptions?: number;
+  maxHeight?: string;
 }
 
 export function SearchableSelect({
@@ -44,6 +45,7 @@ export function SearchableSelect({
   wrapperClassName,
   contentClassName,
   maxVisibleOptions,
+  maxHeight = "max-h-60",
 }: SearchableSelectProps): React.ReactElement {
   const EMPTY_VALUE_TOKEN = "__SEARCHABLE_SELECT_EMPTY__";
   const [searchTerm, setSearchTerm] = React.useState<string>("");
@@ -125,7 +127,7 @@ export function SearchableSelect({
             autoFocus
           />
         </div>
-        <div className="max-h-60 overflow-y-auto py-1">
+        <div className={cn("overflow-y-auto py-1", maxHeight)}>
           {shouldShowNoneOption && (
             <SelectItem value={EMPTY_VALUE_TOKEN}>{noneOptionLabel}</SelectItem>
           )}

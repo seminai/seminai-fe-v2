@@ -1,6 +1,6 @@
 import { authenticatedHttpClient } from "./http";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
 
 async function safeReadText(response: Response): Promise<string> {
   try {
@@ -187,6 +187,24 @@ export type BulkDeleteProductsPayload = {
 export type BulkDeleteProductsResponse = {
   status: "success" | string;
   data?: unknown;
+};
+
+export type ImportFromCsvExcelPayload = {
+  file: File;
+  companyId: string;
+  warehouseId?: string;
+};
+
+export type ImportFromCsvExcelResponse = {
+  status: "success" | string;
+  data?: {
+    imported?: number;
+    skipped?: number;
+    errors?: Array<{
+      row?: number;
+      message: string;
+    }>;
+  };
 };
 
 export async function getProducts(
@@ -383,6 +401,42 @@ export async function bulkDeleteProducts(
   }
 }
 
+export async function importFromCsvExcel(
+  payload: ImportFromCsvExcelPayload,
+  baseUrl: string = BASE_URL
+): Promise<ImportFromCsvExcelResponse> {
+  if (!payload?.companyId) {
+    throw new Error("Company identifier is required");
+  }
+
+  if (!payload?.file) {
+    throw new Error("File is required");
+  }
+
+  const formData = new FormData();
+  formData.append("file", payload.file);
+  formData.append("companyId", payload.companyId);
+  
+  if (payload.warehouseId) {
+    formData.append("warehouseId", payload.warehouseId);
+  }
+
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/products/import-from-csv-excel`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Import from CSV/Excel failed");
+  }
+
+  return (await response.json()) as ImportFromCsvExcelResponse;
+}
+
 class ProductsApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -420,6 +474,39 @@ class ProductsApiService {
     payload: BulkDeleteProductsPayload
   ): Promise<BulkDeleteProductsResponse> {
     return await bulkDeleteProducts(payload, this.baseUrl);
+  }
+
+  public async importFromCsvExcel(
+    payload: ImportFromCsvExcelPayload
+  ): Promise<ImportFromCsvExcelResponse> {
+    return await importFromCsvExcel(payload, this.baseUrl);
+  }
+
+  public async downloadTemplate(): Promise<void> {
+    const response = await authenticatedHttpClient.request(
+      `${this.baseUrl}/products/template`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "text/csv",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await safeReadText(response);
+      throw new Error(errorText || "Download template failed");
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "template.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 }
 

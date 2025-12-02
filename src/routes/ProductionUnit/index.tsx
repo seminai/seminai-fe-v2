@@ -42,6 +42,21 @@ import {
 } from "@/components/ui/sheet";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 
+// Helper function to format dates as DD-MM-YYYY
+const formatDateDDMMYYYY = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return "-";
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "-";
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  } catch {
+    return "-";
+  }
+};
+
 type CropPeriod = {
   minDate: string;
   maxDate: string;
@@ -532,11 +547,21 @@ const buildProductionUnitColumns = (
       id: "startDate",
       title: "Data Inizio",
       type: "date",
+      render: (value: unknown) => {
+        if (!value) return "-";
+        const dateStr = typeof value === "string" ? value : String(value);
+        return formatDateDDMMYYYY(dateStr);
+      },
     },
     {
       id: "endDate",
       title: "Data Fine",
       type: "date",
+      render: (value: unknown) => {
+        if (!value) return "-";
+        const dateStr = typeof value === "string" ? value : String(value);
+        return formatDateDDMMYYYY(dateStr);
+      },
     },
   ];
 };
@@ -1139,11 +1164,7 @@ export default function ProductionUnit(): React.ReactElement {
                 className="mt-1"
               />
             ) : (
-              <p className="text-sm">
-                {pu.startDate
-                  ? new Date(pu.startDate).toLocaleDateString("it-IT")
-                  : "-"}
-              </p>
+              <p className="text-sm">{formatDateDDMMYYYY(pu.startDate)}</p>
             )}
           </div>
 
@@ -1167,11 +1188,7 @@ export default function ProductionUnit(): React.ReactElement {
                 className="mt-1"
               />
             ) : (
-              <p className="text-sm">
-                {pu.floweringDate
-                  ? new Date(pu.floweringDate).toLocaleDateString("it-IT")
-                  : "-"}
-              </p>
+              <p className="text-sm">{formatDateDDMMYYYY(pu.floweringDate)}</p>
             )}
           </div>
 
@@ -1195,11 +1212,7 @@ export default function ProductionUnit(): React.ReactElement {
                 className="mt-1"
               />
             ) : (
-              <p className="text-sm">
-                {pu.harvestingDate
-                  ? new Date(pu.harvestingDate).toLocaleDateString("it-IT")
-                  : "-"}
-              </p>
+              <p className="text-sm">{formatDateDDMMYYYY(pu.harvestingDate)}</p>
             )}
           </div>
 
@@ -1223,11 +1236,7 @@ export default function ProductionUnit(): React.ReactElement {
                 className="mt-1"
               />
             ) : (
-              <p className="text-sm">
-                {pu.endDate
-                  ? new Date(pu.endDate).toLocaleDateString("it-IT")
-                  : "-"}
-              </p>
+              <p className="text-sm">{formatDateDDMMYYYY(pu.endDate)}</p>
             )}
           </div>
 

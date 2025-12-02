@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useJobs } from "@/hooks/useJobs";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLabelsSummary } from "@/hooks/useLabelsSummary";
 import { useLabel } from "@/hooks/useLabel";
 import { PageHeader } from "@/components/organism/Header";
+import { userSettingsIndexDBManager } from "@/utils/userSettingsIndexDBManager";
 import {
   EditableTable,
   type EditableColumn,
@@ -22,13 +23,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import type { SearchableSelectOption } from "@/components/ui/searchable-select";
 import {
   Sheet,
   SheetContent,
@@ -49,7 +45,7 @@ import {
   Sprout,
   FileText,
   Search,
-  Filter,
+  GripVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -555,30 +551,66 @@ interface HistoryPanelProps {
   history: JobHistoryEntry[];
   jobCode: string;
   onProductClick?: (productName: string, registrationNumber?: string) => void;
+  productFilter?: string;
 }
 
-function HistoryPanel({ history, jobCode, onProductClick }: HistoryPanelProps) {
+function HistoryPanel({
+  history,
+  jobCode,
+  onProductClick,
+  productFilter,
+}: HistoryPanelProps) {
   const { productionUnits } = useProductionUnit();
   const [filterText, setFilterText] = useState<string>("");
 
   const groupedHistory = useMemo(() => {
     const groups: Record<string, JobHistoryEntry[]> = {};
-    
-    // Filtra le history in base al testo di ricerca
-    const filteredHistory = filterText
-      ? history.filter((entry) => {
-          const searchText = filterText.toLowerCase();
-          return (
-            entry.title.toLowerCase().includes(searchText) ||
-            String(entry.value).toLowerCase().includes(searchText) ||
-            entry.metadata?.description?.toLowerCase().includes(searchText) ||
-            entry.metadata?.productName?.toLowerCase().includes(searchText) ||
-            entry.metadata?.productRegistrationNumber?.toLowerCase().includes(searchText) ||
-            entry.metadata?.productionUnitName?.toLowerCase().includes(searchText) ||
-            entry.metadata?.cropName?.toLowerCase().includes(searchText)
-          );
-        })
-      : history;
+
+    // Filtra le history in base al testo di ricerca e al filtro prodotto
+    let filteredHistory = history;
+
+    // Applica il filtro prodotto se presente
+    if (productFilter && productFilter !== "all") {
+      const filterLower = productFilter.toLowerCase();
+      filteredHistory = filteredHistory.filter((entry) => {
+        const productName = entry.metadata?.productName?.toLowerCase() || "";
+        const registrationNumber =
+          entry.metadata?.productRegistrationNumber?.toLowerCase() || "";
+
+        // Estrai i singoli prodotti se ci sono più prodotti separati da virgola
+        const individualProducts = productName
+          .split(",")
+          .map((p) => p.trim())
+          .filter((p) => p.length > 0);
+
+        // Verifica se il filtro corrisponde a uno dei prodotti o al numero di registrazione
+        return (
+          individualProducts.some(
+            (p) => p === filterLower || p.includes(filterLower)
+          ) || registrationNumber.includes(filterLower)
+        );
+      });
+    }
+
+    // Applica il filtro di ricerca testuale se presente
+    if (filterText) {
+      const searchText = filterText.toLowerCase();
+      filteredHistory = filteredHistory.filter((entry) => {
+        return (
+          entry.title.toLowerCase().includes(searchText) ||
+          String(entry.value).toLowerCase().includes(searchText) ||
+          entry.metadata?.description?.toLowerCase().includes(searchText) ||
+          entry.metadata?.productName?.toLowerCase().includes(searchText) ||
+          entry.metadata?.productRegistrationNumber
+            ?.toLowerCase()
+            .includes(searchText) ||
+          entry.metadata?.productionUnitName
+            ?.toLowerCase()
+            .includes(searchText) ||
+          entry.metadata?.cropName?.toLowerCase().includes(searchText)
+        );
+      });
+    }
 
     filteredHistory.forEach((entry) => {
       if (!groups[entry.step]) {
@@ -587,7 +619,7 @@ function HistoryPanel({ history, jobCode, onProductClick }: HistoryPanelProps) {
       groups[entry.step].push(entry);
     });
     return groups;
-  }, [history, filterText]);
+  }, [history, filterText, productFilter]);
 
   return (
     <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
@@ -867,7 +899,7 @@ class JobGroupBuilder {
       });
       group.history = Array.from(uniqueHistory.values()).sort(
         (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
     });
 
@@ -923,8 +955,85 @@ export default function JobPage() {
   const [labelSheetOpen, setLabelSheetOpen] = useState<boolean>(false);
   const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
   const [productFilter, setProductFilter] = useState<string>("all");
+  const [historyPanelWidth, setHistoryPanelWidth] = useState<number>(320); // Default: 320px (w-80)
+  const [isResizing, setIsResizing] = useState<boolean>(false);
+  const [isLoadingSettings, setIsLoadingSettings] = useState<boolean>(true);
 
   const isMobile = useIsMobile();
+
+  // Carica la larghezza salvata da IndexedDB all'inizializzazione
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        await userSettingsIndexDBManager.init();
+        const savedWidth = await userSettingsIndexDBManager.getSetting<number>(
+          "job",
+          "historyPanelWidth"
+        );
+        if (savedWidth && typeof savedWidth === "number") {
+          setHistoryPanelWidth(savedWidth);
+        }
+      } catch (error) {
+        console.error("Failed to load settings from IndexedDB:", error);
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    };
+
+    loadSettings();
+  }, []);
+
+  // Salva la larghezza in IndexedDB quando cambia (con debounce)
+  useEffect(() => {
+    if (isLoadingSettings) return; // Non salvare durante il caricamento iniziale
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        await userSettingsIndexDBManager.saveSetting(
+          "job",
+          "historyPanelWidth",
+          historyPanelWidth
+        );
+      } catch (error) {
+        console.error("Failed to save settings to IndexedDB:", error);
+      }
+    }, 300); // Debounce di 300ms per evitare troppi salvataggi durante il resize
+
+    return () => clearTimeout(timeoutId);
+  }, [historyPanelWidth, isLoadingSettings]);
+
+  // Handler per il resize del pannello storico
+  const handleResizeStart = useMemo(
+    () => (e: React.MouseEvent) => {
+      e.preventDefault();
+      setIsResizing(true);
+
+      // Cambia il cursore durante il resize
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+
+      const startX = e.clientX;
+      const startWidth = historyPanelWidth;
+
+      const handleMouseMove = (e: MouseEvent) => {
+        const deltaX = startX - e.clientX; // Invertito perché il pannello è a destra
+        const newWidth = Math.max(200, Math.min(800, startWidth + deltaX));
+        setHistoryPanelWidth(newWidth);
+      };
+
+      const handleMouseUp = () => {
+        setIsResizing(false);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    },
+    [historyPanelWidth]
+  );
   const { jobs, isLoading, error, refetch } = useJobs();
   const { labels } = useLabelsSummary();
   const bulkVerifier = useMemo(() => new JobBulkVerifier(jobsApiService), []);
@@ -1008,11 +1117,11 @@ export default function JobPage() {
     const rows = selectedGroup.jobs.map((jobWithRelations) =>
       new JobTableRowBuilder(jobWithRelations).build()
     );
-    
+
     if (productFilter === "all") {
       return rows;
     }
-    
+
     return rows.filter((row) => {
       const productName = String(row.productName || "").toLowerCase();
       const filterLower = productFilter.toLowerCase();
@@ -1046,6 +1155,17 @@ export default function JobPage() {
     });
     return Array.from(products).sort();
   }, [selectedGroup]);
+
+  // Opzioni per il SearchableSelect
+  const productSelectOptions = useMemo<SearchableSelectOption[]>(() => {
+    const options: SearchableSelectOption[] = [
+      { label: "Tutti i fitofarmaci", value: "all" },
+    ];
+    availableProducts.forEach((product) => {
+      options.push({ label: product, value: product });
+    });
+    return options;
+  }, [availableProducts]);
 
   // Indice del gruppo selezionato e navigazione tra gruppi
   const currentGroupIndex = useMemo(() => {
@@ -1620,20 +1740,16 @@ export default function JobPage() {
               </Button>
             </div>
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-slate-400" />
-              <Select value={productFilter} onValueChange={setProductFilter}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Filtra per fitofarmaco" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutti i fitofarmaci</SelectItem>
-                  {availableProducts.map((product) => (
-                    <SelectItem key={product} value={product}>
-                      {product}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={productFilter}
+                options={productSelectOptions}
+                placeholder="Filtra per fitofarmaco"
+                searchPlaceholder="Cerca fitofarmaco..."
+                emptyMessage="Nessun fitofarmaco trovato"
+                onChange={setProductFilter}
+                wrapperClassName="w-full"
+                maxHeight="max-h-40"
+              />
             </div>
           </div>
 
@@ -1660,6 +1776,7 @@ export default function JobPage() {
                   history={selectedGroup.history}
                   jobCode={selectedGroup.jobCode}
                   onProductClick={handleOpenLabel}
+                  productFilter={productFilter}
                 />
               )}
             </SheetContent>
@@ -1762,20 +1879,16 @@ export default function JobPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2 flex-1">
-                    <Filter className="h-4 w-4 text-slate-400" />
-                    <Select value={productFilter} onValueChange={setProductFilter}>
-                      <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="Filtra per fitofarmaco" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tutti i fitofarmaci</SelectItem>
-                        {availableProducts.map((product) => (
-                          <SelectItem key={product} value={product}>
-                            {product}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={productFilter}
+                      options={productSelectOptions}
+                      placeholder="Filtra per fitofarmaco"
+                      searchPlaceholder="Cerca fitofarmaco..."
+                      emptyMessage="Nessun fitofarmaco trovato"
+                      onChange={setProductFilter}
+                      wrapperClassName="w-[200px]"
+                      maxHeight="max-h-40"
+                    />
                   </div>
                 </div>
               </div>
@@ -1807,13 +1920,32 @@ export default function JobPage() {
 
         {/* Destra - Storico */}
         {selectedGroup && (
-          <div className="w-80 flex-shrink-0 overflow-hidden">
-            <HistoryPanel
-              history={selectedGroup.history}
-              jobCode={selectedGroup.jobCode}
-              onProductClick={handleOpenLabel}
-            />
-          </div>
+          <>
+            {/* Resize Handle */}
+            <div
+              onMouseDown={handleResizeStart}
+              className={cn(
+                "w-1 flex-shrink-0 cursor-col-resize bg-slate-200 hover:bg-slate-300 transition-colors relative group",
+                isResizing && "bg-slate-400"
+              )}
+              style={{ userSelect: "none" }}
+            >
+              <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <GripVertical className="h-4 w-4 text-slate-500" />
+              </div>
+            </div>
+            <div
+              className="flex-shrink-0 overflow-hidden"
+              style={{ width: `${historyPanelWidth}px` }}
+            >
+              <HistoryPanel
+                history={selectedGroup.history}
+                jobCode={selectedGroup.jobCode}
+                onProductClick={handleOpenLabel}
+                productFilter={productFilter}
+              />
+            </div>
+          </>
         )}
       </div>
     );

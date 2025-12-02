@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Package, Eye } from "lucide-react";
+import { AlertCircle, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import DrawerProduct from "./DrawerProduct";
@@ -388,48 +388,34 @@ function ProductsPage() {
       <PageHeader title="Prodotti" />
 
       <div className="flex-1 overflow-auto px-6 pb-24">
-        {sortedProducts.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <Package className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-semibold text-gray-900">
-                Nessun prodotto trovato
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Non ci sono prodotti disponibili
-              </p>
-            </div>
-          </div>
-        ) : (
-          <EditableTable
-            columns={tableColumns}
-            rows={tableRows}
-            isModify={false}
-            addButton={true}
-            onAddClick={() => setImportDrawerOpen(true)}
-            onDeleteSelected={handleDeleteSelected}
-            getRowId={(row) => (row as ProductTableRow).id}
-            lastComponent={(row) => {
-              const data = row as ProductTableRow;
-              return (
-                <div className="bg-white flex justify-end px-2 py-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2 hover:bg-blue-50 hover:border-blue-400 transition-colors"
-                    onClick={() => handleProductClick(data.product)}
-                  >
-                    <Eye className="h-4 w-4" />
-                    <span>
-                      {data.movementsCount} moviment
-                      {data.movementsCount === 1 ? "o" : "i"}
-                    </span>
-                  </Button>
-                </div>
-              );
-            }}
-          />
-        )}
+        <EditableTable
+          columns={tableColumns}
+          rows={tableRows}
+          isModify={false}
+          addButton={true}
+          onAddClick={() => setImportDrawerOpen(true)}
+          onDeleteSelected={handleDeleteSelected}
+          getRowId={(row) => (row as ProductTableRow).id}
+          lastComponent={(row) => {
+            const data = row as ProductTableRow;
+            return (
+              <div className="bg-white flex justify-end px-2 py-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 hover:bg-blue-50 hover:border-blue-400 transition-colors"
+                  onClick={() => handleProductClick(data.product)}
+                >
+                  <Eye className="h-4 w-4" />
+                  <span>
+                    {data.movementsCount} moviment
+                    {data.movementsCount === 1 ? "o" : "i"}
+                  </span>
+                </Button>
+              </div>
+            );
+          }}
+        />
       </div>
 
       <DrawerProduct

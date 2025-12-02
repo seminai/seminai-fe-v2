@@ -27,9 +27,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   productsApiService,
-  type BulkProductPayload,
-  type BulkImportProductsPayload,
-  type BulkImportProductsResponse,
+  type ImportFromCsvExcelResponse,
 } from "@/api/products";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useCompanyWarehouses } from "@/hooks/useCompanyWarehouses";
@@ -569,31 +567,6 @@ class BulkProductTemplateBuilder {
   }
 }
 
-class BulkImportResponsePresenter {
-  private readonly response: BulkImportProductsResponse;
-
-  constructor(response: BulkImportProductsResponse) {
-    this.response = response;
-  }
-
-  public getImportedCount(fallback: number): number {
-    return this.response.data?.imported ?? fallback;
-  }
-
-  public getSkippedCount(): number {
-    return this.response.data?.skipped ?? 0;
-  }
-
-  public getErrors(): string[] {
-    return (
-      this.response.data?.errors?.map((error) => {
-        const rowLabel =
-          typeof error.row === "number" ? `Riga ${error.row}: ` : "";
-        return `${rowLabel}${error.message}`;
-      }) ?? []
-    );
-  }
-}
 
 interface DrawerProductBulkImportProps {
   open: boolean;
@@ -612,14 +585,16 @@ function DrawerProductBulkImport({
   const [isParsing, setIsParsing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreviewRows, setFilePreviewRows] = useState<
+    Record<string, unknown>[]
+  >([]);
   const [dragActive, setDragActive] = useState(false);
-  const [parsedProducts, setParsedProducts] = useState<BulkProductPayload[]>(
-    []
-  );
   const [parserErrors, setParserErrors] = useState<string[]>([]);
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(
     null
   );
+  const [showPreview, setShowPreview] = useState(false);
 
   const {
     companies,
@@ -655,40 +630,82 @@ function DrawerProductBulkImport({
 
   const canImport = useMemo(() => {
     return (
-      parsedProducts.length > 0 &&
+      selectedFile !== null &&
       companyId.trim().length > 0 &&
-      warehouseId.trim().length > 0 &&
       !isImporting &&
       !isParsing
     );
-  }, [parsedProducts.length, companyId, warehouseId, isImporting, isParsing]);
+  }, [selectedFile, companyId, isImporting, isParsing]);
 
   const handleFileSelect = useCallback(async (file: File) => {
-    const parser = new BulkProductFileParser();
     setIsParsing(true);
     setParserErrors([]);
-    setParsedProducts([]);
     setSelectedFileName(file.name);
+    setSelectedFile(file);
     setImportSummary(null);
+    setShowPreview(false);
+    setFilePreviewRows([]);
 
     try {
-      const result = await parser.parse(file);
-      setParsedProducts(result.products);
-      setParserErrors(result.errors);
-      if (result.products.length === 0) {
-        toast.warning(
-          "Nessuna riga valida trovata. Controlla il template e riprova."
-        );
+      const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+      if (!["csv", "xls", "xlsx"].includes(extension)) {
+        throw new Error("Formato non supportato. Usa file CSV o Excel");
+      }
+
+      let previewRows: Record<string, unknown>[] = [];
+
+      if (extension === "csv") {
+        const csvText = await file.text();
+        Papa.parse<Record<string, unknown>>(csvText, {
+          header: true,
+          skipEmptyLines: "greedy",
+          complete: (results) => {
+            previewRows = results.data.filter(
+              (row) => !EmptyRowDetector.isEmpty(row)
+            );
+            setFilePreviewRows(previewRows.slice(0, 10)); // Mostra prime 10 righe
+          },
+          error: (error) => {
+            throw new Error(`Errore parsing CSV: ${error.message}`);
+          },
+        });
+      } else {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: "array" });
+        const firstSheetName = workbook.SheetNames[0];
+
+        if (!firstSheetName) {
+          throw new Error("Excel: nessun foglio trovato");
+        }
+
+        const worksheet = workbook.Sheets[firstSheetName];
+        const rows = XLSX.utils
+          .sheet_to_json<Record<string, unknown>>(worksheet, {
+            defval: "",
+            raw: false,
+            blankrows: false,
+          })
+          .filter((row) => !EmptyRowDetector.isEmpty(row));
+
+        previewRows = rows;
+        setFilePreviewRows(rows.slice(0, 10)); // Mostra prime 10 righe
+      }
+
+      if (previewRows.length === 0) {
+        toast.warning("Nessuna riga valida trovata nel file.");
       } else {
         toast.success(
-          `File caricato correttamente (${result.products.length} righe valide)`
+          `File caricato correttamente (${previewRows.length} righe trovate)`
         );
+        setShowPreview(true);
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Parsing del file fallito";
+        error instanceof Error ? error.message : "Errore durante il caricamento del file";
       setParserErrors([message]);
       toast.error(message);
+      setSelectedFile(null);
+      setSelectedFileName(null);
     } finally {
       setIsParsing(false);
     }
@@ -725,9 +742,11 @@ function DrawerProductBulkImport({
   );
 
   const resetForm = useCallback(() => {
-    setParsedProducts([]);
     setParserErrors([]);
     setSelectedFileName(null);
+    setSelectedFile(null);
+    setFilePreviewRows([]);
+    setShowPreview(false);
     setImportSummary(null);
     setDragActive(false);
     if (fileInputRef.current) {
@@ -745,23 +764,27 @@ function DrawerProductBulkImport({
   );
 
   const handleImport = useCallback(async () => {
-    if (!canImport) {
+    if (!canImport || !selectedFile) {
       return;
     }
-    const payload: BulkImportProductsPayload = {
-      companyId: companyId.trim(),
-      warehouseId: warehouseId.trim(),
-      products: parsedProducts,
-    };
 
     setIsImporting(true);
     try {
-      const response = await productsApiService.bulkImport(payload);
-      const presenter = new BulkImportResponsePresenter(response);
+      const response = await productsApiService.importFromCsvExcel({
+        file: selectedFile,
+        companyId: companyId.trim(),
+        warehouseId: warehouseId.trim() || undefined,
+      });
+
       const summary: ImportSummary = {
-        imported: presenter.getImportedCount(parsedProducts.length),
-        skipped: presenter.getSkippedCount(),
-        errors: presenter.getErrors(),
+        imported: response.data?.imported ?? 0,
+        skipped: response.data?.skipped ?? 0,
+        errors:
+          response.data?.errors?.map((error) => {
+            const rowLabel =
+              typeof error.row === "number" ? `Riga ${error.row}: ` : "";
+            return `${rowLabel}${error.message}`;
+          }) ?? [],
       };
 
       setImportSummary(summary);
@@ -781,8 +804,8 @@ function DrawerProductBulkImport({
     canImport,
     companyId,
     onImportCompleted,
-    parsedProducts,
     resetForm,
+    selectedFile,
     warehouseId,
   ]);
 
@@ -790,12 +813,7 @@ function DrawerProductBulkImport({
     onOpenChange(false);
   }, [onOpenChange]);
 
-  const previewRows = useMemo(
-    () => parsedProducts.slice(0, 3),
-    [parsedProducts]
-  );
-
-  const canShowImportSections = Boolean(companyId && warehouseId);
+  const canShowImportSections = Boolean(companyId);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -848,16 +866,16 @@ function DrawerProductBulkImport({
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Seleziona magazzino</Label>
+                  <Label>Seleziona magazzino (opzionale)</Label>
                   {companyId ? (
                     <>
                       <SearchableSelect
                         value={warehouseId}
                         options={warehouseOptions}
-                        placeholder="Seleziona magazzino"
+                        placeholder="Seleziona magazzino (opzionale)"
                         searchPlaceholder="Cerca magazzino..."
                         emptyMessage="Nessun magazzino trovato"
-                        noneOptionLabel="Nessuna selezione"
+                        noneOptionLabel="Nessuna selezione (verrà usato il primo magazzino disponibile)"
                         loading={isLoadingWarehouses}
                         loadingMessage="Caricamento magazzini..."
                         disabled={!companyId}
@@ -867,7 +885,14 @@ function DrawerProductBulkImport({
                         warehouseOptions.length === 0 && (
                           <p className="text-xs text-muted-foreground">
                             Nessun magazzino disponibile per l&apos;azienda
-                            selezionata.
+                            selezionata. Verrà selezionato automaticamente il primo magazzino disponibile.
+                          </p>
+                        )}
+                      {!isLoadingWarehouses &&
+                        warehouseOptions.length > 0 &&
+                        !warehouseId && (
+                          <p className="text-xs text-muted-foreground">
+                            Se non selezioni un magazzino, verrà utilizzato il primo magazzino disponibile dell&apos;azienda.
                           </p>
                         )}
                     </>
@@ -893,7 +918,7 @@ function DrawerProductBulkImport({
                 <AlertTitle>Seleziona i dati principali</AlertTitle>
                 <AlertDescription>
                   Per poter importare il file devi prima scegliere
-                  un&apos;azienda e un magazzino. Una volta completata la
+                  un&apos;azienda. Una volta completata la
                   selezione appariranno i controlli di caricamento.
                 </AlertDescription>
               </Alert>
@@ -992,50 +1017,53 @@ function DrawerProductBulkImport({
                   </Alert>
                 )}
 
-                {parsedProducts.length > 0 && (
+                {showPreview && filePreviewRows.length > 0 && (
                   <Card>
                     <CardHeader className="space-y-2">
-                      <CardTitle>Anteprima prodotti</CardTitle>
+                      <CardTitle>Anteprima file</CardTitle>
                       <p className="text-sm text-muted-foreground">
-                        Mostrate le prime {previewRows.length} righe su{" "}
-                        {parsedProducts.length} totali.
+                        Mostrate le prime {filePreviewRows.length} righe del file.
+                        Verifica che i dati siano corretti prima di procedere con l&apos;importazione.
                       </p>
                     </CardHeader>
-                    <CardContent className="overflow-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="text-left text-muted-foreground">
-                            <th className="px-2 py-1">Nome</th>
-                            <th className="px-2 py-1">SKU</th>
-                            <th className="px-2 py-1">Categoria</th>
-                            <th className="px-2 py-1">Tipo</th>
-                            <th className="px-2 py-1">Stock</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {previewRows.map((product) => (
-                            <tr key={`${product.sku}-${product.name}`}>
-                              <td className="px-2 py-1 font-medium">
-                                {product.name}
-                              </td>
-                              <td className="px-2 py-1 font-mono text-xs">
-                                {product.sku}
-                              </td>
-                              <td className="px-2 py-1">
-                                {product.category ?? "-"}
-                              </td>
-                              <td className="px-2 py-1">
-                                {product.type ?? "-"}
-                              </td>
-                              <td className="px-2 py-1">
-                                {product.stock
-                                  ? `${product.stock.quantity} ${product.stock.unitOfMeasureQuantity}`
-                                  : "-"}
-                              </td>
+                    <CardContent className="overflow-auto max-h-96">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm border-collapse">
+                          <thead>
+                            <tr className="text-left bg-muted">
+                              {Object.keys(filePreviewRows[0] || {}).map(
+                                (key) => (
+                                  <th
+                                    key={key}
+                                    className="px-3 py-2 border border-border font-semibold"
+                                  >
+                                    {key}
+                                  </th>
+                                )
+                              )}
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {filePreviewRows.map((row, index) => (
+                              <tr
+                                key={index}
+                                className="hover:bg-muted/50 border-b border-border"
+                              >
+                                {Object.keys(filePreviewRows[0] || {}).map(
+                                  (key) => (
+                                    <td
+                                      key={key}
+                                      className="px-3 py-2 border border-border"
+                                    >
+                                      {String(row[key] ?? "")}
+                                    </td>
+                                  )
+                                )}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </CardContent>
                   </Card>
                 )}
@@ -1079,9 +1107,18 @@ function DrawerProductBulkImport({
             <Button
               type="button"
               variant="outline"
-              onClick={() =>
-                BulkProductTemplateBuilder.downloadTemplate("complete")
-              }
+              onClick={async () => {
+                try {
+                  await productsApiService.downloadTemplate();
+                  toast.success("Template scaricato con successo");
+                } catch (error) {
+                  toast.error(
+                    error instanceof Error
+                      ? error.message
+                      : "Errore durante il download del template"
+                  );
+                }
+              }}
             >
               <FileDown className="mr-2 h-4 w-4" />
               Template completo

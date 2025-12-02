@@ -1671,12 +1671,27 @@ export class EditableTable extends React.Component<
           onCloseParentDrawer?: () => void;
           onOpenParentDrawer?: () => void;
         }>;
-        return (
-          <React.Fragment key={child.key ?? `create-drawer-child-${index}`}>
-            {React.cloneElement(element, {
+        // Only pass these props if the element type is a React component (not a DOM element)
+        // This prevents React warnings about unknown props on DOM elements
+        // DOM elements have string types (e.g., 'div', 'span'), while React components have function/object types
+        const elementType = element.type;
+        const isReactComponent =
+          typeof elementType === "function" ||
+          (typeof elementType === "object" &&
+            elementType !== null &&
+            "render" in elementType);
+        
+        // Only pass props to React components to avoid warnings on DOM elements
+        const additionalProps = isReactComponent
+          ? {
               onCloseParentDrawer: this.handleCreateCancel,
               onOpenParentDrawer: this.openCreateDrawer,
-            })}
+            }
+          : {};
+        
+        return (
+          <React.Fragment key={child.key ?? `create-drawer-child-${index}`}>
+            {React.cloneElement(element, additionalProps)}
           </React.Fragment>
         );
       }
