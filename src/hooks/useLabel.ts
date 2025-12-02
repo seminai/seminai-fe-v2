@@ -14,6 +14,8 @@ interface UseLabelReturn {
   isSaving: boolean;
   verifyAsync: (isVerified: boolean) => Promise<unknown>;
   isVerifying: boolean;
+  confirmAsync: () => Promise<unknown>;
+  isConfirming: boolean;
 }
 
 export function useLabel({ id }: UseLabelOptions): UseLabelReturn {
@@ -60,6 +62,23 @@ export function useLabel({ id }: UseLabelOptions): UseLabelReturn {
     },
   });
 
+  const { mutateAsync: confirmAsync, isPending: isConfirming } = useMutation({
+    mutationFn: async () => {
+      return await labelsApiService.updateOverwrite(id);
+    },
+    onSuccess: async () => {
+      toast.success("Etichetta aggiornata con successo");
+      await queryClient.invalidateQueries({
+        queryKey: ["labels", "detail", id],
+      });
+    },
+    onError: (e: unknown) => {
+      const message =
+        e instanceof Error ? e.message : "Aggiornamento etichetta fallito";
+      toast.error(message);
+    },
+  });
+
   return {
     detail,
     isLoading,
@@ -68,5 +87,7 @@ export function useLabel({ id }: UseLabelOptions): UseLabelReturn {
     isSaving,
     verifyAsync,
     isVerifying,
+    confirmAsync,
+    isConfirming,
   };
 }
