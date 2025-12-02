@@ -4,6 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -21,8 +27,14 @@ import {
 import { IoOpenOutline, IoDownloadOutline } from "react-icons/io5";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import Papa from "papaparse";
-import { CheckCircle2, Loader2, Plus } from "lucide-react";
+import {
+  CheckCircle2,
+  Loader2,
+  Plus,
+  Calendar as CalendarIcon,
+} from "lucide-react";
 import { format } from "date-fns";
+import { it } from "date-fns/locale";
 import { DateRange } from "react-day-picker";
 import {
   EditableTableFilterActivator,
@@ -1619,16 +1631,11 @@ export class EditableTable extends React.Component<
         );
       case "date":
         return (
-          <Input
-            type="date"
+          <DateCellPicker
+            value={value}
             placeholder={col.placeholder}
-            aria-invalid={Boolean(isTouched && error)}
-            value={value ? String(value) : ""}
-            onChange={(e) => handleChange(row, col, e.target.value)}
-            className={cn(
-              Boolean(isTouched && error) &&
-                "ring-1 ring-red-200/50 border-red-200/60"
-            )}
+            isInvalid={Boolean(isTouched && error)}
+            onChange={(nextValue) => handleChange(row, col, nextValue)}
           />
         );
       case "text":
@@ -2346,6 +2353,90 @@ export class EditableTable extends React.Component<
         {this.renderFiltersPanel()}
         {this.renderCreateDrawer()}
       </div>
+    );
+  }
+}
+
+interface DateCellPickerProps {
+  value: unknown;
+  onChange: (value: Date | null) => void;
+  placeholder?: string;
+  isInvalid?: boolean;
+}
+
+interface DateCellPickerState {
+  open: boolean;
+}
+
+const DATE_DISPLAY_FORMAT = "dd/MM/yyyy";
+const DATE_PLACEHOLDER_LABEL = "gg/mm/aaaa";
+
+class DateCellPicker extends React.Component<
+  DateCellPickerProps,
+  DateCellPickerState
+> {
+  state: DateCellPickerState = {
+    open: false,
+  };
+
+  private parseValue(value: unknown): Date | null {
+    if (!value) {
+      return null;
+    }
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      return value;
+    }
+    const parsed = new Date(String(value));
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  private formatLabel(date: Date | null): string {
+    if (date) {
+      return format(date, DATE_DISPLAY_FORMAT, { locale: it });
+    }
+    return this.props.placeholder ?? DATE_PLACEHOLDER_LABEL;
+  }
+
+  private handleSelect = (selectedDate?: Date): void => {
+    this.props.onChange(selectedDate ?? null);
+    if (selectedDate) {
+      this.setState({ open: false });
+    }
+  };
+
+  render(): React.ReactElement {
+    const resolvedDate = this.parseValue(this.props.value);
+    const label = this.formatLabel(resolvedDate);
+
+    return (
+      <Popover
+        open={this.state.open}
+        onOpenChange={(isOpen) => this.setState({ open: isOpen })}
+      >
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            className={cn(
+              "w-full justify-start text-left font-normal h-10 rounded-xl border border-black/5 bg-white hover:bg-white",
+              !resolvedDate && "text-muted-foreground",
+              this.props.isInvalid && "ring-1 ring-red-200/50 border-red-200/60"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {label}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0 bg-transparent border-0 shadow-none">
+          <Calendar
+            mode="single"
+            selected={resolvedDate ?? undefined}
+            onSelect={this.handleSelect}
+            initialFocus
+            locale={it}
+          />
+        </PopoverContent>
+      </Popover>
     );
   }
 }

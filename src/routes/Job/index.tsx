@@ -831,6 +831,7 @@ class JobTableRowBuilder {
       _isVerifiedBoolean: job.isVerified,
       _originalStock: job.quantity,
       _originalQuantity: job.quantity,
+      _originalDateOfOperation: new Date(job.dateOfOpeation),
       _companyId: company.id,
       _productionUnitId: productionUnit.id,
       _history: job.history ?? [],
@@ -1383,7 +1384,7 @@ export default function JobPage() {
       title: "Data Operazione",
       type: "date",
       width: "150px",
-      readOnly: true,
+      readOnly: false,
       render: (value) => {
         if (!value) return "-";
         const date = value instanceof Date ? value : new Date(value as string);
@@ -1501,7 +1502,7 @@ export default function JobPage() {
       title: "Data",
       type: "date",
       width: "100px",
-      readOnly: true,
+      readOnly: false,
       render: (value) => {
         if (!value) return "-";
         const date = value instanceof Date ? value : new Date(value as string);
@@ -1558,9 +1559,23 @@ export default function JobPage() {
         const newQuantity = Number(row.quantity);
         const originalQuantity = Number(row._originalQuantity ?? row.quantity);
         const companyId = row._companyId as string;
+        const newDateOfOperation = row.dateOfOpeation
+          ? row.dateOfOpeation instanceof Date
+            ? row.dateOfOpeation
+            : new Date(row.dateOfOpeation as string)
+          : null;
+        const originalDateOfOperation = row._originalDateOfOperation
+          ? row._originalDateOfOperation instanceof Date
+            ? row._originalDateOfOperation
+            : new Date(row._originalDateOfOperation as string)
+          : null;
 
         // Prepara il payload di aggiornamento
-        const updatePayload: { isVerified?: boolean; quantity?: number } = {};
+        const updatePayload: {
+          isVerified?: boolean;
+          quantity?: number;
+          dateOfOpeation?: string;
+        } = {};
 
         // 1. Aggiorna lo stato di verifica se modificato
         if (isVerified !== undefined) {
@@ -1570,6 +1585,16 @@ export default function JobPage() {
         // 2. Aggiorna la quantità se modificata
         if (newQuantity !== originalQuantity) {
           updatePayload.quantity = newQuantity;
+        }
+
+        // 3. Aggiorna la data di operazione se modificata
+        if (
+          newDateOfOperation &&
+          originalDateOfOperation &&
+          newDateOfOperation.getTime() !== originalDateOfOperation.getTime()
+        ) {
+          // Converti la data in formato ISO string per l'API
+          updatePayload.dateOfOpeation = newDateOfOperation.toISOString();
         }
 
         // Esegui l'aggiornamento se ci sono modifiche

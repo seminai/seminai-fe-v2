@@ -101,6 +101,8 @@ export type GetJobsResponse = {
 
 export type UpdateJobPayload = {
   isVerified?: boolean;
+  quantity?: number;
+  dateOfOpeation?: string;
 };
 
 export type UpdateJobResponse = {
