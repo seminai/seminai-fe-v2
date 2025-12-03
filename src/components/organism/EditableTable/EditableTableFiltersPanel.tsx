@@ -43,9 +43,10 @@ export class EditableTableFilterActivator extends React.PureComponent<EditableTa
         onClick={onClick}
         aria-label="Apri filtri"
         className={cn(
-          "text-muted-foreground cursor-pointer",
-          hasFilters &&
-            "bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100"
+          "cursor-pointer",
+          hasFilters
+            ? "bg-agri-green-100 text-agri-green-700 border border-agri-green-200 hover:bg-agri-green-200"
+            : "bg-agri-green-50 text-agri-green-700 border border-agri-green-100 hover:bg-agri-green-100"
         )}
       >
         <Filter className="h-4 w-4 sm:mr-2" />

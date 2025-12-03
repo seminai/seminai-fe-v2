@@ -2035,6 +2035,45 @@ export default function DosageManager() {
         type: "number",
       },
       {
+        id: "liveActions",
+        title: "Live",
+        width: "120px",
+        render: (_value, row) => {
+          const typedRow = row as JobHistoryTableRow;
+          const isPendingOrActive =
+            typedRow.state === "waiting" || typedRow.state === "active";
+          const isCurrentlyLive =
+            isLiveLogsDrawerOpen && liveLogsJobId === typedRow.jobId;
+
+          if (!isPendingOrActive) {
+            return null;
+          }
+
+          return (
+            <Button
+              variant={isCurrentlyLive ? "default" : "outline"}
+              size="sm"
+              className={
+                isCurrentlyLive
+                  ? "gap-2 bg-green-600 text-white hover:bg-green-700"
+                  : "gap-2 text-green-600 border-green-600 hover:bg-green-50"
+              }
+              onClick={(e) => {
+                e.stopPropagation();
+                if (isCurrentlyLive) {
+                  handleCloseLiveLogs();
+                } else {
+                  handleOpenLiveLogs(typedRow.jobId);
+                }
+              }}
+            >
+              <Radio className="h-3.5 w-3.5" />
+              <span>Live</span>
+            </Button>
+          );
+        },
+      },
+      {
         id: "actions",
         title: "Azioni",
         width: "140px",
@@ -2056,7 +2095,13 @@ export default function DosageManager() {
         },
       },
     ];
-  }, [handleShowJobDetails]);
+  }, [
+    handleShowJobDetails,
+    isLiveLogsDrawerOpen,
+    liveLogsJobId,
+    handleOpenLiveLogs,
+    handleCloseLiveLogs,
+  ]);
 
   const handleCancelJobs = useCallback(
     async (jobIds: string[]) => {
@@ -3096,7 +3141,20 @@ export default function DosageManager() {
             <Button
               variant="outline"
               className="flex-1"
-              onClick={() => setLiveLogEvents([])}
+              onClick={() => {
+                setLiveLogEvents([]);
+                // Scroll to top after clearing
+                setTimeout(() => {
+                  liveLogsScrollRef.current?.scrollTo({
+                    top: 0,
+                    behavior: "smooth",
+                  });
+                }, 50);
+                toast.info("Log puliti", {
+                  description:
+                    "I log sono stati rimossi dalla visualizzazione. La connessione live rimane attiva.",
+                });
+              }}
               disabled={liveLogEvents.length === 0}
             >
               Pulisci log
