@@ -1542,6 +1542,13 @@ export default function JobPage() {
       width: "100px",
       readOnly: true,
     },
+    {
+      id: "note",
+      title: "Note",
+      type: "text",
+      width: "200px",
+      readOnly: true,
+    },
   ];
 
   // Gestisce il salvataggio delle modifiche
