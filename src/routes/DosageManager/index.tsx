@@ -261,30 +261,30 @@ class JobProgressIndicatorRenderer {
 
     if (data.state === "waiting" || data.state === "active") {
       return (
-        <span className="flex items-center justify-center">
+        <div className="flex items-center justify-center w-full h-full">
           <img
             src="/logo.png"
             alt="Seminai Logo"
             className="h-6 w-6 animate-spin"
           />
-        </span>
+        </div>
       );
     }
 
     if (data.state === "failed") {
       return (
-        <span className="flex items-center gap-2 text-sm text-red-600">
+        <div className="flex items-center justify-center gap-2 text-sm text-red-600">
           <Octagon className="h-4 w-4" />
           <span>STOP</span>
-        </span>
+        </div>
       );
     }
 
     return (
-      <span className="flex items-center gap-2 text-sm text-green-600">
+      <div className="flex items-center justify-center gap-2 text-sm text-green-600">
         <CheckCircle2 className="h-4 w-4" />
         <span>Completato</span>
-      </span>
+      </div>
     );
   }
 }
@@ -722,7 +722,7 @@ class WarehouseProductsMapper {
           registrationNumber,
           quantity: netQuantity > 0 ? netQuantity : 0,
           quantityUnitOfMeasure: calculator.getUnitOfMeasure(),
-          loadWarehouse: false,
+          loadWarehouse: true,
           supplierName: product.warehouse.company.name,
         };
       })
