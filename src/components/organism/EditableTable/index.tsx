@@ -36,13 +36,11 @@ import {
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { DateRange } from "react-day-picker";
-import {
-  EditableTableFilterActivator,
-  EditableTableFiltersPanel,
-} from "./EditableTableFiltersPanel";
+import { EditableTableFiltersPanel } from "./EditableTableFiltersPanel";
 import { TruncatedCellText } from "./EditableTableTruncatedCellText";
 import { AutoExpandTextarea } from "./EditableTableAutoExpandTextarea";
 import { EditableTableCreateDrawer } from "./EditableTableCreateDrawer";
+import { EditableTableColumnFilterDropdown } from "./EditableTableColumnFilterDropdown";
 
 // EditableTable - Notion-like editable table with bulk add/save
 // The component follows an OOP approach using a React Class.
@@ -300,6 +298,11 @@ interface EditableTableState {
   filterDraft: FilterDraft;
   systemDateRanges: Record<string, DateRange | undefined>;
   confirmDialogOpen: boolean;
+  columnFilterOpen?: string; // Colonna con filtro aperto
+  columnFilterSelectedValues: Record<string, Set<string>>; // Valori selezionati per colonna
+  columnFilterSearchQueries: Record<string, string>; // Query di ricerca per colonna
+  columnFilterDateRanges: Record<string, DateRange | undefined>; // Range di date per colonna
+  columnFilterSelectedDates: Record<string, Date | undefined>; // Date singole per colonna
 }
 
 export class EditableTable extends React.Component<
@@ -342,6 +345,11 @@ export class EditableTable extends React.Component<
       filterDraft: this.createEmptyFilterDraft(),
       systemDateRanges: this.createInitialSystemRanges(),
       confirmDialogOpen: false,
+      columnFilterOpen: undefined,
+      columnFilterSelectedValues: {},
+      columnFilterSearchQueries: {},
+      columnFilterDateRanges: {},
+      columnFilterSelectedDates: {},
     };
   }
 
@@ -375,6 +383,11 @@ export class EditableTable extends React.Component<
           sortColumn: undefined,
           sortDirection: "asc",
           drawerRow: updatedDrawerRow,
+          columnFilterOpen: undefined,
+          columnFilterSelectedValues: {},
+          columnFilterSearchQueries: {},
+          columnFilterDateRanges: {},
+          columnFilterSelectedDates: {},
         },
         this.notifySelectionChange
       );
@@ -738,12 +751,111 @@ export class EditableTable extends React.Component<
     return filters.every((filter) => this.doesRowMatchFilter(row, filter));
   }
 
+  private toDateObject(value: unknown): Date | null {
+    if (value === undefined || value === null || value === "") {
+      return null;
+    }
+    const date = new Date(String(value));
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  private isDateInRange(date: Date, range: DateRange): boolean {
+    if (!range.from || !range.to) {
+      return false;
+    }
+    const dateTime = date.getTime();
+    const fromTime = range.from.getTime();
+    const toTime = range.to.getTime();
+    const minTime = Math.min(fromTime, toTime);
+    const maxTime = Math.max(fromTime, toTime);
+    return dateTime >= minTime && dateTime <= maxTime;
+  }
+
+  private matchesColumnFilters(row: InternalRow): boolean {
+    const {
+      columnFilterSelectedValues,
+      columnFilterDateRanges,
+      columnFilterSelectedDates,
+    } = this.state;
+
+    // Controlla filtri per valori selezionati (non date)
+    for (const [columnId, selectedValues] of Object.entries(
+      columnFilterSelectedValues
+    )) {
+      const column = this.getColumnById(columnId);
+      if (column?.type === "date") {
+        continue; // Le date sono gestite separatamente
+      }
+      if (selectedValues.size === 0) {
+        continue; // Nessun filtro per questa colonna
+      }
+      const cellValue = String(row.data[columnId] ?? "").trim();
+      if (!selectedValues.has(cellValue)) {
+        return false; // Il valore della cella non è tra quelli selezionati
+      }
+    }
+
+    // Controlla filtri per date range
+    for (const [columnId, dateRange] of Object.entries(
+      columnFilterDateRanges
+    )) {
+      if (!dateRange) {
+        continue;
+      }
+      const cellDate = this.toDateObject(row.data[columnId]);
+      if (!cellDate) {
+        return false; // La cella non contiene una data valida
+      }
+      if (!this.isDateInRange(cellDate, dateRange)) {
+        return false; // La data non è nel range selezionato
+      }
+    }
+
+    // Controlla filtri per date singole
+    for (const [columnId, selectedDate] of Object.entries(
+      columnFilterSelectedDates
+    )) {
+      if (!selectedDate) {
+        continue;
+      }
+      const cellDate = this.toDateObject(row.data[columnId]);
+      if (!cellDate) {
+        return false; // La cella non contiene una data valida
+      }
+      // Confronta solo giorno, mese e anno (ignora ore/minuti/secondi)
+      const cellDateOnly = new Date(
+        cellDate.getFullYear(),
+        cellDate.getMonth(),
+        cellDate.getDate()
+      );
+      const selectedDateOnly = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate()
+      );
+      if (cellDateOnly.getTime() !== selectedDateOnly.getTime()) {
+        return false; // Le date non corrispondono
+      }
+    }
+
+    return true;
+  }
+
   private getFilteredRows(): InternalRow[] {
     const { rows, activeFilters } = this.state;
-    if (activeFilters.length === 0) {
-      return rows;
+    let filtered = rows;
+
+    // Applica filtri tradizionali
+    if (activeFilters.length > 0) {
+      filtered = filtered.filter((row) =>
+        this.matchesFilters(row, activeFilters)
+      );
     }
-    return rows.filter((row) => this.matchesFilters(row, activeFilters));
+
+    // Applica filtri per colonna
+    filtered = filtered.filter((row) => this.matchesColumnFilters(row));
+
+    return filtered;
   }
 
   private formatFilterLabel = (filter: TableFilterRule): string => {
@@ -789,13 +901,6 @@ export class EditableTable extends React.Component<
       }
       return { filterDraft: nextDraft };
     });
-  };
-
-  private openFilterDrawer = (): void => {
-    if (this.props.columns.length === 0) {
-      return;
-    }
-    this.setState({ filterDrawerOpen: true });
   };
 
   private handleFilterDrawerChange = (open: boolean): void => {
@@ -977,19 +1082,89 @@ export class EditableTable extends React.Component<
       return;
     }
 
-    const headers = this.props.columns.map(
-      (column) => column.title || column.id
+    // Find indices of quantity and unit of measure columns
+    const quantityColumnIndex = this.props.columns.findIndex(
+      (col) => col.id === "quantity"
     );
+    // Try to find unit of measure column with different possible names
+    const umColumnIndex = this.props.columns.findIndex(
+      (col) =>
+        col.id === "quantityUnitOfMeasure" ||
+        col.id === "unitOfMeasureQuantity" ||
+        col.id === "unitOfMeasure"
+    );
+
+    // Get the first row to check if unitOfMeasureQuantity exists in data even if not as a column
     const filteredRows = this.getFilteredRows();
-    const data = filteredRows.map((row) =>
-      this.props.columns.map((column) => {
-        const value = row.data[column.id];
-        if (value === undefined || value === null) {
-          return "";
+    const hasUmInData =
+      filteredRows.length > 0 &&
+      (filteredRows[0].data.unitOfMeasureQuantity !== undefined ||
+        filteredRows[0].data.quantityUnitOfMeasure !== undefined);
+
+    // Filter out UM column from headers if quantity column exists
+    const headers = this.props.columns
+      .map((column, index) => {
+        // Skip UM column if quantity column exists
+        if (index === umColumnIndex && quantityColumnIndex !== -1) {
+          return null;
         }
-        return String(value);
+        return column.title || column.id;
       })
-    );
+      .filter((header): header is string => header !== null);
+
+    const data = filteredRows.map((row) => {
+      return this.props.columns
+        .map((column, index) => {
+          // Skip UM column if quantity column exists
+          if (index === umColumnIndex && quantityColumnIndex !== -1) {
+            return null;
+          }
+
+          const value = row.data[column.id];
+
+          // Combine quantity and UM if this is the quantity column
+          if (index === quantityColumnIndex) {
+            const quantityValue = value;
+            // Try to get UM from column first, then from row data
+            let umValue: unknown = undefined;
+            if (umColumnIndex !== -1) {
+              umValue = row.data[this.props.columns[umColumnIndex].id];
+            } else if (hasUmInData) {
+              // If no UM column but data has UM field, get it from row data
+              umValue =
+                row.data.unitOfMeasureQuantity ??
+                row.data.quantityUnitOfMeasure ??
+                row.data.unitOfMeasure;
+            }
+
+            if (quantityValue === undefined || quantityValue === null) {
+              return "";
+            }
+
+            const quantityStr = String(quantityValue);
+            const umStr = umValue ? String(umValue).trim() : "";
+
+            // Combine quantity and UM: "0,245 kg" or just "0,245" if no UM
+            return umStr ? `${quantityStr} ${umStr}` : quantityStr;
+          }
+
+          if (value === undefined || value === null) {
+            return "";
+          }
+
+          // Format dates as GG/MM/AAAA
+          if (column.type === "date") {
+            const dateValue = this.toDateObject(value);
+            if (dateValue) {
+              return format(dateValue, "dd/MM/yyyy", { locale: it });
+            }
+            return "";
+          }
+
+          return String(value);
+        })
+        .filter((cell): cell is string => cell !== null);
+    });
 
     const csvContent = Papa.unparse({
       fields: headers,
@@ -1408,14 +1583,16 @@ export class EditableTable extends React.Component<
     this.setState({ drawerOpen: open });
   };
 
-  private handleSort = (columnId: string): void => {
+  private handleSort = (columnId: string, direction?: "asc" | "desc"): void => {
     this.setState((prev) => {
       const isSameColumn = prev.sortColumn === columnId;
-      const newDirection: "asc" | "desc" = isSameColumn
-        ? prev.sortDirection === "asc"
-          ? "desc"
-          : "asc"
-        : "asc";
+      const newDirection: "asc" | "desc" =
+        direction ??
+        (isSameColumn
+          ? prev.sortDirection === "asc"
+            ? "desc"
+            : "asc"
+          : "asc");
 
       const column = this.props.columns.find((c) => c.id === columnId);
       const sortedRows = [...prev.rows].sort((a, b) => {
@@ -1458,6 +1635,115 @@ export class EditableTable extends React.Component<
         rows: sortedRows,
         sortColumn: columnId,
         sortDirection: newDirection,
+      };
+    });
+  };
+
+  private handleColumnFilterOpenChange = (
+    columnId: string,
+    open: boolean
+  ): void => {
+    this.setState((prev) => ({
+      columnFilterOpen: open ? columnId : undefined,
+      columnFilterSearchQueries: open
+        ? { ...prev.columnFilterSearchQueries, [columnId]: "" }
+        : prev.columnFilterSearchQueries,
+    }));
+  };
+
+  private handleColumnFilterSearchChange = (
+    columnId: string,
+    query: string
+  ): void => {
+    this.setState((prev) => ({
+      columnFilterSearchQueries: {
+        ...prev.columnFilterSearchQueries,
+        [columnId]: query,
+      },
+    }));
+  };
+
+  private handleColumnFilterValueToggle = (
+    columnId: string,
+    value: string
+  ): void => {
+    this.setState((prev) => {
+      const currentSet =
+        prev.columnFilterSelectedValues[columnId] || new Set<string>();
+      const newSet = new Set(currentSet);
+      if (newSet.has(value)) {
+        newSet.delete(value);
+      } else {
+        newSet.add(value);
+      }
+      return {
+        columnFilterSelectedValues: {
+          ...prev.columnFilterSelectedValues,
+          [columnId]: newSet,
+        },
+      };
+    });
+  };
+
+  private handleColumnFilterSort = (
+    columnId: string,
+    direction: "asc" | "desc"
+  ): void => {
+    this.handleSort(columnId, direction);
+  };
+
+  private handleColumnFilterDateRangeChange = (
+    columnId: string,
+    range: DateRange | undefined
+  ): void => {
+    this.setState((prev) => ({
+      columnFilterDateRanges: {
+        ...prev.columnFilterDateRanges,
+        [columnId]: range,
+      },
+      // Pulisci la data singola se si imposta un range
+      columnFilterSelectedDates: {
+        ...prev.columnFilterSelectedDates,
+        [columnId]: undefined,
+      },
+    }));
+  };
+
+  private handleColumnFilterDateChange = (
+    columnId: string,
+    date: Date | undefined
+  ): void => {
+    this.setState((prev) => ({
+      columnFilterSelectedDates: {
+        ...prev.columnFilterSelectedDates,
+        [columnId]: date,
+      },
+      // Pulisci il range se si imposta una data singola
+      columnFilterDateRanges: {
+        ...prev.columnFilterDateRanges,
+        [columnId]: undefined,
+      },
+    }));
+  };
+
+  private handleColumnFilterClear = (columnId: string): void => {
+    this.setState((prev) => {
+      const newSelectedValues = { ...prev.columnFilterSelectedValues };
+      const newDateRanges = { ...prev.columnFilterDateRanges };
+      const newSelectedDates = { ...prev.columnFilterSelectedDates };
+      const newSearchQueries = { ...prev.columnFilterSearchQueries };
+
+      // Rimuovi tutti i filtri per questa colonna
+      delete newSelectedValues[columnId];
+      delete newDateRanges[columnId];
+      delete newSelectedDates[columnId];
+      delete newSearchQueries[columnId];
+
+      return {
+        columnFilterSelectedValues: newSelectedValues,
+        columnFilterDateRanges: newDateRanges,
+        columnFilterSelectedDates: newSelectedDates,
+        columnFilterSearchQueries: newSearchQueries,
       };
     });
   };
@@ -1757,11 +2043,6 @@ export class EditableTable extends React.Component<
                   <span className="hidden sm:inline">Esporta File</span>
                 </Button>
               )}
-              <EditableTableFilterActivator
-                activeCount={this.state.activeFilters.length}
-                disabled={this.props.columns.length === 0}
-                onClick={this.openFilterDrawer}
-              />
             </div>
             <div className="flex items-center gap-2">
               {!showEditActions && rightActions}
@@ -2021,11 +2302,6 @@ export class EditableTable extends React.Component<
                   : ""}
               </span>
             )}
-            <EditableTableFilterActivator
-              activeCount={this.state.activeFilters.length}
-              disabled={this.props.columns.length === 0}
-              onClick={this.openFilterDrawer}
-            />
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {!showEditActions && !anySelected && rightActions}
@@ -2164,47 +2440,99 @@ export class EditableTable extends React.Component<
                     aria-label="Select all rows"
                   />
                 </th>
-                {columns.map((c) => (
-                  <th
-                    key={c.id}
-                    data-slot="table-head"
-                    style={{ width: c.width, minWidth: c.width || "250px" }}
-                    className={cn(
-                      // Base header cell styles
-                      "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap cursor-pointer hover:bg-muted/10 transition-colors text-left",
-                      "sticky top-0 bg-white dark:bg-background z-10"
-                    )}
-                    onClick={() => this.handleSort(c.id)}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>
-                        {c.title}
-                        {c.required ? (
-                          <span className="text-red-500 ml-1">*</span>
-                        ) : null}
-                      </span>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        className={cn(
-                          "h-4 w-4 transition-all flex-shrink-0",
-                          this.state.sortColumn === c.id
-                            ? "opacity-100 text-blue-600"
-                            : "opacity-60 hover:opacity-80",
-                          this.state.sortColumn === c.id &&
-                            this.state.sortDirection === "desc"
-                            ? "rotate-180"
-                            : ""
-                        )}
+                {columns.map((c) => {
+                  const uniqueValues = this.buildUniqueValueOptions(c.id);
+                  const selectedValues =
+                    this.state.columnFilterSelectedValues[c.id] ||
+                    new Set<string>();
+                  const searchQuery =
+                    this.state.columnFilterSearchQueries[c.id] || "";
+                  const isFilterOpen = this.state.columnFilterOpen === c.id;
+                  const isDateColumn = c.type === "date";
+                  const dateRange = this.state.columnFilterDateRanges[c.id];
+                  const selectedDate =
+                    this.state.columnFilterSelectedDates[c.id];
+                  const hasActiveFilter = isDateColumn
+                    ? Boolean(dateRange?.from || selectedDate)
+                    : selectedValues.size > 0;
+
+                  return (
+                    <th
+                      key={c.id}
+                      data-slot="table-head"
+                      style={{ width: c.width, minWidth: c.width || "250px" }}
+                      className={cn(
+                        // Base header cell styles
+                        "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap text-left",
+                        "sticky top-0 bg-white dark:bg-background z-10",
+                        hasActiveFilter && "bg-blue-50"
+                      )}
+                    >
+                      <EditableTableColumnFilterDropdown
+                        column={c}
+                        uniqueValues={uniqueValues}
+                        selectedValues={selectedValues}
+                        searchQuery={searchQuery}
+                        onSearchChange={(query) =>
+                          this.handleColumnFilterSearchChange(c.id, query)
+                        }
+                        onValueToggle={(value) =>
+                          this.handleColumnFilterValueToggle(c.id, value)
+                        }
+                        onSort={(direction) =>
+                          this.handleColumnFilterSort(c.id, direction)
+                        }
+                        onApply={() => {
+                          // Il filtro viene già applicato automaticamente tramite getFilteredRows
+                        }}
+                        onClearFilter={() => this.handleColumnFilterClear(c.id)}
+                        currentSortColumn={this.state.sortColumn}
+                        currentSortDirection={this.state.sortDirection}
+                        isOpen={isFilterOpen}
+                        onOpenChange={(open) =>
+                          this.handleColumnFilterOpenChange(c.id, open)
+                        }
+                        dateRange={dateRange}
+                        onDateRangeChange={(range) =>
+                          this.handleColumnFilterDateRangeChange(c.id, range)
+                        }
+                        selectedDate={selectedDate}
+                        onDateChange={(date) =>
+                          this.handleColumnFilterDateChange(c.id, date)
+                        }
                       >
-                        <polyline points="18 15 12 9 6 15" />
-                      </svg>
-                    </div>
-                  </th>
-                ))}
+                        <div className="flex items-center gap-1.5 cursor-pointer hover:bg-muted/10 transition-colors rounded px-1 py-0.5 -mx-1">
+                          <span>
+                            {c.title}
+                            {c.required ? (
+                              <span className="text-red-500 ml-1">*</span>
+                            ) : null}
+                          </span>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            className={cn(
+                              "h-4 w-4 transition-all flex-shrink-0",
+                              this.state.sortColumn === c.id
+                                ? "opacity-100 text-blue-600"
+                                : "opacity-60 hover:opacity-80",
+                              this.state.sortColumn === c.id &&
+                                this.state.sortDirection === "desc"
+                                ? "rotate-180"
+                                : "",
+                              hasActiveFilter && "text-blue-600 opacity-100"
+                            )}
+                          >
+                            <polyline points="18 15 12 9 6 15" />
+                          </svg>
+                        </div>
+                      </EditableTableColumnFilterDropdown>
+                    </th>
+                  );
+                })}
                 {hasLast ? (
                   <th
                     data-slot="table-head"
