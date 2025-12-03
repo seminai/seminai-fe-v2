@@ -21,6 +21,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 import {
   Loader2,
@@ -445,7 +447,10 @@ class DosageStrategyOptionsFactory {
     );
   }
 
-  public static buildCurlSnippet(strategy: DosageStrategy): string {
+  public static buildCurlSnippet(
+    strategy: DosageStrategy,
+    outStockLimiter: boolean
+  ): string {
     return [
       "curl -X POST https://<host>/dosage-agent/start-job \\",
       "",
@@ -470,7 +475,8 @@ class DosageStrategyOptionsFactory {
       '            "disciplinari": ["disciplinare-2025"]',
       "          }",
       "        ],",
-      `        "strategy": "${strategy}"`,
+      `        "strategy": "${strategy}",`,
+      `        "outStockLimiter": ${outStockLimiter}`,
       "      }'",
     ].join("\n");
   }
@@ -1183,9 +1189,13 @@ export default function DosageManager() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
   const [products, setProducts] = useState<DosageProduct[]>([]);
+  const [productSources, setProductSources] = useState<
+    Map<string, "warehouse" | "csv" | "ddt">
+  >(new Map());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [strategy, setStrategy] = useState<DosageStrategy>("avg");
+  const [outStockLimiter, setOutStockLimiter] = useState<boolean>(true);
 
   const editableTableRef = useRef<EditableTable>(null);
 
@@ -1389,7 +1399,10 @@ export default function DosageManager() {
 
   // Gestisce l'aggiunta di righe dalla tabella editabile
   const handleAddRows = useCallback(
-    (rows: Array<Record<string, unknown>>): void => {
+    (
+      rows: Array<Record<string, unknown>>,
+      source: "csv" | "ddt" = "csv"
+    ): void => {
       if (!editableTableRef.current) {
         return;
       }
@@ -1403,10 +1416,35 @@ export default function DosageManager() {
         const uniqueNewProducts = newProducts.filter(
           (p) => !existingIds.has(`${p.productName}-${p.registrationNumber}`)
         );
+        // Traccia la provenienza dei nuovi prodotti
+        setProductSources((prevSources) => {
+          const updated = new Map(prevSources);
+          uniqueNewProducts.forEach((product) => {
+            const key = `${product.productName}-${product.registrationNumber}`;
+            updated.set(key, source);
+          });
+          return updated;
+        });
         return [...prev, ...uniqueNewProducts];
       });
     },
     [convertTableRowsToProducts]
+  );
+
+  // Wrapper per CSV import
+  const handleAddRowsFromCsv = useCallback(
+    (rows: Array<Record<string, unknown>>): void => {
+      handleAddRows(rows, "csv");
+    },
+    [handleAddRows]
+  );
+
+  // Wrapper per DDT import
+  const handleAddRowsFromDdt = useCallback(
+    (rows: Array<Record<string, unknown>>): void => {
+      handleAddRows(rows, "ddt");
+    },
+    [handleAddRows]
   );
 
   // Gestisce il salvataggio dalla tabella editabile
@@ -1417,6 +1455,18 @@ export default function DosageManager() {
     // Converte i prodotti creati e aggiornati
     const createdProducts = convertTableRowsToProducts(payload.created);
     const updatedProducts = convertTableRowsToProducts(payload.updated);
+
+    // Traccia la provenienza dei prodotti creati (default: csv se aggiunti manualmente)
+    setProductSources((prevSources) => {
+      const updated = new Map(prevSources);
+      createdProducts.forEach((product) => {
+        const key = `${product.productName}-${product.registrationNumber}`;
+        if (!updated.has(key)) {
+          updated.set(key, "csv");
+        }
+      });
+      return updated;
+    });
 
     // Aggiorna lo stato: rimuove quelli aggiornati, aggiunge i nuovi e gli aggiornati
     setProducts((prev) => {
@@ -1451,6 +1501,15 @@ export default function DosageManager() {
           )
       )
     );
+    // Rimuovi anche le sorgenti dei prodotti eliminati
+    setProductSources((prevSources) => {
+      const updated = new Map(prevSources);
+      removedProducts.forEach((product) => {
+        const key = `${product.productName}-${product.registrationNumber}`;
+        updated.delete(key);
+      });
+      return updated;
+    });
     toast.info("Prodotti rimossi", {
       description: `${removed.length} prodotti eliminati`,
     });
@@ -1923,6 +1982,17 @@ export default function DosageManager() {
       if (uniqueProducts.length === 0) {
         return prev;
       }
+
+      // Traccia la provenienza dei prodotti importati da magazzino
+      setProductSources((prevSources) => {
+        const updated = new Map(prevSources);
+        uniqueProducts.forEach((product) => {
+          const key = DosageProductKeyBuilder.build(product);
+          updated.set(key, "warehouse");
+        });
+        return updated;
+      });
+
       return [...prev, ...uniqueProducts];
     });
 
@@ -1951,6 +2021,27 @@ export default function DosageManager() {
   const selectedProductsCount = products.length;
   const isCalculateDisabled =
     isSubmitting || selectedProductsCount === 0 || selectedUnitsCount === 0;
+
+  // Calcola il valore di default di outStockLimiter basato sulla provenienza dei prodotti
+  const defaultOutStockLimiter = useMemo(() => {
+    if (products.length === 0) {
+      return true; // Default a true se non ci sono prodotti
+    }
+
+    // Se tutti i prodotti provengono da magazzino, default è false
+    // Se almeno uno proviene da CSV/DDT, default è true
+    const hasWarehouseOnly = products.every((product) => {
+      const key = `${product.productName}-${product.registrationNumber}`;
+      return productSources.get(key) === "warehouse";
+    });
+
+    return !hasWarehouseOnly;
+  }, [products, productSources]);
+
+  // Aggiorna outStockLimiter quando cambia la composizione dei prodotti
+  useEffect(() => {
+    setOutStockLimiter(defaultOutStockLimiter);
+  }, [defaultOutStockLimiter]);
 
   const selectionSummary = useMemo(() => {
     const unitLabel =
@@ -2191,6 +2282,7 @@ export default function DosageManager() {
         products,
         unitOfProduction: unitsOfProduction,
         strategy,
+        outStockLimiter,
       });
 
       const jobId = response.data.jobId;
@@ -2219,7 +2311,9 @@ export default function DosageManager() {
       // Reset form fields
       setSelectedCompanyId("");
       setProducts([]);
+      setProductSources(new Map());
       setStrategy("avg");
+      setOutStockLimiter(true);
       setSelectedUnitIds([]);
       setSearchQuery("");
     } catch (error) {
@@ -2403,11 +2497,11 @@ export default function DosageManager() {
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <ImportProducts
-                        onAddRows={handleAddRows}
+                        onAddRows={handleAddRowsFromCsv}
                         onProductsChange={setProducts}
                       />
                       <ImportProductsFromDdt
-                        onAddRows={handleAddRows}
+                        onAddRows={handleAddRowsFromDdt}
                         onProductsChange={setProducts}
                       />
                       <Button
@@ -2442,7 +2536,7 @@ export default function DosageManager() {
             </div>
 
             {/* Strategy Section */}
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between relative">
+            <div className="space-y-6 relative">
               {!selectedCompanyId && (
                 <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 rounded-2xl flex items-center justify-center">
                   <div className="text-center p-6">
@@ -2489,6 +2583,42 @@ export default function DosageManager() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Out Stock Limiter Section */}
+              <div
+                className={
+                  selectedCompanyId
+                    ? "rounded-2xl border border-neutral-200 bg-white p-4 md:p-6 space-y-3"
+                    : "rounded-2xl border border-neutral-200 bg-white p-4 md:p-6 space-y-3 pointer-events-none opacity-50"
+                }
+              >
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="outStockLimiter"
+                    checked={outStockLimiter}
+                    onCheckedChange={(checked) =>
+                      setOutStockLimiter(checked === true)
+                    }
+                    disabled={!selectedCompanyId}
+                    className="mt-0.5"
+                  />
+                  <div className="flex-1 space-y-1">
+                    <Label
+                      htmlFor="outStockLimiter"
+                      className="text-base font-medium text-neutral-900 cursor-pointer"
+                    >
+                      {outStockLimiter
+                        ? "Protezione stock magazzino (attiva)"
+                        : "Protezione stock magazzino (disattiva)"}
+                    </Label>
+                    <p className="text-sm text-neutral-600 leading-relaxed">
+                      {outStockLimiter
+                        ? "Il sistema tutela lo stock caricato, evitando di andare sotto le quantità disponibili in magazzino."
+                        : "Il sistema esegue un calcolo preciso dei dosaggi, permettendo di andare anche sotto le quantità disponibili in magazzino."}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
