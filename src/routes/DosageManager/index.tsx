@@ -33,7 +33,15 @@ import {
   Trash2,
   Octagon,
   ArrowLeft,
+  Radio,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
+import {
+  dosageJobSocketService,
+  type DosageLogEvent,
+  type SocketConnectionState,
+} from "@/services/dosageJobSocket";
 import { toast } from "sonner";
 import {
   dosageAgentApiService,
@@ -261,19 +269,20 @@ class JobProgressIndicatorRenderer {
 
     if (data.state === "waiting" || data.state === "active") {
       return (
-        <div className="flex items-center justify-center w-full h-full">
+        <div className="flex items-center gap-2">
           <img
             src="/logo.png"
             alt="Seminai Logo"
-            className="h-6 w-6 animate-spin"
+            className="h-5 w-5 animate-spin"
           />
+          <span className="text-sm text-neutral-500">In elaborazione...</span>
         </div>
       );
     }
 
     if (data.state === "failed") {
       return (
-        <div className="flex items-center justify-center gap-2 text-sm text-red-600">
+        <div className="flex items-center gap-2 text-sm text-red-600">
           <Octagon className="h-4 w-4" />
           <span>STOP</span>
         </div>
@@ -281,7 +290,7 @@ class JobProgressIndicatorRenderer {
     }
 
     return (
-      <div className="flex items-center justify-center gap-2 text-sm text-green-600">
+      <div className="flex items-center gap-2 text-sm text-green-600">
         <CheckCircle2 className="h-4 w-4" />
         <span>Completato</span>
       </div>
@@ -1059,6 +1068,107 @@ class ProductLabelDosageFormatter {
 const productLabelLoader = new ProductLabelLoader();
 const MAX_LABEL_DOSAGE_ROWS = 12;
 
+/**
+ * Componente per visualizzare un singolo evento di log live
+ */
+function LiveLogEventCard({ event }: { event: DosageLogEvent }): ReactElement {
+  const timestamp = new Date(event.timestamp);
+  const timeLabel = timestamp.toLocaleTimeString("it-IT", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
+  const getTypeStyles = (
+    type: DosageLogEvent["type"]
+  ): { bg: string; text: string; border: string; icon: ReactElement } => {
+    switch (type) {
+      case "match":
+        return {
+          bg: "bg-green-50",
+          text: "text-green-700",
+          border: "border-green-200",
+          icon: <CheckCircle2 className="h-4 w-4 text-green-600" />,
+        };
+      case "warning":
+        return {
+          bg: "bg-yellow-50",
+          text: "text-yellow-700",
+          border: "border-yellow-200",
+          icon: <Clock className="h-4 w-4 text-yellow-600" />,
+        };
+      case "error":
+        return {
+          bg: "bg-red-50",
+          text: "text-red-700",
+          border: "border-red-200",
+          icon: <Octagon className="h-4 w-4 text-red-600" />,
+        };
+      case "progress":
+        return {
+          bg: "bg-blue-50",
+          text: "text-blue-700",
+          border: "border-blue-200",
+          icon: <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />,
+        };
+      case "complete":
+        return {
+          bg: "bg-emerald-50",
+          text: "text-emerald-700",
+          border: "border-emerald-200",
+          icon: <CheckCircle2 className="h-4 w-4 text-emerald-600" />,
+        };
+      default:
+        return {
+          bg: "bg-neutral-50",
+          text: "text-neutral-700",
+          border: "border-neutral-200",
+          icon: <FileText className="h-4 w-4 text-neutral-500" />,
+        };
+    }
+  };
+
+  const styles = getTypeStyles(event.type);
+
+  return (
+    <div
+      className={`rounded-xl border ${styles.border} ${styles.bg} p-3 space-y-2`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {styles.icon}
+          <Badge variant="outline" className="text-xs uppercase">
+            {event.type}
+          </Badge>
+        </div>
+        <span className="text-xs text-neutral-500 font-mono">{timeLabel}</span>
+      </div>
+      <p className={`text-sm ${styles.text} leading-relaxed`}>
+        {event.message}
+      </p>
+      {event.metadata && Object.keys(event.metadata).length > 0 && (
+        <div className="flex flex-wrap gap-2 pt-1">
+          {event.metadata.productName && (
+            <Badge variant="secondary" className="text-xs">
+              Prodotto: {event.metadata.productName}
+            </Badge>
+          )}
+          {event.metadata.quantity !== undefined && (
+            <Badge variant="secondary" className="text-xs">
+              Quantità: {event.metadata.quantity}
+            </Badge>
+          )}
+          {event.metadata.unitId && (
+            <Badge variant="outline" className="text-xs font-mono">
+              Unit: {event.metadata.unitId.slice(0, 8)}...
+            </Badge>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DosageManager() {
   const { productionUnits, isLoading: loadingUnits } = useProductionUnit();
   const { companies } = useCompanies();
@@ -1095,6 +1205,14 @@ export default function DosageManager() {
   const [labelError, setLabelError] = useState<string | null>(null);
   const [isLabelLoading, setIsLabelLoading] = useState(false);
   const labelRequestId = useRef(0);
+
+  // Live logs drawer state
+  const [isLiveLogsDrawerOpen, setIsLiveLogsDrawerOpen] = useState(false);
+  const [liveLogsJobId, setLiveLogsJobId] = useState<string | null>(null);
+  const [liveLogEvents, setLiveLogEvents] = useState<DosageLogEvent[]>([]);
+  const [liveSocketState, setLiveSocketState] =
+    useState<SocketConnectionState>("disconnected");
+  const liveLogsScrollRef = useRef<HTMLDivElement>(null);
   const isHistoryPage = currentPage === "history";
   const strategyOptions = useMemo(
     () => DosageStrategyOptionsFactory.create(),
@@ -1410,6 +1528,67 @@ export default function DosageManager() {
     }
   }, []);
 
+  // Gestisce l'apertura del drawer dei log live
+  const handleOpenLiveLogs = useCallback((jobId: string) => {
+    setLiveLogsJobId(jobId);
+    setLiveLogEvents([]);
+    setLiveSocketState("connecting");
+    setIsLiveLogsDrawerOpen(true);
+
+    dosageJobSocketService.connect(jobId, {
+      onConnect: () => {
+        setLiveSocketState("connected");
+      },
+      onDisconnect: () => {
+        setLiveSocketState("disconnected");
+      },
+      onError: (error) => {
+        setLiveSocketState("error");
+        toast.error("Errore connessione live", {
+          description: error.message,
+        });
+      },
+      onJoined: (room) => {
+        setLiveLogEvents((prev) => [
+          ...prev,
+          {
+            jobId,
+            userId: "",
+            timestamp: new Date().toISOString(),
+            type: "info",
+            message: `Connesso alla room ${room}`,
+          },
+        ]);
+      },
+      onLog: (event) => {
+        setLiveLogEvents((prev) => [...prev, event]);
+        // Auto-scroll to bottom
+        setTimeout(() => {
+          liveLogsScrollRef.current?.scrollTo({
+            top: liveLogsScrollRef.current.scrollHeight,
+            behavior: "smooth",
+          });
+        }, 50);
+      },
+    });
+  }, []);
+
+  // Gestisce la chiusura del drawer dei log live
+  const handleCloseLiveLogs = useCallback(() => {
+    dosageJobSocketService.disconnect();
+    setIsLiveLogsDrawerOpen(false);
+    setLiveLogsJobId(null);
+    setLiveLogEvents([]);
+    setLiveSocketState("disconnected");
+  }, []);
+
+  // Cleanup socket on unmount
+  useEffect(() => {
+    return () => {
+      dosageJobSocketService.disconnect();
+    };
+  }, []);
+
   const handleOpenProductLabel = useCallback(
     async (reference: ProductLabelReference) => {
       setIsLabelDrawerOpen(true);
@@ -1480,9 +1659,49 @@ export default function DosageManager() {
       jobs.filter((job) => job.state === "waiting" || job.state === "active"),
     [jobs]
   );
-  const activeJobColumns = useMemo(
-    () => ActiveJobsTableColumnsFactory.create(),
-    []
+  const activeJobColumns = useMemo<EditableColumn[]>(
+    () => [
+      ...ActiveJobsTableColumnsFactory.create(),
+      {
+        id: "liveActions",
+        title: "Live",
+        width: "120px",
+        render: (_value, row) => {
+          const data = row as ActiveJobTableRow;
+          const isCurrentlyLive =
+            isLiveLogsDrawerOpen && liveLogsJobId === data.jobId;
+
+          return (
+            <Button
+              variant={isCurrentlyLive ? "default" : "outline"}
+              size="sm"
+              className={
+                isCurrentlyLive
+                  ? "gap-2 bg-green-600 text-white hover:bg-green-700"
+                  : "gap-2 text-green-600 border-green-600 hover:bg-green-50"
+              }
+              onClick={(e) => {
+                e.stopPropagation();
+                if (isCurrentlyLive) {
+                  handleCloseLiveLogs();
+                } else {
+                  handleOpenLiveLogs(data.jobId);
+                }
+              }}
+            >
+              <Radio className="h-3.5 w-3.5" />
+              <span>Live</span>
+            </Button>
+          );
+        },
+      },
+    ],
+    [
+      isLiveLogsDrawerOpen,
+      liveLogsJobId,
+      handleOpenLiveLogs,
+      handleCloseLiveLogs,
+    ]
   );
   const activeJobRows = useMemo(
     () => ActiveJobsTableRowBuilder.build(activeJobs),
@@ -2782,6 +3001,114 @@ export default function DosageManager() {
         onSelectedJobChange={setSelectedJob}
         jobDetailsLoading={isJobDetailsLoading}
       />
+
+      {/* Live Logs Drawer */}
+      <Drawer
+        open={isLiveLogsDrawerOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseLiveLogs();
+          }
+        }}
+      >
+        <DrawerContent data-vaul-drawer-direction="right">
+          <DrawerHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DrawerTitle className="flex items-center gap-2">
+                  <Radio className="h-5 w-5 text-green-600 animate-pulse" />
+                  Log Live
+                </DrawerTitle>
+                <DrawerDescription>
+                  {liveLogsJobId
+                    ? `Job ID: ${liveLogsJobId}`
+                    : "Nessun job selezionato"}
+                </DrawerDescription>
+              </div>
+              <Badge
+                variant={
+                  liveSocketState === "connected"
+                    ? "default"
+                    : liveSocketState === "connecting"
+                    ? "secondary"
+                    : "destructive"
+                }
+                className="flex items-center gap-1.5"
+              >
+                {liveSocketState === "connected" ? (
+                  <>
+                    <Wifi className="h-3 w-3" />
+                    <span>Connesso</span>
+                  </>
+                ) : liveSocketState === "connecting" ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span>Connessione...</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="h-3 w-3" />
+                    <span>Disconnesso</span>
+                  </>
+                )}
+              </Badge>
+            </div>
+          </DrawerHeader>
+          <div
+            ref={liveLogsScrollRef}
+            className="flex-1 overflow-y-auto px-6 pb-6 max-h-[calc(100vh-200px)]"
+          >
+            {liveLogEvents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-neutral-500">
+                {liveSocketState === "connected" ? (
+                  <>
+                    <Loader2 className="h-8 w-8 animate-spin mb-4" />
+                    <p className="text-sm font-medium">
+                      In attesa di eventi...
+                    </p>
+                    <p className="text-xs mt-1">
+                      I log appariranno qui man mano che il job avanza
+                    </p>
+                  </>
+                ) : liveSocketState === "connecting" ? (
+                  <>
+                    <Loader2 className="h-8 w-8 animate-spin mb-4" />
+                    <p className="text-sm font-medium">
+                      Connessione in corso...
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="h-8 w-8 mb-4" />
+                    <p className="text-sm font-medium">Non connesso</p>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {liveLogEvents.map((event, index) => (
+                  <LiveLogEventCard key={`live-log-${index}`} event={event} />
+                ))}
+              </div>
+            )}
+          </div>
+          <DrawerFooter className="flex flex-row gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setLiveLogEvents([])}
+              disabled={liveLogEvents.length === 0}
+            >
+              Pulisci log
+            </Button>
+            <DrawerClose asChild>
+              <Button variant="default" className="flex-1">
+                Chiudi
+              </Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }

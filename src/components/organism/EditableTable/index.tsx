@@ -980,7 +980,8 @@ export class EditableTable extends React.Component<
     const headers = this.props.columns.map(
       (column) => column.title || column.id
     );
-    const data = this.state.rows.map((row) =>
+    const filteredRows = this.getFilteredRows();
+    const data = filteredRows.map((row) =>
       this.props.columns.map((column) => {
         const value = row.data[column.id];
         if (value === undefined || value === null) {
