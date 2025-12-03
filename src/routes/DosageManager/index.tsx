@@ -2371,6 +2371,12 @@ export default function DosageManager() {
                   setSelectedCompanyId(value);
                   setSelectedUnitIds([]);
                   setSearchQuery("");
+                  // Reset prodotti e sorgenti quando cambia azienda
+                  setProducts([]);
+                  setProductSources(new Map());
+                  // Reset strategia e outStockLimiter ai valori di default
+                  setStrategy("avg");
+                  setOutStockLimiter(true);
                 }}
               >
                 <SelectTrigger className="w-full max-w-md h-12 bg-neutral-50 border-neutral-200">
