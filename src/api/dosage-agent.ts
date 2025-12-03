@@ -38,6 +38,7 @@ export type StartDosageJobRequest = {
   products: DosageProduct[];
   unitOfProduction: DosageUnitOfProduction[];
   strategy: DosageStrategy;
+  outStockLimiter: boolean;
 };
 
 export type StartDosageJobResponse = {
