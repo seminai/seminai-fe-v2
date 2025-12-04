@@ -288,3 +288,59 @@ body {
 .typography-warning {
   @apply text-yellow-600;
 }
+
+/* === Stili Toast Sonner === */
+/* Assicura che tutti i toast abbiano uno sfondo bianco */
+[data-sonner-toast] {
+  @apply bg-white !important;
+  background-color: #ffffff !important;
+}
+
+[data-sonner-toast][data-styled="true"] {
+  @apply bg-white !important;
+  background-color: #ffffff !important;
+}
+
+/* Forza il colore nero per tutti gli elementi di testo nel toast */
+[data-sonner-toast],
+[data-sonner-toast] *,
+[data-sonner-toast] [data-title],
+[data-sonner-toast] [data-description],
+[data-sonner-toast] p,
+[data-sonner-toast] span,
+[data-sonner-toast] div,
+[data-sonner-toast] h1,
+[data-sonner-toast] h2,
+[data-sonner-toast] h3,
+[data-sonner-toast] h4,
+[data-sonner-toast] h5,
+[data-sonner-toast] h6 {
+  color: #000000 !important;
+}
+
+/* Eccezione per le icone SVG che possono mantenere il loro colore */
+[data-sonner-toast] svg {
+  color: inherit !important;
+}
+
+/* Assicura che anche gli elementi con classi specifiche di Sonner abbiano testo nero */
+[data-sonner-toast] .toast-title,
+[data-sonner-toast] .toast-description,
+[data-sonner-toast] [class*="description"],
+[data-sonner-toast] [class*="title"] {
+  color: #000000 !important;
+}
+
+/* Sovrascrive tutte le classi Tailwind che potrebbero applicare testo grigio */
+[data-sonner-toast] [class*="text-gray"],
+[data-sonner-toast] [class*="text-muted"],
+[data-sonner-toast] [class*="text-slate"],
+[data-sonner-toast] [class*="text-zinc"],
+[data-sonner-toast] [class*="text-neutral"] {
+  color: #000000 !important;
+}
+
+/* Forza il colore nero anche per elementi con stili inline */
+[data-sonner-toast] [style*="color"] {
+  color: #000000 !important;
+}

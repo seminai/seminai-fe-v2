@@ -32,6 +32,8 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   History,
@@ -48,6 +50,10 @@ import {
   GripVertical,
   PanelLeftClose,
   PanelLeftOpen,
+  File,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -221,190 +227,861 @@ function LabelDetailSheet({
   const { detail, isLoading, error } = useLabel({
     id: labelId ?? "",
   });
+  const [pdfDrawerOpen, setPdfDrawerOpen] = useState<boolean>(false);
+  const [rawTextOpen, setRawTextOpen] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // Funzione per verificare se un testo corrisponde al termine di ricerca
+  const matchesSearch = (text: string | null | undefined): boolean => {
+    if (!searchTerm.trim()) return true;
+    if (!text) return false;
+    return text.toLowerCase().includes(searchTerm.toLowerCase());
+  };
+
+  // Funzione per verificare se una sezione contiene risultati
+  const sectionMatchesSearch = (sectionData: unknown): boolean => {
+    if (!searchTerm.trim()) return true;
+
+    const searchLower = searchTerm.toLowerCase();
+
+    if (typeof sectionData === "string") {
+      return sectionData.toLowerCase().includes(searchLower);
+    }
+
+    if (Array.isArray(sectionData)) {
+      return sectionData.some((item) => {
+        if (typeof item === "string") {
+          return item.toLowerCase().includes(searchLower);
+        }
+        if (typeof item === "object" && item !== null) {
+          return JSON.stringify(item).toLowerCase().includes(searchLower);
+        }
+        return false;
+      });
+    }
+
+    if (typeof sectionData === "object" && sectionData !== null) {
+      return JSON.stringify(sectionData).toLowerCase().includes(searchLower);
+    }
+
+    return false;
+  };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-full sm:max-w-2xl bg-white flex flex-col h-full overflow-hidden"
-      >
-        <SheetHeader className="flex-shrink-0">
-          <SheetTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Dettagli Etichetta
-          </SheetTitle>
-          <SheetDescription>
-            {detail?.productName && (
-              <div className="mt-2">
-                <Badge variant="outline" className="mr-2">
-                  {detail.productName}
-                </Badge>
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-3xl bg-gray-50 flex flex-col h-full overflow-hidden"
+        >
+          <SheetHeader className="flex-shrink-0 px-6 pt-6 pb-4 bg-white border-b border-gray-100">
+            <SheetTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+              <FileText className="h-5 w-5 text-gray-600" />
+              Dettagli Etichetta
+            </SheetTitle>
+            <SheetDescription className="mt-3">
+              {detail?.productName && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge
+                      variant="outline"
+                      className="bg-white border-gray-200 text-gray-700 font-medium px-3 py-1"
+                    >
+                      {detail.productName}
+                    </Badge>
+                    {detail.registrationNumber && (
+                      <Badge
+                        variant="outline"
+                        className="bg-white border-gray-200 text-gray-600 font-mono text-xs px-3 py-1"
+                      >
+                        Reg. {detail.registrationNumber}
+                      </Badge>
+                    )}
+                    {detail.isVerified ? (
+                      <Badge className="bg-green-500 hover:bg-green-600 text-white border-0 px-3 py-1">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Verificata
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-red-500 hover:bg-red-600 text-white border-0 px-3 py-1">
+                        <XCircle className="h-3 w-3 mr-1" />
+                        Non verificata
+                      </Badge>
+                    )}
+                    {detail.sourceUrl && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPdfDrawerOpen(true)}
+                        className="h-8 text-xs bg-white border-gray-200 hover:bg-gray-50 text-gray-700 px-3"
+                      >
+                        <File className="h-3 w-3 mr-1.5" />
+                        PDF
+                      </Button>
+                    )}
+                  </div>
+                  {/* Input di ricerca */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Cerca nei dettagli dell'etichetta..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-4 h-10 bg-white border-gray-200 rounded-lg text-sm focus:border-gray-300 focus:ring-1 focus:ring-gray-300"
+                    />
+                    {searchTerm && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 hover:bg-gray-100"
+                        onClick={() => setSearchTerm("")}
+                      >
+                        <XCircle className="h-4 w-4 text-gray-400" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto">
+            <div className="px-6 py-6 space-y-8">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Spinner ariaLabel="Caricamento etichetta" />
+                </div>
+              ) : error ? (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+                  <p className="font-semibold">
+                    Errore nel caricamento dell'etichetta
+                  </p>
+                  <p className="text-sm mt-1">
+                    {error instanceof Error
+                      ? error.message
+                      : "Errore sconosciuto"}
+                  </p>
+                </div>
+              ) : detail ? (
+                <>
+                  {/* Informazioni principali */}
+                  {sectionMatchesSearch({
+                    productName: detail.productName,
+                    registrationNumber: detail.registrationNumber,
+                    categoria: detail.label?.categoria,
+                    formulazione: detail.label?.formulazione,
+                    titolare: detail.label?.titolare,
+                    stabilimento: detail.label?.stabilimento,
+                  }) && (
+                    <div className="space-y-4 bg-white rounded-2xl p-6 shadow-sm">
+                      <h3 className="text-base font-semibold text-gray-900 pb-1">
+                        Informazioni Prodotto
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        {matchesSearch(detail.productName) && (
+                          <div>
+                            <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                              Nome
+                            </span>
+                            <p className="text-gray-900 mt-1 font-medium">
+                              {detail.productName}
+                            </p>
+                          </div>
+                        )}
+                        {detail.registrationNumber &&
+                          matchesSearch(detail.registrationNumber) && (
+                            <div>
+                              <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                Numero Registrazione
+                              </span>
+                              <p className="text-gray-900 mt-1 font-mono text-sm">
+                                {detail.registrationNumber}
+                              </p>
+                            </div>
+                          )}
+                        {detail.label?.categoria &&
+                          matchesSearch(detail.label.categoria) && (
+                            <div>
+                              <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                Categoria
+                              </span>
+                              <p className="text-gray-900 mt-1">
+                                {detail.label.categoria}
+                              </p>
+                            </div>
+                          )}
+                        {detail.label?.formulazione &&
+                          matchesSearch(detail.label.formulazione) && (
+                            <div>
+                              <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                Formulazione
+                              </span>
+                              <p className="text-gray-900 mt-1">
+                                {detail.label.formulazione}
+                              </p>
+                            </div>
+                          )}
+                        {detail.label?.titolare &&
+                          matchesSearch(detail.label.titolare) && (
+                            <div>
+                              <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                Titolare
+                              </span>
+                              <p className="text-gray-900 mt-1">
+                                {detail.label.titolare}
+                              </p>
+                            </div>
+                          )}
+                        {detail.label?.stabilimento &&
+                          matchesSearch(detail.label.stabilimento) && (
+                            <div className="col-span-2">
+                              <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                Stabilimento
+                              </span>
+                              <p className="text-gray-900 mt-1">
+                                {detail.label.stabilimento}
+                              </p>
+                            </div>
+                          )}
+                        {detail.extractionConfidence !== undefined &&
+                          matchesSearch(
+                            String(detail.extractionConfidence)
+                          ) && (
+                            <div>
+                              <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                Confidenza Estrazione
+                              </span>
+                              <p className="text-gray-900 mt-1">
+                                {detail.extractionConfidence}%
+                              </p>
+                            </div>
+                          )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Principio attivo e composizione */}
+                  {sectionMatchesSearch({
+                    principio_attivo: detail.label?.principio_attivo,
+                    composizione: detail.label?.composizione,
+                    meccanismo_azione_frac:
+                      detail.label?.meccanismo_azione_frac,
+                  }) &&
+                    (detail.label?.principio_attivo ||
+                      detail.label?.composizione) && (
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-1">
+                          Principio Attivo e Composizione
+                        </h3>
+                        {detail.label.principio_attivo &&
+                          matchesSearch(detail.label.principio_attivo) && (
+                            <div className="space-y-1">
+                              <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                Principio Attivo
+                              </span>
+                              <p className="text-gray-900 text-sm">
+                                {detail.label.principio_attivo}
+                              </p>
+                            </div>
+                          )}
+                        {detail.label.composizione &&
+                          matchesSearch(detail.label.composizione) && (
+                            <div className="space-y-1">
+                              <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                Composizione
+                              </span>
+                              <p className="text-gray-900 text-sm">
+                                {detail.label.composizione}
+                              </p>
+                            </div>
+                          )}
+                        {detail.label.meccanismo_azione_frac &&
+                          matchesSearch(
+                            detail.label.meccanismo_azione_frac
+                          ) && (
+                            <div className="space-y-1">
+                              <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                Meccanismo d'azione
+                              </span>
+                              <p className="text-gray-900 text-sm">
+                                {detail.label.meccanismo_azione_frac}
+                              </p>
+                            </div>
+                          )}
+                      </div>
+                    )}
+
+                  {/* Colture target */}
+                  {sectionMatchesSearch(detail.label?.colture_target) &&
+                    detail.label?.colture_target &&
+                    detail.label.colture_target.length > 0 && (
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-2">
+                          Colture Target
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {detail.label.colture_target
+                            .filter((coltura) => matchesSearch(coltura))
+                            .map((coltura, idx) => (
+                              <Badge
+                                key={idx}
+                                className="bg-blue-50 text-blue-700 border-0 px-3 py-1.5 font-medium"
+                              >
+                                {coltura}
+                              </Badge>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Specie infestanti */}
+                  {sectionMatchesSearch(detail.label?.specie) &&
+                    detail.label?.specie &&
+                    detail.label.specie.length > 0 && (
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-2">
+                          Specie Infestanti
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {detail.label.specie
+                            .filter((specie) => matchesSearch(specie))
+                            .map((specie, idx) => (
+                              <Badge
+                                key={idx}
+                                className="bg-gray-100 text-gray-700 border-0 px-3 py-1.5 font-medium"
+                              >
+                                {specie}
+                              </Badge>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Malattie */}
+                  {sectionMatchesSearch(detail.label?.malattie) &&
+                    detail.label?.malattie &&
+                    detail.label.malattie.length > 0 && (
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-2">
+                          Malattie
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {detail.label.malattie
+                            .filter((malattia) => matchesSearch(malattia))
+                            .map((malattia, idx) => (
+                              <Badge
+                                key={idx}
+                                className="bg-orange-50 text-orange-700 border-0 px-3 py-1.5 font-medium"
+                              >
+                                {malattia}
+                              </Badge>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Dosaggi dettagliati */}
+                  {sectionMatchesSearch(detail.label?.dosaggi_dettagliati) &&
+                    detail.label?.dosaggi_dettagliati &&
+                    detail.label.dosaggi_dettagliati.length > 0 && (
+                      <div className="space-y-4 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-2">
+                          Dosaggi Dettagliati
+                        </h3>
+                        <div className="space-y-3">
+                          {detail.label.dosaggi_dettagliati
+                            .filter((dosaggio) =>
+                              sectionMatchesSearch(dosaggio)
+                            )
+                            .map((dosaggio, idx) => (
+                              <div
+                                key={idx}
+                                className="rounded-xl p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+                              >
+                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                  {dosaggio.coltura && (
+                                    <div>
+                                      <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                        Coltura
+                                      </span>
+                                      <p className="text-gray-900 mt-1 font-medium">
+                                        {dosaggio.coltura}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {dosaggio.malattia && (
+                                    <div>
+                                      <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                        Malattia
+                                      </span>
+                                      <p className="text-gray-900 mt-1 font-medium">
+                                        {dosaggio.malattia}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {dosaggio.dose_minima !== undefined &&
+                                    dosaggio.dose_massima !== undefined && (
+                                      <div>
+                                        <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                          Dose
+                                        </span>
+                                        <p className="text-gray-900 mt-1 font-medium">
+                                          {dosaggio.dose_minima ===
+                                          dosaggio.dose_massima
+                                            ? `${dosaggio.dose_minima} ${dosaggio.dose_um}`
+                                            : `${dosaggio.dose_minima} - ${dosaggio.dose_massima} ${dosaggio.dose_um}`}
+                                        </p>
+                                      </div>
+                                    )}
+                                  {dosaggio.epoca_impiego && (
+                                    <div>
+                                      <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                        Epoca
+                                      </span>
+                                      <p className="text-gray-900 mt-1">
+                                        {dosaggio.epoca_impiego}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {dosaggio.acqua_max && (
+                                    <div>
+                                      <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                        Acqua max
+                                      </span>
+                                      <p className="text-gray-900 mt-1">
+                                        {dosaggio.acqua_max}{" "}
+                                        {dosaggio.acqua_max_um}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {dosaggio.n_max_applicazioni && (
+                                    <div>
+                                      <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                        Max applicazioni
+                                      </span>
+                                      <p className="text-gray-900 mt-1">
+                                        {dosaggio.n_max_applicazioni}{" "}
+                                        {dosaggio.n_max_applicazioni_um}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {dosaggio.intervallo_min_giorni && (
+                                    <div>
+                                      <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                        Intervallo min
+                                      </span>
+                                      <p className="text-gray-900 mt-1">
+                                        {dosaggio.intervallo_min_giorni} giorni
+                                      </p>
+                                    </div>
+                                  )}
+                                  {dosaggio.intervallo_sicurezza_giorni && (
+                                    <div>
+                                      <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                        Intervallo sicurezza
+                                      </span>
+                                      <p className="text-gray-900 mt-1">
+                                        {dosaggio.intervallo_sicurezza_giorni}{" "}
+                                        giorni
+                                      </p>
+                                    </div>
+                                  )}
+                                  {dosaggio.modalita_applicazione && (
+                                    <div>
+                                      <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                        Modalità
+                                      </span>
+                                      <p className="text-gray-900 mt-1">
+                                        {dosaggio.modalita_applicazione}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {dosaggio.istruzioni && (
+                                    <div className="col-span-2">
+                                      <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                                        Istruzioni
+                                      </span>
+                                      <p className="text-gray-700 mt-1 text-sm leading-relaxed">
+                                        {dosaggio.istruzioni}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Fasce di rispetto e deriva */}
+                  {sectionMatchesSearch(
+                    detail.label?.fasce_di_rispetto_e_deriva
+                  ) &&
+                    detail.label?.fasce_di_rispetto_e_deriva &&
+                    Array.isArray(detail.label.fasce_di_rispetto_e_deriva) &&
+                    detail.label.fasce_di_rispetto_e_deriva.length > 0 && (
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-2">
+                          Fasce di Rispetto e Deriva
+                        </h3>
+                        <ul className="space-y-2 text-sm text-gray-700">
+                          {detail.label.fasce_di_rispetto_e_deriva
+                            .filter((fascia) => matchesSearch(String(fascia)))
+                            .map((fascia, idx) => (
+                              <li
+                                key={idx}
+                                className="flex items-start gap-2 before:content-['•'] before:text-gray-400 before:font-bold before:mr-1"
+                              >
+                                {String(fascia)}
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+
+                  {/* Frasi di pericolo */}
+                  {sectionMatchesSearch(detail.label?.frasi_pericolo) &&
+                    detail.label?.frasi_pericolo &&
+                    Array.isArray(detail.label.frasi_pericolo) &&
+                    detail.label.frasi_pericolo.length > 0 && (
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-2">
+                          Frasi di Pericolo
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {detail.label.frasi_pericolo
+                            .filter((frasia) => matchesSearch(String(frasia)))
+                            .map((frasia, idx) => (
+                              <Badge
+                                key={idx}
+                                className="bg-red-50 text-red-700 border-0 px-3 py-1.5 font-medium text-xs"
+                              >
+                                {String(frasia)}
+                              </Badge>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Frasi di prudenza */}
+                  {sectionMatchesSearch(detail.label?.frasi_prudenza) &&
+                    detail.label?.frasi_prudenza &&
+                    Array.isArray(detail.label.frasi_prudenza) &&
+                    detail.label.frasi_prudenza.length > 0 && (
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-2">
+                          Frasi di Prudenza
+                        </h3>
+                        <ul className="space-y-2 text-sm text-gray-700">
+                          {detail.label.frasi_prudenza
+                            .filter((frasia) => matchesSearch(String(frasia)))
+                            .map((frasia, idx) => (
+                              <li
+                                key={idx}
+                                className="flex items-start gap-2 before:content-['•'] before:text-gray-400 before:font-bold before:mr-1"
+                              >
+                                {String(frasia)}
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+
+                  {/* Avvertenze */}
+                  {sectionMatchesSearch(detail.label?.avvertenze) &&
+                    detail.label?.avvertenze &&
+                    Array.isArray(detail.label.avvertenze) &&
+                    detail.label.avvertenze.length > 0 && (
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-2">
+                          Avvertenze
+                        </h3>
+                        <ul className="space-y-2 text-sm text-gray-700">
+                          {detail.label.avvertenze
+                            .filter((avvertenza) =>
+                              matchesSearch(String(avvertenza))
+                            )
+                            .map((avvertenza, idx) => (
+                              <li
+                                key={idx}
+                                className="flex items-start gap-2 before:content-['•'] before:text-gray-400 before:font-bold before:mr-1"
+                              >
+                                {String(avvertenza)}
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+
+                  {/* Caratteristiche */}
+                  {detail.label?.caratteristiche &&
+                    matchesSearch(detail.label.caratteristiche) && (
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-2">
+                          Caratteristiche
+                        </h3>
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {detail.label.caratteristiche}
+                        </p>
+                      </div>
+                    )}
+
+                  {/* Note tecniche */}
+                  {detail.label?.note_tecniche &&
+                    matchesSearch(detail.label.note_tecniche) && (
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-2">
+                          Note Tecniche
+                        </h3>
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {detail.label.note_tecniche}
+                        </p>
+                      </div>
+                    )}
+
+                  {/* Compatibilità */}
+                  {detail.label?.compatibilita &&
+                    matchesSearch(detail.label.compatibilita) && (
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-2">
+                          Compatibilità
+                        </h3>
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {detail.label.compatibilita}
+                        </p>
+                      </div>
+                    )}
+
+                  {/* Fitotossicità */}
+                  {detail.label?.fitotossicita &&
+                    matchesSearch(detail.label.fitotossicita) && (
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-2">
+                          Fitotossicità
+                        </h3>
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {detail.label.fitotossicita}
+                        </p>
+                      </div>
+                    )}
+
+                  {/* Errori */}
+                  {sectionMatchesSearch(detail.errors) &&
+                    detail.errors &&
+                    detail.errors.length > 0 && (
+                      <div className="space-y-3 bg-red-50 rounded-2xl p-6 shadow-sm border border-red-100">
+                        <h3 className="text-base font-semibold text-red-700 pb-2 flex items-center gap-2">
+                          <AlertTriangle className="h-5 w-5" />
+                          Errori
+                        </h3>
+                        <ul className="space-y-2 text-sm text-red-700">
+                          {detail.errors
+                            .filter((error) => matchesSearch(error))
+                            .map((error, idx) => (
+                              <li
+                                key={idx}
+                                className="flex items-start gap-2 before:content-['•'] before:text-red-500 before:font-bold before:mr-1"
+                              >
+                                {error}
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+
+                  {/* Errori nel label */}
+                  {sectionMatchesSearch(detail.label?.errors) &&
+                    detail.label?.errors &&
+                    Array.isArray(detail.label.errors) &&
+                    detail.label.errors.length > 0 && (
+                      <div className="space-y-3 bg-red-50 rounded-2xl p-6 shadow-sm border border-red-100">
+                        <h3 className="text-base font-semibold text-red-700 pb-2 flex items-center gap-2">
+                          <AlertTriangle className="h-5 w-5" />
+                          Errori Estrazione
+                        </h3>
+                        <ul className="space-y-2 text-sm text-red-700">
+                          {detail.label.errors
+                            .filter((error) => matchesSearch(String(error)))
+                            .map((error, idx) => (
+                              <li
+                                key={idx}
+                                className="flex items-start gap-2 before:content-['•'] before:text-red-500 before:font-bold before:mr-1"
+                              >
+                                {String(error)}
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+
+                  {/* Campi estratti */}
+                  {sectionMatchesSearch(detail.extractedFields) &&
+                    detail.extractedFields &&
+                    detail.extractedFields.length > 0 && (
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-2">
+                          Campi Estratti
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {detail.extractedFields
+                            .filter((field) => matchesSearch(field))
+                            .map((field, idx) => (
+                              <Badge
+                                key={idx}
+                                className="bg-purple-50 text-purple-700 border-0 px-3 py-1.5 font-medium text-xs"
+                              >
+                                {field}
+                              </Badge>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Qualità estrazione */}
+                  {sectionMatchesSearch(detail.qualityExtraction) &&
+                    detail.qualityExtraction &&
+                    Array.isArray(detail.qualityExtraction) &&
+                    detail.qualityExtraction.length > 0 && (
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-2">
+                          Qualità Estrazione
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {detail.qualityExtraction
+                            .filter((quality) => matchesSearch(String(quality)))
+                            .map((quality, idx) => (
+                              <Badge
+                                key={idx}
+                                className="bg-indigo-50 text-indigo-700 border-0 px-3 py-1.5 font-medium text-xs"
+                              >
+                                {quality}
+                              </Badge>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                  {/* Metadati */}
+                  {matchesSearch(
+                    detail.id || detail.createdAt || detail.updatedAt
+                  ) && (
+                    <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                      <h3 className="text-base font-semibold text-gray-900 pb-2">
+                        Metadati
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        {detail.createdAt && (
+                          <div>
+                            <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                              Creato
+                            </span>
+                            <p className="text-gray-900 mt-1">
+                              {new Date(detail.createdAt).toLocaleString(
+                                "it-IT"
+                              )}
+                            </p>
+                          </div>
+                        )}
+                        {detail.updatedAt && (
+                          <div>
+                            <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                              Aggiornato
+                            </span>
+                            <p className="text-gray-900 mt-1">
+                              {new Date(detail.updatedAt).toLocaleString(
+                                "it-IT"
+                              )}
+                            </p>
+                          </div>
+                        )}
+                        {detail.id && (
+                          <div className="col-span-2">
+                            <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
+                              ID
+                            </span>
+                            <p className="text-gray-900 mt-1 font-mono text-xs break-all">
+                              {detail.id}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Raw Text */}
+                  {detail.rawText &&
+                    (matchesSearch(detail.rawText) || !searchTerm) && (
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <div className="flex items-center justify-between pb-2">
+                          <h3 className="text-base font-semibold text-gray-900">
+                            Testo Estratto (Raw Text)
+                          </h3>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setRawTextOpen(!rawTextOpen)}
+                            className="h-8 text-xs bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
+                          >
+                            {rawTextOpen ? "Nascondi" : "Mostra"}
+                          </Button>
+                        </div>
+                        {rawTextOpen && (
+                          <ScrollArea className="h-[400px] w-full rounded-xl p-4 bg-gray-50">
+                            <pre className="text-xs text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">
+                              {detail.rawText}
+                            </pre>
+                          </ScrollArea>
+                        )}
+                      </div>
+                    )}
+                </>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nessun dettaglio disponibile per questa etichetta.
+                </div>
+              )}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Sheet secondario per il PDF */}
+      {detail?.sourceUrl && (
+        <Sheet open={pdfDrawerOpen} onOpenChange={setPdfDrawerOpen}>
+          <SheetContent
+            side="right"
+            className="w-full sm:max-w-4xl bg-gray-50 flex flex-col h-full overflow-hidden p-0"
+          >
+            <SheetHeader className="flex-shrink-0 px-6 pt-6 pb-4 bg-white border-b border-gray-100">
+              <SheetTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                <File className="h-5 w-5 text-gray-600" />
+                PDF Etichetta - {detail.productName}
+              </SheetTitle>
+              <SheetDescription className="mt-2">
                 {detail.registrationNumber && (
-                  <Badge variant="outline" className="font-mono">
+                  <Badge
+                    variant="outline"
+                    className="bg-white border-gray-200 text-gray-600 font-mono text-xs px-3 py-1"
+                  >
                     Reg. {detail.registrationNumber}
                   </Badge>
                 )}
+              </SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 overflow-hidden p-6">
+              <div className="w-full h-full bg-white rounded-2xl shadow-sm overflow-hidden">
+                <iframe
+                  src={detail.sourceUrl}
+                  className="w-full h-full"
+                  title="PDF Etichetta"
+                  style={{ minHeight: "600px" }}
+                />
               </div>
-            )}
-          </SheetDescription>
-        </SheetHeader>
-        <div className="flex-1 overflow-y-auto mt-4 p-4">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Spinner ariaLabel="Caricamento etichetta" />
             </div>
-          ) : error ? (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-              <p className="font-semibold">
-                Errore nel caricamento dell'etichetta
-              </p>
-              <p className="text-sm mt-1">
-                {error instanceof Error ? error.message : "Errore sconosciuto"}
-              </p>
-            </div>
-          ) : detail ? (
-            <div className="space-y-6">
-              {/* Informazioni principali */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-foreground border-b pb-2">
-                  Informazioni Prodotto
-                </h3>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span className="font-medium text-slate-600">Nome:</span>
-                    <p className="text-slate-800">{detail.productName}</p>
-                  </div>
-                  {detail.registrationNumber && (
-                    <div>
-                      <span className="font-medium text-slate-600">
-                        Numero Registrazione:
-                      </span>
-                      <p className="text-slate-800 font-mono">
-                        {detail.registrationNumber}
-                      </p>
-                    </div>
-                  )}
-                  {detail.label?.categoria && (
-                    <div>
-                      <span className="font-medium text-slate-600">
-                        Categoria:
-                      </span>
-                      <p className="text-slate-800">{detail.label.categoria}</p>
-                    </div>
-                  )}
-                  {detail.label?.formulazione && (
-                    <div>
-                      <span className="font-medium text-slate-600">
-                        Formulazione:
-                      </span>
-                      <p className="text-slate-800">
-                        {detail.label.formulazione}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Principio attivo */}
-              {detail.label?.principio_attivo && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground border-b pb-2">
-                    Principio Attivo
-                  </h3>
-                  <p className="text-sm text-slate-700">
-                    {detail.label.principio_attivo}
-                  </p>
-                </div>
-              )}
-
-              {/* Colture target */}
-              {detail.label?.colture_target &&
-                detail.label.colture_target.length > 0 && (
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-semibold text-foreground border-b pb-2">
-                      Colture Target
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {detail.label.colture_target.map((coltura, idx) => (
-                        <Badge key={idx} variant="secondary">
-                          {coltura}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-              {/* Malattie */}
-              {detail.label?.malattie && detail.label.malattie.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground border-b pb-2">
-                    Malattie
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {detail.label.malattie.map((malattia, idx) => (
-                      <Badge key={idx} variant="outline">
-                        {malattia}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Dosaggi dettagliati */}
-              {detail.label?.dosaggi_dettagliati &&
-                detail.label.dosaggi_dettagliati.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-semibold text-foreground border-b pb-2">
-                      Dosaggi
-                    </h3>
-                    <div className="space-y-3">
-                      {detail.label.dosaggi_dettagliati.map((dosaggio, idx) => (
-                        <div
-                          key={idx}
-                          className="border rounded-lg p-3 bg-slate-50"
-                        >
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            {dosaggio.coltura && (
-                              <div>
-                                <span className="font-medium">Coltura:</span>{" "}
-                                {dosaggio.coltura}
-                              </div>
-                            )}
-                            {dosaggio.malattia && (
-                              <div>
-                                <span className="font-medium">Malattia:</span>{" "}
-                                {dosaggio.malattia}
-                              </div>
-                            )}
-                            {dosaggio.dose_minima !== undefined &&
-                              dosaggio.dose_massima !== undefined && (
-                                <div>
-                                  <span className="font-medium">Dose:</span>{" "}
-                                  {dosaggio.dose_minima} -{" "}
-                                  {dosaggio.dose_massima} {dosaggio.dose_um}
-                                </div>
-                              )}
-                            {dosaggio.epoca_impiego && (
-                              <div>
-                                <span className="font-medium">Epoca:</span>{" "}
-                                {dosaggio.epoca_impiego}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              Nessun dettaglio disponibile per questa etichetta.
-            </div>
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
+          </SheetContent>
+        </Sheet>
+      )}
+    </>
   );
 }
 
@@ -1168,17 +1845,19 @@ export default function JobPage() {
   // Handler per aprire il drawer dell'etichetta
   const handleOpenLabel = (
     productName: string,
-    registrationNumber?: string
+    registrationNumber?: string,
+    showToast: boolean = true
   ) => {
     const labelId = findLabelByProduct(productName, registrationNumber);
     if (labelId) {
       setSelectedLabelId(labelId);
       setLabelSheetOpen(true);
-    } else {
+    } else if (showToast) {
       toast.info("Etichetta non trovata", {
         description: registrationNumber
           ? `${productName} (Reg. ${registrationNumber})`
           : productName,
+        position: "top-center",
       });
     }
   };
@@ -1905,7 +2584,9 @@ export default function JobPage() {
                 <HistoryPanel
                   history={selectedGroup.history}
                   jobCode={selectedGroup.jobCode}
-                  onProductClick={handleOpenLabel}
+                  onProductClick={(name, reg) =>
+                    handleOpenLabel(name, reg, false)
+                  }
                   productFilter={productFilter}
                 />
               )}
@@ -2168,7 +2849,9 @@ export default function JobPage() {
               <HistoryPanel
                 history={selectedGroup.history}
                 jobCode={selectedGroup.jobCode}
-                onProductClick={handleOpenLabel}
+                onProductClick={(name, reg) =>
+                  handleOpenLabel(name, reg, false)
+                }
                 productFilter={productFilter}
               />
             </div>
