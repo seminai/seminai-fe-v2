@@ -16,6 +16,8 @@ interface UseLabelReturn {
   isVerifying: boolean;
   confirmAsync: () => Promise<unknown>;
   isConfirming: boolean;
+  extractWithMistralAsync: () => Promise<unknown>;
+  isExtracting: boolean;
 }
 
 export function useLabel({ id }: UseLabelOptions): UseLabelReturn {
@@ -79,6 +81,28 @@ export function useLabel({ id }: UseLabelOptions): UseLabelReturn {
     },
   });
 
+  const {
+    mutateAsync: extractWithMistralAsync,
+    isPending: isExtracting,
+  } = useMutation({
+    mutationFn: async () => {
+      return await labelsApiService.extractWithMistral(id);
+    },
+    onSuccess: async () => {
+      toast.success("Estrazione completata con successo");
+      await queryClient.invalidateQueries({
+        queryKey: ["labels", "detail", id],
+      });
+    },
+    onError: (e: unknown) => {
+      const message =
+        e instanceof Error
+          ? e.message
+          : "Estrazione con Mistral fallita";
+      toast.error(message);
+    },
+  });
+
   return {
     detail,
     isLoading,
@@ -89,5 +113,7 @@ export function useLabel({ id }: UseLabelOptions): UseLabelReturn {
     isVerifying,
     confirmAsync,
     isConfirming,
+    extractWithMistralAsync,
+    isExtracting,
   };
 }

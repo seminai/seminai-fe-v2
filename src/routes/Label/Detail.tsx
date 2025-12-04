@@ -275,6 +275,18 @@ const buildLabelColumns = (): EditableColumn[] =>
     { id: "titolare", title: "Titolare", type: "text" },
     { id: "stabilimento", title: "Stabilimento", type: "text" },
     { id: "caratteristiche", title: "Caratteristiche", type: "text" },
+    { id: "avvertenze", title: "Avvertenze", type: "text" },
+    { id: "frasi_pericolo", title: "Frasi pericolo", type: "text" },
+    { id: "frasi_prudenza", title: "Frasi prudenza", type: "text" },
+    { id: "compatibilita", title: "Compatibilità", type: "text" },
+    { id: "note_tecniche", title: "Note tecniche", type: "text" },
+    { id: "fitotossicita", title: "Fitotossicità", type: "text" },
+    { id: "resistenze", title: "Resistenze", type: "text" },
+    {
+      id: "fasce_di_rispetto_e_deriva",
+      title: "Fasce di rispetto e deriva",
+      type: "text",
+    },
   ]);
 
 const toLabelRow = (detail: LabelDetail): Record<string, unknown> => {
@@ -298,6 +310,14 @@ const toLabelRow = (detail: LabelDetail): Record<string, unknown> => {
     titolare: String(l.titolare ?? ""),
     stabilimento: String(l.stabilimento ?? ""),
     caratteristiche: String(l.caratteristiche ?? ""),
+    avvertenze: toList(l.avvertenze),
+    frasi_pericolo: toList(l.frasi_pericolo),
+    frasi_prudenza: toList(l.frasi_prudenza),
+    compatibilita: String(l.compatibilita ?? ""),
+    note_tecniche: String(l.note_tecniche ?? ""),
+    fitotossicita: String(l.fitotossicita ?? ""),
+    resistenze: toList(l.resistenze),
+    fasce_di_rispetto_e_deriva: toList(l.fasce_di_rispetto_e_deriva),
   };
 };
 
@@ -342,6 +362,8 @@ export default function LabelDetailPage(): React.ReactElement {
     isVerifying,
     confirmAsync,
     isConfirming,
+    extractWithMistralAsync,
+    isExtracting,
   } = useLabel({ id });
 
   const [labelJson, setLabelJson] = React.useState<string>("{}");
@@ -474,7 +496,27 @@ export default function LabelDetailPage(): React.ReactElement {
                     {detail.rawText}
                   </pre>
                 </ScrollArea>
-                <div className="border-t p-4 flex justify-end shrink-0">
+                <div className="border-t p-4 flex justify-between items-center shrink-0">
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        await extractWithMistralAsync();
+                      } catch {
+                        /* handled in mutation */
+                      }
+                    }}
+                    disabled={isExtracting}
+                  >
+                    {isExtracting ? (
+                      <>
+                        <Spinner size={16} ariaLabel="Estrazione in corso" />
+                        <span className="ml-2">Estrazione in corso...</span>
+                      </>
+                    ) : (
+                      "Estrai nuovamente"
+                    )}
+                  </Button>
                   <DrawerClose asChild>
                     <Button variant="outline">Chiudi</Button>
                   </DrawerClose>
@@ -784,6 +826,41 @@ export default function LabelDetailPage(): React.ReactElement {
                             detail.label?.caratteristiche ??
                             ""
                         ),
+                        avvertenze:
+                          parseList(row.avvertenze) ??
+                          detail.label?.avvertenze ??
+                          [],
+                        frasi_pericolo:
+                          parseList(row.frasi_pericolo) ??
+                          detail.label?.frasi_pericolo ??
+                          [],
+                        frasi_prudenza:
+                          parseList(row.frasi_prudenza) ??
+                          detail.label?.frasi_prudenza ??
+                          [],
+                        compatibilita: String(
+                          row.compatibilita ??
+                            detail.label?.compatibilita ??
+                            ""
+                        ),
+                        note_tecniche: String(
+                          row.note_tecniche ??
+                            detail.label?.note_tecniche ??
+                            ""
+                        ),
+                        fitotossicita:
+                          row.fitotossicita !== undefined &&
+                          row.fitotossicita !== ""
+                            ? String(row.fitotossicita)
+                            : detail.label?.fitotossicita ?? null,
+                        resistenze:
+                          parseList(row.resistenze) ??
+                          detail.label?.resistenze ??
+                          [],
+                        fasce_di_rispetto_e_deriva:
+                          parseList(row.fasce_di_rispetto_e_deriva) ??
+                          detail.label?.fasce_di_rispetto_e_deriva ??
+                          [],
                       };
                       await saveAsync({ label: payloadLabel });
                     } catch {
