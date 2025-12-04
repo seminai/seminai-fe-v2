@@ -147,12 +147,15 @@ function JobHistorySheet({
             <History className="h-5 w-5" />
             Storico Operazione
           </SheetTitle>
-          <SheetDescription>
+          <SheetDescription className="sr-only">
+            Storico dell'operazione
+          </SheetDescription>
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
             Codice:{" "}
             <Badge variant="outline" className="ml-1">
               {jobCode}
             </Badge>
-          </SheetDescription>
+          </div>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto mt-4 p-2">
           <div className="space-y-6 pb-6">
@@ -281,71 +284,72 @@ function LabelDetailSheet({
               <FileText className="h-5 w-5 text-gray-600" />
               Dettagli Etichetta
             </SheetTitle>
-            <SheetDescription className="mt-3">
-              {detail?.productName && (
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2 flex-wrap">
+            <SheetDescription className="sr-only">
+              Dettagli dell'etichetta del prodotto fitosanitario
+            </SheetDescription>
+            {detail?.productName && (
+              <div className="flex flex-col gap-3 mt-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge
+                    variant="outline"
+                    className="bg-white border-gray-200 text-gray-700 font-medium px-3 py-1"
+                  >
+                    {detail.productName}
+                  </Badge>
+                  {detail.registrationNumber && (
                     <Badge
                       variant="outline"
-                      className="bg-white border-gray-200 text-gray-700 font-medium px-3 py-1"
+                      className="bg-white border-gray-200 text-gray-600 font-mono text-xs px-3 py-1"
                     >
-                      {detail.productName}
+                      Reg. {detail.registrationNumber}
                     </Badge>
-                    {detail.registrationNumber && (
-                      <Badge
-                        variant="outline"
-                        className="bg-white border-gray-200 text-gray-600 font-mono text-xs px-3 py-1"
-                      >
-                        Reg. {detail.registrationNumber}
-                      </Badge>
-                    )}
-                    {detail.isVerified ? (
-                      <Badge className="bg-green-500 hover:bg-green-600 text-white border-0 px-3 py-1">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Verificata
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-red-500 hover:bg-red-600 text-white border-0 px-3 py-1">
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Non verificata
-                      </Badge>
-                    )}
-                    {detail.sourceUrl && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPdfDrawerOpen(true)}
-                        className="h-8 text-xs bg-white border-gray-200 hover:bg-gray-50 text-gray-700 px-3"
-                      >
-                        <File className="h-3 w-3 mr-1.5" />
-                        PDF
-                      </Button>
-                    )}
-                  </div>
-                  {/* Input di ricerca */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      type="text"
-                      placeholder="Cerca nei dettagli dell'etichetta..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-4 h-10 bg-white border-gray-200 rounded-lg text-sm focus:border-gray-300 focus:ring-1 focus:ring-gray-300"
-                    />
-                    {searchTerm && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 hover:bg-gray-100"
-                        onClick={() => setSearchTerm("")}
-                      >
-                        <XCircle className="h-4 w-4 text-gray-400" />
-                      </Button>
-                    )}
-                  </div>
+                  )}
+                  {detail.isVerified ? (
+                    <Badge className="bg-green-500 hover:bg-green-600 text-white border-0 px-3 py-1">
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      Verificata
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-red-500 hover:bg-red-600 text-white border-0 px-3 py-1">
+                      <XCircle className="h-3 w-3 mr-1" />
+                      Non verificata
+                    </Badge>
+                  )}
+                  {detail.sourceUrl && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPdfDrawerOpen(true)}
+                      className="h-8 text-xs bg-white border-gray-200 hover:bg-gray-50 text-gray-700 px-3"
+                    >
+                      <File className="h-3 w-3 mr-1.5" />
+                      PDF
+                    </Button>
+                  )}
                 </div>
-              )}
-            </SheetDescription>
+                {/* Input di ricerca */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Cerca nei dettagli dell'etichetta..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 h-10 bg-white border-gray-200 rounded-lg text-sm focus:border-gray-300 focus:ring-1 focus:ring-gray-300"
+                  />
+                  {searchTerm && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 hover:bg-gray-100"
+                      onClick={() => setSearchTerm("")}
+                    >
+                      <XCircle className="h-4 w-4 text-gray-400" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </SheetHeader>
           <div className="flex-1 overflow-y-auto">
             <div className="px-6 py-6 space-y-8">
@@ -1059,16 +1063,17 @@ function LabelDetailSheet({
                 <File className="h-5 w-5 text-gray-600" />
                 PDF Etichetta - {detail.productName}
               </SheetTitle>
-              <SheetDescription className="mt-2">
-                {detail.registrationNumber && (
-                  <Badge
-                    variant="outline"
-                    className="bg-white border-gray-200 text-gray-600 font-mono text-xs px-3 py-1"
-                  >
-                    Reg. {detail.registrationNumber}
-                  </Badge>
-                )}
+              <SheetDescription className="sr-only">
+                Visualizzazione PDF dell'etichetta
               </SheetDescription>
+              {detail.registrationNumber && (
+                <Badge
+                  variant="outline"
+                  className="bg-white border-gray-200 text-gray-600 font-mono text-xs px-3 py-1 mt-2"
+                >
+                  Reg. {detail.registrationNumber}
+                </Badge>
+              )}
             </SheetHeader>
             <div className="flex-1 overflow-hidden p-6">
               <div className="w-full h-full bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -2519,8 +2524,8 @@ export default function JobPage() {
                 <History className="h-4 w-4" />
               </Button>
             </div>
-            <div className="flex items-center gap-2 mb-3">
-              {selectedReviewRows.length > 0 && (
+            {selectedReviewRows.length > 0 && (
+              <div className="flex items-center gap-2 mb-3">
                 <Button
                   variant="default"
                   size="sm"
@@ -2535,25 +2540,22 @@ export default function JobPage() {
                   )}
                   Verifica ({selectedReviewRows.length})
                 </Button>
-              )}
-              <Button
-                variant="default"
-                size="sm"
-                disabled={isBulkVerifying}
-                onClick={() => handleBulkVerifySelected(selectedGroupRows)}
-                className={cn(
-                  "text-xs",
-                  selectedReviewRows.length > 0 ? "flex-1" : "w-full"
-                )}
-              >
-                {isBulkVerifying ? (
-                  <Spinner className="h-3 w-3" />
-                ) : (
-                  <ClipboardCheck className="h-3 w-3" />
-                )}
-                Verifica Tutti
-              </Button>
-            </div>
+                <Button
+                  variant="default"
+                  size="sm"
+                  disabled={isBulkVerifying}
+                  onClick={() => handleBulkVerifySelected(selectedGroupRows)}
+                  className="flex-1 text-xs"
+                >
+                  {isBulkVerifying ? (
+                    <Spinner className="h-3 w-3" />
+                  ) : (
+                    <ClipboardCheck className="h-3 w-3" />
+                  )}
+                  Verifica Tutti
+                </Button>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <SearchableSelect
                 value={productFilter}
@@ -2595,6 +2597,12 @@ export default function JobPage() {
           {/* Sheet storico mobile */}
           <Sheet open={mobileHistoryOpen} onOpenChange={setMobileHistoryOpen}>
             <SheetContent side="bottom" className="h-[70vh] p-0">
+              <SheetHeader className="sr-only">
+                <SheetTitle>Storico Operazione</SheetTitle>
+                <SheetDescription>
+                  Storico dell'operazione selezionata
+                </SheetDescription>
+              </SheetHeader>
               {selectedGroupSummary && (
                 <HistoryPanel
                   history={selectedGroupHistory}
