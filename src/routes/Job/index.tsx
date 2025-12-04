@@ -2719,7 +2719,7 @@ export default function JobPage() {
                   )}
                 </div>
               </div>
-              <div className="flex-1 flex flex-col min-h-0 p-4">
+              <div className="flex-1 flex flex-col min-h-0 px-4 pb-4">
                 {isLoadingGroupDetail ? (
                   <div className="flex items-center justify-center py-8">
                     <Spinner ariaLabel="Caricamento dettagli" />

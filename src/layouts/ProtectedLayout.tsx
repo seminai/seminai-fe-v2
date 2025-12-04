@@ -24,13 +24,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { NavigationModel, NavigationItem } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  IoPersonCircleOutline,
-  IoChevronForwardOutline,
-  IoChevronBackOutline,
-  IoChevronDownOutline,
-} from "react-icons/io5";
-import type { IconType } from "react-icons";
+import { IoPersonCircleOutline, IoChevronDownOutline } from "react-icons/io5";
 import HomeAgriIcon from "@/components/icons/HomeAgriIcon";
 import TagAgriIcon from "@/components/icons/TagAgriIcon";
 import SprayAgriIcon from "@/components/icons/SprayAgriIcon";
@@ -238,10 +232,6 @@ class SidebarToggleController {
 
   constructor(isOpen: boolean) {
     this.isOpen = isOpen;
-  }
-
-  public getIcon(): IconType {
-    return this.isOpen ? IoChevronBackOutline : IoChevronForwardOutline;
   }
 
   public getAriaLabel(): string {
@@ -493,7 +483,6 @@ function SidebarToggleButton({
   className,
 }: SidebarToggleButtonProps) {
   const controller = new SidebarToggleController(isOpen);
-  const Icon = controller.getIcon();
 
   return (
     <button
@@ -503,12 +492,41 @@ function SidebarToggleButton({
       title={controller.getAriaLabel()}
       onClick={onToggle}
       className={cn(
-        "absolute right-0 top-1/2 flex h-9 w-9 -translate-y-1/2 translate-x-0 items-center justify-center rounded-xl border border-neutral-200/60 bg-white text-neutral-600 shadow-sm transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300",
-        "group-data-[collapsible=icon]:translate-x-1/2",
+        "flex cursor-pointer h-9 w-9 items-center justify-center transition",
+        // Quando aperto: posizionato a destra del logo
+        "absolute right-0 top-1/2 -translate-y-1/2 translate-x-0",
+        // Quando chiuso: posizionato sotto il logo
+        "group-data-[collapsible=icon]:relative group-data-[collapsible=icon]:right-auto group-data-[collapsible=icon]:top-auto group-data-[collapsible=icon]:translate-y-0 group-data-[collapsible=icon]:translate-x-0 group-data-[collapsible=icon]:mt-2",
         className
       )}
     >
-      <Icon className="size-4" />
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="text-agri-green-600"
+      >
+        <rect
+          x="2"
+          y="3"
+          width="12"
+          height="10"
+          rx="1.5"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          fill="none"
+        />
+        <line
+          x1="6"
+          y1="3"
+          x2="6"
+          y2="13"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        />
+      </svg>
     </button>
   );
 }
@@ -619,10 +637,10 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         variant="floating"
         collapsible="icon"
         className="bg-transparent py-4"
-        innerClassName="backdrop-blur-lg bg-white/0 border border-neutral-200/50 shadow-sm"
+        innerClassName="backdrop-blur-lg bg-agri-green-50 border border-neutral-200/50 shadow-sm"
       >
         <SidebarHeader className="px-4 pt-4 pb-2">
-          <div className="relative flex w-full items-center justify-center py-1">
+          <div className="relative flex w-full flex-col items-center justify-center py-1 group-data-[collapsible=icon]:gap-0">
             <img src="/logo.png" alt="logo" className="h-8 w-8" />
             {!isMobile && (
               <SidebarToggleButton
