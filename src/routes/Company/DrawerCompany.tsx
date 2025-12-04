@@ -276,12 +276,12 @@ export function DrawerCompanyContent({
 
   const renderGeneralInfo = (): React.ReactNode => {
     return (
-      <div className="bg-gradient-to-br from-agri-green-50/50 to-harvest-100/30 rounded-2xl p-5 border border-agri-green-100/50 shadow-sm">
-        <h3 className="text-sm font-semibold text-agri-green-700 mb-4 flex items-center gap-2">
+      <div className="bg-gradient-to-br from-agri-green-50/50 to-harvest-100/30 rounded-2xl p-4 md:p-5 border border-agri-green-100/50 shadow-sm">
+        <h3 className="text-xs md:text-sm font-semibold text-agri-green-700 mb-3 md:mb-4 flex items-center gap-2">
           <div className="h-1 w-1 rounded-full bg-agri-green-500"></div>
           Informazioni Generali
         </h3>
-        <div className="grid grid-cols-1 gap-5">
+        <div className="grid grid-cols-1 gap-4 md:gap-5">
           <div>
             <p className="text-xs font-medium text-agri-green-600 mb-1.5">
               Nome Azienda
@@ -371,12 +371,12 @@ export function DrawerCompanyContent({
 
   const renderFiscalInfo = (): React.ReactNode => {
     return (
-      <div className="bg-gradient-to-br from-field-50/50 to-nature-100/30 rounded-2xl p-5 border border-field-200/50 shadow-sm">
-        <h3 className="text-sm font-semibold text-field-600 mb-4 flex items-center gap-2">
+      <div className="bg-gradient-to-br from-field-50/50 to-nature-100/30 rounded-2xl p-4 md:p-5 border border-field-200/50 shadow-sm">
+        <h3 className="text-xs md:text-sm font-semibold text-field-600 mb-3 md:mb-4 flex items-center gap-2">
           <div className="h-1 w-1 rounded-full bg-field-500"></div>
           Dati Fiscali
         </h3>
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
           <div>
             <p className="text-xs font-medium text-field-600 mb-1.5">
               Partita IVA
@@ -439,12 +439,12 @@ export function DrawerCompanyContent({
 
   const renderAddressInfo = (): React.ReactNode => {
     return (
-      <div className="bg-gradient-to-br from-harvest-50/50 to-nature-100/30 rounded-2xl p-5 border border-harvest-200/50 shadow-sm">
-        <h3 className="text-sm font-semibold text-harvest-600 mb-4 flex items-center gap-2">
+      <div className="bg-gradient-to-br from-harvest-50/50 to-nature-100/30 rounded-2xl p-4 md:p-5 border border-harvest-200/50 shadow-sm">
+        <h3 className="text-xs md:text-sm font-semibold text-harvest-600 mb-3 md:mb-4 flex items-center gap-2">
           <div className="h-1 w-1 rounded-full bg-harvest-500"></div>
           Indirizzo
         </h3>
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
           <div className="col-span-2">
             <p className="text-xs font-medium text-harvest-600 mb-1.5">
               Indirizzo
@@ -524,12 +524,12 @@ export function DrawerCompanyContent({
 
   const renderContactInfo = (): React.ReactNode => {
     return (
-      <div className="bg-gradient-to-br from-field-50/50 to-agri-green-50/30 rounded-2xl p-5 border border-field-200/50 shadow-sm">
-        <h3 className="text-sm font-semibold text-field-600 mb-4 flex items-center gap-2">
+      <div className="bg-gradient-to-br from-field-50/50 to-agri-green-50/30 rounded-2xl p-4 md:p-5 border border-field-200/50 shadow-sm">
+        <h3 className="text-xs md:text-sm font-semibold text-field-600 mb-3 md:mb-4 flex items-center gap-2">
           <div className="h-1 w-1 rounded-full bg-field-500"></div>
           Contatti
         </h3>
-        <div className="grid grid-cols-1 gap-5">
+        <div className="grid grid-cols-1 gap-4 md:gap-5">
           <div>
             <p className="text-xs font-medium text-field-600 mb-1.5">Email</p>
             {isEditing ? (
@@ -624,8 +624,8 @@ export function DrawerCompanyContent({
 
   const renderActions = (): React.ReactNode => {
     return (
-      <div className="pt-4 border-t border-agri-green-100/50">
-        <h3 className="text-sm font-semibold text-agri-green-700 mb-3 flex items-center gap-2">
+      <div className="pt-3 md:pt-4 border-t border-agri-green-100/50">
+        <h3 className="text-xs md:text-sm font-semibold text-agri-green-700 mb-2 md:mb-3 flex items-center gap-2">
           <div className="h-1 w-1 rounded-full bg-agri-green-500"></div>
           Azioni
         </h3>
@@ -682,53 +682,56 @@ export function DrawerCompanyContent({
         setActiveTab(tab);
         onTabChange?.(tab);
       }}
-      className="space-y-6"
+      className="space-y-4 md:space-y-6"
     >
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-agri-green-100/50">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">
+      <div className="flex flex-col gap-3 md:gap-4">
+        <div className="flex flex-col md:flex-row md:flex-wrap md:items-center md:justify-between gap-3 pb-3 md:pb-4 border-b border-agri-green-100/50">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base md:text-lg font-semibold text-foreground">
               {headerTitle}
             </h2>
             {headerSubtitle && (
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                {isUsersTab && <Users className="h-3 w-3" />}
-                {isWarehousesTab && <WarehouseIcon className="h-3 w-3" />}
-                {isFilesTab && <FileText className="h-3 w-3" />}
-                {isMachinesTab && <Wrench className="h-3 w-3" />}
-                {headerSubtitle}
+                {isUsersTab && <Users className="h-3 w-3 shrink-0" />}
+                {isWarehousesTab && <WarehouseIcon className="h-3 w-3 shrink-0" />}
+                {isFilesTab && <FileText className="h-3 w-3 shrink-0" />}
+                {isMachinesTab && <Wrench className="h-3 w-3 shrink-0" />}
+                <span className="truncate">{headerSubtitle}</span>
               </p>
             )}
           </div>
-          <div className="flex items-center gap-3">
-            <TabsList>
-              <TabsTrigger value="details">Dettagli</TabsTrigger>
-              <TabsTrigger value="users">Utenti</TabsTrigger>
-              <TabsTrigger value="warehouses">Magazzini</TabsTrigger>
-              <TabsTrigger value="files">File</TabsTrigger>
-              <TabsTrigger value="machines">Macchine</TabsTrigger>
-            </TabsList>
+          <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 w-full md:w-auto">
+              <TabsList className="inline-flex w-auto">
+                <TabsTrigger value="details" className="text-xs md:text-sm whitespace-nowrap">Dettagli</TabsTrigger>
+                <TabsTrigger value="users" className="text-xs md:text-sm whitespace-nowrap">Utenti</TabsTrigger>
+                <TabsTrigger value="warehouses" className="text-xs md:text-sm whitespace-nowrap">Magazzini</TabsTrigger>
+                <TabsTrigger value="files" className="text-xs md:text-sm whitespace-nowrap">File</TabsTrigger>
+                <TabsTrigger value="machines" className="text-xs md:text-sm whitespace-nowrap">Macchine</TabsTrigger>
+              </TabsList>
+            </div>
             {isDetailsTab &&
               (isEditing ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleCancel}
                     disabled={isUpdating}
-                    className="h-9 px-3 rounded-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 shadow-sm transition-all"
+                    className="h-8 md:h-9 px-2 md:px-3 rounded-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 shadow-sm transition-all text-xs md:text-sm"
                   >
-                    <X className="h-4 w-4 mr-1" />
-                    Annulla
+                    <X className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                    <span className="hidden md:inline">Annulla</span>
                   </Button>
                   <Button
                     size="sm"
                     onClick={handleSave}
                     disabled={isUpdating}
-                    className="h-9 px-3 rounded-full bg-agri-green-600 hover:bg-agri-green-700 text-white shadow-sm transition-all hover:shadow-md"
+                    className="h-8 md:h-9 px-2 md:px-3 rounded-full bg-agri-green-600 hover:bg-agri-green-700 text-white shadow-sm transition-all hover:shadow-md text-xs md:text-sm"
                   >
-                    <Check className="h-4 w-4 mr-1" />
-                    {isUpdating ? "Salvataggio..." : "Salva"}
+                    <Check className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                    <span className="hidden md:inline">{isUpdating ? "Salvataggio..." : "Salva"}</span>
+                    <span className="md:hidden">{isUpdating ? "..." : "✓"}</span>
                   </Button>
                 </div>
               ) : (
@@ -737,10 +740,10 @@ export function DrawerCompanyContent({
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsEditing(true)}
-                    className="h-9 w-9 p-0 rounded-full bg-agri-green-50 hover:bg-agri-green-100 text-agri-green-700 border border-agri-green-200/50 shadow-sm transition-all hover:shadow-md"
+                    className="h-8 w-8 md:h-9 md:w-9 p-0 rounded-full bg-agri-green-50 hover:bg-agri-green-100 text-agri-green-700 border border-agri-green-200/50 shadow-sm transition-all hover:shadow-md flex-shrink-0"
                     aria-label="Modifica"
                   >
-                    <Pencil className="h-4 w-4" />
+                    <Pencil className="h-3 w-3 md:h-4 md:w-4" />
                   </Button>
                 )
               ))}
@@ -748,8 +751,8 @@ export function DrawerCompanyContent({
         </div>
       </div>
 
-      <TabsContent value="details" className="mt-4">
-        <div className="space-y-5">
+      <TabsContent value="details" className="mt-3 md:mt-4">
+        <div className="space-y-4 md:space-y-5">
           {renderGeneralInfo()}
           {renderFiscalInfo()}
           {renderAddressInfo()}
@@ -758,7 +761,7 @@ export function DrawerCompanyContent({
         </div>
       </TabsContent>
 
-      <TabsContent value="users" className="mt-4">
+      <TabsContent value="users" className="mt-3 md:mt-4">
         <CompanyUsersPanel
           companyId={company.id}
           companyName={company.name}
@@ -776,7 +779,7 @@ export function DrawerCompanyContent({
         />
       </TabsContent>
 
-      <TabsContent value="warehouses" className="mt-4">
+      <TabsContent value="warehouses" className="mt-3 md:mt-4">
         <CompanyWarehousesPanel
           companyId={company.id}
           companyName={company.name}
@@ -796,7 +799,7 @@ export function DrawerCompanyContent({
         />
       </TabsContent>
 
-      <TabsContent value="files" className="mt-4">
+      <TabsContent value="files" className="mt-3 md:mt-4">
         <CompanyFilesPanel
           companyId={company.id}
           companyName={company.name}
@@ -810,7 +813,7 @@ export function DrawerCompanyContent({
         />
       </TabsContent>
 
-      <TabsContent value="machines" className="mt-4">
+      <TabsContent value="machines" className="mt-3 md:mt-4">
         <CompanyMachinesPanel
           companyId={company.id}
           companyName={company.name}

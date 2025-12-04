@@ -120,15 +120,15 @@ export default function CompanyDetailPage(): React.ReactElement {
   }, []);
 
   const glassPanelClass =
-    "rounded-[32px] border border-white/60 bg-white/80 shadow-[0_30px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl p-8";
+    "rounded-[32px] border border-white/60 bg-white/80 shadow-[0_30px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl p-4 md:p-8";
 
   return (
     <div className="flex flex-col min-h-screen">
       <PageHeader title={pageTitle} />
 
-      <div className="px-6 w-full">
+      <div className="px-3 md:px-6 w-full">
         <div className="mx-auto w-full">
-          <Breadcrumb className="mb-6  px-6 py-3 text-sm text-muted-foreground">
+          <Breadcrumb className="mb-4 md:mb-6 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm text-muted-foreground">
             <BreadcrumbList>
               {breadcrumbNodes.map((node, index) => (
                 <React.Fragment key={`${node.label}-${index}`}>
@@ -156,7 +156,7 @@ export default function CompanyDetailPage(): React.ReactElement {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pb-10 w-full">
+      <div className="flex-1 overflow-y-auto px-3 md:px-6 pb-24 md:pb-10 w-full">
         <div className="mx-auto space-y-6">
           {isLoading ? (
             <div className={glassPanelClass}>
