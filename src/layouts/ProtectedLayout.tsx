@@ -506,7 +506,7 @@ function SidebarToggleButton({
         viewBox="0 0 16 16"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="text-agri-green-600"
+        className="text-slate-500"
       >
         <rect
           x="2"
