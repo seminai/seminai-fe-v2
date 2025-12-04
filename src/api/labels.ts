@@ -296,6 +296,29 @@ async function updateLabelOverwrite(
   return (await response.json()) as UpdateLabelResponse;
 }
 
+async function extractWithMistral(
+  id: string,
+  baseUrl: string
+): Promise<LabelDetailResponse> {
+  const response = await fetch(
+    `${baseUrl}/labels/extract-with-mistral/${encodeURIComponent(id)}`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+      },
+      credentials: "include",
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to extract label with Mistral");
+  }
+
+  return (await response.json()) as LabelDetailResponse;
+}
+
 class LabelsApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -336,6 +359,10 @@ class LabelsApiService {
 
   public async updateOverwrite(id: string): Promise<UpdateLabelResponse> {
     return await updateLabelOverwrite(id, this.baseUrl);
+  }
+
+  public async extractWithMistral(id: string): Promise<LabelDetailResponse> {
+    return await extractWithMistral(id, this.baseUrl);
   }
 }
 
