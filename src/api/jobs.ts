@@ -119,6 +119,36 @@ export type BulkDeleteJobsResponse = {
   data?: unknown;
 };
 
+// Types for groups-summary endpoint
+export type JobGroupSummaryCompany = {
+  id: string;
+  name: string;
+};
+
+export type JobGroupSummaryItem = {
+  jobId: string;
+  createdAt: string;
+  company: JobGroupSummaryCompany;
+  totalOperations: number;
+  verifiedOperations: number;
+  pendingOperations: number;
+};
+
+export type GetJobGroupsSummaryResponse = {
+  status: "success" | string;
+  data: {
+    groups: JobGroupSummaryItem[];
+  };
+};
+
+// Types for group/{jobId} endpoint
+export type GetJobGroupDetailResponse = {
+  status: "success" | string;
+  data: {
+    jobs: JobWithRelations[];
+  };
+};
+
 export async function getJobs(
   companyName?: string,
   baseUrl: string = BASE_URL
@@ -216,6 +246,53 @@ export async function bulkDeleteJobs(
   return jsonData as BulkDeleteJobsResponse;
 }
 
+export async function getJobGroupsSummary(
+  baseUrl: string = BASE_URL
+): Promise<GetJobGroupsSummaryResponse> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/jobs/groups-summary`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    console.error("Get job groups summary error:", errorText);
+    throw new Error(errorText || "Get job groups summary failed");
+  }
+
+  const jsonData = await response.json();
+  return jsonData as GetJobGroupsSummaryResponse;
+}
+
+export async function getJobGroupDetail(
+  jobId: string,
+  baseUrl: string = BASE_URL
+): Promise<GetJobGroupDetailResponse> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/jobs/group/${jobId}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    console.error("Get job group detail error:", errorText);
+    throw new Error(errorText || "Get job group detail failed");
+  }
+
+  const jsonData = await response.json();
+  return jsonData as GetJobGroupDetailResponse;
+}
+
 class JobsApiService {
   private readonly baseUrl: string;
 
@@ -238,6 +315,16 @@ class JobsApiService {
     payload: BulkDeleteJobsPayload
   ): Promise<BulkDeleteJobsResponse> {
     return await bulkDeleteJobs(payload, this.baseUrl);
+  }
+
+  public async getGroupsSummary(): Promise<GetJobGroupsSummaryResponse> {
+    return await getJobGroupsSummary(this.baseUrl);
+  }
+
+  public async getGroupDetail(
+    jobId: string
+  ): Promise<GetJobGroupDetailResponse> {
+    return await getJobGroupDetail(jobId, this.baseUrl);
   }
 }
 

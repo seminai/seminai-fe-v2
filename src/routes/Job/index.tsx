@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useJobs } from "@/hooks/useJobs";
+import { useJobGroupsSummary, useJobGroupDetail } from "@/hooks/useJobGroups";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLabelsSummary } from "@/hooks/useLabelsSummary";
@@ -17,6 +18,7 @@ import {
   type JobWithRelations,
   type Product,
   type JobHistoryEntry,
+  type JobGroupSummaryItem,
 } from "@/api/jobs";
 import { stocksApiService, type CreateStockPayload } from "@/api/stocks";
 import { Spinner } from "@/components/ui/spinner";
@@ -1384,7 +1386,7 @@ function HistoryPanel({
 
 // Componente per la card del gruppo nella vista review
 interface JobGroupCardProps {
-  group: JobGroup;
+  group: JobGroupSummaryItem;
   isSelected: boolean;
   onClick: () => void;
 }
@@ -1410,19 +1412,19 @@ function JobGroupCard({ group, isSelected, onClick }: JobGroupCardProps) {
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="font-mono text-xs">
-              #{group.jobCode}
+            <Badge className="font-mono text-xs bg-agri-green-50">
+              #{group.jobId}
             </Badge>
-            {group.unverifiedCount > 0 && (
-              <Badge variant="destructive" className="text-xs animate-pulse">
-                {group.unverifiedCount} da verificare
+            {group.pendingOperations > 0 && (
+              <Badge variant="destructive" className="text-xs  text-black">
+                {group.pendingOperations} da verificare
               </Badge>
             )}
           </div>
           <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
             <span className="flex items-center gap-1">
               <Building2 className="h-3 w-3" />
-              {group.companyName}
+              {group.company.name}
             </span>
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
@@ -1430,7 +1432,8 @@ function JobGroupCard({ group, isSelected, onClick }: JobGroupCardProps) {
             </span>
           </div>
           <div className="mt-1 text-xs text-slate-400">
-            {group.jobs.length} operazion{group.jobs.length === 1 ? "e" : "i"}
+            {group.totalOperations} operazion
+            {group.totalOperations === 1 ? "e" : "i"}
           </div>
         </div>
         <ChevronRight
@@ -1517,75 +1520,6 @@ class JobTableRowBuilder {
 }
 
 type EditableTableRowData = Record<string, unknown>;
-
-// Tipo per i job raggruppati per codice operazione (jobId)
-interface JobGroup {
-  jobCode: string;
-  companyName: string;
-  createdAt: string;
-  jobs: JobWithRelations[];
-  history: JobHistoryEntry[];
-  unverifiedCount: number;
-}
-
-// Classe per raggruppare i job per codice operazione
-class JobGroupBuilder {
-  public static buildGroups(jobs: JobWithRelations[]): JobGroup[] {
-    const groupsMap = new Map<string, JobGroup>();
-
-    jobs.forEach((jobWithRelations) => {
-      const { job, company } = jobWithRelations;
-      const jobCode = job.jobId ?? "unknown";
-
-      if (!groupsMap.has(jobCode)) {
-        groupsMap.set(jobCode, {
-          jobCode,
-          companyName: company.name,
-          createdAt: job.createdAt,
-          jobs: [],
-          history: job.history ?? [],
-          unverifiedCount: 0,
-        });
-      }
-
-      const group = groupsMap.get(jobCode)!;
-      group.jobs.push(jobWithRelations);
-
-      if (!job.isVerified) {
-        group.unverifiedCount++;
-      }
-
-      // Unisci tutte le history di tutti i job del gruppo
-      if (job.history && job.history.length > 0) {
-        group.history = [...group.history, ...job.history];
-      }
-    });
-
-    // Ordina per data di creazione (più recenti prima)
-    const sortedGroups = Array.from(groupsMap.values()).sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-
-    // Rimuovi duplicati dalle history e ordina per timestamp
-    sortedGroups.forEach((group) => {
-      const uniqueHistory = new Map<string, JobHistoryEntry>();
-      group.history.forEach((entry) => {
-        // Usa una chiave unica basata su step, title, value e timestamp
-        const key = `${entry.step}-${entry.title}-${entry.value}-${entry.timestamp}`;
-        if (!uniqueHistory.has(key)) {
-          uniqueHistory.set(key, entry);
-        }
-      });
-      group.history = Array.from(uniqueHistory.values()).sort(
-        (a, b) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
-    });
-
-    return sortedGroups;
-  }
-}
 
 class JobBulkVerifier {
   private readonly jobService: typeof jobsApiService;
@@ -1811,6 +1745,19 @@ export default function JobPage() {
   const { labels } = useLabelsSummary();
   const bulkVerifier = useMemo(() => new JobBulkVerifier(jobsApiService), []);
 
+  // Hook per la vista "da confermare" - API mirate
+  const {
+    groups: jobGroupsSummary,
+    isLoading: isLoadingGroupsSummary,
+    refetch: refetchGroupsSummary,
+  } = useJobGroupsSummary();
+
+  const {
+    jobs: selectedGroupJobs,
+    isLoading: isLoadingGroupDetail,
+    refetch: refetchGroupDetail,
+  } = useJobGroupDetail(selectedGroupCode);
+
   const handleOpenHistory = (row: Record<string, unknown>) => {
     setSelectedJobHistory(row._history as JobHistoryEntry[]);
     setSelectedJobCode(row.jobCode as string);
@@ -1869,27 +1816,70 @@ export default function JobPage() {
     );
   }, [jobs]);
 
-  // Job non verificati raggruppati per codice operazione
-  const unverifiedJobs = useMemo(() => {
-    return jobs.filter((j) => !j.job.isVerified);
-  }, [jobs]);
+  // Conteggio totale operazioni non verificate (dalla summary API)
+  const totalPendingOperations = useMemo(() => {
+    return jobGroupsSummary.reduce(
+      (acc, group) => acc + group.pendingOperations,
+      0
+    );
+  }, [jobGroupsSummary]);
 
-  const jobGroups = useMemo(() => {
-    return JobGroupBuilder.buildGroups(unverifiedJobs);
-  }, [unverifiedJobs]);
+  // Filtra solo i gruppi con operazioni pendenti per la vista review
+  const pendingJobGroups = useMemo(() => {
+    return jobGroupsSummary.filter((group) => group.pendingOperations > 0);
+  }, [jobGroupsSummary]);
 
-  // Seleziona automaticamente il primo gruppo se nessuno è selezionato
-  const selectedGroup = useMemo(() => {
-    if (selectedGroupCode) {
-      return jobGroups.find((g) => g.jobCode === selectedGroupCode) ?? null;
+  // Auto-seleziona il primo gruppo quando i dati arrivano e nessun gruppo è selezionato
+  useEffect(() => {
+    if (
+      pendingJobGroups.length > 0 &&
+      !selectedGroupCode &&
+      viewMode === "review"
+    ) {
+      setSelectedGroupCode(pendingJobGroups[0].jobId);
     }
-    return jobGroups[0] ?? null;
-  }, [jobGroups, selectedGroupCode]);
+  }, [pendingJobGroups, selectedGroupCode, viewMode]);
+
+  // Gruppo selezionato dalla summary
+  const selectedGroupSummary = useMemo(() => {
+    if (selectedGroupCode) {
+      return (
+        pendingJobGroups.find((g) => g.jobId === selectedGroupCode) ?? null
+      );
+    }
+    return pendingJobGroups[0] ?? null;
+  }, [pendingJobGroups, selectedGroupCode]);
+
+  // History estratta dai job del gruppo selezionato
+  const selectedGroupHistory = useMemo(() => {
+    if (!selectedGroupJobs || selectedGroupJobs.length === 0) return [];
+
+    const allHistory: JobHistoryEntry[] = [];
+    selectedGroupJobs.forEach((jobWithRelations) => {
+      if (jobWithRelations.job.history) {
+        allHistory.push(...jobWithRelations.job.history);
+      }
+    });
+
+    // Rimuovi duplicati e ordina per timestamp
+    const uniqueHistory = new Map<string, JobHistoryEntry>();
+    allHistory.forEach((entry) => {
+      const key = `${entry.step}-${entry.title}-${entry.value}-${entry.timestamp}`;
+      if (!uniqueHistory.has(key)) {
+        uniqueHistory.set(key, entry);
+      }
+    });
+
+    return Array.from(uniqueHistory.values()).sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+  }, [selectedGroupJobs]);
 
   // Rows per il gruppo selezionato con filtro per productName
   const selectedGroupRows = useMemo(() => {
-    if (!selectedGroup) return [];
-    const rows = selectedGroup.jobs.map((jobWithRelations) =>
+    if (!selectedGroupJobs || selectedGroupJobs.length === 0) return [];
+    const rows = selectedGroupJobs.map((jobWithRelations) =>
       new JobTableRowBuilder(jobWithRelations).build()
     );
 
@@ -1910,13 +1900,13 @@ export default function JobPage() {
         (p) => p === filterLower || p.includes(filterLower)
       );
     });
-  }, [selectedGroup, productFilter]);
+  }, [selectedGroupJobs, productFilter]);
 
   // Lista unica di prodotti per il filtro (estrai i singoli prodotti)
   const availableProducts = useMemo(() => {
-    if (!selectedGroup) return [];
+    if (!selectedGroupJobs || selectedGroupJobs.length === 0) return [];
     const products = new Set<string>();
-    selectedGroup.jobs.forEach((jobWithRelations) => {
+    selectedGroupJobs.forEach((jobWithRelations) => {
       const row = new JobTableRowBuilder(jobWithRelations).build();
       const productName = String(row.productName || "");
       if (productName && productName !== "-") {
@@ -1929,7 +1919,7 @@ export default function JobPage() {
       }
     });
     return Array.from(products).sort();
-  }, [selectedGroup]);
+  }, [selectedGroupJobs]);
 
   // Opzioni per il SearchableSelect
   const productSelectOptions = useMemo<SearchableSelectOption[]>(() => {
@@ -1944,17 +1934,19 @@ export default function JobPage() {
 
   // Indice del gruppo selezionato e navigazione tra gruppi
   const currentGroupIndex = useMemo(() => {
-    if (!selectedGroup) return -1;
-    return jobGroups.findIndex((g) => g.jobCode === selectedGroup.jobCode);
-  }, [jobGroups, selectedGroup]);
+    if (!selectedGroupSummary) return -1;
+    return pendingJobGroups.findIndex(
+      (g) => g.jobId === selectedGroupSummary.jobId
+    );
+  }, [pendingJobGroups, selectedGroupSummary]);
 
   const canGoToPreviousGroup = currentGroupIndex > 0;
   const canGoToNextGroup =
-    currentGroupIndex < jobGroups.length - 1 && currentGroupIndex >= 0;
+    currentGroupIndex < pendingJobGroups.length - 1 && currentGroupIndex >= 0;
 
   const goToPreviousGroup = () => {
     if (canGoToPreviousGroup) {
-      setSelectedGroupCode(jobGroups[currentGroupIndex - 1].jobCode);
+      setSelectedGroupCode(pendingJobGroups[currentGroupIndex - 1].jobId);
       setSelectedReviewRows([]);
       setProductFilter("all");
     }
@@ -1962,7 +1954,7 @@ export default function JobPage() {
 
   const goToNextGroup = () => {
     if (canGoToNextGroup) {
-      setSelectedGroupCode(jobGroups[currentGroupIndex + 1].jobCode);
+      setSelectedGroupCode(pendingJobGroups[currentGroupIndex + 1].jobId);
       setSelectedReviewRows([]);
       setProductFilter("all");
     }
@@ -2311,7 +2303,11 @@ export default function JobPage() {
       });
 
       // Ricarica i dati
-      await refetch();
+      await Promise.all([
+        refetch(),
+        refetchGroupsSummary(),
+        refetchGroupDetail(),
+      ]);
     } catch (error) {
       toast.error("Errore durante l'aggiornamento", {
         description:
@@ -2337,7 +2333,11 @@ export default function JobPage() {
       });
 
       // Ricarica i dati
-      await refetch();
+      await Promise.all([
+        refetch(),
+        refetchGroupsSummary(),
+        refetchGroupDetail(),
+      ]);
     } catch (error) {
       toast.error("Errore durante l'eliminazione", {
         description:
@@ -2363,7 +2363,11 @@ export default function JobPage() {
         description: `${verifiedCount} operazioni verificate con successo`,
       });
 
-      await refetch();
+      await Promise.all([
+        refetch(),
+        refetchGroupsSummary(),
+        refetchGroupDetail(),
+      ]);
     } catch (error) {
       toast.error("Errore durante la verifica", {
         description:
@@ -2423,7 +2427,7 @@ export default function JobPage() {
     // Vista mobile: mostra una schermata alla volta
     if (isMobile) {
       // Se nessun gruppo è selezionato, mostra la lista gruppi
-      if (!selectedGroup) {
+      if (!selectedGroupSummary) {
         return (
           <div className="flex-1 flex flex-col overflow-hidden min-h-0">
             <div className="p-3 bg-white flex-shrink-0">
@@ -2431,25 +2435,30 @@ export default function JobPage() {
                 Gruppi da verificare
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                {jobGroups.length} grupp{jobGroups.length === 1 ? "o" : "i"} •{" "}
-                {unverifiedJobs.length} operazion
-                {unverifiedJobs.length === 1 ? "e" : "i"}
+                {pendingJobGroups.length} grupp
+                {pendingJobGroups.length === 1 ? "o" : "i"} •{" "}
+                {totalPendingOperations} operazion
+                {totalPendingOperations === 1 ? "e" : "i"}
               </p>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
-              {jobGroups.length === 0 ? (
+              {isLoadingGroupsSummary ? (
+                <div className="flex items-center justify-center py-8">
+                  <Spinner ariaLabel="Caricamento gruppi" />
+                </div>
+              ) : pendingJobGroups.length === 0 ? (
                 <div className="text-center py-8 text-slate-400 text-sm">
                   <ClipboardCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p>Nessuna operazione da verificare</p>
                 </div>
               ) : (
-                jobGroups.map((group) => (
+                pendingJobGroups.map((group) => (
                   <JobGroupCard
-                    key={group.jobCode}
+                    key={group.jobId}
                     group={group}
                     isSelected={false}
                     onClick={() => {
-                      setSelectedGroupCode(group.jobCode);
+                      setSelectedGroupCode(group.jobId);
                       setSelectedReviewRows([]);
                       setProductFilter("all");
                     }}
@@ -2479,17 +2488,17 @@ export default function JobPage() {
               <div className="flex-1 min-w-0 text-center">
                 <div className="flex items-center justify-center gap-2">
                   <h3 className="text-base font-semibold text-slate-800 truncate">
-                    #{selectedGroup.jobCode}
+                    #{selectedGroupSummary.jobId}
                   </h3>
                   <Badge variant="outline" className="shrink-0 text-xs">
-                    {selectedGroup.jobs.length}
+                    {selectedGroupSummary.totalOperations}
                   </Badge>
                 </div>
                 <p className="text-xs text-slate-500">
-                  {selectedGroup.companyName}
+                  {selectedGroupSummary.company.name}
                 </p>
                 <p className="text-[10px] text-slate-400">
-                  {currentGroupIndex + 1} / {jobGroups.length}
+                  {currentGroupIndex + 1} / {pendingJobGroups.length}
                 </p>
               </div>
               <Button
@@ -2561,29 +2570,35 @@ export default function JobPage() {
 
           {/* Tabella mobile */}
           <div className="flex-1 flex flex-col min-h-0 p-2">
-            <div className="flex-1 min-h-0 [&>div]:h-full [&>div]:flex [&>div]:flex-col">
-              <EditableTable
-                columns={reviewColumns}
-                rows={selectedGroupRows}
-                isModify={true}
-                onSave={handleSave}
-                onDeleteSelected={handleDeleteSelected}
-                onSelectionChange={(selectedRows) => {
-                  setSelectedReviewRows(selectedRows);
-                }}
-                getRowId={(row) => row.id as string}
-                className="flex-1 flex flex-col min-h-0"
-              />
-            </div>
+            {isLoadingGroupDetail ? (
+              <div className="flex items-center justify-center py-8">
+                <Spinner ariaLabel="Caricamento dettagli" />
+              </div>
+            ) : (
+              <div className="flex-1 min-h-0 [&>div]:h-full [&>div]:flex [&>div]:flex-col">
+                <EditableTable
+                  columns={reviewColumns}
+                  rows={selectedGroupRows}
+                  isModify={true}
+                  onSave={handleSave}
+                  onDeleteSelected={handleDeleteSelected}
+                  onSelectionChange={(selectedRows) => {
+                    setSelectedReviewRows(selectedRows);
+                  }}
+                  getRowId={(row) => row.id as string}
+                  className="flex-1 flex flex-col min-h-0"
+                />
+              </div>
+            )}
           </div>
 
           {/* Sheet storico mobile */}
           <Sheet open={mobileHistoryOpen} onOpenChange={setMobileHistoryOpen}>
             <SheetContent side="bottom" className="h-[70vh] p-0">
-              {selectedGroup && (
+              {selectedGroupSummary && (
                 <HistoryPanel
-                  history={selectedGroup.history}
-                  jobCode={selectedGroup.jobCode}
+                  history={selectedGroupHistory}
+                  jobCode={selectedGroupSummary.jobId}
                   onProductClick={(name, reg) =>
                     handleOpenLabel(name, reg, false)
                   }
@@ -2613,10 +2628,10 @@ export default function JobPage() {
                       Gruppi da verificare
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      {jobGroups.length} grupp
-                      {jobGroups.length === 1 ? "o" : "i"} •{" "}
-                      {unverifiedJobs.length} operazion
-                      {unverifiedJobs.length === 1 ? "e" : "i"}
+                      {pendingJobGroups.length} grupp
+                      {pendingJobGroups.length === 1 ? "o" : "i"} •{" "}
+                      {totalPendingOperations} operazion
+                      {totalPendingOperations === 1 ? "e" : "i"}
                     </p>
                   </div>
                   <Button
@@ -2631,19 +2646,23 @@ export default function JobPage() {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
-                {jobGroups.length === 0 ? (
+                {isLoadingGroupsSummary ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Spinner ariaLabel="Caricamento gruppi" />
+                  </div>
+                ) : pendingJobGroups.length === 0 ? (
                   <div className="text-center py-8 text-slate-400 text-sm">
                     <ClipboardCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p>Nessuna operazione da verificare</p>
                   </div>
                 ) : (
-                  jobGroups.map((group) => (
+                  pendingJobGroups.map((group) => (
                     <JobGroupCard
-                      key={group.jobCode}
+                      key={group.jobId}
                       group={group}
-                      isSelected={selectedGroup?.jobCode === group.jobCode}
+                      isSelected={selectedGroupSummary?.jobId === group.jobId}
                       onClick={() => {
-                        setSelectedGroupCode(group.jobCode);
+                        setSelectedGroupCode(group.jobId);
                         setSelectedReviewRows([]);
                       }}
                     />
@@ -2682,44 +2701,48 @@ export default function JobPage() {
             </div>
             {/* Lista compatta dei jobId */}
             <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
-              {jobGroups.length === 0 ? (
+              {isLoadingGroupsSummary ? (
+                <div className="flex items-center justify-center py-4">
+                  <Spinner ariaLabel="Caricamento" className="h-4 w-4" />
+                </div>
+              ) : pendingJobGroups.length === 0 ? (
                 <div className="text-center py-4 text-slate-400 text-[10px]">
                   <ClipboardCheck className="h-4 w-4 mx-auto mb-1 opacity-50" />
                   <p>Nessuna</p>
                 </div>
               ) : (
-                jobGroups.map((group) => (
+                pendingJobGroups.map((group) => (
                   <button
-                    key={group.jobCode}
+                    key={group.jobId}
                     type="button"
                     onClick={() => {
-                      setSelectedGroupCode(group.jobCode);
+                      setSelectedGroupCode(group.jobId);
                       setSelectedReviewRows([]);
                     }}
                     className={cn(
                       "w-full p-1.5 rounded-md transition-all text-center",
-                      selectedGroup?.jobCode === group.jobCode
+                      selectedGroupSummary?.jobId === group.jobId
                         ? "bg-agri-green-100 border border-agri-green-300 ring-1 ring-agri-green-200"
                         : "bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                     )}
-                    title={`Operazione #${group.jobCode} - ${group.jobs.length} operazioni`}
+                    title={`Operazione #${group.jobId} - ${group.totalOperations} operazioni`}
                   >
                     <Badge
                       variant="outline"
                       className={cn(
                         "font-mono text-xs w-full justify-center",
-                        selectedGroup?.jobCode === group.jobCode &&
+                        selectedGroupSummary?.jobId === group.jobId &&
                           "border-agri-green-400 text-agri-green-700"
                       )}
                     >
-                      #{group.jobCode}
+                      #{group.jobId}
                     </Badge>
-                    {group.unverifiedCount > 0 && (
+                    {group.pendingOperations > 0 && (
                       <Badge
                         variant="destructive"
                         className="mt-1 h-4 min-w-4 px-1 text-[10px] block mx-auto"
                       >
-                        {group.unverifiedCount}
+                        {group.pendingOperations}
                       </Badge>
                     )}
                   </button>
@@ -2731,14 +2754,14 @@ export default function JobPage() {
 
         {/* Centro - Tabella del gruppo selezionato */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {selectedGroup ? (
+          {selectedGroupSummary ? (
             <>
               <div className="flex-shrink-0 p-4 bg-white">
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg font-semibold text-slate-800">
-                        Operazione #{selectedGroup.jobCode}
+                        Operazione #{selectedGroupSummary.jobId}
                       </h3>
                       <Badge variant="outline">
                         {selectedGroupRows.length} trattament
@@ -2746,7 +2769,7 @@ export default function JobPage() {
                       </Badge>
                     </div>
                     <p className="text-sm text-slate-500 mt-0.5">
-                      {selectedGroup.companyName}
+                      {selectedGroupSummary.company.name}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -2800,20 +2823,26 @@ export default function JobPage() {
                 </div>
               </div>
               <div className="flex-1 flex flex-col min-h-0 p-4">
-                <div className="flex-1 min-h-0 [&>div]:h-full [&>div]:flex [&>div]:flex-col">
-                  <EditableTable
-                    columns={reviewColumns}
-                    rows={selectedGroupRows}
-                    isModify={true}
-                    onSave={handleSave}
-                    onDeleteSelected={handleDeleteSelected}
-                    onSelectionChange={(selectedRows) => {
-                      setSelectedReviewRows(selectedRows);
-                    }}
-                    getRowId={(row) => row.id as string}
-                    className="flex-1 flex flex-col min-h-0"
-                  />
-                </div>
+                {isLoadingGroupDetail ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Spinner ariaLabel="Caricamento dettagli" />
+                  </div>
+                ) : (
+                  <div className="flex-1 min-h-0 [&>div]:h-full [&>div]:flex [&>div]:flex-col">
+                    <EditableTable
+                      columns={reviewColumns}
+                      rows={selectedGroupRows}
+                      isModify={true}
+                      onSave={handleSave}
+                      onDeleteSelected={handleDeleteSelected}
+                      onSelectionChange={(selectedRows) => {
+                        setSelectedReviewRows(selectedRows);
+                      }}
+                      getRowId={(row) => row.id as string}
+                      className="flex-1 flex flex-col min-h-0"
+                    />
+                  </div>
+                )}
               </div>
             </>
           ) : (
@@ -2827,7 +2856,7 @@ export default function JobPage() {
         </div>
 
         {/* Destra - Storico */}
-        {selectedGroup && (
+        {selectedGroupSummary && (
           <>
             {/* Resize Handle */}
             <div
@@ -2847,8 +2876,8 @@ export default function JobPage() {
               style={{ width: `${historyPanelWidth}px` }}
             >
               <HistoryPanel
-                history={selectedGroup.history}
-                jobCode={selectedGroup.jobCode}
+                history={selectedGroupHistory}
+                jobCode={selectedGroupSummary.jobId}
                 onProductClick={(name, reg) =>
                   handleOpenLabel(name, reg, false)
                 }
@@ -2876,12 +2905,12 @@ export default function JobPage() {
             <TabsTrigger value="review" className="gap-1.5">
               <ClipboardCheck className="h-4 w-4" />
               Da confermare
-              {unverifiedJobs.length > 0 && (
+              {totalPendingOperations > 0 && (
                 <Badge
                   variant="destructive"
                   className="ml-1 h-5 min-w-5 px-1.5 text-xs"
                 >
-                  {unverifiedJobs.length}
+                  {totalPendingOperations}
                 </Badge>
               )}
             </TabsTrigger>
