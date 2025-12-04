@@ -25,8 +25,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SearchableSelect } from "@/components/ui/searchable-select";
-import type { SearchableSelectOption } from "@/components/ui/searchable-select";
 import {
   Sheet,
   SheetContent,
@@ -1237,46 +1235,17 @@ interface HistoryPanelProps {
   history: JobHistoryEntry[];
   jobCode: string;
   onProductClick?: (productName: string, registrationNumber?: string) => void;
-  productFilter?: string;
 }
 
-function HistoryPanel({
-  history,
-  jobCode,
-  onProductClick,
-  productFilter,
-}: HistoryPanelProps) {
+function HistoryPanel({ history, jobCode, onProductClick }: HistoryPanelProps) {
   const { productionUnits } = useProductionUnit();
   const [filterText, setFilterText] = useState<string>("");
 
   const groupedHistory = useMemo(() => {
     const groups: Record<string, JobHistoryEntry[]> = {};
 
-    // Filtra le history in base al testo di ricerca e al filtro prodotto
+    // Filtra le history in base al testo di ricerca
     let filteredHistory = history;
-
-    // Applica il filtro prodotto se presente
-    if (productFilter && productFilter !== "all") {
-      const filterLower = productFilter.toLowerCase();
-      filteredHistory = filteredHistory.filter((entry) => {
-        const productName = entry.metadata?.productName?.toLowerCase() || "";
-        const registrationNumber =
-          entry.metadata?.productRegistrationNumber?.toLowerCase() || "";
-
-        // Estrai i singoli prodotti se ci sono più prodotti separati da virgola
-        const individualProducts = productName
-          .split(",")
-          .map((p) => p.trim())
-          .filter((p) => p.length > 0);
-
-        // Verifica se il filtro corrisponde a uno dei prodotti o al numero di registrazione
-        return (
-          individualProducts.some(
-            (p) => p === filterLower || p.includes(filterLower)
-          ) || registrationNumber.includes(filterLower)
-        );
-      });
-    }
 
     // Applica il filtro di ricerca testuale se presente
     if (filterText) {
@@ -1305,7 +1274,7 @@ function HistoryPanel({
       groups[entry.step].push(entry);
     });
     return groups;
-  }, [history, filterText, productFilter]);
+  }, [history, filterText]);
 
   return (
     <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
@@ -1573,7 +1542,6 @@ export default function JobPage() {
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState<boolean>(false);
   const [labelSheetOpen, setLabelSheetOpen] = useState<boolean>(false);
   const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
-  const [productFilter, setProductFilter] = useState<string>("all");
   const [historyPanelWidth, setHistoryPanelWidth] = useState<number>(320); // Default: 320px (w-80)
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState<boolean>(true);
@@ -1881,61 +1849,13 @@ export default function JobPage() {
     );
   }, [selectedGroupJobs]);
 
-  // Rows per il gruppo selezionato con filtro per productName
+  // Rows per il gruppo selezionato
   const selectedGroupRows = useMemo(() => {
     if (!selectedGroupJobs || selectedGroupJobs.length === 0) return [];
-    const rows = selectedGroupJobs.map((jobWithRelations) =>
+    return selectedGroupJobs.map((jobWithRelations) =>
       new JobTableRowBuilder(jobWithRelations).build()
     );
-
-    if (productFilter === "all") {
-      return rows;
-    }
-
-    return rows.filter((row) => {
-      const productName = String(row.productName || "").toLowerCase();
-      const filterLower = productFilter.toLowerCase();
-      // Estrai i singoli prodotti e verifica se uno di essi corrisponde
-      const individualProducts = productName
-        .split(",")
-        .map((p) => p.trim())
-        .filter((p) => p.length > 0);
-      // Verifica se il filtro corrisponde esattamente a uno dei prodotti o è contenuto in uno di essi
-      return individualProducts.some(
-        (p) => p === filterLower || p.includes(filterLower)
-      );
-    });
-  }, [selectedGroupJobs, productFilter]);
-
-  // Lista unica di prodotti per il filtro (estrai i singoli prodotti)
-  const availableProducts = useMemo(() => {
-    if (!selectedGroupJobs || selectedGroupJobs.length === 0) return [];
-    const products = new Set<string>();
-    selectedGroupJobs.forEach((jobWithRelations) => {
-      const row = new JobTableRowBuilder(jobWithRelations).build();
-      const productName = String(row.productName || "");
-      if (productName && productName !== "-") {
-        // Se ci sono più prodotti separati da virgola, estrai i singoli
-        const individualProducts = productName
-          .split(",")
-          .map((p) => p.trim())
-          .filter((p) => p.length > 0);
-        individualProducts.forEach((p) => products.add(p));
-      }
-    });
-    return Array.from(products).sort();
   }, [selectedGroupJobs]);
-
-  // Opzioni per il SearchableSelect
-  const productSelectOptions = useMemo<SearchableSelectOption[]>(() => {
-    const options: SearchableSelectOption[] = [
-      { label: "Tutti i fitofarmaci", value: "all" },
-    ];
-    availableProducts.forEach((product) => {
-      options.push({ label: product, value: product });
-    });
-    return options;
-  }, [availableProducts]);
 
   // Indice del gruppo selezionato e navigazione tra gruppi
   const currentGroupIndex = useMemo(() => {
@@ -1953,7 +1873,6 @@ export default function JobPage() {
     if (canGoToPreviousGroup) {
       setSelectedGroupCode(pendingJobGroups[currentGroupIndex - 1].jobId);
       setSelectedReviewRows([]);
-      setProductFilter("all");
     }
   };
 
@@ -1961,7 +1880,6 @@ export default function JobPage() {
     if (canGoToNextGroup) {
       setSelectedGroupCode(pendingJobGroups[currentGroupIndex + 1].jobId);
       setSelectedReviewRows([]);
-      setProductFilter("all");
     }
   };
 
@@ -2465,7 +2383,6 @@ export default function JobPage() {
                     onClick={() => {
                       setSelectedGroupCode(group.jobId);
                       setSelectedReviewRows([]);
-                      setProductFilter("all");
                     }}
                   />
                 ))
@@ -2556,18 +2473,6 @@ export default function JobPage() {
                 </Button>
               </div>
             )}
-            <div className="flex items-center gap-2">
-              <SearchableSelect
-                value={productFilter}
-                options={productSelectOptions}
-                placeholder="Filtra per fitofarmaco"
-                searchPlaceholder="Cerca fitofarmaco..."
-                emptyMessage="Nessun fitofarmaco trovato"
-                onChange={setProductFilter}
-                wrapperClassName="w-full"
-                maxHeight="max-h-40"
-              />
-            </div>
           </div>
 
           {/* Tabella mobile */}
@@ -2610,7 +2515,6 @@ export default function JobPage() {
                   onProductClick={(name, reg) =>
                     handleOpenLabel(name, reg, false)
                   }
-                  productFilter={productFilter}
                 />
               )}
             </SheetContent>
@@ -2736,11 +2640,10 @@ export default function JobPage() {
                     title={`Operazione #${group.jobId} - ${group.totalOperations} operazioni`}
                   >
                     <Badge
-                      variant="outline"
                       className={cn(
-                        "font-mono text-xs w-full justify-center",
+                        "font-mono text-xs w-full justify-center bg-agri-green-50",
                         selectedGroupSummary?.jobId === group.jobId &&
-                          "border-agri-green-400 text-agri-green-700"
+                          " text-agri-green-700 "
                       )}
                     >
                       #{group.jobId}
@@ -2748,7 +2651,7 @@ export default function JobPage() {
                     {group.pendingOperations > 0 && (
                       <Badge
                         variant="destructive"
-                        className="mt-1 h-4 min-w-4 px-1 text-[10px] block mx-auto"
+                        className="mt-1 h-4 min-w-4 px-1 text-[10px] block mx-auto text-black"
                       >
                         {group.pendingOperations}
                       </Badge>
@@ -2780,8 +2683,8 @@ export default function JobPage() {
                       {selectedGroupSummary.company.name}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {selectedReviewRows.length > 0 && (
+                  {selectedReviewRows.length > 0 && (
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="default"
                         size="sm"
@@ -2797,37 +2700,23 @@ export default function JobPage() {
                         )}
                         Verifica Selezionati ({selectedReviewRows.length})
                       </Button>
-                    )}
-                    <Button
-                      variant="default"
-                      size="sm"
-                      disabled={isBulkVerifying}
-                      onClick={() =>
-                        handleBulkVerifySelected(selectedGroupRows)
-                      }
-                    >
-                      {isBulkVerifying ? (
-                        <Spinner className="h-4 w-4" />
-                      ) : (
-                        <ClipboardCheck className="h-4 w-4" />
-                      )}
-                      Verifica Tutti
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 flex-1">
-                    <SearchableSelect
-                      value={productFilter}
-                      options={productSelectOptions}
-                      placeholder="Filtra per fitofarmaco"
-                      searchPlaceholder="Cerca fitofarmaco..."
-                      emptyMessage="Nessun fitofarmaco trovato"
-                      onChange={setProductFilter}
-                      wrapperClassName="w-[200px]"
-                      maxHeight="max-h-40"
-                    />
-                  </div>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        disabled={isBulkVerifying}
+                        onClick={() =>
+                          handleBulkVerifySelected(selectedGroupRows)
+                        }
+                      >
+                        {isBulkVerifying ? (
+                          <Spinner className="h-4 w-4" />
+                        ) : (
+                          <ClipboardCheck className="h-4 w-4" />
+                        )}
+                        Verifica Tutti
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex-1 flex flex-col min-h-0 p-4">
@@ -2889,7 +2778,6 @@ export default function JobPage() {
                 onProductClick={(name, reg) =>
                   handleOpenLabel(name, reg, false)
                 }
-                productFilter={productFilter}
               />
             </div>
           </>

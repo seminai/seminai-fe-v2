@@ -938,11 +938,11 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     {(data?.data.user.surname?.[0] ?? "").toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex flex-col items-start text-left group-data-[collapsible=icon]:hidden">
-                  <span className="text-sm font-medium text-neutral-900">
+                <div className="flex flex-col items-start text-left group-data-[collapsible=icon]:hidden min-w-0 flex-1">
+                  <span className="text-sm font-medium text-neutral-900 truncate w-full">
                     {data?.data.user.name} {data?.data.user.surname}
                   </span>
-                  <span className="text-xs text-neutral-500">
+                  <span className="text-xs text-neutral-500 truncate w-full">
                     {data?.data.user.email}
                   </span>
                 </div>
