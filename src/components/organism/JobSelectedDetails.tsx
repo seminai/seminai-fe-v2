@@ -414,7 +414,7 @@ export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
                           </p>
                         ) : (
                           <p className="text-xs text-slate-400 italic">
-                            non presente
+                            stock disponibile
                           </p>
                         )}
                       </div>
