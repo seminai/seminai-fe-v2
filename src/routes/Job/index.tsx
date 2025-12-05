@@ -11,6 +11,10 @@ import {
   EditableTable,
   type EditableColumn,
 } from "@/components/organism/EditableTable";
+import {
+  JobSelectedDetails,
+  type JobRow,
+} from "@/components/organism/JobSelectedDetails";
 
 import { toast } from "sonner";
 import {
@@ -54,6 +58,9 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
+  Brain,
+  Eraser,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -1482,6 +1489,7 @@ class JobTableRowBuilder {
       note: job.note,
       isVerified: job.isVerified ? "Verificato" : "Non Verificato",
       stock: job.quantity,
+      alertNotes: job.alertNotes ?? null,
       _isVerifiedBoolean: job.isVerified,
       _originalStock: job.quantity,
       _originalQuantity: job.quantity,
@@ -1494,6 +1502,11 @@ class JobTableRowBuilder {
 }
 
 type EditableTableRowData = Record<string, unknown>;
+
+// Helper per convertire EditableTableRowData[] a JobRow[]
+function convertToJobRows(rows: EditableTableRowData[]): JobRow[] {
+  return rows as JobRow[];
+}
 
 class JobBulkVerifier {
   private readonly jobService: typeof jobsApiService;
@@ -1547,6 +1560,9 @@ export default function JobPage() {
   const [isLoadingSettings, setIsLoadingSettings] = useState<boolean>(true);
   const [isGroupsSidebarOpen, setIsGroupsSidebarOpen] = useState<boolean>(true);
   const [groupsSidebarWidth, setGroupsSidebarWidth] = useState<number>(288); // Default: 288px (w-72)
+  const [rightSidebarMode, setRightSidebarMode] = useState<
+    "details" | "history"
+  >("details");
 
   const isMobile = useIsMobile();
 
@@ -2435,10 +2451,26 @@ export default function JobPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setMobileHistoryOpen(true)}
+                onClick={() => {
+                  setRightSidebarMode("details");
+                  setMobileHistoryOpen(true);
+                }}
                 className="p-2 h-auto"
+                title="Dettagli"
               >
-                <History className="h-4 w-4" />
+                <Package className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setRightSidebarMode("history");
+                  setMobileHistoryOpen(true);
+                }}
+                className="p-2 h-auto"
+                title="Storico"
+              >
+                <Brain className="h-4 w-4" />
               </Button>
             </div>
             {selectedReviewRows.length > 0 && (
@@ -2499,24 +2531,51 @@ export default function JobPage() {
             )}
           </div>
 
-          {/* Sheet storico mobile */}
+          {/* Sheet dettagli/storico mobile */}
           <Sheet open={mobileHistoryOpen} onOpenChange={setMobileHistoryOpen}>
-            <SheetContent side="bottom" className="h-[70vh] p-0">
-              <SheetHeader className="sr-only">
-                <SheetTitle>Storico Operazione</SheetTitle>
-                <SheetDescription>
-                  Storico dell'operazione selezionata
+            <SheetContent side="bottom" className="h-[70vh] p-0 flex flex-col">
+              <SheetHeader className="flex-shrink-0 p-3 border-b border-slate-200">
+                <div className="flex items-center justify-between">
+                  <SheetTitle className="text-base">
+                    {rightSidebarMode === "details"
+                      ? "Dettagli Operazioni"
+                      : "Storico Operazione"}
+                  </SheetTitle>
+                  {rightSidebarMode === "details" &&
+                    selectedReviewRows.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedReviewRows([])}
+                        className="h-7 w-7 p-0"
+                        title="Pulisci selezione"
+                      >
+                        <Eraser className="h-4 w-4" />
+                      </Button>
+                    )}
+                </div>
+                <SheetDescription className="sr-only">
+                  {rightSidebarMode === "details"
+                    ? "Dettagli delle operazioni selezionate"
+                    : "Storico dell'operazione selezionata"}
                 </SheetDescription>
               </SheetHeader>
-              {selectedGroupSummary && (
-                <HistoryPanel
-                  history={selectedGroupHistory}
-                  jobCode={selectedGroupSummary.jobId}
-                  onProductClick={(name, reg) =>
-                    handleOpenLabel(name, reg, false)
-                  }
-                />
-              )}
+              <div className="flex-1 overflow-hidden">
+                {selectedGroupSummary &&
+                  (rightSidebarMode === "details" ? (
+                    <JobSelectedDetails
+                      selectedRows={convertToJobRows(selectedReviewRows)}
+                    />
+                  ) : (
+                    <HistoryPanel
+                      history={selectedGroupHistory}
+                      jobCode={selectedGroupSummary.jobId}
+                      onProductClick={(name, reg) =>
+                        handleOpenLabel(name, reg, false)
+                      }
+                    />
+                  ))}
+              </div>
             </SheetContent>
           </Sheet>
         </div>
@@ -2752,7 +2811,7 @@ export default function JobPage() {
           )}
         </div>
 
-        {/* Destra - Storico */}
+        {/* Destra - Dettagli Selezionati / Storico */}
         {selectedGroupSummary && (
           <>
             {/* Resize Handle */}
@@ -2769,16 +2828,79 @@ export default function JobPage() {
               </div>
             </div>
             <div
-              className="flex-shrink-0 overflow-hidden"
+              className="flex-shrink-0 overflow-hidden flex flex-col"
               style={{ width: `${historyPanelWidth}px` }}
             >
-              <HistoryPanel
-                history={selectedGroupHistory}
-                jobCode={selectedGroupSummary.jobId}
-                onProductClick={(name, reg) =>
-                  handleOpenLabel(name, reg, false)
-                }
-              />
+              {/* Header con toggle */}
+              <div className="flex-shrink-0 p-3 bg-white border-b border-slate-200 flex items-center justify-between">
+                {rightSidebarMode === "details" ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-slate-700">
+                        Dettagli
+                      </span>
+                      {selectedReviewRows.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {selectedReviewRows.length}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {selectedReviewRows.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedReviewRows([])}
+                          className="h-7 w-7 p-0"
+                          title="Pulisci selezione"
+                        >
+                          <Eraser className="h-4 w-4 text-slate-500" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setRightSidebarMode("history")}
+                        className="h-7 w-7 p-0"
+                        title="Mostra storico"
+                      >
+                        <Brain className="h-4 w-4 text-slate-500" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm font-medium text-slate-700">
+                      Storico
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setRightSidebarMode("details")}
+                      className="h-7 w-7 p-0"
+                      title="Chiudi storico"
+                    >
+                      <X className="h-4 w-4 text-slate-500" />
+                    </Button>
+                  </>
+                )}
+              </div>
+              {/* Contenuto */}
+              <div className="flex-1 overflow-hidden">
+                {rightSidebarMode === "details" ? (
+                  <JobSelectedDetails
+                    selectedRows={convertToJobRows(selectedReviewRows)}
+                  />
+                ) : (
+                  <HistoryPanel
+                    history={selectedGroupHistory}
+                    jobCode={selectedGroupSummary.jobId}
+                    onProductClick={(name, reg) =>
+                      handleOpenLabel(name, reg, false)
+                    }
+                  />
+                )}
+              </div>
             </div>
           </>
         )}
