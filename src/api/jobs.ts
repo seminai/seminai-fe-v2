@@ -57,6 +57,7 @@ export type Job = {
   history: JobHistoryEntry[];
   totalDistributedWaterL: number | null;
   machineId: string | null;
+  alertNotes?: unknown;
   createdAt: string;
   updatedAt: string;
 };
