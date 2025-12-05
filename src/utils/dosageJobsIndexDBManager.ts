@@ -36,7 +36,7 @@ class DosageJobsIndexDBManager {
       return;
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       try {
         const request = indexedDB.open(this.dbName, this.version);
 
@@ -187,7 +187,7 @@ class DosageJobsIndexDBManager {
 
       // Delete oldest jobs directly using IndexedDB transaction
       const deletePromises = jobsToDelete.map((job) => {
-        return new Promise<void>((resolve, reject) => {
+        return new Promise<void>((resolve) => {
           try {
             const transaction = db.transaction([this.storeName], "readwrite");
             const store = transaction.objectStore(this.storeName);

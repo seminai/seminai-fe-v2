@@ -53,6 +53,7 @@ export type LabelInner = {
   compatibilita?: string | null;
   fitotossicita?: string | null;
   note_tecniche?: string | null;
+  resistenze?: string[] | null;
   extraction_confidence?: number;
   extracted_fields?: string[];
   errors?: string[];
