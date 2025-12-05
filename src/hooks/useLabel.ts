@@ -18,6 +18,8 @@ interface UseLabelReturn {
   isConfirming: boolean;
   extractWithMistralAsync: () => Promise<unknown>;
   isExtracting: boolean;
+  extractWithGptAsync: () => Promise<unknown>;
+  isExtractingGpt: boolean;
 }
 
 export function useLabel({ id }: UseLabelOptions): UseLabelReturn {
@@ -103,6 +105,28 @@ export function useLabel({ id }: UseLabelOptions): UseLabelReturn {
     },
   });
 
+  const {
+    mutateAsync: extractWithGptAsync,
+    isPending: isExtractingGpt,
+  } = useMutation({
+    mutationFn: async () => {
+      return await labelsApiService.extractWithGpt(id);
+    },
+    onSuccess: async () => {
+      toast.success("Estrazione con GPT completata con successo");
+      await queryClient.invalidateQueries({
+        queryKey: ["labels", "detail", id],
+      });
+    },
+    onError: (e: unknown) => {
+      const message =
+        e instanceof Error
+          ? e.message
+          : "Estrazione con GPT fallita";
+      toast.error(message);
+    },
+  });
+
   return {
     detail,
     isLoading,
@@ -115,5 +139,7 @@ export function useLabel({ id }: UseLabelOptions): UseLabelReturn {
     isConfirming,
     extractWithMistralAsync,
     isExtracting,
+    extractWithGptAsync,
+    isExtractingGpt,
   };
 }

@@ -320,6 +320,30 @@ async function extractWithMistral(
   return (await response.json()) as LabelDetailResponse;
 }
 
+async function extractWithGpt(
+  id: string,
+  baseUrl: string
+): Promise<LabelDetailResponse> {
+  const response = await fetch(
+    `${baseUrl}/labels/extract-with-gpt/${encodeURIComponent(id)}`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to extract label with GPT");
+  }
+
+  return (await response.json()) as LabelDetailResponse;
+}
+
 class LabelsApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -364,6 +388,10 @@ class LabelsApiService {
 
   public async extractWithMistral(id: string): Promise<LabelDetailResponse> {
     return await extractWithMistral(id, this.baseUrl);
+  }
+
+  public async extractWithGpt(id: string): Promise<LabelDetailResponse> {
+    return await extractWithGpt(id, this.baseUrl);
   }
 }
 

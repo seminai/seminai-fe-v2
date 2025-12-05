@@ -364,6 +364,8 @@ export default function LabelDetailPage(): React.ReactElement {
     isConfirming,
     extractWithMistralAsync,
     isExtracting,
+    extractWithGptAsync,
+    isExtractingGpt,
   } = useLabel({ id });
 
   const [labelJson, setLabelJson] = React.useState<string>("{}");
@@ -496,27 +498,49 @@ export default function LabelDetailPage(): React.ReactElement {
                     {detail.rawText}
                   </pre>
                 </ScrollArea>
-                <div className="border-t p-4 flex justify-between items-center shrink-0">
-                  <Button
-                    variant="outline"
-                    onClick={async () => {
-                      try {
-                        await extractWithMistralAsync();
-                      } catch {
-                        /* handled in mutation */
-                      }
-                    }}
-                    disabled={isExtracting}
-                  >
-                    {isExtracting ? (
-                      <>
-                        <Spinner size={16} ariaLabel="Estrazione in corso" />
-                        <span className="ml-2">Estrazione in corso...</span>
-                      </>
-                    ) : (
-                      "Estrai nuovamente"
-                    )}
-                  </Button>
+                <div className="border-t p-4 flex justify-between items-center shrink-0 gap-2">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await extractWithMistralAsync();
+                        } catch {
+                          /* handled in mutation */
+                        }
+                      }}
+                      disabled={isExtracting}
+                    >
+                      {isExtracting ? (
+                        <>
+                          <Spinner size={16} ariaLabel="Estrazione in corso" />
+                          <span className="ml-2">Estrazione in corso...</span>
+                        </>
+                      ) : (
+                        "Estrai nuovamente"
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await extractWithGptAsync();
+                        } catch {
+                          /* handled in mutation */
+                        }
+                      }}
+                      disabled={isExtractingGpt}
+                    >
+                      {isExtractingGpt ? (
+                        <>
+                          <Spinner size={16} ariaLabel="Estrazione GPT in corso" />
+                          <span className="ml-2">Estrazione in corso...</span>
+                        </>
+                      ) : (
+                        "Estrai testo con llm"
+                      )}
+                    </Button>
+                  </div>
                   <DrawerClose asChild>
                     <Button variant="outline">Chiudi</Button>
                   </DrawerClose>
