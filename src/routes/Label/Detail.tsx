@@ -4,6 +4,7 @@ import {
   type LabelDetail,
   type LabelDosaggioDettagliato,
   type LabelInner,
+  type LabelResistenza,
 } from "@/api/labels";
 import { useLabel } from "@/hooks/useLabel";
 import { Spinner } from "@/components/ui/spinner";
@@ -93,6 +94,61 @@ type LabelWithFertilizer = LabelInner & {
     };
   };
 };
+
+class ResistanceAdapter {
+  public static toNumber(value: unknown): number | undefined {
+    if (value === "" || value === null || value === undefined) {
+      return undefined;
+    }
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  }
+
+  public static normalize(value: LabelInner["resistenze"]): LabelResistenza[] {
+    if (!value || !Array.isArray(value)) {
+      return [];
+    }
+
+    return value
+      .map((item) => {
+        if (typeof item === "string") {
+          return { testo_completo: item };
+        }
+        if (item && typeof item === "object") {
+          const obj = item as Record<string, unknown>;
+          return {
+            testo_completo:
+              typeof obj.testo_completo === "string" ? obj.testo_completo : "",
+            raccomandazioni:
+              typeof obj.raccomandazioni === "string"
+                ? obj.raccomandazioni
+                : "",
+            n_max_applicazioni: this.toNumber(obj.n_max_applicazioni),
+            n_min_applicazioni: this.toNumber(obj.n_min_applicazioni),
+            n_max_applicazioni_um:
+              typeof obj.n_max_applicazioni_um === "string"
+                ? obj.n_max_applicazioni_um
+                : "",
+            n_min_applicazioni_um:
+              typeof obj.n_min_applicazioni_um === "string"
+                ? obj.n_min_applicazioni_um
+                : "",
+          };
+        }
+        return { testo_completo: String(item) };
+      })
+      .filter((r) =>
+        Object.values(r).some((val) => val !== undefined && val !== "")
+      );
+  }
+
+  public static summary(resistenze: LabelResistenza[]): string {
+    return resistenze
+      .map((r) => r.testo_completo || r.raccomandazioni || "")
+      .filter(Boolean)
+      .join(" | ");
+  }
+}
 
 // Fertilizer specific columns
 const buildFertilizerColumns = (): EditableColumn[] =>
@@ -281,7 +337,6 @@ const buildLabelColumns = (): EditableColumn[] =>
     { id: "compatibilita", title: "Compatibilità", type: "text" },
     { id: "note_tecniche", title: "Note tecniche", type: "text" },
     { id: "fitotossicita", title: "Fitotossicità", type: "text" },
-    { id: "resistenze", title: "Resistenze", type: "text" },
     {
       id: "fasce_di_rispetto_e_deriva",
       title: "Fasce di rispetto e deriva",
@@ -316,7 +371,6 @@ const toLabelRow = (detail: LabelDetail): Record<string, unknown> => {
     compatibilita: String(l.compatibilita ?? ""),
     note_tecniche: String(l.note_tecniche ?? ""),
     fitotossicita: String(l.fitotossicita ?? ""),
-    resistenze: toList(l.resistenze),
     fasce_di_rispetto_e_deriva: toList(l.fasce_di_rispetto_e_deriva),
   };
 };
@@ -373,6 +427,9 @@ export default function LabelDetailPage(): React.ReactElement {
   const [editedDosaggi, setEditedDosaggi] = React.useState<
     LabelDosaggioDettagliato[]
   >([]);
+  const [editedResistenze, setEditedResistenze] = React.useState<
+    LabelResistenza[]
+  >([]);
 
   React.useEffect(() => {
     if (!detail) return;
@@ -383,6 +440,7 @@ export default function LabelDetailPage(): React.ReactElement {
       )
     );
     setEditedDosaggi(detail.label?.dosaggi_dettagliati ?? []);
+    setEditedResistenze(ResistanceAdapter.normalize(detail.label?.resistenze));
   }, [detail]);
 
   const isFertilizer = Boolean(
@@ -408,19 +466,23 @@ export default function LabelDetailPage(): React.ReactElement {
     [detail]
   );
 
+  const normalizedResistenze = React.useMemo(
+    () => ResistanceAdapter.normalize(detail?.label?.resistenze),
+    [detail]
+  );
+
+  const hasEditedResistenzeChanges = React.useMemo(
+    () =>
+      JSON.stringify(editedResistenze) !== JSON.stringify(normalizedResistenze),
+    [editedResistenze, normalizedResistenze]
+  );
+
   const [editedFertilizerDosages, setEditedFertilizerDosages] = React.useState<
     FertilizerDosage[]
   >([]);
 
   React.useEffect(() => {
     if (!detail) return;
-    setLabelJson(JSON.stringify(detail.label ?? {}, null, 2));
-    setDosaggiJson(
-      (detail.label?.dosaggi_dettagliati ?? []).map((d) =>
-        JSON.stringify(d, null, 2)
-      )
-    );
-    setEditedDosaggi(detail.label?.dosaggi_dettagliati ?? []);
     if (isFertilizer) {
       setEditedFertilizerDosages(fertilizerDosages);
     }
@@ -533,7 +595,10 @@ export default function LabelDetailPage(): React.ReactElement {
                     >
                       {isExtractingGpt ? (
                         <>
-                          <Spinner size={16} ariaLabel="Estrazione GPT in corso" />
+                          <Spinner
+                            size={16}
+                            ariaLabel="Estrazione GPT in corso"
+                          />
                           <span className="ml-2">Estrazione in corso...</span>
                         </>
                       ) : (
@@ -651,248 +716,490 @@ export default function LabelDetailPage(): React.ReactElement {
           <div className="flex-1 md:h-full min-h-0 overflow-y-auto pr-1">
             {view === "dati" ? (
               viewMode === "table" ? (
-                <EditableTable
-                  columns={columns}
-                  rows={[rowData]}
-                  isModify={true}
-                  isVertical={true}
-                  alwaysEdit={true}
-                  getRowId={() => "row-0"}
-                  onSave={async ({ updated }) => {
-                    try {
-                      const row = updated?.[0] ?? {};
+                <>
+                  <EditableTable
+                    columns={columns}
+                    rows={[rowData]}
+                    isModify={true}
+                    isVertical={true}
+                    alwaysEdit={true}
+                    getRowId={() => "row-0"}
+                    onSave={async ({ updated }) => {
+                      try {
+                        const row = updated?.[0] ?? {};
 
-                      if (isFertilizer) {
-                        const currentLabel =
-                          detail.label as LabelWithFertilizer;
-                        const fert =
-                          currentLabel.prodotto_fertilizzante_ue || {};
-                        const ident = fert.identificazione_prodotto || {};
-                        const comp = fert.composizione_garantita || {};
-                        const npk =
-                          comp.analisi_principale_NPK_percentuale_peso || {};
-                        const meso = comp.meso_elementi_percentuale_peso || {};
-                        const solFosforo = comp.solubilita_fosforo || {};
-                        const paramOrg =
-                          comp.parametri_organici_biologici || {};
-                        const instr = fert.istruzioni_uso_agronomiche || {};
-                        const sicurezza = fert.informazioni_sicurezza_clp || {};
+                        if (isFertilizer) {
+                          const currentLabel =
+                            detail.label as LabelWithFertilizer;
+                          const fert =
+                            currentLabel.prodotto_fertilizzante_ue || {};
+                          const ident = fert.identificazione_prodotto || {};
+                          const comp = fert.composizione_garantita || {};
+                          const npk =
+                            comp.analisi_principale_NPK_percentuale_peso || {};
+                          const meso =
+                            comp.meso_elementi_percentuale_peso || {};
+                          const solFosforo = comp.solubilita_fosforo || {};
+                          const paramOrg =
+                            comp.parametri_organici_biologici || {};
+                          const instr = fert.istruzioni_uso_agronomiche || {};
+                          const sicurezza =
+                            fert.informazioni_sicurezza_clp || {};
 
-                        // Helper per convertire in numero o null
-                        const toNumberOrNull = (
-                          val: unknown
-                        ): number | null => {
-                          if (val === "" || val === null || val === undefined)
-                            return null;
-                          const num = Number(val);
-                          return isNaN(num) ? null : num;
-                        };
+                          // Helper per convertire in numero o null
+                          const toNumberOrNull = (
+                            val: unknown
+                          ): number | null => {
+                            if (val === "" || val === null || val === undefined)
+                              return null;
+                            const num = Number(val);
+                            return isNaN(num) ? null : num;
+                          };
 
-                        // Helper per convertire stringa in array
-                        const parseConfezioni = (val: string): string[] => {
-                          if (!val || typeof val !== "string") {
-                            return Array.isArray(ident.confezioni_disponibili)
-                              ? (ident.confezioni_disponibili as string[])
-                              : [];
-                          }
-                          return val
-                            .split(",")
-                            .map((s) => s.trim())
-                            .filter(Boolean);
-                        };
+                          // Helper per convertire stringa in array
+                          const parseConfezioni = (val: string): string[] => {
+                            if (!val || typeof val !== "string") {
+                              return Array.isArray(ident.confezioni_disponibili)
+                                ? (ident.confezioni_disponibili as string[])
+                                : [];
+                            }
+                            return val
+                              .split(",")
+                              .map((s) => s.trim())
+                              .filter(Boolean);
+                          };
+
+                          const payloadLabel = {
+                            ...currentLabel,
+                            prodotto_fertilizzante_ue: {
+                              ...fert,
+                              identificazione_prodotto: {
+                                ...ident,
+                                nome_commerciale:
+                                  row.nome_commerciale ??
+                                  ident.nome_commerciale,
+                                funzione_categoria_prodotto:
+                                  row.funzione_categoria ??
+                                  ident.funzione_categoria_prodotto,
+                                numero_lotto:
+                                  row.numero_lotto || ident.numero_lotto,
+                                stato_fisico:
+                                  row.stato_fisico || ident.stato_fisico,
+                                confezioni_disponibili: parseConfezioni(
+                                  row.confezioni_disponibili as string
+                                ),
+                              },
+                              composizione_garantita: {
+                                ...comp,
+                                analisi_principale_NPK_percentuale_peso: {
+                                  ...npk,
+                                  N_totale:
+                                    toNumberOrNull(row.n_totale) ??
+                                    npk.N_totale,
+                                  P2O5_totale:
+                                    toNumberOrNull(row.p2o5_totale) ??
+                                    npk.P2O5_totale,
+                                  K2O_totale:
+                                    toNumberOrNull(row.k2o_totale) ??
+                                    npk.K2O_totale,
+                                },
+                                meso_elementi_percentuale_peso: {
+                                  ...meso,
+                                  CaO_totale:
+                                    toNumberOrNull(row.cao_totale) ??
+                                    meso.CaO_totale,
+                                  MgO_totale:
+                                    toNumberOrNull(row.mgo_totale) ??
+                                    meso.MgO_totale,
+                                  SO3_totale:
+                                    toNumberOrNull(row.so3_totale) ??
+                                    meso.SO3_totale,
+                                  Na2O_totale:
+                                    toNumberOrNull(row.na2o_totale) ??
+                                    meso.Na2O_totale,
+                                },
+                                solubilita_fosforo: {
+                                  ...solFosforo,
+                                  P2O5_solubile_acqua:
+                                    toNumberOrNull(row.p2o5_solubile_acqua) ??
+                                    solFosforo.P2O5_solubile_acqua,
+                                  P2O5_solubile_citrato_ammonio_neutro:
+                                    toNumberOrNull(row.p2o5_solubile_citrato) ??
+                                    solFosforo.P2O5_solubile_citrato_ammonio_neutro,
+                                },
+                                parametri_organici_biologici: {
+                                  ...paramOrg,
+                                  carbonio_organico_biologico:
+                                    toNumberOrNull(row.carbonio_organico) ??
+                                    paramOrg.carbonio_organico_biologico,
+                                  acidi_umici_fulvici:
+                                    toNumberOrNull(row.acidi_umici_fulvici) ??
+                                    paramOrg.acidi_umici_fulvici,
+                                  sostanza_organica:
+                                    toNumberOrNull(row.sostanza_organica) ??
+                                    paramOrg.sostanza_organica,
+                                },
+                              },
+                              istruzioni_uso_agronomiche: {
+                                ...instr,
+                                uso_previsto:
+                                  row.uso_previsto ?? instr.uso_previsto,
+                                frequenza: row.frequenza ?? instr.frequenza,
+                                condizioni_stoccaggio:
+                                  row.condizioni_stoccaggio ??
+                                  instr.condizioni_stoccaggio,
+                              },
+                              informazioni_sicurezza_clp: {
+                                ...sicurezza,
+                                avvertenza:
+                                  row.avvertenza ?? sicurezza.avvertenza,
+                                note_mediche:
+                                  row.note_mediche || sicurezza.note_mediche,
+                              },
+                            },
+                          };
+                          await saveAsync({ label: payloadLabel });
+                          return;
+                        }
 
                         const payloadLabel = {
-                          ...currentLabel,
-                          prodotto_fertilizzante_ue: {
-                            ...fert,
-                            identificazione_prodotto: {
-                              ...ident,
-                              nome_commerciale:
-                                row.nome_commerciale ?? ident.nome_commerciale,
-                              funzione_categoria_prodotto:
-                                row.funzione_categoria ??
-                                ident.funzione_categoria_prodotto,
-                              numero_lotto:
-                                row.numero_lotto || ident.numero_lotto,
-                              stato_fisico:
-                                row.stato_fisico || ident.stato_fisico,
-                              confezioni_disponibili: parseConfezioni(
-                                row.confezioni_disponibili as string
-                              ),
-                            },
-                            composizione_garantita: {
-                              ...comp,
-                              analisi_principale_NPK_percentuale_peso: {
-                                ...npk,
-                                N_totale:
-                                  toNumberOrNull(row.n_totale) ?? npk.N_totale,
-                                P2O5_totale:
-                                  toNumberOrNull(row.p2o5_totale) ??
-                                  npk.P2O5_totale,
-                                K2O_totale:
-                                  toNumberOrNull(row.k2o_totale) ??
-                                  npk.K2O_totale,
-                              },
-                              meso_elementi_percentuale_peso: {
-                                ...meso,
-                                CaO_totale:
-                                  toNumberOrNull(row.cao_totale) ??
-                                  meso.CaO_totale,
-                                MgO_totale:
-                                  toNumberOrNull(row.mgo_totale) ??
-                                  meso.MgO_totale,
-                                SO3_totale:
-                                  toNumberOrNull(row.so3_totale) ??
-                                  meso.SO3_totale,
-                                Na2O_totale:
-                                  toNumberOrNull(row.na2o_totale) ??
-                                  meso.Na2O_totale,
-                              },
-                              solubilita_fosforo: {
-                                ...solFosforo,
-                                P2O5_solubile_acqua:
-                                  toNumberOrNull(row.p2o5_solubile_acqua) ??
-                                  solFosforo.P2O5_solubile_acqua,
-                                P2O5_solubile_citrato_ammonio_neutro:
-                                  toNumberOrNull(row.p2o5_solubile_citrato) ??
-                                  solFosforo.P2O5_solubile_citrato_ammonio_neutro,
-                              },
-                              parametri_organici_biologici: {
-                                ...paramOrg,
-                                carbonio_organico_biologico:
-                                  toNumberOrNull(row.carbonio_organico) ??
-                                  paramOrg.carbonio_organico_biologico,
-                                acidi_umici_fulvici:
-                                  toNumberOrNull(row.acidi_umici_fulvici) ??
-                                  paramOrg.acidi_umici_fulvici,
-                                sostanza_organica:
-                                  toNumberOrNull(row.sostanza_organica) ??
-                                  paramOrg.sostanza_organica,
-                              },
-                            },
-                            istruzioni_uso_agronomiche: {
-                              ...instr,
-                              uso_previsto:
-                                row.uso_previsto ?? instr.uso_previsto,
-                              frequenza: row.frequenza ?? instr.frequenza,
-                              condizioni_stoccaggio:
-                                row.condizioni_stoccaggio ??
-                                instr.condizioni_stoccaggio,
-                            },
-                            informazioni_sicurezza_clp: {
-                              ...sicurezza,
-                              avvertenza:
-                                row.avvertenza ?? sicurezza.avvertenza,
-                              note_mediche:
-                                row.note_mediche || sicurezza.note_mediche,
-                            },
-                          },
+                          ...detail.label,
+                          prodotto: String(
+                            row.prodotto ?? detail.label?.prodotto ?? ""
+                          ),
+                          categoria: String(
+                            row.categoria ?? detail.label?.categoria ?? ""
+                          ),
+                          formulazione: String(
+                            row.formulazione ?? detail.label?.formulazione ?? ""
+                          ),
+                          principio_attivo: String(
+                            row.principio_attivo ??
+                              detail.label?.principio_attivo ??
+                              ""
+                          ),
+                          composizione: String(
+                            row.composizione ?? detail.label?.composizione ?? ""
+                          ),
+                          meccanismo_azione_frac: String(
+                            row.meccanismo_azione_frac ??
+                              detail.label?.meccanismo_azione_frac ??
+                              ""
+                          ),
+                          malattie:
+                            parseList(row.malattie) ??
+                            detail.label?.malattie ??
+                            [],
+                          specie:
+                            parseList(row.specie) ?? detail.label?.specie ?? [],
+                          colture_target:
+                            parseList(row.colture_target) ??
+                            detail.label?.colture_target ??
+                            [],
+                          colture_target_fuori_periodo_di_prodizione:
+                            parseList(
+                              row.colture_target_fuori_periodo_di_prodizione
+                            ) ??
+                            detail.label
+                              ?.colture_target_fuori_periodo_di_prodizione ??
+                            null,
+                          numero_registrazione: String(
+                            row.numero_registrazione ??
+                              detail.label?.numero_registrazione ??
+                              detail.registrationNumber ??
+                              ""
+                          ),
+                          titolare: String(
+                            row.titolare ?? detail.label?.titolare ?? ""
+                          ),
+                          stabilimento: String(
+                            row.stabilimento ?? detail.label?.stabilimento ?? ""
+                          ),
+                          caratteristiche: String(
+                            row.caratteristiche ??
+                              detail.label?.caratteristiche ??
+                              ""
+                          ),
+                          avvertenze:
+                            parseList(row.avvertenze) ??
+                            detail.label?.avvertenze ??
+                            [],
+                          frasi_pericolo:
+                            parseList(row.frasi_pericolo) ??
+                            detail.label?.frasi_pericolo ??
+                            [],
+                          frasi_prudenza:
+                            parseList(row.frasi_prudenza) ??
+                            detail.label?.frasi_prudenza ??
+                            [],
+                          compatibilita: String(
+                            row.compatibilita ??
+                              detail.label?.compatibilita ??
+                              ""
+                          ),
+                          note_tecniche: String(
+                            row.note_tecniche ??
+                              detail.label?.note_tecniche ??
+                              ""
+                          ),
+                          fitotossicita:
+                            row.fitotossicita !== undefined &&
+                            row.fitotossicita !== ""
+                              ? String(row.fitotossicita)
+                              : detail.label?.fitotossicita ?? null,
+                          resistenze: detail.label?.resistenze ?? [],
+                          fasce_di_rispetto_e_deriva:
+                            parseList(row.fasce_di_rispetto_e_deriva) ??
+                            detail.label?.fasce_di_rispetto_e_deriva ??
+                            [],
                         };
                         await saveAsync({ label: payloadLabel });
-                        return;
+                      } catch {
+                        /* handled in mutation */
                       }
+                    }}
+                    className="bg-background"
+                  />
 
-                      const payloadLabel = {
-                        ...detail.label,
-                        prodotto: String(
-                          row.prodotto ?? detail.label?.prodotto ?? ""
-                        ),
-                        categoria: String(
-                          row.categoria ?? detail.label?.categoria ?? ""
-                        ),
-                        formulazione: String(
-                          row.formulazione ?? detail.label?.formulazione ?? ""
-                        ),
-                        principio_attivo: String(
-                          row.principio_attivo ??
-                            detail.label?.principio_attivo ??
-                            ""
-                        ),
-                        composizione: String(
-                          row.composizione ?? detail.label?.composizione ?? ""
-                        ),
-                        meccanismo_azione_frac: String(
-                          row.meccanismo_azione_frac ??
-                            detail.label?.meccanismo_azione_frac ??
-                            ""
-                        ),
-                        malattie:
-                          parseList(row.malattie) ??
-                          detail.label?.malattie ??
-                          [],
-                        specie:
-                          parseList(row.specie) ?? detail.label?.specie ?? [],
-                        colture_target:
-                          parseList(row.colture_target) ??
-                          detail.label?.colture_target ??
-                          [],
-                        colture_target_fuori_periodo_di_prodizione:
-                          parseList(
-                            row.colture_target_fuori_periodo_di_prodizione
-                          ) ??
-                          detail.label
-                            ?.colture_target_fuori_periodo_di_prodizione ??
-                          null,
-                        numero_registrazione: String(
-                          row.numero_registrazione ??
-                            detail.label?.numero_registrazione ??
-                            detail.registrationNumber ??
-                            ""
-                        ),
-                        titolare: String(
-                          row.titolare ?? detail.label?.titolare ?? ""
-                        ),
-                        stabilimento: String(
-                          row.stabilimento ?? detail.label?.stabilimento ?? ""
-                        ),
-                        caratteristiche: String(
-                          row.caratteristiche ??
-                            detail.label?.caratteristiche ??
-                            ""
-                        ),
-                        avvertenze:
-                          parseList(row.avvertenze) ??
-                          detail.label?.avvertenze ??
-                          [],
-                        frasi_pericolo:
-                          parseList(row.frasi_pericolo) ??
-                          detail.label?.frasi_pericolo ??
-                          [],
-                        frasi_prudenza:
-                          parseList(row.frasi_prudenza) ??
-                          detail.label?.frasi_prudenza ??
-                          [],
-                        compatibilita: String(
-                          row.compatibilita ??
-                            detail.label?.compatibilita ??
-                            ""
-                        ),
-                        note_tecniche: String(
-                          row.note_tecniche ??
-                            detail.label?.note_tecniche ??
-                            ""
-                        ),
-                        fitotossicita:
-                          row.fitotossicita !== undefined &&
-                          row.fitotossicita !== ""
-                            ? String(row.fitotossicita)
-                            : detail.label?.fitotossicita ?? null,
-                        resistenze:
-                          parseList(row.resistenze) ??
-                          detail.label?.resistenze ??
-                          [],
-                        fasce_di_rispetto_e_deriva:
-                          parseList(row.fasce_di_rispetto_e_deriva) ??
-                          detail.label?.fasce_di_rispetto_e_deriva ??
-                          [],
-                      };
-                      await saveAsync({ label: payloadLabel });
-                    } catch {
-                      /* handled in mutation */
-                    }
-                  }}
-                  className="bg-background"
-                />
+                  {!isFertilizer ? (
+                    <div className="mt-6 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <h2 className="text-base font-semibold">Resistenze</h2>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                            onClick={() =>
+                              setEditedResistenze((prev) => [...prev, {}])
+                            }
+                            disabled={isSaving || !detail}
+                          >
+                            Aggiungi resistenza
+                          </Button>
+                          {hasEditedResistenzeChanges ? (
+                            <>
+                              <Button
+                                variant="outline"
+                                className="w-full sm:w-auto"
+                                onClick={() =>
+                                  setEditedResistenze(normalizedResistenze)
+                                }
+                                disabled={isSaving}
+                              >
+                                Annulla
+                              </Button>
+                              <Button
+                                className="w-full sm:w-auto"
+                                onClick={async () => {
+                                  if (!detail) return;
+                                  try {
+                                    await saveAsync({
+                                      label: {
+                                        ...detail.label,
+                                        resistenze: editedResistenze,
+                                      },
+                                    });
+                                  } catch {
+                                    /* handled in mutation */
+                                  }
+                                }}
+                                disabled={isSaving}
+                              >
+                                {isSaving ? "Salvataggio…" : "Salva"}
+                              </Button>
+                            </>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {editedResistenze.length > 0 ? (
+                        <Accordion type="multiple" className="space-y-2">
+                          {editedResistenze.map((resistenza, idx) => (
+                            <AccordionItem
+                              key={idx}
+                              value={`resistenza-${idx}`}
+                              className="border rounded-lg px-3 md:px-4"
+                            >
+                              <AccordionTrigger className="hover:no-underline py-3">
+                                <span className="text-left flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 whitespace-normal break-words">
+                                  <span className="font-semibold">
+                                    Resistenza #{idx + 1}
+                                  </span>
+                                  <span className="text-muted-foreground text-xs sm:text-sm whitespace-normal break-words">
+                                    {ResistanceAdapter.summary([resistenza]) ||
+                                      "Dettagli non specificati"}
+                                  </span>
+                                </span>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <Card className="shadow-none border-0">
+                                  <CardContent className="space-y-4 pt-4">
+                                    <div className="space-y-2">
+                                      <Label
+                                        htmlFor={`resistenza-testo-${idx}`}
+                                      >
+                                        Testo completo
+                                      </Label>
+                                      <Textarea
+                                        id={`resistenza-testo-${idx}`}
+                                        value={resistenza.testo_completo ?? ""}
+                                        onChange={(e) => {
+                                          const next = [...editedResistenze];
+                                          next[idx] = {
+                                            ...next[idx],
+                                            testo_completo: e.target.value,
+                                          };
+                                          setEditedResistenze(next);
+                                        }}
+                                        className="min-h-[120px]"
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label
+                                        htmlFor={`resistenza-raccomandazioni-${idx}`}
+                                      >
+                                        Raccomandazioni
+                                      </Label>
+                                      <Textarea
+                                        id={`resistenza-raccomandazioni-${idx}`}
+                                        value={resistenza.raccomandazioni ?? ""}
+                                        onChange={(e) => {
+                                          const next = [...editedResistenze];
+                                          next[idx] = {
+                                            ...next[idx],
+                                            raccomandazioni: e.target.value,
+                                          };
+                                          setEditedResistenze(next);
+                                        }}
+                                        className="min-h-[100px]"
+                                      />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div className="space-y-2">
+                                        <Label
+                                          htmlFor={`resistenza-n-max-${idx}`}
+                                        >
+                                          N. max applicazioni
+                                        </Label>
+                                        <Input
+                                          id={`resistenza-n-max-${idx}`}
+                                          type="number"
+                                          value={
+                                            resistenza.n_max_applicazioni ?? ""
+                                          }
+                                          onChange={(e) => {
+                                            const next = [...editedResistenze];
+                                            next[idx] = {
+                                              ...next[idx],
+                                              n_max_applicazioni:
+                                                e.target.value === ""
+                                                  ? undefined
+                                                  : Number(e.target.value),
+                                            };
+                                            setEditedResistenze(next);
+                                          }}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label
+                                          htmlFor={`resistenza-n-min-${idx}`}
+                                        >
+                                          N. min applicazioni
+                                        </Label>
+                                        <Input
+                                          id={`resistenza-n-min-${idx}`}
+                                          type="number"
+                                          value={
+                                            resistenza.n_min_applicazioni ?? ""
+                                          }
+                                          onChange={(e) => {
+                                            const next = [...editedResistenze];
+                                            next[idx] = {
+                                              ...next[idx],
+                                              n_min_applicazioni:
+                                                e.target.value === ""
+                                                  ? undefined
+                                                  : Number(e.target.value),
+                                            };
+                                            setEditedResistenze(next);
+                                          }}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label
+                                          htmlFor={`resistenza-n-max-um-${idx}`}
+                                        >
+                                          N. max applicazioni UM
+                                        </Label>
+                                        <Input
+                                          id={`resistenza-n-max-um-${idx}`}
+                                          value={
+                                            resistenza.n_max_applicazioni_um ??
+                                            ""
+                                          }
+                                          onChange={(e) => {
+                                            const next = [...editedResistenze];
+                                            next[idx] = {
+                                              ...next[idx],
+                                              n_max_applicazioni_um:
+                                                e.target.value,
+                                            };
+                                            setEditedResistenze(next);
+                                          }}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label
+                                          htmlFor={`resistenza-n-min-um-${idx}`}
+                                        >
+                                          N. min applicazioni UM
+                                        </Label>
+                                        <Input
+                                          id={`resistenza-n-min-um-${idx}`}
+                                          value={
+                                            resistenza.n_min_applicazioni_um ??
+                                            ""
+                                          }
+                                          onChange={(e) => {
+                                            const next = [...editedResistenze];
+                                            next[idx] = {
+                                              ...next[idx],
+                                              n_min_applicazioni_um:
+                                                e.target.value,
+                                            };
+                                            setEditedResistenze(next);
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="flex justify-end">
+                                      <Button
+                                        variant="ghost"
+                                        className="text-red-600 hover:text-red-700"
+                                        onClick={() => {
+                                          setEditedResistenze((prev) =>
+                                            prev.filter((_, i) => i !== idx)
+                                          );
+                                        }}
+                                        disabled={isSaving}
+                                      >
+                                        Rimuovi
+                                      </Button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
+                      ) : (
+                        <div className="text-sm text-gray-600">
+                          Nessuna resistenza presente.
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </>
               ) : (
                 <div className="space-y-2">
                   <Textarea

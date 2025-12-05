@@ -34,6 +34,15 @@ export type LabelDosaggioDettagliato = {
   istruzioni?: string;
 };
 
+export type LabelResistenza = {
+  testo_completo?: string;
+  raccomandazioni?: string;
+  n_max_applicazioni?: number;
+  n_min_applicazioni?: number;
+  n_max_applicazioni_um?: string;
+  n_min_applicazioni_um?: string;
+};
+
 export type LabelInner = {
   prodotto?: string;
   categoria?: string;
@@ -53,7 +62,7 @@ export type LabelInner = {
   compatibilita?: string | null;
   fitotossicita?: string | null;
   note_tecniche?: string | null;
-  resistenze?: string[] | null;
+  resistenze?: Array<LabelResistenza | string> | null;
   extraction_confidence?: number;
   extracted_fields?: string[];
   errors?: string[];

@@ -57,6 +57,7 @@ export interface JobRow {
   productName: string;
   productionUnitName: string;
   companyName: string;
+  note?: string;
   quantity: number;
   unitOfMeasureQuantity: string;
   dateOfOpeation: Date;
@@ -178,7 +179,10 @@ export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
       row.productName?.toLowerCase().includes(searchLower) ||
       row.productionUnitName?.toLowerCase().includes(searchLower) ||
       row.companyName?.toLowerCase().includes(searchLower) ||
-      JSON.stringify(row.alertNotes).toLowerCase().includes(searchLower)
+      row.note?.toLowerCase().includes(searchLower) ||
+      JSON.stringify(row.alertNotes ?? "")
+        .toLowerCase()
+        .includes(searchLower)
     );
   });
 
@@ -400,12 +404,12 @@ export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
                     {/* Stock - Utilizzato e Necessario affiancati */}
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide block">
-                          Stock Utilizzato
+                        <span className="text-xs font-medium text-red-700 uppercase tracking-wide block">
+                          Stock mancante
                         </span>
                         {formatter.getStockOut() &&
                         matchesSearch(formatter.getStockOut()) ? (
-                          <p className="text-sm text-slate-700 font-medium">
+                          <p className="text-sm text-red-700 font-medium underline">
                             {formatter.getStockOut()}
                           </p>
                         ) : (
@@ -649,9 +653,20 @@ export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
 
                 {!hasAlertNotes && (
                   <div className="border-t border-slate-100 pt-3">
-                    <p className="text-xs text-slate-400 italic text-center py-2">
-                      Nessun alert note disponibile
-                    </p>
+                    {row.note && matchesSearch(row.note) ? (
+                      <div className="space-y-1">
+                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                          Note salvate
+                        </span>
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                          {row.note}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic text-center py-2">
+                        Nessun alert note disponibile
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
