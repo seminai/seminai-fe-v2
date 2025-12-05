@@ -13,6 +13,10 @@ import {
   Sparkles,
   Building2,
   CheckCircle,
+  FileX,
+  ChevronDown,
+  ChevronUp,
+  FileText,
 } from "lucide-react";
 
 export interface AlertNotes {
@@ -44,6 +48,7 @@ export interface AlertNotes {
   total_stock_required_for_jobs_um?: string;
   colture_target_fuori_periodo_di_produzione?: string | null;
   colture_target_fuori_periodo_di_produzione_llm?: string | null;
+  ddt_date_is_ok?: boolean | null;
 }
 
 export interface JobRow {
@@ -97,12 +102,16 @@ class AlertNotesFormatter {
 
   public getTotalStockRequired(): string | null {
     if (!this.alertNotes?.total_stock_required_for_jobs) return null;
-    return `${this.alertNotes.total_stock_required_for_jobs} ${this.alertNotes.total_stock_required_for_jobs_um ?? ""}`;
+    return `${this.alertNotes.total_stock_required_for_jobs} ${
+      this.alertNotes.total_stock_required_for_jobs_um ?? ""
+    }`;
   }
 
   public getMaxApplications(): string | null {
     if (!this.alertNotes?.n_max_applicazioni) return null;
-    return `${this.alertNotes.n_max_applicazioni} ${this.alertNotes.n_max_applicazioni_um ?? ""}`;
+    return `${this.alertNotes.n_max_applicazioni} ${
+      this.alertNotes.n_max_applicazioni_um ?? ""
+    }`;
   }
 
   public getMalattie(): string[] {
@@ -135,10 +144,23 @@ class AlertNotesFormatter {
   public getModalitaApplicazione(): string | null {
     return this.alertNotes?.modalita_applicazione ?? null;
   }
+
+  public isDdtDateOk(): boolean {
+    return this.alertNotes?.ddt_date_is_ok === true;
+  }
 }
 
 export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [expandedFrasiPericolo, setExpandedFrasiPericolo] = useState<
+    Set<string>
+  >(new Set());
+  const [expandedNoteTecniche, setExpandedNoteTecniche] = useState<Set<string>>(
+    new Set()
+  );
+  const [expandedResistenze, setExpandedResistenze] = useState<Set<string>>(
+    new Set()
+  );
 
   // Funzione per verificare se un testo corrisponde al termine di ricerca
   const matchesSearch = (text: string | null | undefined): boolean => {
@@ -409,15 +431,30 @@ export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
                       </div>
                     </div>
 
+                    {/* Data DDT */}
+                    {!formatter.isDdtDateOk() && (
+                      <div className="bg-red-50 rounded-lg p-2 border border-red-200">
+                        <div className="flex items-start gap-1.5">
+                          <FileX className="h-3.5 w-3.5 text-red-600 mt-0.5 shrink-0" />
+                          <div className="flex-1">
+                            <span className="text-xs font-medium text-red-700 block mb-0.5">
+                              Data DDT Mancante
+                            </span>
+                            <p className="text-xs text-red-600 leading-relaxed">
+                              Manca la data del DDT caricata per questo stock
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Malattie */}
                     <div className="space-y-2">
                       <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
                         Malattie
                       </span>
                       {formatter.getMalattie().length > 0 &&
-                      formatter
-                        .getMalattie()
-                        .some((m) => matchesSearch(m)) ? (
+                      formatter.getMalattie().some((m) => matchesSearch(m)) ? (
                         <div className="flex flex-wrap gap-1.5">
                           {formatter
                             .getMalattie()
@@ -438,100 +475,173 @@ export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
                       )}
                     </div>
 
-                    {/* Note Tecniche */}
-                    <div className="space-y-1">
-                      <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                        Note Tecniche
-                      </span>
-                      {formatter.getNoteTecniche() &&
-                      matchesSearch(formatter.getNoteTecniche()) ? (
-                        <p className="text-xs text-slate-600 leading-relaxed">
-                          {formatter.getNoteTecniche()}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-slate-400 italic">
-                          non presente
-                        </p>
-                      )}
-                    </div>
-
                     {/* Resistenze */}
                     <div className="space-y-2">
-                      <span className="text-xs font-medium text-amber-600 uppercase tracking-wide flex items-center gap-1">
-                        <Shield className="h-3 w-3" />
-                        Resistenze
-                      </span>
-                      {formatter.getResistenze().length > 0 &&
-                      formatter
-                        .getResistenze()
-                        .some(
-                          (r) =>
-                            matchesSearch(r.testo_completo) ||
-                            matchesSearch(r.raccomandazioni)
-                        ) ? (
-                        <div className="space-y-2">
-                          {formatter
+                      <button
+                        onClick={() => {
+                          setExpandedResistenze((prev) => {
+                            const newSet = new Set(prev);
+                            if (newSet.has(row.id)) {
+                              newSet.delete(row.id);
+                            } else {
+                              newSet.add(row.id);
+                            }
+                            return newSet;
+                          });
+                        }}
+                        className="w-full text-left flex items-center gap-1 hover:opacity-80 transition-opacity"
+                      >
+                        <Shield className="h-3 w-3 text-amber-600 shrink-0" />
+                        <span className="text-xs font-medium text-amber-600 uppercase tracking-wide">
+                          Resistenze
+                        </span>
+                        {expandedResistenze.has(row.id) ? (
+                          <ChevronUp className="h-3 w-3 text-amber-600 ml-auto shrink-0" />
+                        ) : (
+                          <ChevronDown className="h-3 w-3 text-amber-600 ml-auto shrink-0" />
+                        )}
+                      </button>
+                      {expandedResistenze.has(row.id) && (
+                        <>
+                          {formatter.getResistenze().length > 0 &&
+                          formatter
                             .getResistenze()
-                            .filter(
+                            .some(
                               (r) =>
                                 matchesSearch(r.testo_completo) ||
                                 matchesSearch(r.raccomandazioni)
-                            )
-                            .map((resistenza, idx) => (
-                              <div
-                                key={idx}
-                                className="bg-amber-50 rounded-lg p-2 space-y-1"
-                              >
-                                {resistenza.raccomandazioni && (
-                                  <p className="text-xs text-amber-700 font-medium">
-                                    {resistenza.raccomandazioni}
-                                  </p>
-                                )}
-                                {resistenza.testo_completo && (
-                                  <p className="text-xs text-amber-600 leading-relaxed">
-                                    {resistenza.testo_completo}
-                                  </p>
-                                )}
-                              </div>
-                            ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-slate-400 italic">
-                          non presente
-                        </p>
+                            ) ? (
+                            <div className="space-y-2">
+                              {formatter
+                                .getResistenze()
+                                .filter(
+                                  (r) =>
+                                    matchesSearch(r.testo_completo) ||
+                                    matchesSearch(r.raccomandazioni)
+                                )
+                                .map((resistenza, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="bg-amber-50 rounded-lg p-2 space-y-1"
+                                  >
+                                    {resistenza.raccomandazioni && (
+                                      <p className="text-xs text-amber-700 font-medium">
+                                        {resistenza.raccomandazioni}
+                                      </p>
+                                    )}
+                                    {resistenza.testo_completo && (
+                                      <p className="text-xs text-amber-600 leading-relaxed">
+                                        {resistenza.testo_completo}
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-slate-400 italic">
+                              non presente
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* Note Tecniche */}
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          setExpandedNoteTecniche((prev) => {
+                            const newSet = new Set(prev);
+                            if (newSet.has(row.id)) {
+                              newSet.delete(row.id);
+                            } else {
+                              newSet.add(row.id);
+                            }
+                            return newSet;
+                          });
+                        }}
+                        className="w-full text-left flex items-center gap-1 hover:opacity-80 transition-opacity"
+                      >
+                        <FileText className="h-3 w-3 text-slate-500 shrink-0" />
+                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                          Note Tecniche
+                        </span>
+                        {expandedNoteTecniche.has(row.id) ? (
+                          <ChevronUp className="h-3 w-3 text-slate-500 ml-auto shrink-0" />
+                        ) : (
+                          <ChevronDown className="h-3 w-3 text-slate-500 ml-auto shrink-0" />
+                        )}
+                      </button>
+                      {expandedNoteTecniche.has(row.id) && (
+                        <>
+                          {formatter.getNoteTecniche() &&
+                          matchesSearch(formatter.getNoteTecniche()) ? (
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                              {formatter.getNoteTecniche()}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-slate-400 italic">
+                              non presente
+                            </p>
+                          )}
+                        </>
                       )}
                     </div>
 
                     {/* Frasi di Pericolo */}
                     <div className="space-y-2">
-                      <span className="text-xs font-medium text-red-600 uppercase tracking-wide flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        Frasi di Pericolo
-                      </span>
-                      {formatter.getFrasiPericolo().length > 0 &&
-                      formatter
-                        .getFrasiPericolo()
-                        .some((f) => matchesSearch(f)) ? (
-                        <div className="space-y-1">
-                          {formatter
+                      <button
+                        onClick={() => {
+                          setExpandedFrasiPericolo((prev) => {
+                            const newSet = new Set(prev);
+                            if (newSet.has(row.id)) {
+                              newSet.delete(row.id);
+                            } else {
+                              newSet.add(row.id);
+                            }
+                            return newSet;
+                          });
+                        }}
+                        className="w-full text-left flex items-center gap-1 hover:opacity-80 transition-opacity"
+                      >
+                        <AlertTriangle className="h-3 w-3 text-red-600 shrink-0" />
+                        <span className="text-xs font-medium text-red-600 uppercase tracking-wide">
+                          Frasi di Pericolo
+                        </span>
+                        {expandedFrasiPericolo.has(row.id) ? (
+                          <ChevronUp className="h-3 w-3 text-red-600 ml-auto shrink-0" />
+                        ) : (
+                          <ChevronDown className="h-3 w-3 text-red-600 ml-auto shrink-0" />
+                        )}
+                      </button>
+                      {expandedFrasiPericolo.has(row.id) && (
+                        <>
+                          {formatter.getFrasiPericolo().length > 0 &&
+                          formatter
                             .getFrasiPericolo()
-                            .filter((f) => matchesSearch(f))
-                            .map((frase, idx) => (
-                              <div
-                                key={idx}
-                                className="flex items-start gap-1.5 text-xs text-red-700 bg-red-50 rounded p-2"
-                              >
-                                <span className="text-red-400 font-bold shrink-0">
-                                  •
-                                </span>
-                                <span>{frase}</span>
-                              </div>
-                            ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-slate-400 italic">
-                          non presente
-                        </p>
+                            .some((f) => matchesSearch(f)) ? (
+                            <div className="space-y-1">
+                              {formatter
+                                .getFrasiPericolo()
+                                .filter((f) => matchesSearch(f))
+                                .map((frase, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-start gap-1.5 text-xs text-red-700 bg-red-50 rounded p-2"
+                                  >
+                                    <span className="text-red-400 font-bold shrink-0">
+                                      •
+                                    </span>
+                                    <span>{frase}</span>
+                                  </div>
+                                ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-slate-400 italic">
+                              non presente
+                            </p>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -552,4 +662,3 @@ export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
     </div>
   );
 }
-

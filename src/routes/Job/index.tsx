@@ -40,12 +40,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
   History,
   ListChecks,
   ClipboardCheck,
@@ -761,39 +755,23 @@ function LabelDetailSheet({
                     detail.label?.frasi_pericolo &&
                     Array.isArray(detail.label.frasi_pericolo) &&
                     detail.label.frasi_pericolo.length > 0 && (
-                      <Accordion
-                        type="single"
-                        collapsible
-                        className="bg-white rounded-2xl shadow-sm"
-                      >
-                        <AccordionItem
-                          value="frasi-pericolo"
-                          className="border-0"
-                        >
-                          <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                            <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                              <AlertTriangle className="h-4 w-4 text-red-600" />
-                              Frasi di Pericolo
-                            </h3>
-                          </AccordionTrigger>
-                          <AccordionContent className="px-6 pb-6">
-                            <div className="flex flex-wrap gap-2">
-                              {detail.label.frasi_pericolo
-                                .filter((frasia) =>
-                                  matchesSearch(String(frasia))
-                                )
-                                .map((frasia, idx) => (
-                                  <Badge
-                                    key={idx}
-                                    className="bg-red-50 text-red-700 border-0 px-3 py-1.5 font-medium text-xs"
-                                  >
-                                    {String(frasia)}
-                                  </Badge>
-                                ))}
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
+                      <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 pb-2">
+                          Frasi di Pericolo
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {detail.label.frasi_pericolo
+                            .filter((frasia) => matchesSearch(String(frasia)))
+                            .map((frasia, idx) => (
+                              <Badge
+                                key={idx}
+                                className="bg-red-50 text-red-700 border-0 px-3 py-1.5 font-medium text-xs"
+                              >
+                                {String(frasia)}
+                              </Badge>
+                            ))}
+                        </div>
+                      </div>
                     )}
 
                   {/* Frasi di prudenza */}
