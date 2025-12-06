@@ -18,6 +18,7 @@ import {
   ChevronUp,
   FileText,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface AlertNotes {
   dose_um?: string;
@@ -38,13 +39,13 @@ export interface AlertNotes {
   resistenze_llm?: string | null;
   epoca_impiego_llm?: string;
   n_max_applicazioni?: number;
-  fasce_rispetto_acqua?: string | null;
+  fasce_rispetto_acqua?: string[] | string | null;
   modalita_applicazione?: string;
   n_max_applicazioni_um?: string;
-  fasce_rispetto_colture?: string | null;
-  fasce_di_rispetto_e_deriva?: string | null;
+  fasce_rispetto_colture?: string[] | string | null;
+  fasce_di_rispetto_e_deriva?: string[] | string | null;
   total_stock_required_for_jobs?: number;
-  fasce_di_rispetto_e_deriva_llm?: string | null;
+  fasce_di_rispetto_e_deriva_llm?: string[] | string | null;
   total_stock_required_for_jobs_um?: string;
   colture_target_fuori_periodo_di_produzione?: string | null;
   colture_target_fuori_periodo_di_produzione_llm?: string | null;
@@ -67,6 +68,7 @@ export interface JobRow {
 
 interface JobSelectedDetailsProps {
   selectedRows: JobRow[];
+  isMobile?: boolean;
 }
 
 class AlertNotesFormatter {
@@ -149,9 +151,34 @@ class AlertNotesFormatter {
   public isDdtDateOk(): boolean {
     return this.alertNotes?.ddt_date_is_ok === true;
   }
+
+  public getFasceDeriva(): string[] {
+    return this.toArray(this.alertNotes?.fasce_di_rispetto_e_deriva);
+  }
+
+  public getFasceDerivaLLM(): string[] {
+    return this.toArray(this.alertNotes?.fasce_di_rispetto_e_deriva_llm);
+  }
+
+  public getFasceAcqua(): string[] {
+    return this.toArray(this.alertNotes?.fasce_rispetto_acqua);
+  }
+
+  public getFasceColture(): string[] {
+    return this.toArray(this.alertNotes?.fasce_rispetto_colture);
+  }
+
+  private toArray(value?: string | string[] | null): string[] {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.filter(Boolean);
+    return value.trim() ? [value] : [];
+  }
 }
 
-export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
+export function JobSelectedDetails({
+  selectedRows,
+  isMobile = false,
+}: JobSelectedDetailsProps) {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [expandedFrasiPericolo, setExpandedFrasiPericolo] = useState<
     Set<string>
@@ -160,6 +187,18 @@ export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
     new Set()
   );
   const [expandedResistenze, setExpandedResistenze] = useState<Set<string>>(
+    new Set()
+  );
+  const [expandedFasceDeriva, setExpandedFasceDeriva] = useState<Set<string>>(
+    new Set()
+  );
+  const [expandedFasceDerivaLLM, setExpandedFasceDerivaLLM] = useState<
+    Set<string>
+  >(new Set());
+  const [expandedFasceAcqua, setExpandedFasceAcqua] = useState<Set<string>>(
+    new Set()
+  );
+  const [expandedFasceColture, setExpandedFasceColture] = useState<Set<string>>(
     new Set()
   );
 
@@ -187,8 +226,18 @@ export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
   });
 
   return (
-    <div className="h-full flex flex-col bg-slate-50">
-      <div className="flex-shrink-0 p-4 bg-white border-b border-slate-200">
+    <div
+      className={cn(
+        "h-full flex flex-col",
+        isMobile ? "bg-white" : "bg-slate-50"
+      )}
+    >
+      <div
+        className={cn(
+          "flex-shrink-0 p-4 bg-white",
+          !isMobile && "border-b border-slate-200"
+        )}
+      >
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="h-4 w-4 text-slate-500" />
           <span className="text-sm font-medium text-slate-700">
@@ -233,7 +282,10 @@ export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
             return (
               <div
                 key={row.id}
-                className="bg-white rounded-xl p-4 shadow-sm space-y-3 border border-slate-200"
+                className={cn(
+                  "bg-white rounded-xl p-4 shadow-sm space-y-3",
+                  !isMobile && "border border-slate-200"
+                )}
               >
                 {/* Header */}
                 <div className="space-y-2">
@@ -282,7 +334,7 @@ export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
                 {hasAlertNotes && (
                   <div className="border-t border-slate-100 pt-3 space-y-3">
                     {/* Dose e Acqua Max affiancati */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 items-start">
                       <div className="space-y-1">
                         <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
                           <Droplet className="h-3 w-3" />
@@ -300,7 +352,8 @@ export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
                         )}
                       </div>
                       <div className="space-y-1">
-                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                          <Droplet className="h-3 w-3 text-slate-500" />
                           Acqua Max
                         </span>
                         {formatter.getAcquaMax() &&
@@ -401,6 +454,7 @@ export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
                       </div>
                     </div>
 
+                    {/* Fasce di rispetto e derivati */}
                     {/* Stock - Utilizzato e Necessario affiancati */}
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
@@ -478,6 +532,194 @@ export function JobSelectedDetails({ selectedRows }: JobSelectedDetailsProps) {
                         </p>
                       )}
                     </div>
+
+                    {formatter.getFasceDeriva().length > 0 && (
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => {
+                            setExpandedFasceDeriva((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(row.id)) {
+                                next.delete(row.id);
+                              } else {
+                                next.add(row.id);
+                              }
+                              return next;
+                            });
+                          }}
+                          className="w-full text-left flex items-center gap-1 hover:opacity-80 transition-opacity"
+                        >
+                          <Shield className="h-3 w-3 text-slate-600 shrink-0" />
+                          <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                            Fasce di rispetto e deriva
+                          </span>
+                          {expandedFasceDeriva.has(row.id) ? (
+                            <ChevronUp className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
+                          ) : (
+                            <ChevronDown className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
+                          )}
+                        </button>
+                        {expandedFasceDeriva.has(row.id) && (
+                          <div className="space-y-1">
+                            {formatter
+                              .getFasceDeriva()
+                              .filter((f) => matchesSearch(f))
+                              .map((fascia, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-start gap-1.5 text-xs text-slate-700 bg-slate-50 rounded p-2 border border-slate-100"
+                                >
+                                  <span className="text-slate-400 font-bold shrink-0">
+                                    •
+                                  </span>
+                                  <span>{fascia}</span>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {formatter.getFasceDerivaLLM().length > 0 && (
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => {
+                            setExpandedFasceDerivaLLM((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(row.id)) {
+                                next.delete(row.id);
+                              } else {
+                                next.add(row.id);
+                              }
+                              return next;
+                            });
+                          }}
+                          className="w-full text-left flex items-center gap-1 hover:opacity-80 transition-opacity"
+                        >
+                          <Sparkles className="h-3 w-3 text-blue-600 shrink-0" />
+                          <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">
+                            Fasce rispetto e deriva (AI)
+                          </span>
+                          {expandedFasceDerivaLLM.has(row.id) ? (
+                            <ChevronUp className="h-3 w-3 text-blue-600 ml-auto shrink-0" />
+                          ) : (
+                            <ChevronDown className="h-3 w-3 text-blue-600 ml-auto shrink-0" />
+                          )}
+                        </button>
+                        {expandedFasceDerivaLLM.has(row.id) && (
+                          <div className="space-y-1">
+                            {formatter
+                              .getFasceDerivaLLM()
+                              .filter((f) => matchesSearch(f))
+                              .map((fascia, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-start gap-1.5 text-xs text-blue-700 bg-blue-50 rounded p-2 border border-blue-100"
+                                >
+                                  <span className="text-blue-300 font-bold shrink-0">
+                                    •
+                                  </span>
+                                  <span>{fascia}</span>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {formatter.getFasceAcqua().length > 0 && (
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => {
+                            setExpandedFasceAcqua((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(row.id)) {
+                                next.delete(row.id);
+                              } else {
+                                next.add(row.id);
+                              }
+                              return next;
+                            });
+                          }}
+                          className="w-full text-left flex items-center gap-1 hover:opacity-80 transition-opacity"
+                        >
+                          <Droplet className="h-3 w-3 text-sky-600 shrink-0" />
+                          <span className="text-xs font-medium text-sky-600 uppercase tracking-wide">
+                            Fasce rispetto acqua
+                          </span>
+                          {expandedFasceAcqua.has(row.id) ? (
+                            <ChevronUp className="h-3 w-3 text-sky-600 ml-auto shrink-0" />
+                          ) : (
+                            <ChevronDown className="h-3 w-3 text-sky-600 ml-auto shrink-0" />
+                          )}
+                        </button>
+                        {expandedFasceAcqua.has(row.id) && (
+                          <div className="space-y-1">
+                            {formatter
+                              .getFasceAcqua()
+                              .filter((f) => matchesSearch(f))
+                              .map((fascia, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-start gap-1.5 text-xs text-sky-700 bg-sky-50 rounded p-2 border border-sky-100"
+                                >
+                                  <span className="text-sky-300 font-bold shrink-0">
+                                    •
+                                  </span>
+                                  <span>{fascia}</span>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {formatter.getFasceColture().length > 0 && (
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => {
+                            setExpandedFasceColture((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(row.id)) {
+                                next.delete(row.id);
+                              } else {
+                                next.add(row.id);
+                              }
+                              return next;
+                            });
+                          }}
+                          className="w-full text-left flex items-center gap-1 hover:opacity-80 transition-opacity"
+                        >
+                          <Sprout className="h-3 w-3 text-emerald-600 shrink-0" />
+                          <span className="text-xs font-medium text-emerald-600 uppercase tracking-wide">
+                            Fasce rispetto colture
+                          </span>
+                          {expandedFasceColture.has(row.id) ? (
+                            <ChevronUp className="h-3 w-3 text-emerald-600 ml-auto shrink-0" />
+                          ) : (
+                            <ChevronDown className="h-3 w-3 text-emerald-600 ml-auto shrink-0" />
+                          )}
+                        </button>
+                        {expandedFasceColture.has(row.id) && (
+                          <div className="space-y-1">
+                            {formatter
+                              .getFasceColture()
+                              .filter((f) => matchesSearch(f))
+                              .map((fascia, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-start gap-1.5 text-xs text-emerald-700 bg-emerald-50 rounded p-2 border border-emerald-100"
+                                >
+                                  <span className="text-emerald-300 font-bold shrink-0">
+                                    •
+                                  </span>
+                                  <span>{fascia}</span>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Resistenze */}
                     <div className="space-y-2">
