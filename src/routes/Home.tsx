@@ -7,6 +7,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { ContactRequestForm } from "@/components/organism/ContactRequestForm";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 interface HighlightCard {
   title: string;
@@ -173,10 +174,12 @@ export default class Home extends Component<
             </div>
           </div>
           <div className="md:w-1/2 flex justify-center md:justify-end">
-            <img
+            <OptimizedImage
               src="/robot_farmer.png"
               alt="Robot Farmer"
-              className="w-full max-w-lg h-auto object-cover rounded-2xl shadow-xl"
+              priority={true}
+              containerClassName="w-full max-w-lg rounded-2xl shadow-xl"
+              className="w-full h-auto object-cover rounded-2xl"
             />
           </div>
         </div>
@@ -278,10 +281,11 @@ export default class Home extends Component<
             </p>
           </div>
           <div className="md:w-1/2 flex justify-center md:justify-end">
-            <img
+            <OptimizedImage
               src="image/no_calcoli.png"
               alt="Gestione semplificata"
-              className="w-full max-w-xs h-auto object-cover "
+              containerClassName="w-full max-w-xs"
+              className="w-full h-auto object-cover"
             />
           </div>
         </div>
@@ -401,9 +405,10 @@ export default class Home extends Component<
           <div className="flex flex-col md:flex-row items-center gap-12 md:gap-24">
             <div className="w-full md:w-1/2 order-2 md:order-1 flex justify-center">
               <div className="relative w-full max-w-md aspect-square bg-agri-green-50 rounded-3xl flex items-center justify-center p-12">
-                <img
+                <OptimizedImage
                   src="/image/conforme_alle_normative.png"
                   alt="Conforme alle normative"
+                  containerClassName="w-full h-full"
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -451,9 +456,10 @@ export default class Home extends Component<
             </div>
             <div className="w-full md:w-1/2 flex justify-center">
               <div className="relative w-full max-w-md aspect-square bg-blue-50 rounded-3xl flex items-center justify-center p-12">
-                <img
+                <OptimizedImage
                   src="/image/riduzione_costi_tempo.png"
                   alt="Riduzione di tempo e costi"
+                  containerClassName="w-full h-full"
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -464,9 +470,10 @@ export default class Home extends Component<
           <div className="flex flex-col md:flex-row items-center gap-12 md:gap-24">
             <div className="w-full md:w-1/2 order-2 md:order-1 flex justify-center">
               <div className="relative w-full max-w-md aspect-square bg-purple-50 rounded-3xl flex items-center justify-center p-12">
-                <img
+                <OptimizedImage
                   src="/image/white_label.png"
                   alt="White label personalizzato"
+                  containerClassName="w-full h-full"
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -513,9 +520,10 @@ export default class Home extends Component<
             </div>
             <div className="w-full md:w-1/2 flex justify-center">
               <div className="relative w-full max-w-md aspect-square bg-orange-50 rounded-3xl flex items-center justify-center p-12">
-                <img
+                <OptimizedImage
                   src="/image/integrabile.png"
                   alt="Integrabile con sistemi terzi"
+                  containerClassName="w-full h-full"
                   className="w-full h-full object-contain"
                 />
               </div>
