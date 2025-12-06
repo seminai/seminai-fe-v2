@@ -67,9 +67,10 @@ interface AllJobsViewProps {
     registration?: string,
     showToast?: boolean
   ) => void;
+  showSelectionSummary?: boolean;
 }
 
-function JobIdMultiSelect({
+export function JobIdMultiSelect({
   options,
   value,
   onChange,
@@ -237,6 +238,7 @@ export function AllJobsView({
   paginatedJobsCount,
   onClearSelection,
   onProductClick,
+  showSelectionSummary = false,
 }: AllJobsViewProps) {
   const hasError = Boolean(error);
   const errorMessage =
@@ -246,31 +248,35 @@ export function AllJobsView({
     <div className="flex-1 flex overflow-hidden px-6 pb-6">
       <div className="flex-1 overflow-hidden">
         <div className="h-full space-y-4">
-          <div className="flex items-start justify-between gap-3 pt-2 pr-2 flex-wrap">
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span>
-                Job selezionati: {selectedJobIds.length || 0} • Totale
-                operazioni: {paginatedJobsCount}
-              </span>
-              {isLoading && (
-                <Spinner
-                  className="h-3 w-3 text-slate-400"
-                  ariaLabel="Caricamento"
+          {showSelectionSummary && (
+            <div className="flex items-start justify-between gap-3 pt-2 pr-2 flex-wrap">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span>
+                  Job selezionati: {selectedJobIds.length || 0} • Totale
+                  operazioni: {paginatedJobsCount}
+                </span>
+                {isLoading && (
+                  <Spinner
+                    className="h-3 w-3 text-slate-400"
+                    ariaLabel="Caricamento"
+                  />
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {selectedJobIds.length === 0 && (
+                  <span className="text-xs font-medium text-slate-600 whitespace-nowrap">
+                    Seleziona una o più operazioni
+                  </span>
+                )}
+                <JobIdMultiSelect
+                  options={jobIdOptions}
+                  value={selectedJobIds}
+                  onChange={onJobIdsChange}
+                  isLoading={isLoading}
                 />
-              )}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-600 whitespace-nowrap">
-                Seleziona una o più operazioni
-              </span>
-              <JobIdMultiSelect
-                options={jobIdOptions}
-                value={selectedJobIds}
-                onChange={onJobIdsChange}
-                isLoading={isLoading}
-              />
-            </div>
-          </div>
+          )}
           {hasError && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
               <p className="font-semibold">Errore nel caricamento dei dati</p>

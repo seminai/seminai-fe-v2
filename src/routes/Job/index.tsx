@@ -30,11 +30,8 @@ import {
 } from "@/components/ui/sheet";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   History,
-  ListChecks,
-  ClipboardCheck,
   Package,
   Sprout,
   FileText,
@@ -45,7 +42,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import AllJobsView from "./AllJobsView";
+import AllJobsView, { JobIdMultiSelect } from "./AllJobsView";
 import ReviewJobsView from "./ReviewJobsView";
 
 // Component to display job history in a Sheet
@@ -1371,10 +1368,12 @@ export default function JobPage() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    if (isMobile && viewMode !== "review") {
+    if (isMobile) {
       setViewMode("review");
+    } else {
+      setViewMode("all");
     }
-  }, [isMobile, viewMode]);
+  }, [isMobile]);
 
   // Carica le impostazioni salvate da IndexedDB all'inizializzazione
   useEffect(() => {
@@ -2204,6 +2203,7 @@ export default function JobPage() {
       paginatedJobsCount={allGroupRows.length}
       onClearSelection={() => setSelectedAllRows([])}
       onProductClick={handleOpenLabel}
+      showSelectionSummary={isMobile}
     />
   );
 
@@ -2252,30 +2252,34 @@ export default function JobPage() {
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       <PageHeader title="Operazioni">
-        {!isMobile && (
-          <Tabs
-            value={viewMode}
-            onValueChange={(v) => setViewMode(v as ViewMode)}
-          >
-            <TabsList>
-              <TabsTrigger value="all" className="gap-1.5">
-                <ListChecks className="h-4 w-4" />
-                Tutte
-              </TabsTrigger>
-              <TabsTrigger value="review" className="gap-1.5">
-                <ClipboardCheck className="h-4 w-4" />
-                Da confermare
-                {totalPendingOperations > 0 && (
-                  <Badge
-                    variant="destructive"
-                    className="ml-1 h-5 min-w-5 px-1.5 text-xs"
-                  >
-                    {totalPendingOperations}
-                  </Badge>
-                )}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+        {!isMobile && viewMode === "all" && (
+          <div className="flex items-center justify-end gap-4 flex-wrap">
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <span>
+                Job selezionati: {selectedAllJobIds.length || 0} • Totale
+                operazioni: {allGroupRows.length}
+              </span>
+              {isLoadingAllView && (
+                <Spinner
+                  className="h-3 w-3 text-slate-400"
+                  ariaLabel="Caricamento"
+                />
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {selectedAllJobIds.length <= 1 && (
+                <span className="text-xs font-medium text-slate-600 whitespace-nowrap">
+                  Puoi selezionare una o più operazioni
+                </span>
+              )}
+              <JobIdMultiSelect
+                options={jobIdOptions}
+                value={selectedAllJobIds}
+                onChange={setSelectedAllJobIds}
+                isLoading={isLoadingAllView}
+              />
+            </div>
+          </div>
         )}
       </PageHeader>
 
