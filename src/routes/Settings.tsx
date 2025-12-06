@@ -1,10 +1,20 @@
 import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useTokenCosts } from "@/hooks/useTokenCosts";
 import { Spinner } from "@/components/ui/spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -13,6 +23,7 @@ import {
   type UpdateCurrentUserRequest,
 } from "@/api/users";
 import { uploadProfilePictureWithBearer } from "@/api/users";
+import { type TokenUsage } from "@/api/token-costs";
 import { InputFile } from "@/components/ui/input-file";
 import {
   updatePasswordWithBearer,
@@ -26,14 +37,237 @@ import {
   type EditableUserState,
 } from "@/utils/user-edit";
 
+const currencyFormatter = new Intl.NumberFormat("it-IT", {
+  style: "currency",
+  currency: "EUR",
+  minimumFractionDigits: 4,
+  maximumFractionDigits: 6,
+});
+
+const integerFormatter = new Intl.NumberFormat("it-IT", {
+  maximumFractionDigits: 0,
+});
+
+const percentageFormatter = new Intl.NumberFormat("it-IT", {
+  style: "percent",
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+const dateTimeFormatter = new Intl.DateTimeFormat("it-IT", {
+  dateStyle: "short",
+  timeStyle: "short",
+});
+
+function formatCurrency(value: number): string {
+  return currencyFormatter.format(value);
+}
+
+function formatInteger(value: number): string {
+  return integerFormatter.format(value);
+}
+
+function formatPercentage(value: number): string {
+  return percentageFormatter.format(value);
+}
+
+function formatDateTime(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return dateTimeFormatter.format(parsed);
+}
+
+class TokenUsageViewModel {
+  private readonly usage: TokenUsage;
+
+  constructor(usage: TokenUsage) {
+    this.usage = usage;
+  }
+
+  public get id(): string {
+    return this.usage.id;
+  }
+
+  public get jobType(): string {
+    return this.usage.jobType;
+  }
+
+  public get model(): string {
+    return this.usage.model;
+  }
+
+  public get promptTokens(): string {
+    return formatInteger(this.usage.promptTokens);
+  }
+
+  public get completionTokens(): string {
+    return formatInteger(this.usage.completionTokens);
+  }
+
+  public get totalTokens(): string {
+    return formatInteger(this.usage.totalTokens);
+  }
+
+  public get cost(): string {
+    return formatCurrency(this.usage.cost);
+  }
+
+  public get clientCost(): string {
+    return formatCurrency(this.usage.costClient);
+  }
+
+  public get margin(): string {
+    return formatPercentage(this.usage.seminaiMargin);
+  }
+
+  public get createdAt(): string {
+    return formatDateTime(this.usage.createdAt);
+  }
+
+  public get reference(): string {
+    return (
+      this.usage.jobId ||
+      this.usage.jobGroupId ||
+      this.usage.companyId ||
+      "—"
+    );
+  }
+
+  public get metadataCompanyId(): string {
+    const metaCompany = (this.usage.metadata as { companyId?: unknown })?.companyId;
+    if (typeof metaCompany === "string" && metaCompany.trim().length > 0) {
+      return metaCompany;
+    }
+    if (typeof this.usage.companyId === "string" && this.usage.companyId) {
+      return this.usage.companyId;
+    }
+    return "—";
+  }
+
+  public get metadataSummary(): string {
+    const entries = Object.entries(this.usage.metadata ?? {});
+    if (entries.length === 0) return "—";
+    return entries
+      .slice(0, 3)
+      .map(([key, value]) => `${key}: ${String(value)}`)
+      .join(" • ");
+  }
+}
+
+type TokenUsageFilters = {
+  text: string;
+  jobType: string;
+  model: string;
+  companyId: string;
+};
+
+class TokenUsageFilterEngine {
+  private readonly filters: TokenUsageFilters;
+
+  constructor(filters: TokenUsageFilters) {
+    this.filters = filters;
+  }
+
+  public apply(rows: TokenUsageViewModel[]): TokenUsageViewModel[] {
+    return rows.filter((row) => this.matches(row));
+  }
+
+  private matches(row: TokenUsageViewModel): boolean {
+    const { text, jobType, model, companyId } = this.filters;
+    if (jobType && row.jobType !== jobType) return false;
+    if (model && row.model !== model) return false;
+    if (companyId && row.metadataCompanyId !== companyId) return false;
+
+    if (text.trim().length === 0) return true;
+    const query = text.toLowerCase();
+    return (
+      row.model.toLowerCase().includes(query) ||
+      row.jobType.toLowerCase().includes(query) ||
+      row.metadataCompanyId.toLowerCase().includes(query) ||
+      row.reference.toLowerCase().includes(query) ||
+      row.metadataSummary.toLowerCase().includes(query)
+    );
+  }
+}
+
+const DEFAULT_FILTERS: TokenUsageFilters = {
+  text: "",
+  jobType: "",
+  model: "",
+  companyId: "",
+};
+
 export default function Settings() {
   const { data, isLoading, error } = useCurrentUser();
   const queryClient = useQueryClient();
+  const {
+    usages,
+    totals,
+    isLoading: isLoadingTokenCosts,
+    isError: isTokenCostsError,
+    error: tokenCostsError,
+  } = useTokenCosts();
 
   const userData = data?.data.user;
   const [editable, setEditable] = React.useState<EditableUserState | null>(
     userData ? createEditableUserState(userData) : null
   );
+
+  const usageRows = React.useMemo(() => {
+    return usages.map((usage) => new TokenUsageViewModel(usage));
+  }, [usages]);
+
+  const tokenCostSummary = React.useMemo(
+    () =>
+      totals
+        ? [
+            {
+              label: "Costo totale (cliente)",
+              value: formatCurrency(totals.totalCostClient),
+            },
+            {
+              label: "Token prompt",
+              value: formatInteger(totals.totalPromptTokens),
+            },
+            {
+              label: "Token completion",
+              value: formatInteger(totals.totalCompletionTokens),
+            },
+            {
+              label: "Token totali",
+              value: formatInteger(totals.totalTokens),
+            },
+          ]
+        : [],
+    [totals]
+  );
+
+  const [filters, setFilters] = React.useState<TokenUsageFilters>(
+    DEFAULT_FILTERS
+  );
+
+  const filterOptions = React.useMemo(() => {
+    const jobTypes = Array.from(new Set(usageRows.map((row) => row.jobType)));
+    const models = Array.from(new Set(usageRows.map((row) => row.model)));
+    const companies = Array.from(
+      new Set(
+        usageRows
+          .map((row) => row.metadataCompanyId)
+          .filter((id) => id !== "—")
+      )
+    );
+    return { jobTypes, models, companies };
+  }, [usageRows]);
+
+  const filteredUsageRows = React.useMemo(() => {
+    const engine = new TokenUsageFilterEngine(filters);
+    return engine.apply(usageRows);
+  }, [filters, usageRows]);
+
+  const hasUsages = usageRows.length > 0;
+  const hasFilteredUsages = filteredUsageRows.length > 0;
 
   React.useEffect(() => {
     if (userData) {
@@ -344,6 +578,179 @@ export default function Settings() {
           </div>
         </Card>
       </div>
+
+      <Card className="p-4 shadow-none mt-6">
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <div>
+            <h2 className="font-medium">Storico costi token</h2>
+            <p className="text-sm text-gray-600">
+              Dettaglio dei consumi e dei costi calcolati con margine Seminai.
+            </p>
+          </div>
+          {isLoadingTokenCosts && (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Spinner size={16} ariaLabel="Caricamento costi token" />
+              <span>Caricamento…</span>
+            </div>
+          )}
+        </div>
+
+        {isTokenCostsError && (
+          <div className="mb-4 text-sm text-red-600">
+            {tokenCostsError?.message ?? "Impossibile caricare i costi."}
+          </div>
+        )}
+
+        {tokenCostSummary.length > 0 && (
+          <div className="grid sm:grid-cols-3 md:grid-cols-5 gap-3 mb-4">
+            {tokenCostSummary.map((item) => (
+              <div
+                key={item.label}
+                className="rounded-lg border border-agri-green-100 bg-agri-green-50/60 p-3"
+              >
+                <div className="text-xs text-gray-600">{item.label}</div>
+                <div className="text-base font-semibold text-agri-green-900">
+                  {item.value}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mb-4 flex flex-wrap gap-3 items-center">
+          <Input
+            placeholder="Cerca per modello, job, metadata…"
+            value={filters.text}
+            className="w-full sm:w-64"
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, text: e.target.value }))
+            }
+          />
+          <select
+            className="h-10 rounded-md border border-agri-green-100 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-agri-green-200"
+            value={filters.jobType}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, jobType: e.target.value }))
+            }
+          >
+            <option value="">Job type</option>
+            {filterOptions.jobTypes.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+          <select
+            className="h-10 rounded-md border border-agri-green-100 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-agri-green-200"
+            value={filters.model}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, model: e.target.value }))
+            }
+          >
+            <option value="">Modello</option>
+            {filterOptions.models.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+          <select
+            className="h-10 rounded-md border border-agri-green-100 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-agri-green-200"
+            value={filters.companyId}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, companyId: e.target.value }))
+            }
+          >
+            <option value="">Azienda (metadata)</option>
+            {filterOptions.companies.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <Button
+            variant="outline"
+            onClick={() => setFilters(DEFAULT_FILTERS)}
+            className="ml-auto"
+          >
+            Reset filtri
+          </Button>
+        </div>
+
+        <div className="max-h-[420px] rounded-lg border border-agri-green-100 bg-white shadow-sm overflow-auto">
+          <Table className="min-w-[1040px] [&_tr]:border-agri-green-100 [&_th]:border-agri-green-100 [&_td]:border-agri-green-50">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Data</TableHead>
+                <TableHead>Job</TableHead>
+                <TableHead>Modello</TableHead>
+                <TableHead className="text-right">Prompt</TableHead>
+                <TableHead className="text-right">Completion</TableHead>
+                <TableHead className="text-right">Token totali</TableHead>
+                <TableHead className="text-right">Costo cliente</TableHead>
+                <TableHead>Azienda (metadata)</TableHead>
+                <TableHead>Riferimento</TableHead>
+                <TableHead>Metadata</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoadingTokenCosts && (
+                <TableRow>
+                  <TableCell colSpan={10}>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Spinner size={16} ariaLabel="Caricamento costi token" />
+                      <span>Recupero costi in corso…</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+
+              {!isLoadingTokenCosts && !hasUsages && (
+                <TableRow>
+                  <TableCell colSpan={10}>
+                    <div className="text-sm text-gray-600">
+                      Nessun costo registrato al momento.
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+
+              {!isLoadingTokenCosts &&
+                hasUsages &&
+                filteredUsageRows.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell>{row.createdAt}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{row.jobType}</Badge>
+                    </TableCell>
+                    <TableCell>{row.model}</TableCell>
+                    <TableCell className="text-right">
+                      {row.promptTokens}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.completionTokens}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.totalTokens}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.clientCost}
+                    </TableCell>
+                    <TableCell className="max-w-[180px] truncate">
+                      {row.metadataCompanyId}
+                    </TableCell>
+                    <TableCell className="max-w-[180px] truncate">
+                      {row.reference}
+                    </TableCell>
+                    <TableCell className="max-w-[260px] truncate">
+                      {row.metadataSummary}
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
     </div>
   );
 }
