@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from "react";
-import { useJobs } from "@/hooks/useJobs";
 import { useJobGroupsSummary, useJobGroupDetail } from "@/hooks/useJobGroups";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -7,14 +6,8 @@ import { useLabelsSummary } from "@/hooks/useLabelsSummary";
 import { useLabel } from "@/hooks/useLabel";
 import { PageHeader } from "@/components/organism/Header";
 import { userSettingsIndexDBManager } from "@/utils/userSettingsIndexDBManager";
-import {
-  EditableTable,
-  type EditableColumn,
-} from "@/components/organism/EditableTable";
-import {
-  JobSelectedDetails,
-  type JobRow,
-} from "@/components/organism/JobSelectedDetails";
+import { type EditableColumn } from "@/components/organism/EditableTable";
+import { type JobRow } from "@/components/organism/JobSelectedDetails";
 
 import { toast } from "sonner";
 import {
@@ -22,7 +15,6 @@ import {
   type JobWithRelations,
   type Product,
   type JobHistoryEntry,
-  type JobGroupSummaryItem,
 } from "@/api/jobs";
 import { stocksApiService, type CreateStockPayload } from "@/api/stocks";
 import { Spinner } from "@/components/ui/spinner";
@@ -43,26 +35,18 @@ import {
   History,
   ListChecks,
   ClipboardCheck,
-  Building2,
-  Calendar,
-  ChevronRight,
-  ChevronLeft,
   Package,
   Sprout,
   FileText,
   Search,
-  GripVertical,
-  PanelLeftClose,
-  PanelLeftOpen,
   File,
   AlertTriangle,
   CheckCircle2,
   XCircle,
-  Brain,
-  Eraser,
-  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import AllJobsView from "./AllJobsView";
+import ReviewJobsView from "./ReviewJobsView";
 
 // Component to display job history in a Sheet
 interface JobHistorySheetProps {
@@ -1238,196 +1222,6 @@ function HistoryEntryDetails({
 }
 
 // Componente per mostrare lo storico inline (per la vista review)
-interface HistoryPanelProps {
-  history: JobHistoryEntry[];
-  jobCode: string;
-  onProductClick?: (productName: string, registrationNumber?: string) => void;
-}
-
-function HistoryPanel({ history, jobCode, onProductClick }: HistoryPanelProps) {
-  const { productionUnits } = useProductionUnit();
-  const [filterText, setFilterText] = useState<string>("");
-
-  const groupedHistory = useMemo(() => {
-    const groups: Record<string, JobHistoryEntry[]> = {};
-
-    // Filtra le history in base al testo di ricerca
-    let filteredHistory = history;
-
-    // Applica il filtro di ricerca testuale se presente
-    if (filterText) {
-      const searchText = filterText.toLowerCase();
-      filteredHistory = filteredHistory.filter((entry) => {
-        return (
-          entry.title.toLowerCase().includes(searchText) ||
-          String(entry.value).toLowerCase().includes(searchText) ||
-          entry.metadata?.description?.toLowerCase().includes(searchText) ||
-          entry.metadata?.productName?.toLowerCase().includes(searchText) ||
-          entry.metadata?.productRegistrationNumber
-            ?.toLowerCase()
-            .includes(searchText) ||
-          entry.metadata?.productionUnitName
-            ?.toLowerCase()
-            .includes(searchText) ||
-          entry.metadata?.cropName?.toLowerCase().includes(searchText)
-        );
-      });
-    }
-
-    filteredHistory.forEach((entry) => {
-      if (!groups[entry.step]) {
-        groups[entry.step] = [];
-      }
-      groups[entry.step].push(entry);
-    });
-    return groups;
-  }, [history, filterText]);
-
-  return (
-    <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
-      <div className="flex-shrink-0 p-4 bg-white">
-        <div className="flex items-center gap-2 mb-3">
-          <History className="h-4 w-4 text-slate-500" />
-          <span className="text-sm font-medium text-slate-700">
-            Storico Operazione
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="font-mono text-xs shrink-0">
-            {jobCode}
-          </Badge>
-          <div className="relative flex-1">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              type="text"
-              placeholder="Cerca nello storico..."
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-              className="pl-8 text-sm"
-            />
-          </div>
-        </div>
-      </div>
-      <div className="flex-1 overflow-y-auto p-3 min-h-0">
-        <div className="space-y-4">
-          {Object.entries(groupedHistory).map(([step, entries]) => (
-            <div key={step} className="space-y-2">
-              <h4 className="text-xs font-semibold text-slate-600 uppercase tracking-wide border-b border-slate-200 pb-1">
-                {HistoryEntryFormatter.formatStep(step)}
-              </h4>
-              <div className="space-y-1.5">
-                {entries.map((entry, idx) => (
-                  <div
-                    key={`${step}-${idx}`}
-                    className="flex flex-col gap-0.5 py-1.5 border-l-2 border-slate-200 pl-2 text-xs"
-                  >
-                    <div className="flex items-start justify-between gap-1">
-                      <span className="font-medium text-slate-700 leading-tight">
-                        {entry.title}
-                      </span>
-                      <Badge
-                        variant="secondary"
-                        className={`text-[10px] shrink-0 px-1.5 py-0 ${HistoryEntryFormatter.getSourceColor(
-                          entry.source
-                        )}`}
-                      >
-                        {HistoryEntryFormatter.formatSource(entry.source)}
-                      </Badge>
-                    </div>
-                    <span className="text-slate-600">
-                      {String(entry.value)}
-                    </span>
-                    {entry.metadata?.description && (
-                      <p className="text-[10px] text-slate-500 leading-relaxed">
-                        {entry.metadata.description}
-                      </p>
-                    )}
-                    <HistoryEntryDetails
-                      entry={entry}
-                      productionUnits={productionUnits}
-                      onProductClick={onProductClick}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-          {Object.keys(groupedHistory).length === 0 && (
-            <div className="text-center py-6 text-slate-400 text-xs">
-              {filterText
-                ? "Nessun risultato trovato"
-                : "Nessuno storico disponibile"}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Componente per la card del gruppo nella vista review
-interface JobGroupCardProps {
-  group: JobGroupSummaryItem;
-  isSelected: boolean;
-  onClick: () => void;
-}
-
-function JobGroupCard({ group, isSelected, onClick }: JobGroupCardProps) {
-  const formattedDate = new Date(group.createdAt).toLocaleDateString("it-IT", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "w-full text-left p-3 rounded-lg border transition-all",
-        isSelected
-          ? "bg-agri-green-50 border-agri-green-300 ring-1 ring-agri-green-200"
-          : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <Badge className="font-mono text-xs bg-agri-green-50">
-              #{group.jobId}
-            </Badge>
-            {group.pendingOperations > 0 && (
-              <Badge variant="destructive" className="text-xs  text-black">
-                {group.pendingOperations} da verificare
-              </Badge>
-            )}
-          </div>
-          <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
-            <span className="flex items-center gap-1">
-              <Building2 className="h-3 w-3" />
-              {group.company.name}
-            </span>
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {formattedDate}
-            </span>
-          </div>
-          <div className="mt-1 text-xs text-slate-400">
-            {group.totalOperations} operazion
-            {group.totalOperations === 1 ? "e" : "i"}
-          </div>
-        </div>
-        <ChevronRight
-          className={cn(
-            "h-4 w-4 shrink-0 transition-colors",
-            isSelected ? "text-agri-green-600" : "text-slate-300"
-          )}
-        />
-      </div>
-    </button>
-  );
-}
-
 class JobProductsFormatter {
   private readonly products: Product[];
 
@@ -1472,6 +1266,7 @@ class JobTableRowBuilder {
       id: job.id,
       jobCode: job.jobId ?? "-",
       dateOfOpeation: new Date(job.dateOfOpeation),
+      createdAt: new Date(job.createdAt),
       companyName: company.name,
       productionUnitName: productionUnit.name,
       cropName: productionUnit.cropName,
@@ -1539,16 +1334,25 @@ class JobBulkVerifier {
 type ViewMode = "all" | "review";
 
 export default function JobPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>("review");
+  const [viewMode, setViewMode] = useState<ViewMode>("all");
   const [isBulkVerifying, setIsBulkVerifying] = useState<boolean>(false);
   const [historySheetOpen, setHistorySheetOpen] = useState<boolean>(false);
-  const [selectedJobHistory, setSelectedJobHistory] = useState<
-    JobHistoryEntry[]
-  >([]);
-  const [selectedJobCode, setSelectedJobCode] = useState<string>("");
+  const [selectedJobHistory] = useState<JobHistoryEntry[]>([]);
+  const [selectedJobCode] = useState<string>("");
   const [selectedGroupCode, setSelectedGroupCode] = useState<string | null>(
     null
   );
+  // Rimosso uso della paginazione nella vista "Tutte"
+  const [selectedAllRows, setSelectedAllRows] = useState<
+    EditableTableRowData[]
+  >([]);
+  const [selectedAllJobIds, setSelectedAllJobIds] = useState<string[]>([]);
+  const [allSelectedJobs, setAllSelectedJobs] = useState<JobWithRelations[]>(
+    []
+  );
+  const [isLoadingSelectedJobs, setIsLoadingSelectedJobs] =
+    useState<boolean>(false);
+  const [errorSelectedJobs, setErrorSelectedJobs] = useState<unknown>(null);
   const [selectedReviewRows, setSelectedReviewRows] = useState<
     EditableTableRowData[]
   >([]);
@@ -1565,6 +1369,12 @@ export default function JobPage() {
   >("details");
 
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    if (isMobile && viewMode !== "review") {
+      setViewMode("review");
+    }
+  }, [isMobile, viewMode]);
 
   // Carica le impostazioni salvate da IndexedDB all'inizializzazione
   useEffect(() => {
@@ -1730,7 +1540,6 @@ export default function JobPage() {
     },
     [groupsSidebarWidth]
   );
-  const { jobs, isLoading, error, refetch } = useJobs();
   const { labels } = useLabelsSummary();
   const bulkVerifier = useMemo(() => new JobBulkVerifier(jobsApiService), []);
 
@@ -1738,6 +1547,7 @@ export default function JobPage() {
   const {
     groups: jobGroupsSummary,
     isLoading: isLoadingGroupsSummary,
+    error: jobGroupsSummaryError,
     refetch: refetchGroupsSummary,
   } = useJobGroupsSummary();
 
@@ -1747,11 +1557,37 @@ export default function JobPage() {
     refetch: refetchGroupDetail,
   } = useJobGroupDetail(selectedGroupCode);
 
-  const handleOpenHistory = (row: Record<string, unknown>) => {
-    setSelectedJobHistory(row._history as JobHistoryEntry[]);
-    setSelectedJobCode(row.jobCode as string);
-    setHistorySheetOpen(true);
-  };
+  // Lista gruppi per la vista "Tutte" (ordine decrescente per data, poi jobId)
+  const sortedAllJobGroups = useMemo(() => {
+    const sorted = [...jobGroupsSummary];
+    return sorted.sort((a, b) => {
+      const dateDiff =
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return b.jobId.localeCompare(a.jobId);
+    });
+  }, [jobGroupsSummary]);
+
+  const selectedAllRowsHistory = useMemo(() => {
+    const history: JobHistoryEntry[] = [];
+    selectedAllRows.forEach((row) => {
+      const rowHistory = (row._history as JobHistoryEntry[]) ?? [];
+      history.push(...rowHistory);
+    });
+
+    const uniqueHistory = new Map<string, JobHistoryEntry>();
+    history.forEach((entry) => {
+      const key = `${entry.step}-${entry.title}-${entry.value}-${entry.timestamp}`;
+      if (!uniqueHistory.has(key)) {
+        uniqueHistory.set(key, entry);
+      }
+    });
+
+    return Array.from(uniqueHistory.values()).sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+  }, [selectedAllRows]);
 
   // Funzione per trovare l'etichetta per nome prodotto e numero di registrazione
   const findLabelByProduct = (
@@ -1798,12 +1634,70 @@ export default function JobPage() {
     }
   };
 
-  // Converte i jobs in formato per la tabella
-  const jobsAsRows = useMemo(() => {
-    return jobs.map((jobWithRelations) =>
+  // Rows per la vista "Tutte" ottenuti dal dettaglio del jobId corrente
+  const jobIdOptions = useMemo(() => {
+    return sortedAllJobGroups.map((group) => ({
+      value: group.jobId,
+      label: `Operazione ${group.jobId} creata il ${new Date(
+        group.createdAt
+      ).toLocaleDateString("it-IT")}`,
+      jobId: group.jobId,
+      createdAt: group.createdAt,
+    }));
+  }, [sortedAllJobGroups]);
+
+  useEffect(() => {
+    if (jobIdOptions.length > 0 && selectedAllJobIds.length === 0) {
+      // seleziona l'ultima per data (lista già ordinata per createdAt desc)
+      setSelectedAllJobIds([jobIdOptions[0].value]);
+    }
+  }, [jobIdOptions, selectedAllJobIds.length]);
+
+  useEffect(() => {
+    const fetchSelectedJobs = async () => {
+      if (selectedAllJobIds.length === 0) {
+        setAllSelectedJobs([]);
+        return;
+      }
+      setIsLoadingSelectedJobs(true);
+      setErrorSelectedJobs(null);
+      try {
+        const responses = await Promise.all(
+          selectedAllJobIds.map((jobId) => jobsApiService.getGroupDetail(jobId))
+        );
+        const jobs = responses.flatMap((res) => res.data.jobs ?? []);
+        setAllSelectedJobs(jobs);
+      } catch (err) {
+        setErrorSelectedJobs(err);
+      } finally {
+        setIsLoadingSelectedJobs(false);
+      }
+    };
+
+    fetchSelectedJobs();
+  }, [selectedAllJobIds]);
+
+  const allGroupRows = useMemo(() => {
+    if (!allSelectedJobs || allSelectedJobs.length === 0) return [];
+    return allSelectedJobs.map((jobWithRelations) =>
       new JobTableRowBuilder(jobWithRelations).build()
     );
-  }, [jobs]);
+  }, [allSelectedJobs]);
+
+  useEffect(() => {
+    setSelectedAllRows([]);
+  }, [selectedAllJobIds]);
+
+  const allViewError = jobGroupsSummaryError ?? errorSelectedJobs;
+  const isLoadingAllView = isLoadingGroupsSummary || isLoadingSelectedJobs;
+
+  useEffect(() => {
+    if (viewMode === "all") {
+      setSelectedReviewRows([]);
+    } else {
+      setSelectedAllRows([]);
+    }
+  }, [viewMode]);
 
   // Conteggio totale operazioni non verificate (dalla summary API)
   const totalPendingOperations = useMemo(() => {
@@ -1899,7 +1793,7 @@ export default function JobPage() {
     }
   };
 
-  // Colonne per la tabella editabile
+  // Colonne per la tabella editabile (vista "Tutte")
   const columns: EditableColumn[] = [
     {
       id: "jobCode",
@@ -1913,6 +1807,7 @@ export default function JobPage() {
         </Badge>
       ),
     },
+
     {
       id: "isVerified",
       title: "Stato Verifica",
@@ -1942,12 +1837,26 @@ export default function JobPage() {
       },
     },
     {
+      id: "dateOfOpeation",
+      title: "Data Operazione",
+      type: "date",
+      width: "150px",
+      readOnly: false,
+      render: (value) => {
+        if (!value) return "-";
+        const date = value instanceof Date ? value : new Date(value as string);
+        return date.toLocaleDateString("it-IT");
+      },
+    },
+
+    {
       id: "productionUnitName",
       title: "Unità Produttiva",
       type: "text",
       width: "200px",
       readOnly: true,
     },
+
     {
       id: "cropName",
       title: "Coltura",
@@ -1970,6 +1879,13 @@ export default function JobPage() {
       readOnly: true,
     },
     {
+      id: "treatedSurface",
+      title: "Superficie Trattata (ha)",
+      type: "number",
+      width: "180px",
+      readOnly: true,
+    },
+    {
       id: "productName",
       title: "Prodotto",
       type: "text",
@@ -1989,18 +1905,7 @@ export default function JobPage() {
       type: "number",
       width: "120px",
     },
-    {
-      id: "dateOfOpeation",
-      title: "Data Operazione",
-      type: "date",
-      width: "150px",
-      readOnly: false,
-      render: (value) => {
-        if (!value) return "-";
-        const date = value instanceof Date ? value : new Date(value as string);
-        return date.toLocaleDateString("it-IT");
-      },
-    },
+
     {
       id: "companyName",
       title: "Azienda",
@@ -2036,47 +1941,13 @@ export default function JobPage() {
       width: "180px",
       readOnly: true,
     },
-    {
-      id: "treatedSurface",
-      title: "Superficie Trattata (ha)",
-      type: "number",
-      width: "180px",
-      readOnly: true,
-    },
+
     {
       id: "avversity",
       title: "Avversità",
       type: "text",
       width: "150px",
       readOnly: true,
-    },
-    {
-      id: "note",
-      title: "Note",
-      type: "text",
-      width: "250px",
-      readOnly: true,
-    },
-    {
-      id: "_history",
-      title: "Storico",
-      type: "text",
-      width: "100px",
-      readOnly: true,
-      render: (_value, row) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleOpenHistory(row);
-          }}
-          className="gap-1.5"
-        >
-          <History className="h-4 w-4" />
-          Storico
-        </Button>
-      ),
     },
   ];
 
@@ -2242,11 +2113,7 @@ export default function JobPage() {
       });
 
       // Ricarica i dati
-      await Promise.all([
-        refetch(),
-        refetchGroupsSummary(),
-        refetchGroupDetail(),
-      ]);
+      await Promise.all([refetchGroupsSummary(), refetchGroupDetail()]);
     } catch (error) {
       toast.error("Errore durante l'aggiornamento", {
         description:
@@ -2272,11 +2139,7 @@ export default function JobPage() {
       });
 
       // Ricarica i dati
-      await Promise.all([
-        refetch(),
-        refetchGroupsSummary(),
-        refetchGroupDetail(),
-      ]);
+      await Promise.all([refetchGroupsSummary(), refetchGroupDetail()]);
     } catch (error) {
       toast.error("Errore durante l'eliminazione", {
         description:
@@ -2302,11 +2165,7 @@ export default function JobPage() {
         description: `${verifiedCount} operazioni verificate con successo`,
       });
 
-      await Promise.all([
-        refetch(),
-        refetchGroupsSummary(),
-        refetchGroupDetail(),
-      ]);
+      await Promise.all([refetchGroupsSummary(), refetchGroupDetail()]);
     } catch (error) {
       toast.error("Errore durante la verifica", {
         description:
@@ -2320,623 +2179,109 @@ export default function JobPage() {
 
   // Renderizza la vista "Tutte le operazioni"
   const renderAllJobsView = () => (
-    <div className="flex-1 overflow-auto px-6 pb-6">
-      <div className="mx-auto space-y-6">
-        <div className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-              <p className="font-semibold">Errore nel caricamento dei dati</p>
-              <p className="text-sm mt-1">
-                {error instanceof Error ? error.message : "Errore sconosciuto"}
-              </p>
-            </div>
-          )}
-
-          {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Spinner
-                ariaLabel="Caricamento operazioni"
-                className="text-neutral-400"
-              />
-            </div>
-          ) : jobs.length === 0 ? (
-            <div className="text-center py-16 text-neutral-500">
-              <p>Nessuna operazione trovata</p>
-            </div>
-          ) : (
-            <EditableTable
-              columns={columns}
-              rows={jobsAsRows}
-              isModify={true}
-              onSave={handleSave}
-              onDeleteSelected={handleDeleteSelected}
-              onBulkVerifySelected={handleBulkVerifySelected}
-              bulkVerifyButtonLabel="Verifica"
-              isBulkVerifyLoading={isBulkVerifying}
-              getRowId={(row) => row.id as string}
-            />
-          )}
-        </div>
-      </div>
-    </div>
+    <AllJobsView
+      error={allViewError}
+      isLoading={isLoadingAllView}
+      jobsLength={allGroupRows.length}
+      columns={columns}
+      rows={allGroupRows}
+      jobIdOptions={jobIdOptions}
+      selectedJobIds={selectedAllJobIds}
+      onJobIdsChange={setSelectedAllJobIds}
+      onSave={handleSave}
+      onDeleteSelected={handleDeleteSelected}
+      onBulkVerifySelected={handleBulkVerifySelected}
+      isBulkVerifying={isBulkVerifying}
+      selectedRows={selectedAllRows}
+      onSelectionChange={setSelectedAllRows}
+      historyPanelWidth={historyPanelWidth}
+      rightSidebarMode={rightSidebarMode}
+      onRightSidebarModeChange={setRightSidebarMode}
+      onResizeStart={handleResizeStart}
+      isResizing={isResizing}
+      selectedRowsHistory={selectedAllRowsHistory}
+      convertToJobRows={convertToJobRows}
+      paginatedJobsCount={allGroupRows.length}
+      onClearSelection={() => setSelectedAllRows([])}
+      onProductClick={handleOpenLabel}
+    />
   );
 
   // Renderizza la vista "Da confermare" (review)
-  const renderReviewView = () => {
-    // Vista mobile: mostra una schermata alla volta
-    if (isMobile) {
-      // Se nessun gruppo è selezionato, mostra la lista gruppi
-      if (!selectedGroupSummary) {
-        return (
-          <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-            <div className="p-3 bg-white flex-shrink-0">
-              <h3 className="text-sm font-medium text-slate-700">
-                Gruppi da verificare
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {pendingJobGroups.length} grupp
-                {pendingJobGroups.length === 1 ? "o" : "i"} •{" "}
-                {totalPendingOperations} operazion
-                {totalPendingOperations === 1 ? "e" : "i"}
-              </p>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
-              {isLoadingGroupsSummary ? (
-                <div className="flex items-center justify-center py-8">
-                  <Spinner ariaLabel="Caricamento gruppi" />
-                </div>
-              ) : pendingJobGroups.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 text-sm">
-                  <ClipboardCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>Nessuna operazione da verificare</p>
-                </div>
-              ) : (
-                pendingJobGroups.map((group) => (
-                  <JobGroupCard
-                    key={group.jobId}
-                    group={group}
-                    isSelected={false}
-                    onClick={() => {
-                      setSelectedGroupCode(group.jobId);
-                      setSelectedReviewRows([]);
-                    }}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-        );
-      }
-
-      // Se un gruppo è selezionato, mostra il dettaglio
-      return (
-        <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-          {/* Header mobile con navigazione tra gruppi */}
-          <div className="flex-shrink-0 p-3 bg-white">
-            <div className="flex items-center gap-2 mb-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={goToPreviousGroup}
-                disabled={!canGoToPreviousGroup}
-                className="p-1 h-auto"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <div className="flex-1 min-w-0 text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <h3 className="text-base font-semibold text-slate-800 truncate">
-                    #{selectedGroupSummary.jobId}
-                  </h3>
-                  <Badge variant="outline" className="shrink-0 text-xs">
-                    {selectedGroupSummary.totalOperations}
-                  </Badge>
-                </div>
-                <p className="text-xs text-slate-500">
-                  {selectedGroupSummary.company.name}
-                </p>
-                <p className="text-[10px] text-slate-400">
-                  {currentGroupIndex + 1} / {pendingJobGroups.length}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={goToNextGroup}
-                disabled={!canGoToNextGroup}
-                className="p-1 h-auto"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setRightSidebarMode("details");
-                  setMobileHistoryOpen(true);
-                }}
-                className="p-2 h-auto"
-                title="Dettagli"
-              >
-                <Package className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setRightSidebarMode("history");
-                  setMobileHistoryOpen(true);
-                }}
-                className="p-2 h-auto"
-                title="Storico"
-              >
-                <Brain className="h-4 w-4" />
-              </Button>
-            </div>
-            {selectedReviewRows.length > 0 && (
-              <div className="flex items-center gap-2 mb-3">
-                <Button
-                  variant="default"
-                  size="sm"
-                  disabled={isBulkVerifying}
-                  onClick={() => handleBulkVerifySelected(selectedReviewRows)}
-                  className="flex-1 text-xs"
-                >
-                  {isBulkVerifying ? (
-                    <Spinner className="h-3 w-3" />
-                  ) : (
-                    <ClipboardCheck className="h-3 w-3" />
-                  )}
-                  Verifica ({selectedReviewRows.length})
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  disabled={isBulkVerifying}
-                  onClick={() => handleBulkVerifySelected(selectedGroupRows)}
-                  className="flex-1 text-xs"
-                >
-                  {isBulkVerifying ? (
-                    <Spinner className="h-3 w-3" />
-                  ) : (
-                    <ClipboardCheck className="h-3 w-3" />
-                  )}
-                  Verifica Tutti
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Tabella mobile */}
-          <div className="flex-1 flex flex-col min-h-0 p-2">
-            {isLoadingGroupDetail ? (
-              <div className="flex items-center justify-center py-8">
-                <Spinner ariaLabel="Caricamento dettagli" />
-              </div>
-            ) : (
-              <div className="flex-1 min-h-0 [&>div]:h-full [&>div]:flex [&>div]:flex-col">
-                <EditableTable
-                  columns={reviewColumns}
-                  rows={selectedGroupRows}
-                  isModify={true}
-                  onSave={handleSave}
-                  onDeleteSelected={handleDeleteSelected}
-                  onSelectionChange={(selectedRows) => {
-                    setSelectedReviewRows(selectedRows);
-                  }}
-                  getRowId={(row) => row.id as string}
-                  className="flex-1 flex flex-col min-h-0"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Sheet dettagli/storico mobile */}
-          <Sheet open={mobileHistoryOpen} onOpenChange={setMobileHistoryOpen}>
-            <SheetContent side="bottom" className="h-[70vh] p-0 flex flex-col">
-              <SheetHeader className="flex-shrink-0 p-3 border-b border-slate-200">
-                <div className="flex items-center justify-between">
-                  <SheetTitle className="text-base">
-                    {rightSidebarMode === "details"
-                      ? "Dettagli Operazioni"
-                      : "Storico Operazione"}
-                  </SheetTitle>
-                  {rightSidebarMode === "details" &&
-                    selectedReviewRows.length > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedReviewRows([])}
-                        className="h-7 w-7 p-0"
-                        title="Pulisci selezione"
-                      >
-                        <Eraser className="h-4 w-4" />
-                      </Button>
-                    )}
-                </div>
-                <SheetDescription className="sr-only">
-                  {rightSidebarMode === "details"
-                    ? "Dettagli delle operazioni selezionate"
-                    : "Storico dell'operazione selezionata"}
-                </SheetDescription>
-              </SheetHeader>
-              <div className="flex-1 overflow-hidden">
-                {selectedGroupSummary &&
-                  (rightSidebarMode === "details" ? (
-                    <JobSelectedDetails
-                      selectedRows={convertToJobRows(selectedReviewRows)}
-                    />
-                  ) : (
-                    <HistoryPanel
-                      history={selectedGroupHistory}
-                      jobCode={selectedGroupSummary.jobId}
-                      onProductClick={(name, reg) =>
-                        handleOpenLabel(name, reg, false)
-                      }
-                    />
-                  ))}
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      );
-    }
-
-    // Vista desktop: layout a 3 colonne
-    return (
-      <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* Sidebar sinistra - Lista gruppi */}
-        {isGroupsSidebarOpen && (
-          <>
-            <div
-              className="flex-shrink-0 bg-slate-50 flex flex-col overflow-hidden"
-              style={{ width: `${groupsSidebarWidth}px` }}
-            >
-              <div className="p-3 bg-white flex-shrink-0">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-slate-700">
-                      Gruppi da verificare
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {pendingJobGroups.length} grupp
-                      {pendingJobGroups.length === 1 ? "o" : "i"} •{" "}
-                      {totalPendingOperations} operazion
-                      {totalPendingOperations === 1 ? "e" : "i"}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsGroupsSidebarOpen(false)}
-                    className="h-7 w-7 p-0 shrink-0"
-                    title="Chiudi elenco gruppi"
-                  >
-                    <PanelLeftClose className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
-                {isLoadingGroupsSummary ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Spinner ariaLabel="Caricamento gruppi" />
-                  </div>
-                ) : pendingJobGroups.length === 0 ? (
-                  <div className="text-center py-8 text-slate-400 text-sm">
-                    <ClipboardCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>Nessuna operazione da verificare</p>
-                  </div>
-                ) : (
-                  pendingJobGroups.map((group) => (
-                    <JobGroupCard
-                      key={group.jobId}
-                      group={group}
-                      isSelected={selectedGroupSummary?.jobId === group.jobId}
-                      onClick={() => {
-                        setSelectedGroupCode(group.jobId);
-                        setSelectedReviewRows([]);
-                      }}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
-            {/* Resize Handle per la sidebar gruppi */}
-            <div
-              onMouseDown={handleGroupsSidebarResizeStart}
-              className={cn(
-                "w-1 flex-shrink-0 cursor-col-resize bg-slate-200 hover:bg-slate-300 transition-colors relative group",
-                isResizingGroupsSidebar && "bg-slate-400"
-              )}
-              style={{ userSelect: "none" }}
-            >
-              <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <GripVertical className="h-4 w-4 text-slate-500" />
-              </div>
-            </div>
-          </>
-        )}
-        {!isGroupsSidebarOpen && (
-          <div className="flex-shrink-0 bg-slate-50 border-r border-slate-200 flex flex-col overflow-hidden w-16 rounded-md">
-            {/* Header con pulsante per aprire */}
-            <div className="p-2 bg-white flex-shrink-0 border-b border-slate-200">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsGroupsSidebarOpen(true)}
-                className="h-7 w-full p-0"
-                title="Apri elenco gruppi"
-              >
-                <PanelLeftOpen className="h-4 w-4" />
-              </Button>
-            </div>
-            {/* Lista compatta dei jobId */}
-            <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
-              {isLoadingGroupsSummary ? (
-                <div className="flex items-center justify-center py-4">
-                  <Spinner ariaLabel="Caricamento" className="h-4 w-4" />
-                </div>
-              ) : pendingJobGroups.length === 0 ? (
-                <div className="text-center py-4 text-slate-400 text-[10px]">
-                  <ClipboardCheck className="h-4 w-4 mx-auto mb-1 opacity-50" />
-                  <p>Nessuna</p>
-                </div>
-              ) : (
-                pendingJobGroups.map((group) => (
-                  <button
-                    key={group.jobId}
-                    type="button"
-                    onClick={() => {
-                      setSelectedGroupCode(group.jobId);
-                      setSelectedReviewRows([]);
-                    }}
-                    className={cn(
-                      "w-full p-1.5 rounded-md transition-all text-center",
-                      selectedGroupSummary?.jobId === group.jobId
-                        ? "bg-agri-green-100 border border-agri-green-300 ring-1 ring-agri-green-200"
-                        : "bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-                    )}
-                    title={`Operazione #${group.jobId} - ${group.totalOperations} operazioni`}
-                  >
-                    <Badge
-                      className={cn(
-                        "font-mono text-xs w-full justify-center bg-agri-green-50",
-                        selectedGroupSummary?.jobId === group.jobId &&
-                          " text-agri-green-700 "
-                      )}
-                    >
-                      #{group.jobId}
-                    </Badge>
-                    {group.pendingOperations > 0 && (
-                      <Badge
-                        variant="destructive"
-                        className="mt-1 h-4 min-w-4 px-1 text-[10px] block mx-auto text-black"
-                      >
-                        {group.pendingOperations}
-                      </Badge>
-                    )}
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Centro - Tabella del gruppo selezionato */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {selectedGroupSummary ? (
-            <>
-              <div className="flex-shrink-0 p-4 bg-white">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold text-slate-800">
-                        Operazione #{selectedGroupSummary.jobId}
-                      </h3>
-                      <Badge variant="outline">
-                        {selectedGroupRows.length} trattament
-                        {selectedGroupRows.length === 1 ? "o" : "i"}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-slate-500 mt-0.5">
-                      {selectedGroupSummary.company.name}
-                    </p>
-                  </div>
-                  {selectedReviewRows.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="default"
-                        size="sm"
-                        disabled={isBulkVerifying}
-                        onClick={() =>
-                          handleBulkVerifySelected(selectedReviewRows)
-                        }
-                      >
-                        {isBulkVerifying ? (
-                          <Spinner className="h-4 w-4" />
-                        ) : (
-                          <ClipboardCheck className="h-4 w-4" />
-                        )}
-                        Verifica Selezionati ({selectedReviewRows.length})
-                      </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        disabled={isBulkVerifying}
-                        onClick={() =>
-                          handleBulkVerifySelected(selectedGroupRows)
-                        }
-                      >
-                        {isBulkVerifying ? (
-                          <Spinner className="h-4 w-4" />
-                        ) : (
-                          <ClipboardCheck className="h-4 w-4" />
-                        )}
-                        Verifica Tutti
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex-1 flex flex-col min-h-0 px-4 pb-4">
-                {isLoadingGroupDetail ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Spinner ariaLabel="Caricamento dettagli" />
-                  </div>
-                ) : (
-                  <div className="flex-1 min-h-0 [&>div]:h-full [&>div]:flex [&>div]:flex-col">
-                    <EditableTable
-                      columns={reviewColumns}
-                      rows={selectedGroupRows}
-                      isModify={true}
-                      onSave={handleSave}
-                      onDeleteSelected={handleDeleteSelected}
-                      onSelectionChange={(selectedRows) => {
-                        setSelectedReviewRows(selectedRows);
-                      }}
-                      getRowId={(row) => row.id as string}
-                      className="flex-1 flex flex-col min-h-0"
-                    />
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-slate-400">
-              <div className="text-center">
-                <ListChecks className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>Seleziona un gruppo per visualizzare i dettagli</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Destra - Dettagli Selezionati / Storico */}
-        {selectedGroupSummary && (
-          <>
-            {/* Resize Handle */}
-            <div
-              onMouseDown={handleResizeStart}
-              className={cn(
-                "w-1 flex-shrink-0 cursor-col-resize bg-slate-200 hover:bg-slate-300 transition-colors relative group",
-                isResizing && "bg-slate-400"
-              )}
-              style={{ userSelect: "none" }}
-            >
-              <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <GripVertical className="h-4 w-4 text-slate-500" />
-              </div>
-            </div>
-            <div
-              className="flex-shrink-0 overflow-hidden flex flex-col"
-              style={{ width: `${historyPanelWidth}px` }}
-            >
-              {/* Header con toggle */}
-              <div className="flex-shrink-0 p-3 bg-white border-b border-slate-200 flex items-center justify-between">
-                {rightSidebarMode === "details" ? (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-slate-700">
-                        Dettagli
-                      </span>
-                      {selectedReviewRows.length > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                          {selectedReviewRows.length}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {selectedReviewRows.length > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedReviewRows([])}
-                          className="h-7 w-7 p-0"
-                          title="Pulisci selezione"
-                        >
-                          <Eraser className="h-4 w-4 text-slate-500" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setRightSidebarMode("history")}
-                        className="h-7 w-7 p-0"
-                        title="Mostra storico"
-                      >
-                        <Brain className="h-4 w-4 text-slate-500" />
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-sm font-medium text-slate-700">
-                      Storico
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setRightSidebarMode("details")}
-                      className="h-7 w-7 p-0"
-                      title="Chiudi storico"
-                    >
-                      <X className="h-4 w-4 text-slate-500" />
-                    </Button>
-                  </>
-                )}
-              </div>
-              {/* Contenuto */}
-              <div className="flex-1 overflow-hidden">
-                {rightSidebarMode === "details" ? (
-                  <JobSelectedDetails
-                    selectedRows={convertToJobRows(selectedReviewRows)}
-                  />
-                ) : (
-                  <HistoryPanel
-                    history={selectedGroupHistory}
-                    jobCode={selectedGroupSummary.jobId}
-                    onProductClick={(name, reg) =>
-                      handleOpenLabel(name, reg, false)
-                    }
-                  />
-                )}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-    );
-  };
+  const renderReviewView = () => (
+    <ReviewJobsView
+      isMobile={isMobile}
+      isGroupsSidebarOpen={isGroupsSidebarOpen}
+      onToggleGroupsSidebar={setIsGroupsSidebarOpen}
+      groupsSidebarWidth={groupsSidebarWidth}
+      onGroupsResizeStart={handleGroupsSidebarResizeStart}
+      isResizingGroupsSidebar={isResizingGroupsSidebar}
+      pendingJobGroups={pendingJobGroups}
+      totalPendingOperations={totalPendingOperations}
+      isLoadingGroupsSummary={isLoadingGroupsSummary}
+      selectedGroupSummary={selectedGroupSummary}
+      selectedGroupRows={selectedGroupRows}
+      selectedGroupHistory={selectedGroupHistory}
+      onSelectGroup={setSelectedGroupCode}
+      selectedReviewRows={selectedReviewRows}
+      onSelectionChange={setSelectedReviewRows}
+      isLoadingGroupDetail={isLoadingGroupDetail}
+      reviewColumns={reviewColumns}
+      onSave={handleSave}
+      onDeleteSelected={handleDeleteSelected}
+      onBulkVerifySelected={handleBulkVerifySelected}
+      isBulkVerifying={isBulkVerifying}
+      canGoToPreviousGroup={canGoToPreviousGroup}
+      canGoToNextGroup={canGoToNextGroup}
+      onPreviousGroup={goToPreviousGroup}
+      onNextGroup={goToNextGroup}
+      currentGroupIndex={currentGroupIndex}
+      totalGroups={pendingJobGroups.length}
+      historyPanelWidth={historyPanelWidth}
+      rightSidebarMode={rightSidebarMode}
+      onRightSidebarModeChange={setRightSidebarMode}
+      onResizeStart={handleResizeStart}
+      isResizing={isResizing}
+      onProductClick={handleOpenLabel}
+      mobileHistoryOpen={mobileHistoryOpen}
+      onMobileHistoryChange={setMobileHistoryOpen}
+      convertToJobRows={convertToJobRows}
+    />
+  );
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       <PageHeader title="Operazioni">
-        <Tabs
-          value={viewMode}
-          onValueChange={(v) => setViewMode(v as ViewMode)}
-        >
-          <TabsList>
-            <TabsTrigger value="all" className="gap-1.5">
-              <ListChecks className="h-4 w-4" />
-              Tutte
-            </TabsTrigger>
-            <TabsTrigger value="review" className="gap-1.5">
-              <ClipboardCheck className="h-4 w-4" />
-              Da confermare
-              {totalPendingOperations > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="ml-1 h-5 min-w-5 px-1.5 text-xs"
-                >
-                  {totalPendingOperations}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {!isMobile && (
+          <Tabs
+            value={viewMode}
+            onValueChange={(v) => setViewMode(v as ViewMode)}
+          >
+            <TabsList>
+              <TabsTrigger value="all" className="gap-1.5">
+                <ListChecks className="h-4 w-4" />
+                Tutte
+              </TabsTrigger>
+              <TabsTrigger value="review" className="gap-1.5">
+                <ClipboardCheck className="h-4 w-4" />
+                Da confermare
+                {totalPendingOperations > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="ml-1 h-5 min-w-5 px-1.5 text-xs"
+                  >
+                    {totalPendingOperations}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
       </PageHeader>
 
-      {viewMode === "all" ? renderAllJobsView() : renderReviewView()}
+      {!isMobile && viewMode === "all"
+        ? renderAllJobsView()
+        : renderReviewView()}
 
       {/* History Sheet (per la vista "Tutte") */}
       <JobHistorySheet
