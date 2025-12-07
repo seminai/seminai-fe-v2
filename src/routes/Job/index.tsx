@@ -1864,6 +1864,13 @@ export default function JobPage() {
       readOnly: true,
     },
     {
+      id: "productName",
+      title: "Prodotto",
+      type: "text",
+      width: "200px",
+      readOnly: true,
+    },
+    {
       id: "quantity",
       title: "Quantità",
       type: "number",
@@ -1884,13 +1891,7 @@ export default function JobPage() {
       width: "180px",
       readOnly: true,
     },
-    {
-      id: "productName",
-      title: "Prodotto",
-      type: "text",
-      width: "200px",
-      readOnly: true,
-    },
+
     {
       id: "productRegistrationNumber",
       title: "Numero Registrazione",
