@@ -1149,7 +1149,7 @@ function LiveLogEventCard({ event }: { event: DosageLogEvent }): ReactElement {
         </div>
         <span className="text-xs text-neutral-500 font-mono">{timeLabel}</span>
       </div>
-      <p className={`text-sm ${styles.text} leading-relaxed`}>
+      <p className={`text-sm ${styles.text} leading-relaxed break-words`}>
         {event.message}
       </p>
       {event.metadata && Object.keys(event.metadata).length > 0 && (
