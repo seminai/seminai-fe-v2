@@ -39,11 +39,7 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
-import {
-  dosageJobSocketService,
-  type DosageLogEvent,
-  type SocketConnectionState,
-} from "@/services/dosageJobSocket";
+import { type DosageLogEvent } from "@/services/dosageJobSocket";
 import { toast } from "sonner";
 import {
   dosageAgentApiService,
@@ -63,6 +59,8 @@ import {
   type DosageJob,
 } from "@/utils/dosageJobsIndexDBManager";
 import { JobDetails } from "./JobDetails";
+import { useLiveLogs } from "./useLiveLogs";
+import { dosageJobStateSynchronizer } from "./jobStateSynchronizer";
 import {
   type FitosanitariDatasetRecord,
   findRegNumberByName,
@@ -1216,13 +1214,18 @@ export default function DosageManager() {
   const [isLabelLoading, setIsLabelLoading] = useState(false);
   const labelRequestId = useRef(0);
 
-  // Live logs drawer state
-  const [isLiveLogsDrawerOpen, setIsLiveLogsDrawerOpen] = useState(false);
-  const [liveLogsJobId, setLiveLogsJobId] = useState<string | null>(null);
-  const [liveLogEvents, setLiveLogEvents] = useState<DosageLogEvent[]>([]);
-  const [liveSocketState, setLiveSocketState] =
-    useState<SocketConnectionState>("disconnected");
-  const liveLogsScrollRef = useRef<HTMLDivElement>(null);
+  const {
+    isLiveLogsDrawerOpen,
+    liveLogsJobId,
+    liveLogEvents,
+    liveSocketState,
+    liveLogsScrollRef,
+    handleOpenLiveLogs,
+    handleCloseLiveLogs,
+    reconnectLiveLogs,
+    clearLiveLogEvents,
+  } = useLiveLogs();
+  const isResumeSyncInProgressRef = useRef(false);
   const isHistoryPage = currentPage === "history";
   const strategyOptions = useMemo(
     () => DosageStrategyOptionsFactory.create(),
@@ -1587,67 +1590,6 @@ export default function DosageManager() {
     }
   }, []);
 
-  // Gestisce l'apertura del drawer dei log live
-  const handleOpenLiveLogs = useCallback((jobId: string) => {
-    setLiveLogsJobId(jobId);
-    setLiveLogEvents([]);
-    setLiveSocketState("connecting");
-    setIsLiveLogsDrawerOpen(true);
-
-    dosageJobSocketService.connect(jobId, {
-      onConnect: () => {
-        setLiveSocketState("connected");
-      },
-      onDisconnect: () => {
-        setLiveSocketState("disconnected");
-      },
-      onError: (error) => {
-        setLiveSocketState("error");
-        toast.error("Errore connessione live", {
-          description: error.message,
-        });
-      },
-      onJoined: (room) => {
-        setLiveLogEvents((prev) => [
-          ...prev,
-          {
-            jobId,
-            userId: "",
-            timestamp: new Date().toISOString(),
-            type: "info",
-            message: `Connesso alla room ${room}`,
-          },
-        ]);
-      },
-      onLog: (event) => {
-        setLiveLogEvents((prev) => [...prev, event]);
-        // Auto-scroll to bottom
-        setTimeout(() => {
-          liveLogsScrollRef.current?.scrollTo({
-            top: liveLogsScrollRef.current.scrollHeight,
-            behavior: "smooth",
-          });
-        }, 50);
-      },
-    });
-  }, []);
-
-  // Gestisce la chiusura del drawer dei log live
-  const handleCloseLiveLogs = useCallback(() => {
-    dosageJobSocketService.disconnect();
-    setIsLiveLogsDrawerOpen(false);
-    setLiveLogsJobId(null);
-    setLiveLogEvents([]);
-    setLiveSocketState("disconnected");
-  }, []);
-
-  // Cleanup socket on unmount
-  useEffect(() => {
-    return () => {
-      dosageJobSocketService.disconnect();
-    };
-  }, []);
-
   const handleOpenProductLabel = useCallback(
     async (reference: ProductLabelReference) => {
       setIsLabelDrawerOpen(true);
@@ -1856,6 +1798,47 @@ export default function DosageManager() {
       return filtered.length === prev.length ? prev : filtered;
     });
   }, [activeJobs]);
+
+  useEffect(() => {
+    const syncOnResume = () => {
+      if (document.visibilityState && document.visibilityState !== "visible") {
+        return;
+      }
+
+      if (isResumeSyncInProgressRef.current) {
+        return;
+      }
+
+      isResumeSyncInProgressRef.current = true;
+
+      (async () => {
+        try {
+          const storedJobs = await dosageJobStateSynchronizer.reloadAll();
+          const refreshedJobs =
+            await dosageJobStateSynchronizer.refreshActiveJobs(storedJobs);
+          setJobs(refreshedJobs);
+
+          if (isLiveLogsDrawerOpen && liveLogsJobId) {
+            reconnectLiveLogs();
+          }
+        } catch (error) {
+          console.error("Failed to sync jobs after resume", error);
+        } finally {
+          isResumeSyncInProgressRef.current = false;
+        }
+      })();
+    };
+
+    window.addEventListener("visibilitychange", syncOnResume);
+    window.addEventListener("focus", syncOnResume);
+    window.addEventListener("pageshow", syncOnResume);
+
+    return () => {
+      window.removeEventListener("visibilitychange", syncOnResume);
+      window.removeEventListener("focus", syncOnResume);
+      window.removeEventListener("pageshow", syncOnResume);
+    };
+  }, [isLiveLogsDrawerOpen, liveLogsJobId, reconnectLiveLogs]);
 
   // Filter production units by selected company and search query
   const filteredUnits = useMemo(() => {
@@ -3278,7 +3261,7 @@ export default function DosageManager() {
               variant="outline"
               className="flex-1"
               onClick={() => {
-                setLiveLogEvents([]);
+                clearLiveLogEvents();
                 // Scroll to top after clearing
                 setTimeout(() => {
                   liveLogsScrollRef.current?.scrollTo({

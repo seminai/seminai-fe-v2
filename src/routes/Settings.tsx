@@ -128,15 +128,13 @@ class TokenUsageViewModel {
 
   public get reference(): string {
     return (
-      this.usage.jobId ||
-      this.usage.jobGroupId ||
-      this.usage.companyId ||
-      "—"
+      this.usage.jobId || this.usage.jobGroupId || this.usage.companyId || "—"
     );
   }
 
   public get metadataCompanyId(): string {
-    const metaCompany = (this.usage.metadata as { companyId?: unknown })?.companyId;
+    const metaCompany = (this.usage.metadata as { companyId?: unknown })
+      ?.companyId;
     if (typeof metaCompany === "string" && metaCompany.trim().length > 0) {
       return metaCompany;
     }
@@ -244,18 +242,15 @@ export default function Settings() {
     [totals]
   );
 
-  const [filters, setFilters] = React.useState<TokenUsageFilters>(
-    DEFAULT_FILTERS
-  );
+  const [filters, setFilters] =
+    React.useState<TokenUsageFilters>(DEFAULT_FILTERS);
 
   const filterOptions = React.useMemo(() => {
     const jobTypes = Array.from(new Set(usageRows.map((row) => row.jobType)));
     const models = Array.from(new Set(usageRows.map((row) => row.model)));
     const companies = Array.from(
       new Set(
-        usageRows
-          .map((row) => row.metadataCompanyId)
-          .filter((id) => id !== "—")
+        usageRows.map((row) => row.metadataCompanyId).filter((id) => id !== "—")
       )
     );
     return { jobTypes, models, companies };
@@ -267,7 +262,6 @@ export default function Settings() {
   }, [filters, usageRows]);
 
   const hasUsages = usageRows.length > 0;
-  const hasFilteredUsages = filteredUsageRows.length > 0;
 
   React.useEffect(() => {
     if (userData) {
