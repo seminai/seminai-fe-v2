@@ -13,6 +13,7 @@ export type ProductionUnitInput = {
   name: string;
   cropCode: string;
   cultivarId?: string | null;
+  totalAreaHa?: number | null;
   allocations: Map<string, number>;
   protectionStructure: string;
   occupazione: string;

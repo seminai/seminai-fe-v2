@@ -1,28 +1,15 @@
-import type { ChangeEvent, ReactElement } from "react";
+import type { ReactElement } from "react";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useProducts } from "@/hooks/useProducts";
-import { ImportProducts } from "./importProducts";
-import { ImportProductsFromDdt } from "./importProductsFromDdt";
-import { FitosanitariProductSearch } from "./FitosanitariProductSearch";
 import { PageHeader } from "@/components/organism/Header";
 import {
   EditableTable,
   type EditableColumn,
 } from "@/components/organism/EditableTable";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 
 import {
   Loader2,
@@ -30,9 +17,7 @@ import {
   CheckCircle2,
   Clock,
   Apple,
-  Package,
   FileText,
-  Trash2,
   Octagon,
   ArrowLeft,
   Radio,
@@ -54,13 +39,16 @@ import {
 } from "@/api/product-labels";
 import type { ProductionUnit } from "@/api/production-unit";
 import type { Product } from "@/api/products";
-import {
-  dosageJobsIndexDBManager,
-  type DosageJob,
-} from "@/utils/dosageJobsIndexDBManager";
 import { JobDetails } from "./JobDetails";
 import { useLiveLogs } from "./useLiveLogs";
-import { dosageJobStateSynchronizer } from "./jobStateSynchronizer";
+import { HistorySection } from "./HistorySection";
+import { ManageSection } from "./ManageSection";
+import {
+  type ActiveJobTableRow,
+  type JobHistoryTableRow,
+  type DosageJob,
+  normalizeJob,
+} from "./types";
 import {
   type FitosanitariDatasetRecord,
   findRegNumberByName,
@@ -94,30 +82,6 @@ class DosageJobDetailsManager {
       const statusResponse = await dosageAgentApiService.getJobStatus(job.id);
       const statusData = statusResponse.data;
 
-      try {
-        await dosageJobsIndexDBManager.updateJob(job.id, {
-          state: statusData.state,
-          progress: statusData.progress,
-          result: statusData.result,
-          productsCount: statusData.data?.productsCount ?? job.productsCount,
-          unitsCount: statusData.data?.unitsCount ?? job.unitsCount,
-          error:
-            statusData.state === "failed"
-              ? "The dosage job has failed"
-              : undefined,
-        });
-
-        const refreshedJob = await dosageJobsIndexDBManager.getJob(job.id);
-        if (refreshedJob) {
-          return refreshedJob;
-        }
-      } catch (synchronizationError) {
-        console.error(
-          "Failed to synchronize job details:",
-          synchronizationError
-        );
-      }
-
       return {
         ...job,
         state: statusData.state,
@@ -125,7 +89,7 @@ class DosageJobDetailsManager {
         result: statusData.result,
         productsCount: statusData.data?.productsCount ?? job.productsCount,
         unitsCount: statusData.data?.unitsCount ?? job.unitsCount,
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
         error:
           statusData.state === "failed"
             ? "The dosage job has failed"
@@ -144,7 +108,6 @@ const dosageJobDetailsManager = new DosageJobDetailsManager();
 
 class DosageJobCancellationService {
   private readonly api: typeof dosageAgentApiService;
-  private readonly storage = dosageJobsIndexDBManager;
 
   constructor(api: typeof dosageAgentApiService = dosageAgentApiService) {
     this.api = api;
@@ -154,44 +117,20 @@ class DosageJobCancellationService {
     const uniqueIds = [...new Set(jobIds.filter((id) => Boolean(id)))];
 
     if (uniqueIds.length === 0) {
-      return await this.storage.getAllJobs();
+      const listResponse = await this.api.listJobs();
+      return listResponse.data.map(normalizeJob);
     }
 
     await this.api.cancelJobs(uniqueIds);
 
-    await Promise.all(
-      uniqueIds.map(async (jobId) => {
-        try {
-          await this.storage.deleteJob(jobId);
-        } catch (error) {
-          console.error(
-            `Failed to remove job ${jobId} from IndexedDB after cancellation`,
-            error
-          );
-        }
-      })
-    );
-
-    return await this.storage.getAllJobs();
+    const listResponse = await this.api.listJobs();
+    return listResponse.data.map(normalizeJob);
   }
 }
 
 const dosageJobCancellationService = new DosageJobCancellationService();
 
 type BadgeVariant = React.ComponentProps<typeof Badge>["variant"];
-
-interface ActiveJobTableRow extends Record<string, unknown> {
-  id: string;
-  jobId: string;
-  createdAtLabel: string;
-  state: DosageJob["state"];
-  stateLabel: string;
-  stateBadgeVariant: BadgeVariant;
-  progress: number;
-  progressLabel: string;
-  productsCount: number;
-  unitsCount: number;
-}
 
 class ActiveJobStateDescriptor {
   private static readonly variants: Record<
@@ -216,8 +155,7 @@ class ActiveJobsTableRowBuilder {
   public static build(jobs: DosageJob[]): ActiveJobTableRow[] {
     return jobs.map((job) => {
       const descriptor = ActiveJobStateDescriptor.describe(job.state);
-      const createdAt =
-        job.createdAt instanceof Date ? job.createdAt : new Date(job.createdAt);
+      const createdAt = new Date(job.createdAt);
 
       return {
         id: job.id,
@@ -342,10 +280,6 @@ class ActiveJobsTableColumnsFactory {
   }
 }
 
-interface JobHistoryTableRow extends ActiveJobTableRow {
-  job: DosageJob;
-}
-
 class JobHistoryTableRowBuilder {
   public static build(jobs: DosageJob[]): JobHistoryTableRow[] {
     return [...jobs]
@@ -355,10 +289,7 @@ class JobHistoryTableRowBuilder {
       )
       .map((job) => {
         const descriptor = ActiveJobStateDescriptor.describe(job.state);
-        const createdAt =
-          job.createdAt instanceof Date
-            ? job.createdAt
-            : new Date(job.createdAt);
+        const createdAt = new Date(job.createdAt);
 
         return {
           id: job.id,
@@ -1227,6 +1158,15 @@ export default function DosageManager() {
   } = useLiveLogs();
   const isResumeSyncInProgressRef = useRef(false);
   const isHistoryPage = currentPage === "history";
+  const fetchJobsFromApi = useCallback(async () => {
+    try {
+      const response = await dosageAgentApiService.listJobs();
+      const normalized = response.data.map(normalizeJob);
+      setJobs(normalized);
+    } catch (error) {
+      console.error("Failed to load dosage jobs", error);
+    }
+  }, []);
   const strategyOptions = useMemo(
     () => DosageStrategyOptionsFactory.create(),
     []
@@ -1724,26 +1664,11 @@ export default function DosageManager() {
 
   // Load jobs from IndexedDB on mount
   useEffect(() => {
-    const loadJobs = async () => {
-      try {
-        const allJobs = await dosageJobsIndexDBManager.getAllJobs();
-        setJobs(allJobs);
-      } catch (error) {
-        console.error("Error loading jobs:", error);
-      }
-    };
-
-    loadJobs();
-  }, []);
+    void fetchJobsFromApi();
+  }, [fetchJobsFromApi]);
 
   // Poll active jobs
   useEffect(() => {
-    const activeJobs = jobs.filter(
-      (job) => job.state === "waiting" || job.state === "active"
-    );
-
-    if (activeJobs.length === 0) return;
-
     // Optimization: prevent polling when tab is backgrounded
     const POLLING_INTERVAL_MS = 10000;
 
@@ -1752,41 +1677,11 @@ export default function DosageManager() {
         return;
       }
 
-      for (const job of activeJobs) {
-        try {
-          const response = await dosageAgentApiService.getJobStatus(job.id);
-          const statusData = response.data;
-
-          // Update job in IndexedDB
-          await dosageJobsIndexDBManager.updateJob(job.id, {
-            state: statusData.state,
-            progress: statusData.progress,
-            result: statusData.result,
-            updatedAt: new Date(),
-          });
-
-          // Reload jobs from IndexedDB
-          const updatedJobs = await dosageJobsIndexDBManager.getAllJobs();
-          setJobs(updatedJobs);
-
-          // Notify on completion
-          if (statusData.state === "completed") {
-            toast.success("Calcolo dosaggi completato", {
-              description: `Job ${job.id} completato con successo`,
-            });
-          } else if (statusData.state === "failed") {
-            toast.error("Calcolo dosaggi fallito", {
-              description: `Job ${job.id} ha riscontrato un errore`,
-            });
-          }
-        } catch (error) {
-          console.error(`Error polling job ${job.id}:`, error);
-        }
-      }
+      await fetchJobsFromApi();
     }, POLLING_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [jobs]);
+  }, [fetchJobsFromApi]);
 
   useEffect(() => {
     setSelectedActiveJobIds((prev) => {
@@ -1813,10 +1708,7 @@ export default function DosageManager() {
 
       (async () => {
         try {
-          const storedJobs = await dosageJobStateSynchronizer.reloadAll();
-          const refreshedJobs =
-            await dosageJobStateSynchronizer.refreshActiveJobs(storedJobs);
-          setJobs(refreshedJobs);
+          await fetchJobsFromApi();
 
           if (isLiveLogsDrawerOpen && liveLogsJobId) {
             reconnectLiveLogs();
@@ -1838,7 +1730,12 @@ export default function DosageManager() {
       window.removeEventListener("focus", syncOnResume);
       window.removeEventListener("pageshow", syncOnResume);
     };
-  }, [isLiveLogsDrawerOpen, liveLogsJobId, reconnectLiveLogs]);
+  }, [
+    fetchJobsFromApi,
+    isLiveLogsDrawerOpen,
+    liveLogsJobId,
+    reconnectLiveLogs,
+  ]);
 
   // Filter production units by selected company and search query
   const filteredUnits = useMemo(() => {
@@ -2052,10 +1949,11 @@ export default function DosageManager() {
 
       try {
         const detailedJob = await dosageJobDetailsManager.load(job);
-        setSelectedJob(detailedJob);
+        const normalized = normalizeJob(detailedJob);
+        setSelectedJob(normalized);
         setJobs((prev) =>
           prev.map((existingJob) =>
-            existingJob.id === detailedJob.id ? detailedJob : existingJob
+            existingJob.id === normalized.id ? normalized : existingJob
           )
         );
       } catch (error) {
@@ -2270,22 +2168,8 @@ export default function DosageManager() {
 
       const jobId = response.data.jobId;
 
-      // Save job to IndexedDB
-      const newJob: DosageJob = {
-        id: jobId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        state: "waiting",
-        progress: 0,
-        productsCount: products.length,
-        unitsCount: unitsOfProduction.length,
-      };
-
-      await dosageJobsIndexDBManager.saveJob(newJob);
-
-      // Reload jobs
-      const updatedJobs = await dosageJobsIndexDBManager.getAllJobs();
-      setJobs(updatedJobs);
+      // Reload jobs from API
+      await fetchJobsFromApi();
 
       toast.success("Calcolo dosaggi avviato", {
         description: `Job ID: ${jobId}`,
@@ -2340,358 +2224,57 @@ export default function DosageManager() {
 
       <div className="flex-1 overflow-auto px-4 md:px-6 pb-6">
         {currentPage === "manage" ? (
-          <div className="mx-auto space-y-8 md:space-y-12">
-            {/* Company Filter Section */}
-            <div className="space-y-3 md:space-y-4">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <h2 className="text-lg md:text-xl font-medium text-neutral-900">
-                  Seleziona Azienda
-                </h2>
-              </div>
-              <Select
-                value={selectedCompanyId}
-                onValueChange={(value) => {
-                  setSelectedCompanyId(value);
-                  setSelectedUnitIds([]);
-                  setSearchQuery("");
-                  // Reset prodotti e sorgenti quando cambia azienda
-                  setProducts([]);
-                  setProductSources(new Map());
-                  // Reset strategia e outStockLimiter ai valori di default
-                  setStrategy("avg");
-                  setOutStockLimiter(true);
-                }}
-              >
-                <SelectTrigger className="w-full max-w-md h-12 bg-neutral-50 border-neutral-200">
-                  <SelectValue placeholder="Scegli un'azienda" />
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      {company.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Units Section */}
-            {selectedCompanyId && (
-              <div className="space-y-4 md:space-y-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <h2 className="text-lg md:text-xl font-medium text-neutral-900">
-                      Seleziona Unità Produttive
-                    </h2>
-                    {selectedUnitIds.length > 0 && (
-                      <p className="text-sm text-neutral-500 mt-1">
-                        {selectedUnitIds.length} selezionate
-                      </p>
-                    )}
-                  </div>
-                  <div className="w-full lg:w-auto">
-                    <Input
-                      value={searchQuery}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                        setSearchQuery(event.target.value)
-                      }
-                      placeholder="Cerca per nome, coltura o varietà"
-                      aria-label="Cerca unità produttive"
-                      disabled={loadingUnits}
-                      className="bg-white"
-                    />
-                  </div>
-                </div>
-
-                {loadingUnits ? (
-                  <div className="flex items-center justify-center py-16">
-                    <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
-                  </div>
-                ) : filteredUnits.length === 0 ? (
-                  <div className="text-center py-16 text-neutral-500">
-                    {searchQuery
-                      ? "Nessuna unità trovata"
-                      : "Nessuna unità disponibile per questa azienda"}
-                  </div>
-                ) : (
-                  <EditableTable
-                    columns={productionUnitTableColumns}
-                    rows={productionUnitTableRows}
-                    isModify={false}
-                    addButton={false}
-                    onSelectionChange={handleUnitSelectionChange}
-                    showDeleteAction={false}
-                    getRowId={(row) => (row as ProductionUnitTableRow).id}
-                    className="bg-white rounded-2xl border border-neutral-200"
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Products Section */}
-            <div className="space-y-4 md:space-y-6 relative">
-              {!selectedCompanyId && (
-                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 rounded-2xl flex items-center justify-center">
-                  <div className="text-center p-6">
-                    <p className="text-base font-medium text-neutral-700 mb-2">
-                      Seleziona prima un'azienda
-                    </p>
-                    <p className="text-sm text-neutral-500">
-                      Per selezionare i prodotti fitosanitari, devi prima
-                      scegliere un'azienda nella sezione sopra.
-                    </p>
-                  </div>
-                </div>
-              )}
-              <div
-                className={
-                  selectedCompanyId ? "" : "pointer-events-none opacity-50"
-                }
-              >
-                <div>
-                  <h2 className="text-lg md:text-xl font-medium text-neutral-900">
-                    Seleziona prodotti fitosanitari
-                  </h2>
-                  {products.length > 0 && (
-                    <p className="text-sm text-neutral-500 mt-1">
-                      {products.length} prodotti caricati
-                    </p>
-                  )}
-                </div>
-                <EditableTable
-                  ref={editableTableRef}
-                  columns={productColumns}
-                  rows={productsAsRows}
-                  isModify={true}
-                  addButton={true}
-                  onSave={handleSaveProducts}
-                  onDeleteSelected={handleDeleteProducts}
-                  getRowId={(row, index) =>
-                    `${row.productName}-${row.registrationNumber}-${index}`
-                  }
-                  lastComponent={renderProductLabelAction}
-                >
-                  <div
-                    data-editable-table-slot="create-drawer"
-                    className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 space-y-6"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold text-neutral-900">
-                        Importa prodotti
-                      </p>
-                      <p className="text-sm text-neutral-500">
-                        Carica rapidamente i prodotti tramite CSV oppure leggi i
-                        DDT in formato PDF.
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <ImportProducts
-                        onAddRows={handleAddRowsFromCsv}
-                        onProductsChange={setProducts}
-                      />
-                      <ImportProductsFromDdt
-                        onAddRows={handleAddRowsFromDdt}
-                        onProductsChange={setProducts}
-                      />
-                      <Button
-                        variant="outline"
-                        className="gap-2"
-                        onClick={handleImportFromWarehouse}
-                        disabled={
-                          isWarehouseProductsLoading || !selectedCompanyId
-                        }
-                      >
-                        {isWarehouseProductsLoading ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span>Importazione...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Package className="h-4 w-4" />
-                            <span>Importa da magazzino</span>
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                    <FitosanitariProductSearch
-                      onProductSelected={handleRegistryProductSelected}
-                    />
-                  </div>
-                </EditableTable>
-                {products.length === 0 &&
-                  dosagePlaceholderRenderer.renderEmptyProductsPlaceholder()}
-              </div>
-            </div>
-
-            {/* Strategy Section */}
-            <div className="space-y-6 relative">
-              {!selectedCompanyId && (
-                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 rounded-2xl flex items-center justify-center">
-                  <div className="text-center p-6">
-                    <p className="text-base font-medium text-neutral-700 mb-2">
-                      Seleziona prima un'azienda
-                    </p>
-                    <p className="text-sm text-neutral-500">
-                      Per selezionare la strategia di calcolo, devi prima
-                      scegliere un'azienda nella sezione sopra.
-                    </p>
-                  </div>
-                </div>
-              )}
-              <div
-                className={
-                  selectedCompanyId
-                    ? "flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between w-full"
-                    : "flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between w-full pointer-events-none opacity-50"
-                }
-              >
-                <div>
-                  <h2 className="text-lg md:text-xl font-medium text-neutral-900">
-                    Seleziona la strategia di calcolo dosaggi
-                  </h2>
-                  <p className="text-sm text-neutral-500 mt-1">
-                    {selectedStrategyOption.description}
-                  </p>
-                </div>
-                <Select
-                  value={strategy}
-                  onValueChange={(value) =>
-                    setStrategy(value as DosageStrategy)
-                  }
-                  disabled={!selectedCompanyId}
-                >
-                  <SelectTrigger className="w-full max-w-sm h-12 bg-white border-neutral-200">
-                    <SelectValue placeholder="Seleziona una strategia" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {strategyOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Out Stock Limiter Section */}
-              <div
-                className={
-                  selectedCompanyId
-                    ? "rounded-2xl border border-neutral-200 bg-white p-4 md:p-6 space-y-3"
-                    : "rounded-2xl border border-neutral-200 bg-white p-4 md:p-6 space-y-3 pointer-events-none opacity-50"
-                }
-              >
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="outStockLimiter"
-                    checked={outStockLimiter}
-                    onCheckedChange={(checked) =>
-                      setOutStockLimiter(checked === true)
-                    }
-                    disabled={!selectedCompanyId}
-                    className="mt-0.5"
-                  />
-                  <div className="flex-1 space-y-1">
-                    <Label
-                      htmlFor="outStockLimiter"
-                      className="text-base font-medium text-neutral-900 cursor-pointer"
-                    >
-                      {outStockLimiter
-                        ? "Protezione stock magazzino (attiva)"
-                        : "Protezione stock magazzino (disattiva)"}
-                    </Label>
-                    <p className="text-sm text-neutral-600 leading-relaxed">
-                      {outStockLimiter
-                        ? "Il sistema tutela lo stock caricato, evitando di andare sotto le quantità disponibili in magazzino."
-                        : "Il sistema esegue un calcolo preciso dei dosaggi, permettendo di andare anche sotto le quantità disponibili in magazzino."}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ManageSection
+            companies={companies}
+            selectedCompanyId={selectedCompanyId}
+            setSelectedCompanyId={setSelectedCompanyId}
+            selectedUnitIds={selectedUnitIds}
+            setSelectedUnitIds={setSelectedUnitIds}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            loadingUnits={loadingUnits}
+            filteredUnits={filteredUnits}
+            productionUnitTableColumns={productionUnitTableColumns}
+            productionUnitTableRows={productionUnitTableRows}
+            handleUnitSelectionChange={handleUnitSelectionChange}
+            products={products}
+            setProducts={setProducts}
+            setProductSources={setProductSources}
+            productColumns={productColumns}
+            productsAsRows={productsAsRows}
+            handleSaveProducts={handleSaveProducts}
+            handleDeleteProducts={handleDeleteProducts}
+            handleAddRowsFromCsv={handleAddRowsFromCsv}
+            handleAddRowsFromDdt={handleAddRowsFromDdt}
+            handleImportFromWarehouse={handleImportFromWarehouse}
+            isWarehouseProductsLoading={isWarehouseProductsLoading}
+            handleRegistryProductSelected={handleRegistryProductSelected}
+            renderProductLabelAction={renderProductLabelAction}
+            strategy={strategy}
+            setStrategy={setStrategy}
+            strategyOptions={strategyOptions}
+            selectedStrategyOption={selectedStrategyOption}
+            outStockLimiter={outStockLimiter}
+            setOutStockLimiter={setOutStockLimiter}
+            editableTableRef={editableTableRef}
+            renderEmptyProductsPlaceholder={() =>
+              dosagePlaceholderRenderer.renderEmptyProductsPlaceholder()
+            }
+          />
         ) : (
-          <div className="mx-auto space-y-6">
-            <div className="space-y-4 md:space-y-6">
-              {activeJobs.length > 0 && (
-                <section className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-4">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                      <h3 className="text-base font-semibold text-neutral-900">
-                        Job attivi ({activeJobs.length})
-                      </h3>
-                      <p className="text-sm text-neutral-500">
-                        {activeSelectionLabel}
-                      </p>
-                    </div>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="gap-2 self-start lg:self-auto"
-                      disabled={
-                        selectedActiveJobIds.length === 0 || isCancellingJobs
-                      }
-                      onClick={handleCancelSelectedActiveJobs}
-                    >
-                      {isCancellingJobs ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Annullamento...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Trash2 className="h-4 w-4" />
-                          <span>Annulla selezionati</span>
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                  <EditableTable
-                    columns={activeJobColumns}
-                    rows={activeJobRows}
-                    isModify={false}
-                    addButton={false}
-                    showDeleteAction={false}
-                    onSelectionChange={handleActiveJobsSelectionChange}
-                    getRowId={(row) => ActiveJobsTableRowBuilder.extractId(row)}
-                    className="bg-white"
-                  />
-                  <div className="flex items-start gap-3 rounded-xl border border-neutral-100 bg-neutral-50 p-4">
-                    <Loader2 className="h-4 w-4 animate-spin text-neutral-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-neutral-600 leading-tight">
-                      Ci vorranno da 1 a massimo 10 minuti per elaborare i
-                      dosaggi. Puoi annullare i job selezionandoli nella
-                      tabella.
-                    </p>
-                  </div>
-                </section>
-              )}
-
-              <section className="space-y-4">
-                {jobs.length === 0 ? (
-                  <div className="text-center py-16 text-neutral-500 bg-white rounded-2xl border border-neutral-200">
-                    <Clock className="h-12 w-12 mx-auto mb-3 text-neutral-300" />
-                    <p>Nessun calcolo effettuato</p>
-                  </div>
-                ) : (
-                  <EditableTable
-                    columns={historyJobColumns}
-                    rows={historyJobRows}
-                    isModify={false}
-                    addButton={false}
-                    showDeleteAction={false}
-                    getRowId={(row) => (row as JobHistoryTableRow).id}
-                    onOpenDetails={(row) => {
-                      const typedRow = row as JobHistoryTableRow;
-                      void handleShowJobDetails(typedRow.job);
-                    }}
-                    className="bg-white rounded-2xl border border-neutral-200"
-                  />
-                )}
-              </section>
-            </div>
-          </div>
+          <HistorySection
+            activeJobsCount={activeJobs.length}
+            activeSelectionLabel={activeSelectionLabel}
+            isCancellingJobs={isCancellingJobs}
+            selectedActiveJobIds={selectedActiveJobIds}
+            onCancelSelectedActiveJobs={handleCancelSelectedActiveJobs}
+            activeJobColumns={activeJobColumns}
+            activeJobRows={activeJobRows}
+            onActiveSelectionChange={handleActiveJobsSelectionChange}
+            historyJobColumns={historyJobColumns}
+            historyJobRows={historyJobRows}
+            onOpenJobDetails={(job) => void handleShowJobDetails(job)}
+          />
         )}
       </div>
 

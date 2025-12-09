@@ -4,15 +4,27 @@ import {
   type FieldsAvailabilityResponse,
 } from "@/api/fields";
 
-export function useFieldsAvailability(startAt: string, endAt: string) {
+type UseFieldsAvailabilityOptions = {
+  enabled?: boolean;
+};
+
+export function useFieldsAvailability(
+  startAt: string,
+  endAt: string,
+  options?: UseFieldsAvailabilityOptions
+) {
+  const isEnabled = (options?.enabled ?? true) && !!startAt && !!endAt;
+
   // Query per ottenere la disponibilità dei campi nel range di date selezionato
-  const fieldsAvailabilityQuery = useQuery<FieldsAvailabilityResponse, Error>({
-    queryKey: ["fields-availability", startAt, endAt],
-    queryFn: async () => {
-      return await getFieldsAvailability(startAt, endAt);
-    },
-    enabled: !!startAt && !!endAt, // Solo se entrambe le date sono definite
-  });
+  const fieldsAvailabilityQuery = useQuery<FieldsAvailabilityResponse, Error>(
+    {
+      queryKey: ["fields-availability", startAt, endAt],
+      queryFn: async () => {
+        return await getFieldsAvailability(startAt, endAt);
+      },
+      enabled: isEnabled, // Solo se attivato e con date definite
+    }
+  );
 
   return {
     // Dati e stati della query

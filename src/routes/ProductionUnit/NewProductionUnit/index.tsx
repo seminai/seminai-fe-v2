@@ -177,6 +177,8 @@ export default function NewProductionUnit(): React.ReactElement {
   const [tempDateRange, setTempDateRange] = useState<DateRange>(
     getCurrentYearRange()
   );
+  const [entryMode, setEntryMode] = useState<"search" | "import" | null>(null);
+  const [hasPerformedSearch, setHasPerformedSearch] = useState(false);
 
   const navigate = useNavigate();
   const navigationManager = useMemo(
@@ -188,6 +190,8 @@ export default function NewProductionUnit(): React.ReactElement {
   }, [navigationManager]);
 
   const handleSearch = () => {
+    setEntryMode("search");
+    setHasPerformedSearch(true);
     setDateRange(tempDateRange);
   };
 
@@ -230,9 +234,18 @@ export default function NewProductionUnit(): React.ReactElement {
     }
   }, [cultivarCatalogError]);
 
+  const isAvailabilitySearchEnabled = entryMode === "search" && hasPerformedSearch;
+  const availabilityStart = isAvailabilitySearchEnabled
+    ? dateRange.start.toISOString().split("T")[0]
+    : "";
+  const availabilityEnd = isAvailabilitySearchEnabled
+    ? dateRange.end.toISOString().split("T")[0]
+    : "";
+
   const { companies, isLoading, isError, error } = useFieldsAvailability(
-    dateRange.start.toISOString().split("T")[0],
-    dateRange.end.toISOString().split("T")[0]
+    availabilityStart,
+    availabilityEnd,
+    { enabled: isAvailabilitySearchEnabled }
   );
 
   // Tutti i campi disponibili (flattening da tutte le aziende)
@@ -321,6 +334,12 @@ export default function NewProductionUnit(): React.ReactElement {
       );
     });
   }, [fieldsFilteredByCompany, searchValue]);
+
+  const displayedFieldsCount = isAvailabilitySearchEnabled
+    ? filteredFields.length
+    : 0;
+  const showPreSearchEmptyState =
+    !isAvailabilitySearchEnabled && entryMode !== "import";
 
   // Calcola il totale SAU allocato
   const totalAllocatedSAU = useMemo(() => {
@@ -545,6 +564,9 @@ export default function NewProductionUnit(): React.ReactElement {
       return;
     }
 
+    setEntryMode("import");
+    setHasPerformedSearch(false);
+
     // Filtra per l'azienda selezionata
     setSelectedCompanyId(result.companyId);
 
@@ -560,6 +582,7 @@ export default function NewProductionUnit(): React.ReactElement {
           name: importedUnit.name,
           cropCode,
           cultivarId: null,
+          totalAreaHa: importedUnit.totalAreaHa ?? null,
           allocations: importedUnit.allocations,
           protectionStructure: importedUnit.protectionStructure,
           occupazione: importedUnit.occupazione,
@@ -607,14 +630,6 @@ export default function NewProductionUnit(): React.ReactElement {
     if (unitsWithMissingCrop.length > 0) {
       toast.warning(
         `${unitsWithMissingCrop.length} unità non hanno una varietà abbinata. Selezionala manualmente.`,
-        { duration: 5000 }
-      );
-    }
-
-    if (result.warnings.length > 0) {
-      console.warn("⚠️ Avvisi import:", result.warnings);
-      toast.warning(
-        `${result.warnings.length} campi non trovati. Controlla la console per i dettagli.`,
         { duration: 5000 }
       );
     }
@@ -760,8 +775,8 @@ export default function NewProductionUnit(): React.ReactElement {
       <div className="flex-shrink-0 bg-gray-50/50 backdrop-blur-sm z-10">
         <PageHeader
           title="Nuova Unità Produttiva"
-          totalItems={filteredFields.length}
-          filteredItems={filteredFields.length}
+          totalItems={displayedFieldsCount}
+          filteredItems={displayedFieldsCount}
         >
           <Button
             variant="outline"
@@ -1116,11 +1131,14 @@ export default function NewProductionUnit(): React.ReactElement {
                     <div className="text-center py-8 text-gray-500">
                       <Search className="mx-auto h-12 w-12 text-gray-400" />
                       <h3 className="mt-2 text-sm font-medium text-gray-900">
-                        Nessun campo trovato
+                        {showPreSearchEmptyState
+                          ? "Nessun campo selezionato"
+                          : "Nessun campo trovato"}
                       </h3>
                       <p className="mt-1 text-sm text-gray-500">
-                        Prova a modificare i filtri di ricerca o il periodo
-                        selezionato.
+                        {showPreSearchEmptyState
+                          ? "Devi effettuare una ricerca in un range di tempo o importare file."
+                          : "Prova a modificare i filtri di ricerca o il periodo selezionato."}
                       </p>
                     </div>
                   ) : (

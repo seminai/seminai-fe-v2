@@ -265,6 +265,69 @@ export type BulkDeleteProductionUnitsResponse = {
   data?: unknown;
 };
 
+export type ExtractedAllocation = {
+  fieldName?: string;
+  sezione?: string;
+  foglio?: string;
+  particella?: string;
+  subalterno?: string | null;
+  areaHa: number;
+};
+
+export type ExtractedProductionUnit = {
+  name: string;
+  cropName: string;
+  cropType: string;
+  variety?: string;
+  protocoll?: string;
+  protectionStructure?: string;
+  startDate?: string;
+  floweringDate?: string | null;
+  harvestingDate?: string | null;
+  endDate?: string;
+  occupazione?: string;
+  destinazioneDiUso?: string;
+  acquaTotalePeridoL?: number;
+  areaHa?: number;
+  allocations: ExtractedAllocation[];
+};
+
+export type ExtractProductionUnitsResponse =
+  | ExtractedProductionUnit[]
+  | {
+      data: ExtractedProductionUnit[];
+    };
+
+function normalizeExtractedProductionUnits(
+  payload: unknown
+): ExtractedProductionUnit[] {
+  const candidates = [
+    payload,
+    (payload as { data?: unknown })?.data,
+    (payload as { productionUnits?: unknown })?.productionUnits,
+    (payload as { data?: { productionUnits?: unknown } })?.data
+      ?.productionUnits,
+    (payload as { items?: unknown })?.items,
+    (payload as { data?: { items?: unknown } })?.data?.items,
+    (payload as { result?: unknown })?.result,
+  ];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) {
+      return candidate as ExtractedProductionUnit[];
+    }
+  }
+
+  if (payload && typeof payload === "object") {
+    const values = Object.values(payload as Record<string, unknown>);
+    if (values.length > 0 && values.every((value) => typeof value === "object")) {
+      return values as ExtractedProductionUnit[];
+    }
+  }
+
+  return [];
+}
+
 // API function for bulk delete
 export async function bulkDeleteProductionUnits(
   request: BulkDeleteProductionUnitsRequest,
@@ -319,6 +382,43 @@ export async function bulkDeleteProductionUnits(
   }
 }
 
+export async function extractProductionUnits(
+  companyId: string,
+  file: File,
+  baseUrl: string = BASE_URL
+): Promise<ExtractedProductionUnit[]> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/production-units/extract?companyId=${encodeURIComponent(
+      companyId
+    )}`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  const rawText = await safeReadText(response);
+
+  if (!response.ok) {
+    throw new Error(rawText || "Failed to extract production units");
+  }
+
+  if (!rawText || rawText.trim() === "") {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(rawText) as ExtractProductionUnitsResponse;
+    const normalized = normalizeExtractedProductionUnits(parsed);
+    return normalized;
+  } catch {
+    return [];
+  }
+}
+
 class ProductionUnitApiService {
   private readonly baseUrl: string;
 
@@ -363,6 +463,13 @@ class ProductionUnitApiService {
     request: BulkDeleteProductionUnitsRequest
   ): Promise<BulkDeleteProductionUnitsResponse> {
     return await bulkDeleteProductionUnits(request, this.baseUrl);
+  }
+
+  public async extract(
+    companyId: string,
+    file: File
+  ): Promise<ExtractedProductionUnit[]> {
+    return await extractProductionUnits(companyId, file, this.baseUrl);
   }
 }
 

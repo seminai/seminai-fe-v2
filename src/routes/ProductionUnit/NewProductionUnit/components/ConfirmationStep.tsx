@@ -42,12 +42,17 @@ const ConfirmationStep: React.FC<ConfirmationStepProps> = ({
   onConfirm,
   isCreating,
 }) => {
-  const totalSAU = productionUnits.reduce((total, unit) => {
+  const getUnitArea = (unit: ProductionUnitInput): number => {
     return (
-      total +
+      unit.totalAreaHa ??
       Array.from(unit.allocations.values()).reduce((sum, area) => sum + area, 0)
     );
-  }, 0);
+  };
+
+  const totalSAU = productionUnits.reduce(
+    (total, unit) => total + getUnitArea(unit),
+    0
+  );
 
   return (
     <div className="space-y-6">
@@ -103,10 +108,7 @@ const ConfirmationStep: React.FC<ConfirmationStepProps> = ({
         </h3>
         {productionUnits.map((unit, index) => {
           const crop = cropVarieties.find((v) => v.code === unit.cropCode);
-          const unitTotalArea = Array.from(unit.allocations.values()).reduce(
-            (sum, area) => sum + area,
-            0
-          );
+          const unitTotalArea = getUnitArea(unit);
 
           const cropDates = crop
             ? calculateCropDates(crop, dateRange.start)

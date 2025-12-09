@@ -10,13 +10,7 @@ import {
   DrawerTrigger,
   DrawerClose,
 } from "@/components/ui/drawer";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Upload,
@@ -26,13 +20,11 @@ import {
   Building2,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
 import {
-  parseProductionUnitCSV,
-  validateParsedData,
-  type ParsedBulkImport,
-} from "@/utils/csvProductionUnitParser";
-import * as XLSX from "xlsx";
+  extractProductionUnits,
+  type ExtractedProductionUnit,
+} from "@/api/production-unit";
+import { toast } from "sonner";
 
 type AvailableField = {
   id: string;
@@ -64,11 +56,13 @@ export type ImportedProductionUnit = {
   acquaTotalePeridoL: number;
   allocations: Map<string, number>;
   matchedFieldIds: string[];
+  totalAreaHa: number | null;
   unmatchedAllocations: Array<{
     fieldName: string;
     sezione?: string;
     foglio?: string;
     particella?: string;
+    subalterno?: string | null;
     areaHa: number;
   }>;
 };
@@ -83,12 +77,7 @@ export type ImportResult = {
 type ProductionUnitCsvImporterProps = {
   companies: Company[];
   onImportSuccess: (result: ImportResult) => void;
-};
-
-type CropCatalogEntry = {
-  code: string;
-  species: string;
-  cropType: string;
+  openSignal?: number | null;
 };
 
 class FieldMatcher {
@@ -184,6 +173,7 @@ class ProductionUnitAggregator {
       occupazione: entry.occupazione,
       destinazioneDiUso: entry.destinazioneDiUso,
       acquaTotalePeridoL: entry.acquaTotalePeridoL,
+      totalAreaHa: entry.totalAreaHa,
       allocations: entry.allocations,
       matchedFieldIds: Array.from(entry.matchedFieldIds),
       unmatchedAllocations: entry.unmatchedAllocations,
@@ -216,6 +206,7 @@ class ProductionUnitAggregator {
       occupazione: unit.occupazione,
       destinazioneDiUso: unit.destinazioneDiUso,
       acquaTotalePeridoL: unit.acquaTotalePeridoL,
+      totalAreaHa: unit.totalAreaHa,
       allocations: new Map(unit.allocations),
       matchedFieldIds: new Set(unit.matchedFieldIds),
       unmatchedAllocations: [...unit.unmatchedAllocations],
@@ -227,6 +218,11 @@ class ProductionUnitAggregator {
       const prev = target.allocations.get(fieldId) ?? 0;
       target.allocations.set(fieldId, parseFloat((prev + area).toFixed(4)));
     });
+
+    if (typeof source.totalAreaHa === "number") {
+      const current = target.totalAreaHa ?? 0;
+      target.totalAreaHa = parseFloat((current + source.totalAreaHa).toFixed(4));
+    }
 
     source.matchedFieldIds.forEach((fieldId) => {
       target.matchedFieldIds.add(fieldId);
@@ -267,6 +263,7 @@ type AggregatedUnit = {
   occupazione: string;
   destinazioneDiUso: string;
   acquaTotalePeridoL: number;
+  totalAreaHa: number | null;
   allocations: Map<string, number>;
   matchedFieldIds: Set<string>;
   unmatchedAllocations: ImportedProductionUnit["unmatchedAllocations"];
@@ -274,41 +271,24 @@ type AggregatedUnit = {
 
 export const ProductionUnitCsvImporter: React.FC<
   ProductionUnitCsvImporterProps
-> = ({ companies, onImportSuccess }) => {
+> = ({ companies, onImportSuccess, openSignal }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [parsedData, setParsedData] = useState<ParsedBulkImport[] | null>(null);
-  const [cropCatalog, setCropCatalog] = useState<CropCatalogEntry[]>([]);
-  const [isCatalogLoading, setIsCatalogLoading] = useState(true);
-  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [extractedUnits, setExtractedUnits] = useState<
+    ExtractedProductionUnit[] | null
+  >(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
+
+  useEffect(() => {
+    if (openSignal) {
+      setIsOpen(true);
+    }
+  }, [openSignal]);
 
   const selectedCompany = companies.find(
     (c) => c.companyId === selectedCompanyId
   );
-
-  useEffect(() => {
-    const loadCatalog = async () => {
-      try {
-        const response = await fetch("/datasets/varietà/index.json");
-        if (!response.ok) {
-          throw new Error("Impossibile caricare il catalogo varietà");
-        }
-        const data = (await response.json()) as CropCatalogEntry[];
-        setCropCatalog(data);
-      } catch (error) {
-        console.error("Errore nel caricamento del catalogo varietà:", error);
-        setCatalogError(
-          error instanceof Error ? error.message : "Errore sconosciuto"
-        );
-      } finally {
-        setIsCatalogLoading(false);
-      }
-    };
-
-    void loadCatalog();
-  }, []);
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -317,61 +297,28 @@ export const ProductionUnitCsvImporter: React.FC<
     if (!file) return;
 
     if (!selectedCompanyId) {
-      toast.error("Seleziona un'azienda prima di caricare il file");
+      setValidationErrors(["Seleziona un'azienda prima di caricare il file"]);
       event.target.value = "";
       return;
     }
 
     setIsLoading(true);
     setValidationErrors([]);
-    setParsedData(null);
-
+    setExtractedUnits(null);
     try {
-      let csvText = "";
+      const extracted = await extractProductionUnits(selectedCompanyId, file);
 
-      if (
-        file.name.endsWith(".xlsx") ||
-        file.name.endsWith(".xls") ||
-        file.type.includes("spreadsheet")
-      ) {
-        const data = await file.arrayBuffer();
-        const workbook = XLSX.read(data);
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        csvText = XLSX.utils.sheet_to_csv(worksheet);
-      } else {
-        csvText = await file.text();
-      }
-
-      const parsed = parseProductionUnitCSV(csvText, {
-        cropVarieties: cropCatalog,
-      });
-
-      console.log("📊 Dati parsati dal CSV:", parsed);
-      console.log("📋 Numero di aziende trovate:", parsed.length);
-
-      const validation = validateParsedData(parsed);
-
-      if (!validation.isValid) {
-        console.error("❌ Errori di validazione:", validation.errors);
-        setValidationErrors(validation.errors);
-        toast.error("Il file contiene errori. Controlla i dettagli.");
+      if (!extracted || extracted.length === 0) {
+        setValidationErrors(["Nessuna unità produttiva trovata nel file."]);
         return;
       }
 
-      setParsedData(parsed);
-      toast.success(
-        `File parsato con successo! Trovate ${parsed.reduce(
-          (sum, d) => sum + d.productionUnits.length,
-          0
-        )} unità produttive.`
-      );
+      setExtractedUnits(extracted);
     } catch (error) {
       console.error("Errore nell'importazione del file:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Errore sconosciuto";
       setValidationErrors([errorMessage]);
-      toast.error("Errore nell'importazione del file");
     } finally {
       setIsLoading(false);
       event.target.value = "";
@@ -379,54 +326,83 @@ export const ProductionUnitCsvImporter: React.FC<
   };
 
   const buildImportResult = (): ImportResult | null => {
-    if (!parsedData || !selectedCompany) return null;
+    if (!extractedUnits || !selectedCompany) return null;
 
     const warnings: string[] = [];
     const fieldMatcher = new FieldMatcher(selectedCompany.fields);
 
-    const allProductionUnits = parsedData.flatMap((d) => d.productionUnits);
+    const parseDateSafe = (value?: string | null): Date | null => {
+      if (!value) return null;
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
 
-    const importedUnits: ImportedProductionUnit[] = allProductionUnits.map(
+    const importedUnits: ImportedProductionUnit[] = extractedUnits.map(
       (pu, index) => {
         const allocations = new Map<string, number>();
         const matchedFieldIds: string[] = [];
         const unmatchedAllocations: ImportedProductionUnit["unmatchedAllocations"] =
           [];
+        const totalAreaHa =
+          typeof pu.areaHa === "number" && !Number.isNaN(pu.areaHa)
+            ? pu.areaHa
+            : null;
 
-        pu.fieldAllocations.forEach((alloc) => {
-          const matchedField = fieldMatcher.match(alloc);
+        (pu.allocations ?? []).forEach((alloc) => {
+          const matchedField = fieldMatcher.match({
+            fieldName: alloc.fieldName ?? "",
+            sezione: alloc.sezione,
+            foglio: alloc.foglio,
+            particella: alloc.particella,
+          });
+          const parsedArea =
+            typeof alloc.areaHa === "string"
+              ? parseFloat(alloc.areaHa)
+              : alloc.areaHa;
+          const area = Number.isFinite(parsedArea) ? parsedArea : 0;
+
+          if (!area || area <= 0) {
+            return;
+          }
+
           if (matchedField) {
             const existingArea = allocations.get(matchedField.id) ?? 0;
-            allocations.set(matchedField.id, existingArea + alloc.areaHa);
+            allocations.set(
+              matchedField.id,
+              parseFloat((existingArea + area).toFixed(4))
+            );
             if (!matchedFieldIds.includes(matchedField.id)) {
               matchedFieldIds.push(matchedField.id);
             }
           } else {
-            unmatchedAllocations.push(alloc);
-            warnings.push(
-              `Unità "${pu.name}": campo non trovato per foglio=${alloc.foglio}, particella=${alloc.particella}${
-                alloc.sezione ? `, sezione=${alloc.sezione}` : ""
-              }`
-            );
+            unmatchedAllocations.push({
+              fieldName: alloc.fieldName ?? "Campo non riconosciuto",
+              sezione: alloc.sezione,
+              foglio: alloc.foglio,
+              particella: alloc.particella,
+              subalterno: alloc.subalterno,
+              areaHa: area,
+            });
           }
         });
 
-        const startDate = pu.startDate ? new Date(pu.startDate) : null;
-        const endDate = pu.endDate ? new Date(pu.endDate) : null;
+        const startDate = parseDateSafe(pu.startDate ?? null);
+        const endDate = parseDateSafe(pu.endDate ?? null);
 
         return {
           id: `import-${Date.now()}-${index}`,
           name: pu.name,
-          cropName: pu.cropName,
-          cropType: pu.cropType,
-          variety: pu.variety,
-          protocoll: pu.protocoll,
-          protectionStructure: pu.protectionStructure,
+          cropName: pu.cropName ?? pu.name,
+          cropType: pu.cropType ?? pu.cropName ?? pu.name,
+          variety: pu.variety ?? pu.cropType ?? pu.cropName ?? pu.name,
+          protocoll: pu.protocoll ?? "Non specificato",
+          protectionStructure: pu.protectionStructure ?? "Non specificato",
           startDate,
           endDate,
-          occupazione: pu.occupazione ?? "",
+          occupazione: pu.occupazione ?? pu.name ?? "",
           destinazioneDiUso: pu.destinazioneDiUso ?? "",
           acquaTotalePeridoL: pu.acquaTotalePeridoL ?? 0,
+          totalAreaHa,
           allocations,
           matchedFieldIds,
           unmatchedAllocations,
@@ -447,7 +423,6 @@ export const ProductionUnitCsvImporter: React.FC<
   const handleImport = () => {
     const result = buildImportResult();
     if (!result) {
-      toast.error("Impossibile elaborare i dati. Riprova.");
       return;
     }
 
@@ -458,19 +433,19 @@ export const ProductionUnitCsvImporter: React.FC<
 
     onImportSuccess(result);
     setIsOpen(false);
-    setParsedData(null);
+    setExtractedUnits(null);
     setValidationErrors([]);
     setSelectedCompanyId("");
   };
 
   const handleCancel = () => {
     setIsOpen(false);
-    setParsedData(null);
+    setExtractedUnits(null);
     setValidationErrors([]);
     setSelectedCompanyId("");
   };
 
-  const previewResult = parsedData ? buildImportResult() : null;
+  const previewResult = extractedUnits ? buildImportResult() : null;
 
   return (
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
@@ -505,21 +480,18 @@ export const ProductionUnitCsvImporter: React.FC<
               <Building2 className="h-4 w-4" />
               Azienda di destinazione
             </label>
-            <Select
+            <SearchableSelect
               value={selectedCompanyId}
-              onValueChange={setSelectedCompanyId}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Seleziona un'azienda..." />
-              </SelectTrigger>
-              <SelectContent>
-                {companies.map((company) => (
-                  <SelectItem key={company.companyId} value={company.companyId}>
-                    {company.companyName} ({company.fields.length} campi)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={setSelectedCompanyId}
+              options={companies.map((company) => ({
+                label: company.companyName,
+                value: company.companyId,
+              }))}
+              placeholder="Seleziona un'azienda..."
+              searchPlaceholder="Cerca azienda..."
+              emptyMessage="Nessuna azienda trovata"
+              wrapperClassName="w-full"
+            />
             {selectedCompany && (
               <p className="text-xs text-muted-foreground">
                 I campi verranno abbinati tramite Foglio e Particella (e Sezione
@@ -568,16 +540,6 @@ export const ProductionUnitCsvImporter: React.FC<
             {!selectedCompanyId && (
               <p className="text-xs text-amber-600 mt-1 font-medium">
                 Seleziona prima un'azienda per abilitare l'upload
-              </p>
-            )}
-            {catalogError && (
-              <p className="text-xs text-red-600 mt-1">
-                {catalogError} — il catalogo varietà non verrà utilizzato.
-              </p>
-            )}
-            {!catalogError && isCatalogLoading && (
-              <p className="text-xs text-gray-500 mt-1">
-                Caricamento catalogo varietà in corso...
               </p>
             )}
           </div>
@@ -630,47 +592,10 @@ export const ProductionUnitCsvImporter: React.FC<
                       Azienda: {previewResult.companyName}
                     </p>
                     <p className="text-xs mt-1">
-                      • {previewResult.productionUnits.length} unità produttive
-                      trovate
+                      • {previewResult.productionUnits.length} unità produttive trovate
                     </p>
-                    {previewResult.productionUnits
-                      .slice(0, 5)
-                      .map((pu, puIndex) => (
-                        <p key={puIndex} className="text-xs ml-4 text-gray-600">
-                          - {pu.name} ({pu.cropName}) — {pu.allocations.size}{" "}
-                          campi abbinati
-                          {pu.unmatchedAllocations.length > 0 && (
-                            <span className="text-amber-600 ml-1">
-                              ({pu.unmatchedAllocations.length} non trovati)
-                            </span>
-                          )}
-                        </p>
-                      ))}
-                    {previewResult.productionUnits.length > 5 && (
-                      <p className="text-xs ml-4 text-gray-500">
-                        ... e altre{" "}
-                        {previewResult.productionUnits.length - 5} unità
-                      </p>
-                    )}
                   </div>
                 </div>
-                {previewResult.warnings.length > 0 && (
-                  <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
-                    <p className="font-medium mb-1">
-                      ⚠️ Avvisi ({previewResult.warnings.length}):
-                    </p>
-                    <ul className="list-disc list-inside space-y-0.5">
-                      {previewResult.warnings.slice(0, 5).map((w, i) => (
-                        <li key={i}>{w}</li>
-                      ))}
-                      {previewResult.warnings.length > 5 && (
-                        <li className="text-gray-600">
-                          ... e altri {previewResult.warnings.length - 5} avvisi
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                )}
               </AlertDescription>
             </Alert>
           )}
