@@ -114,6 +114,7 @@ export const SingleProductionUnitForm: React.FC<
       name: "",
       cropCode: "",
       cultivarId: null,
+      totalAreaHa: null,
       allocations: new Map(allocatedFields),
       protectionStructure: "",
       occupazione: "",
@@ -315,9 +316,12 @@ export const SingleProductionUnitForm: React.FC<
                 const crop = cropVarieties.find(
                   (v) => v.code === unit.cropCode
                 );
-                const unitTotalArea = Array.from(
-                  unit.allocations.values()
-                ).reduce((sum, area) => sum + area, 0);
+                const unitTotalArea =
+                  unit.totalAreaHa ??
+                  Array.from(unit.allocations.values()).reduce(
+                    (sum, area) => sum + area,
+                    0
+                  );
                 const cultivarLabel =
                   (unit.cultivarId &&
                     cultivarCatalog?.getCultivarLabel(unit.cultivarId)) ||

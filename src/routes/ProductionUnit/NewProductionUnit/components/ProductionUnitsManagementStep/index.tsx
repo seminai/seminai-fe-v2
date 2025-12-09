@@ -96,6 +96,7 @@ const ProductionUnitsManagementStep: React.FC<
       id: `pu-${Date.now()}`,
       name: "",
       cropCode: "",
+      totalAreaHa: null,
       allocations: new Map(),
       protectionStructure: "",
       occupazione: "",
@@ -167,10 +168,12 @@ const ProductionUnitsManagementStep: React.FC<
           <div className="space-y-3">
             {productionUnits.map((unit) => {
               const crop = cropVarieties.find((v) => v.code === unit.cropCode);
-              const totalArea = Array.from(unit.allocations.values()).reduce(
-                (sum, area) => sum + area,
-                0
-              );
+              const totalArea =
+                unit.totalAreaHa ??
+                Array.from(unit.allocations.values()).reduce(
+                  (sum, area) => sum + area,
+                  0
+                );
               const issues = unitIssuesMap.get(unit.id) ?? [];
 
               return (

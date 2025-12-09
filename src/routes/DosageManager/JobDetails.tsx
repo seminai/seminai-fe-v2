@@ -10,7 +10,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Loader2 } from "lucide-react";
-import { type DosageJob } from "@/utils/dosageJobsIndexDBManager";
+import { type DosageJob } from "./types";
 
 interface JobDetailsProps {
   selectedJob: DosageJob | null;

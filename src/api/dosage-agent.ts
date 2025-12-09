@@ -136,6 +136,48 @@ export type CancelDosageJobsResponse = {
   data?: unknown;
 };
 
+export interface DosageAgentJob {
+  id: string;
+  userId?: string;
+  state: "waiting" | "active" | "completed" | "failed";
+  progress: number;
+  failedReason?: string | null;
+  processedOn?: string | null;
+  finishedOn?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  productsCount?: number;
+  unitsCount?: number;
+  result?: DosageJobStatus["result"];
+}
+
+export interface ListDosageJobsResponse {
+  status: "success";
+  data: DosageAgentJob[];
+}
+
+export async function listDosageJobs(
+  baseUrl: string = BASE_URL
+): Promise<ListDosageJobsResponse> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/dosage-agent/jobs`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to list dosage jobs");
+  }
+
+  return (await response.json()) as ListDosageJobsResponse;
+}
+
 async function safeReadText(response: Response): Promise<string> {
   try {
     return await response.text();
@@ -243,6 +285,10 @@ class DosageAgentApiService {
 
   public async cancelJobs(jobIds: string[]): Promise<CancelDosageJobsResponse> {
     return await cancelDosageJobs({ jobIds }, this.baseUrl);
+  }
+
+  public async listJobs(): Promise<ListDosageJobsResponse> {
+    return await listDosageJobs(this.baseUrl);
   }
 }
 

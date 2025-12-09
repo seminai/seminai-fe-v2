@@ -1893,13 +1893,6 @@ export default function JobPage() {
     },
 
     {
-      id: "productRegistrationNumber",
-      title: "Numero Registrazione",
-      type: "text",
-      width: "200px",
-      readOnly: true,
-    },
-    {
       id: "stock",
       title: "Stock",
       type: "number",
@@ -1925,28 +1918,6 @@ export default function JobPage() {
       title: "Campi",
       type: "text",
       width: "200px",
-      readOnly: true,
-    },
-    {
-      id: "category",
-      title: "Categoria",
-      type: "text",
-      width: "150px",
-      readOnly: true,
-    },
-    {
-      id: "modeOfApplication",
-      title: "Modalità Applicazione",
-      type: "text",
-      width: "180px",
-      readOnly: true,
-    },
-
-    {
-      id: "avversity",
-      title: "Avversità",
-      type: "text",
-      width: "150px",
       readOnly: true,
     },
   ];
