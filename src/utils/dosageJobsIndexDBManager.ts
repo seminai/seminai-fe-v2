@@ -3,13 +3,13 @@
  * Manages asynchronous job tracking for dosage calculations
  */
 
-import type { DosageJobStatus } from "@/api/dosage-agent";
+import type { DosageJobState, DosageJobStatus } from "@/api/dosage-agent";
 
 export interface DosageJob {
   id: string;
   createdAt: Date;
   updatedAt: Date;
-  state: "waiting" | "active" | "completed" | "failed";
+  state: DosageJobState;
   progress: number;
   productsCount: number;
   unitsCount: number;
