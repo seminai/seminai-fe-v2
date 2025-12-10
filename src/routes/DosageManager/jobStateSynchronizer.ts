@@ -21,7 +21,11 @@ class DosageJobStateSynchronizer {
 
   public async refreshActiveJobs(jobs: DosageJob[]): Promise<DosageJob[]> {
     const activeJobs = jobs.filter(
-      (job) => job.state === "waiting" || job.state === "active"
+      (job) =>
+        job.state === "queued" ||
+        job.state === "waiting" ||
+        job.state === "active" ||
+        job.state === "delayed"
     );
 
     if (activeJobs.length === 0) {
@@ -40,7 +44,7 @@ class DosageJobStateSynchronizer {
           unitsCount: statusData.data?.unitsCount ?? job.unitsCount,
           updatedAt: new Date(),
           error:
-            statusData.state === "failed"
+            statusData.state === "failed" || statusData.state === "stalled"
               ? "The dosage job has failed"
               : undefined,
         });

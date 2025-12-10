@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import {
   EditableTable,
   type EditableColumn,
+  type CustomExportConfig,
 } from "@/components/organism/EditableTable";
 import {
   JobSelectedDetails,
@@ -68,6 +69,7 @@ interface AllJobsViewProps {
     showToast?: boolean
   ) => void;
   showSelectionSummary?: boolean;
+  exportConfig?: CustomExportConfig;
 }
 
 export function JobIdMultiSelect({
@@ -239,6 +241,7 @@ export function AllJobsView({
   onClearSelection,
   onProductClick,
   showSelectionSummary = false,
+  exportConfig,
 }: AllJobsViewProps) {
   const hasError = Boolean(error);
   const errorMessage =
@@ -302,6 +305,7 @@ export function AllJobsView({
                   isBulkVerifyLoading={isBulkVerifying}
                   getRowId={(row) => row.id as string}
                   onSelectionChange={onSelectionChange}
+                  customExportConfig={exportConfig}
                 />
               </div>
             </div>

@@ -666,9 +666,29 @@ export default function NewProductionUnit(): React.ReactElement {
         "@/api/production-unit"
       );
 
+      // Filtra le unità senza allocazioni: le saltiamo ma avvisiamo l'utente
+      const unitsWithAllocations = productionUnits.filter(
+        (unit) => unit.allocations.size > 0
+      );
+      const skippedUnits = productionUnits.length - unitsWithAllocations.length;
+
+      if (unitsWithAllocations.length === 0) {
+        toast.error(
+          "Nessuna unità ha campi allocati. Assegna almeno un campo e riprova."
+        );
+        return;
+      }
+
+      if (skippedUnits > 0) {
+        toast.warning(
+          `${skippedUnits} unità senza campi allocati sono state escluse dalla creazione.`
+        );
+      }
+
       // Preparazione dei dati per la chiamata API
       const request = {
-        productionUnits: productionUnits.map((unit) => {
+        productionUnits: unitsWithAllocations.map((unit) => {
+
           const crop = cropVarieties.find((v) => v.code === unit.cropCode);
           if (!crop) {
             throw new Error(
@@ -676,25 +696,34 @@ export default function NewProductionUnit(): React.ReactElement {
             );
           }
 
-          // Trova il companyId dal primo campo allocato
-          // (assumiamo che tutti i campi di un'unità produttiva appartengano alla stessa azienda)
-          const firstFieldId = Array.from(unit.allocations.keys())[0];
-          const baseFieldId = firstFieldId
-            ? getBaseFieldIdFromAllocation(firstFieldId)
-            : undefined;
-          const field = baseFieldId
-            ? allFields.find((f) => f.id === baseFieldId)
+          // Raggruppa per campo base e verifica che esistano
+          const allocationsByField = Array.from(
+            unit.allocations.entries()
+          ).reduce<Map<string, number>>((acc, [allocationKey, areaHa]) => {
+            const targetFieldId = getBaseFieldIdFromAllocation(allocationKey);
+            acc.set(targetFieldId, (acc.get(targetFieldId) || 0) + areaHa);
+            return acc;
+          }, new Map());
+
+          const firstAllocatedFieldId =
+            Array.from(allocationsByField.keys())[0] ?? null;
+          const matchedField = firstAllocatedFieldId
+            ? allFields.find((f) => f.id === firstAllocatedFieldId)
             : undefined;
 
-          if (!field) {
+          const companyId =
+            matchedField?.companyId ??
+            (selectedCompanyId !== "all" ? selectedCompanyId : null);
+
+          if (!companyId) {
             throw new Error(
-              `Campo non trovato per l'unità produttiva: ${unit.name}`
+              `Impossibile determinare l'azienda per l'unità "${unit.name}". Seleziona un'azienda o assegna almeno un campo valido.`
             );
           }
 
-          if (!field.companyId) {
-            throw new Error(
-              `Company ID non trovato per il campo: ${field.name}. Verifica che i dati dei campi includano il companyId.`
+          if (!matchedField) {
+            console.warn(
+              `Campo non trovato in cache per l'unità "${unit.name}", uso comunque l'ID dal CSV.`
             );
           }
 
@@ -708,14 +737,6 @@ export default function NewProductionUnit(): React.ReactElement {
           const finalHarvestingDate =
             unit.customHarvestingDate || cropDates.harvestingDate;
 
-          const allocationsByField = Array.from(
-            unit.allocations.entries()
-          ).reduce<Map<string, number>>((acc, [allocationKey, areaHa]) => {
-            const targetFieldId = getBaseFieldIdFromAllocation(allocationKey);
-            acc.set(targetFieldId, (acc.get(targetFieldId) || 0) + areaHa);
-            return acc;
-          }, new Map());
-
           const resolvedVariety =
             (unit.cultivarId &&
               cultivarCatalog?.getCultivarName(unit.cultivarId)) ||
@@ -723,7 +744,7 @@ export default function NewProductionUnit(): React.ReactElement {
 
           return {
             name: unit.name,
-            companyId: field.companyId,
+            companyId,
             cropName: crop.species,
             cropType: crop.cropType,
             variety: resolvedVariety,

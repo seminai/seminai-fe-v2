@@ -5,6 +5,10 @@ import {
   type ProductionUnitUpdateInput,
   type FieldInfo,
 } from "@/api/production-unit";
+import {
+  type ProductionCycle,
+  type ProductionCycleUpdateInput,
+} from "@/api/production-unit-cycle";
 import type { Company } from "@/api/companies";
 import type { Field as CompanyField } from "@/api/fields";
 import { Spinner } from "@/components/ui/spinner";
@@ -41,6 +45,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useProductionUnitCycles } from "@/hooks/useProductionUnitCycles";
 
 // Helper function to format dates as DD-MM-YYYY
 const formatDateDDMMYYYY = (dateStr: string | null | undefined): string => {
@@ -55,6 +60,12 @@ const formatDateDDMMYYYY = (dateStr: string | null | undefined): string => {
   } catch {
     return "-";
   }
+};
+
+// Helper per ottenere formato YYYY-MM-DD per input date
+const formatDateForInput = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return "";
+  return String(dateStr).split("T")[0] ?? "";
 };
 
 type CropPeriod = {
@@ -326,6 +337,291 @@ class CompanyDirectory {
     }
     return this.fieldInfoById.get(fieldId) ?? null;
   }
+}
+
+type CycleFormState = {
+  floweringDate: string;
+  harvestingDate: string;
+  destinazioneDiUso: string;
+};
+
+type ProductionUnitCyclesSectionProps = {
+  productionUnitId: string;
+};
+
+const buildEmptyCycleFormState = (): CycleFormState => ({
+  floweringDate: "",
+  harvestingDate: "",
+  destinazioneDiUso: "",
+});
+
+const getStatusStyle = (status?: string): string => {
+  switch (status) {
+    case "current":
+      return "bg-green-100 text-green-800";
+    case "future":
+      return "bg-blue-100 text-blue-800";
+    case "past":
+      return "bg-gray-100 text-gray-700";
+    default:
+      return "bg-slate-100 text-slate-800";
+  }
+};
+
+function ProductionUnitCyclesSection({
+  productionUnitId,
+}: ProductionUnitCyclesSectionProps): React.ReactElement {
+  const [editingCycleId, setEditingCycleId] = useState<string | null>(null);
+  const [cycleForm, setCycleForm] = useState<CycleFormState>(
+    buildEmptyCycleFormState()
+  );
+
+  const {
+    cycles,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    updateCycle,
+    deleteCycle,
+    isUpdating,
+    isDeleting,
+  } = useProductionUnitCycles(productionUnitId);
+
+  const handleStartEdit = (cycle: ProductionCycle) => {
+    setEditingCycleId(cycle.id);
+    setCycleForm({
+      floweringDate: formatDateForInput(cycle.floweringDate),
+      harvestingDate: formatDateForInput(cycle.harvestingDate),
+      destinazioneDiUso:
+        (cycle as { destinazioneDiUso?: string | null }).destinazioneDiUso ?? "",
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCycleId(null);
+    setCycleForm(buildEmptyCycleFormState());
+  };
+
+  const handleSave = async () => {
+    if (!editingCycleId) return;
+
+    const payload: ProductionCycleUpdateInput = {
+      floweringDate: cycleForm.floweringDate
+        ? new Date(cycleForm.floweringDate).toISOString()
+        : null,
+      harvestingDate: cycleForm.harvestingDate
+        ? new Date(cycleForm.harvestingDate).toISOString()
+        : null,
+      destinazioneDiUso:
+        cycleForm.destinazioneDiUso.trim().length === 0
+          ? null
+          : cycleForm.destinazioneDiUso,
+    };
+
+    try {
+      await updateCycle({ cycleId: editingCycleId, data: payload });
+      toast.success("Ciclo aggiornato con successo");
+      handleCancelEdit();
+    } catch (mutationError) {
+      toast.error(
+        mutationError instanceof Error
+          ? mutationError.message
+          : "Errore nell'aggiornamento del ciclo"
+      );
+    }
+  };
+
+  const handleDelete = async (cycleId: string) => {
+    const confirmed = window.confirm(
+      "Sei sicuro di voler eliminare questo ciclo?"
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteCycle(cycleId);
+      toast.success("Ciclo eliminato con successo");
+      if (editingCycleId === cycleId) {
+        handleCancelEdit();
+      }
+    } catch (mutationError) {
+      toast.error(
+        mutationError instanceof Error
+          ? mutationError.message
+          : "Errore nell'eliminazione del ciclo"
+      );
+    }
+  };
+
+  return (
+    <div className="mt-6 space-y-3">
+      <div className="flex items-center justify-between">
+        <h4 className="text-base font-semibold">Cicli produttivi</h4>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => refetch()}
+          disabled={isLoading}
+        >
+          Aggiorna
+        </Button>
+      </div>
+
+      {isLoading && (
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <Spinner size={16} ariaLabel="Caricamento cicli" />
+          <span>Caricamento cicli…</span>
+        </div>
+      )}
+
+      {isError && (
+        <div className="text-sm text-red-600 bg-red-50 border border-red-100 p-3 rounded">
+          {error?.message || "Errore nel caricamento dei cicli"}
+        </div>
+      )}
+
+      {!isLoading && !isError && cycles.length === 0 && (
+        <p className="text-sm text-gray-500">Nessun ciclo disponibile</p>
+      )}
+
+      {cycles.map((cycle) => {
+        const isEditing = editingCycleId === cycle.id;
+        return (
+          <div
+            key={cycle.id}
+            className="border border-gray-200 rounded-lg bg-slate-50 p-3"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">
+                  Ciclo {cycle.cycleIndex ?? "-"} • {cycle.cropName ?? "-"}{" "}
+                  {cycle.seasonYear ? `(${cycle.seasonYear})` : ""}
+                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                  <Badge
+                    variant="secondary"
+                    className={getStatusStyle(
+                      (cycle as { status?: string }).status
+                    )}
+                  >
+                    {(cycle as { status?: string }).status ?? "N/D"}
+                  </Badge>
+                  {cycle.variety && <Badge variant="outline">{cycle.variety}</Badge>}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {isEditing ? (
+                  <>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleSave}
+                      disabled={isUpdating}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {isUpdating ? "Salvataggio..." : "Salva"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelEdit}
+                      disabled={isUpdating}
+                    >
+                      Annulla
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleStartEdit(cycle)}
+                    >
+                      Modifica
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(cycle.id)}
+                      disabled={isDeleting}
+                    >
+                      Elimina
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {isEditing ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                <div>
+                  <Label className="text-xs text-gray-500">Data Fioritura</Label>
+                  <Input
+                    type="date"
+                    value={cycleForm.floweringDate}
+                    onChange={(e) =>
+                      setCycleForm({
+                        ...cycleForm,
+                        floweringDate: e.target.value,
+                      })
+                    }
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500">Data Raccolta</Label>
+                  <Input
+                    type="date"
+                    value={cycleForm.harvestingDate}
+                    onChange={(e) =>
+                      setCycleForm({
+                        ...cycleForm,
+                        harvestingDate: e.target.value,
+                      })
+                    }
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-500">
+                    Destinazione d'Uso
+                  </Label>
+                  <Input
+                    value={cycleForm.destinazioneDiUso}
+                    onChange={(e) =>
+                      setCycleForm({
+                        ...cycleForm,
+                        destinazioneDiUso: e.target.value,
+                      })
+                    }
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 text-sm text-gray-700">
+                <div>
+                  <p className="text-xs text-gray-500">Data Fioritura</p>
+                  <p>{formatDateDDMMYYYY(cycle.floweringDate)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Data Raccolta</p>
+                  <p>{formatDateDDMMYYYY(cycle.harvestingDate)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Destinazione d'Uso</p>
+                  <p>
+                    {(cycle as { destinazioneDiUso?: string | null })
+                      .destinazioneDiUso ?? "-"}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 const buildProductionUnitColumns = (
@@ -927,12 +1223,6 @@ export default function ProductionUnit(): React.ReactElement {
     const pu = productionUnit.productionUnit;
     const isEditing = editingId === pu.id;
 
-    // Helper per convertire date ISO in formato YYYY-MM-DD per input
-    const formatDateForInput = (dateStr: string | null) => {
-      if (!dateStr) return "";
-      return dateStr.split("T")[0];
-    };
-
     return (
       <div className="p-4 space-y-4">
         {/* Header con pulsante edit */}
@@ -1308,6 +1598,8 @@ export default function ProductionUnit(): React.ReactElement {
             )}
           </div>
         </div>
+
+        <ProductionUnitCyclesSection productionUnitId={pu.id} />
 
         {/* Pulsanti azioni */}
         <div className="mt-6 pt-4 border-t flex gap-2">

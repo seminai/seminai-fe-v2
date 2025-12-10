@@ -6,8 +6,14 @@ import { useLabelsSummary } from "@/hooks/useLabelsSummary";
 import { useLabel } from "@/hooks/useLabel";
 import { PageHeader } from "@/components/organism/Header";
 import { userSettingsIndexDBManager } from "@/utils/userSettingsIndexDBManager";
-import { type EditableColumn } from "@/components/organism/EditableTable";
-import { type JobRow } from "@/components/organism/JobSelectedDetails";
+import {
+  type EditableColumn,
+  type CustomExportConfig,
+} from "@/components/organism/EditableTable";
+import {
+  type JobRow,
+  type AlertNotes,
+} from "@/components/organism/JobSelectedDetails";
 
 import { toast } from "sonner";
 import {
@@ -1300,6 +1306,194 @@ function convertToJobRows(rows: EditableTableRowData[]): JobRow[] {
   return rows as JobRow[];
 }
 
+class JobExportRowFormatter {
+  private readonly row: EditableTableRowData;
+  private readonly alertNotes: AlertNotes | null;
+
+  constructor(row: EditableTableRowData) {
+    this.row = row;
+    this.alertNotes = (row.alertNotes as AlertNotes | null | undefined) ?? null;
+  }
+
+  public getStatus(): string {
+    return String(this.row.isVerified ?? "");
+  }
+
+  public getOperationDate(): unknown {
+    return this.row.dateOfOpeation ?? "";
+  }
+
+  public getPhenologicalStage(): string {
+    return (
+      this.alertNotes?.epoca_impiego ??
+      this.alertNotes?.epoca_impiego_llm ??
+      (this.row.category as string | undefined) ??
+      ""
+    );
+  }
+
+  public getProductionUnit(): string {
+    return String(this.row.productionUnitName ?? "");
+  }
+
+  public getProduct(): string {
+    return String(this.row.productName ?? "");
+  }
+
+  public getTreatmentQuantity(): unknown {
+    return this.row.quantity ?? this.row.productQuantityTreated ?? "";
+  }
+
+  public getUnitMeasure(): string {
+    return String(this.row.unitOfMeasureQuantity ?? "");
+  }
+
+  public getTreatedSurface(): unknown {
+    return this.row.treatedSurface ?? "";
+  }
+
+  public getDoseMin(): unknown {
+    return this.alertNotes?.dose_minima ?? "";
+  }
+
+  public getDoseMax(): unknown {
+    return this.alertNotes?.dose_massima ?? "";
+  }
+
+  public getAverageDose(): number | "" {
+    const minDose = this.alertNotes?.dose_minima;
+    const maxDose = this.alertNotes?.dose_massima;
+
+    if (typeof minDose === "number" && typeof maxDose === "number") {
+      return (minDose + maxDose) / 2;
+    }
+
+    return "";
+  }
+
+  public getDoseUnit(): string {
+    return this.alertNotes?.dose_um ?? "";
+  }
+
+  public getAvailableStock(): number | "" {
+    const totalStock = this.alertNotes?.total_stock_required_for_jobs;
+    const missingStock = this.alertNotes?.stock_out;
+
+    if (typeof totalStock === "number" && typeof missingStock === "number") {
+      return totalStock - missingStock;
+    }
+
+    if (typeof totalStock === "number") {
+      return totalStock;
+    }
+
+    if (typeof missingStock === "number") {
+      return -missingStock;
+    }
+
+    return "";
+  }
+
+  public getTargetDiseases(): string {
+    return (this.alertNotes?.malattie ?? []).join(", ");
+  }
+
+  public getTotalWarehouseNote(): string {
+    const notes: string[] = [];
+
+    if (typeof this.alertNotes?.total_stock_required_for_jobs === "number") {
+      const unit = this.alertNotes.total_stock_required_for_jobs_um ?? "";
+      notes.push(
+        `${this.alertNotes.total_stock_required_for_jobs}${
+          unit ? ` ${unit}` : ""
+        }`
+      );
+    }
+
+    if (this.alertNotes?.note_tecniche) {
+      notes.push(this.alertNotes.note_tecniche);
+    }
+
+    if (typeof this.row.note === "string" && this.row.note.trim().length > 0) {
+      notes.push(this.row.note);
+    }
+
+    return notes.filter(Boolean).join(" - ");
+  }
+}
+
+class JobExportConfigBuilder {
+  public build(): CustomExportConfig {
+    return {
+      columns: [
+        {
+          header: "Stato",
+          accessor: (row) => new JobExportRowFormatter(row).getStatus(),
+        },
+        {
+          header: "Data",
+          accessor: (row) => new JobExportRowFormatter(row).getOperationDate(),
+        },
+        {
+          header: "Fase fenologica",
+          accessor: (row) =>
+            new JobExportRowFormatter(row).getPhenologicalStage(),
+        },
+        {
+          header: "Unità Produttiva",
+          accessor: (row) => new JobExportRowFormatter(row).getProductionUnit(),
+        },
+        {
+          header: "Prodotto",
+          accessor: (row) => new JobExportRowFormatter(row).getProduct(),
+        },
+        {
+          header: "Quantità trattamento",
+          accessor: (row) =>
+            new JobExportRowFormatter(row).getTreatmentQuantity(),
+        },
+        {
+          header: "UDM",
+          accessor: (row) => new JobExportRowFormatter(row).getUnitMeasure(),
+        },
+        {
+          header: "Superficie (ha)",
+          accessor: (row) => new JobExportRowFormatter(row).getTreatedSurface(),
+        },
+        {
+          header: "Dose min",
+          accessor: (row) => new JobExportRowFormatter(row).getDoseMin(),
+        },
+        {
+          header: "Dose max",
+          accessor: (row) => new JobExportRowFormatter(row).getDoseMax(),
+        },
+        {
+          header: "Dose Media Calcolo",
+          accessor: (row) => new JobExportRowFormatter(row).getAverageDose(),
+        },
+        {
+          header: "UM dose",
+          accessor: (row) => new JobExportRowFormatter(row).getDoseUnit(),
+        },
+        {
+          header: "Disponibile in magazzino",
+          accessor: (row) => new JobExportRowFormatter(row).getAvailableStock(),
+        },
+        {
+          header: "Malattie target",
+          accessor: (row) => new JobExportRowFormatter(row).getTargetDiseases(),
+        },
+        {
+          header: "Note Magazzino Totale",
+          accessor: (row) =>
+            new JobExportRowFormatter(row).getTotalWarehouseNote(),
+        },
+      ],
+    };
+  }
+}
+
 class JobBulkVerifier {
   private readonly jobService: typeof jobsApiService;
 
@@ -1541,6 +1735,10 @@ export default function JobPage() {
   );
   const { labels } = useLabelsSummary();
   const bulkVerifier = useMemo(() => new JobBulkVerifier(jobsApiService), []);
+  const jobExportConfig = useMemo(
+    () => new JobExportConfigBuilder().build(),
+    []
+  );
 
   // Hook per la vista "da confermare" - API mirate
   const {
@@ -2176,6 +2374,7 @@ export default function JobPage() {
       onClearSelection={() => setSelectedAllRows([])}
       onProductClick={handleOpenLabel}
       showSelectionSummary={isMobile}
+      exportConfig={jobExportConfig}
     />
   );
 
@@ -2218,6 +2417,7 @@ export default function JobPage() {
       mobileHistoryOpen={mobileHistoryOpen}
       onMobileHistoryChange={setMobileHistoryOpen}
       convertToJobRows={convertToJobRows}
+      exportConfig={jobExportConfig}
     />
   );
 

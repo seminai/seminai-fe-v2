@@ -50,7 +50,15 @@ export type StartDosageJobResponse = {
 };
 
 // Types for job status
-export type DosageJobState = "waiting" | "active" | "completed" | "failed";
+// Backend enum: QUEUED, WAITING, ACTIVE, COMPLETED, FAILED, STALLED, DELAYED, NOT_FOUND
+export type DosageJobState =
+  | "queued"
+  | "waiting"
+  | "active"
+  | "completed"
+  | "failed"
+  | "stalled"
+  | "delayed";
 
 export type DosageJobStatusData = {
   productsCount: number;
@@ -139,7 +147,7 @@ export type CancelDosageJobsResponse = {
 export interface DosageAgentJob {
   id: string;
   userId?: string;
-  state: "waiting" | "active" | "completed" | "failed";
+  state: DosageJobState;
   progress: number;
   failedReason?: string | null;
   processedOn?: string | null;

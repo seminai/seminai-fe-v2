@@ -77,6 +77,15 @@ export interface EditableColumn {
   readOnly?: boolean; // Column is always read-only even in edit mode
 }
 
+export interface CustomExportColumn {
+  header: string;
+  accessor: (rowData: Record<string, unknown>) => unknown;
+}
+
+export interface CustomExportConfig {
+  columns: CustomExportColumn[];
+}
+
 export interface EditableTableProps {
   columns: EditableColumn[];
   rows?: Array<Record<string, unknown>>;
@@ -105,6 +114,7 @@ export interface EditableTableProps {
   children?: React.ReactNode;
   onSelectionChange?: (selectedRows: Array<Record<string, unknown>>) => void;
   showDeleteAction?: boolean;
+  customExportConfig?: CustomExportConfig;
 }
 
 export type FilterInputType = "text" | "number" | "date";
@@ -1038,7 +1048,7 @@ export class EditableTable extends React.Component<
       });
 
       return {
-        rows: [...prev.rows, ...newRows],
+        rows: [...newRows, ...prev.rows],
         touched,
       };
     });
@@ -1082,6 +1092,30 @@ export class EditableTable extends React.Component<
       return;
     }
 
+    const filteredRows = this.getFilteredRows();
+
+    if (
+      this.props.customExportConfig &&
+      this.props.customExportConfig.columns.length > 0
+    ) {
+      const headers = this.props.customExportConfig.columns.map(
+        (column) => column.header
+      );
+      const data = filteredRows.map((row) =>
+        this.props.customExportConfig!.columns.map((column) =>
+          this.formatExportValue(column.accessor(row.data))
+        )
+      );
+
+      const csvContent = Papa.unparse({
+        fields: headers,
+        data,
+      });
+
+      this.downloadCsv(csvContent);
+      return;
+    }
+
     // Find indices of quantity and unit of measure columns
     const quantityColumnIndex = this.props.columns.findIndex(
       (col) => col.id === "quantity"
@@ -1094,8 +1128,6 @@ export class EditableTable extends React.Component<
         col.id === "unitOfMeasure"
     );
 
-    // Get the first row to check if unitOfMeasureQuantity exists in data even if not as a column
-    const filteredRows = this.getFilteredRows();
     const hasUmInData =
       filteredRows.length > 0 &&
       (filteredRows[0].data.unitOfMeasureQuantity !== undefined ||
@@ -1173,6 +1205,43 @@ export class EditableTable extends React.Component<
 
     this.downloadCsv(csvContent);
   };
+
+  private isDateLikeValue(value: string): boolean {
+    return /\d{4}-\d{2}-\d{2}/.test(value) || /\d{2}\/\d{2}\/\d{4}/.test(value);
+  }
+
+  private formatExportValue(value: unknown): string {
+    if (value === undefined || value === null) {
+      return "";
+    }
+
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => this.formatExportValue(item))
+        .filter(Boolean)
+        .join(", ");
+    }
+
+    if (value instanceof Date) {
+      return format(value, "dd/MM/yyyy", { locale: it });
+    }
+
+    if (typeof value === "string") {
+      if (this.isDateLikeValue(value)) {
+        const parsedDate = this.toDateObject(value);
+        if (parsedDate) {
+          return format(parsedDate, "dd/MM/yyyy", { locale: it });
+        }
+      }
+      return value;
+    }
+
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    return String(value);
+  }
 
   private downloadCsv(content: string): void {
     const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
