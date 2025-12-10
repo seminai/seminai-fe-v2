@@ -91,7 +91,7 @@ class DosageJobDetailsManager {
         unitsCount: statusData.data?.unitsCount ?? job.unitsCount,
         updatedAt: new Date().toISOString(),
         error:
-          statusData.state === "failed"
+          statusData.state === "failed" || statusData.state === "stalled"
             ? "The dosage job has failed"
             : undefined,
       };
@@ -137,10 +137,13 @@ class ActiveJobStateDescriptor {
     DosageJob["state"],
     { label: string; variant: BadgeVariant }
   > = {
+    queued: { label: "In coda", variant: "secondary" },
     waiting: { label: "In attesa", variant: "secondary" },
     active: { label: "In esecuzione", variant: "default" },
     completed: { label: "Completato", variant: "default" },
     failed: { label: "Fallito", variant: "destructive" },
+    stalled: { label: "Bloccato", variant: "destructive" },
+    delayed: { label: "Ritardato", variant: "secondary" },
   };
 
   public static describe(state: DosageJob["state"]): {
@@ -199,13 +202,25 @@ class JobStateBadgeRenderer {
 }
 
 class JobProgressIndicatorRenderer {
+  private static readonly pendingStates: DosageJob["state"][] = [
+    "queued",
+    "waiting",
+    "active",
+    "delayed",
+  ];
+
+  private static readonly failedStates: DosageJob["state"][] = [
+    "failed",
+    "stalled",
+  ];
+
   public static render(row: Record<string, unknown>): ReactElement {
     const data = row as {
       state: DosageJob["state"];
       progressLabel: string;
     };
 
-    if (data.state === "waiting" || data.state === "active") {
+    if (this.pendingStates.includes(data.state)) {
       return (
         <div className="flex items-center gap-2">
           <img
@@ -218,7 +233,7 @@ class JobProgressIndicatorRenderer {
       );
     }
 
-    if (data.state === "failed") {
+    if (this.failedStates.includes(data.state)) {
       return (
         <div className="flex items-center gap-2 text-sm text-red-600">
           <Octagon className="h-4 w-4" />
@@ -1597,7 +1612,13 @@ export default function DosageManager() {
 
   const activeJobs = useMemo(
     () =>
-      jobs.filter((job) => job.state === "waiting" || job.state === "active"),
+      jobs.filter(
+        (job) =>
+          job.state === "queued" ||
+          job.state === "waiting" ||
+          job.state === "active" ||
+          job.state === "delayed"
+      ),
     [jobs]
   );
   const activeJobColumns = useMemo<EditableColumn[]>(
@@ -2013,7 +2034,10 @@ export default function DosageManager() {
         render: (_value, row) => {
           const typedRow = row as JobHistoryTableRow;
           const isPendingOrActive =
-            typedRow.state === "waiting" || typedRow.state === "active";
+            typedRow.state === "queued" ||
+            typedRow.state === "waiting" ||
+            typedRow.state === "active" ||
+            typedRow.state === "delayed";
           const isCurrentlyLive =
             isLiveLogsDrawerOpen && liveLogsJobId === typedRow.jobId;
 

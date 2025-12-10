@@ -266,6 +266,7 @@ export type BulkDeleteProductionUnitsResponse = {
 };
 
 export type ExtractedAllocation = {
+  fieldId?: string;
   fieldName?: string;
   sezione?: string;
   foglio?: string;
@@ -320,7 +321,10 @@ function normalizeExtractedProductionUnits(
 
   if (payload && typeof payload === "object") {
     const values = Object.values(payload as Record<string, unknown>);
-    if (values.length > 0 && values.every((value) => typeof value === "object")) {
+    if (
+      values.length > 0 &&
+      values.every((value) => typeof value === "object")
+    ) {
       return values as ExtractedProductionUnit[];
     }
   }

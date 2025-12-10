@@ -349,12 +349,6 @@ export const ProductionUnitCsvImporter: React.FC<
             : null;
 
         (pu.allocations ?? []).forEach((alloc) => {
-          const matchedField = fieldMatcher.match({
-            fieldName: alloc.fieldName ?? "",
-            sezione: alloc.sezione,
-            foglio: alloc.foglio,
-            particella: alloc.particella,
-          });
           const parsedArea =
             typeof alloc.areaHa === "string"
               ? parseFloat(alloc.areaHa)
@@ -364,6 +358,27 @@ export const ProductionUnitCsvImporter: React.FC<
           if (!area || area <= 0) {
             return;
           }
+
+          // Se il backend ha già fornito un fieldId, usalo direttamente
+          if (alloc.fieldId) {
+            const existingArea = allocations.get(alloc.fieldId) ?? 0;
+            allocations.set(
+              alloc.fieldId,
+              parseFloat((existingArea + area).toFixed(4))
+            );
+            if (!matchedFieldIds.includes(alloc.fieldId)) {
+              matchedFieldIds.push(alloc.fieldId);
+            }
+            return;
+          }
+
+          // Altrimenti, prova a fare matching locale
+          const matchedField = fieldMatcher.match({
+            fieldName: alloc.fieldName ?? "",
+            sezione: alloc.sezione,
+            foglio: alloc.foglio,
+            particella: alloc.particella,
+          });
 
           if (matchedField) {
             const existingArea = allocations.get(matchedField.id) ?? 0;

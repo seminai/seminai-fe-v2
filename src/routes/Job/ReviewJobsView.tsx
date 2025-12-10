@@ -11,6 +11,7 @@ import {
 import {
   EditableTable,
   type EditableColumn,
+  type CustomExportConfig,
 } from "@/components/organism/EditableTable";
 import {
   JobSelectedDetails,
@@ -80,6 +81,7 @@ interface ReviewJobsViewProps {
   mobileHistoryOpen: boolean;
   onMobileHistoryChange: (open: boolean) => void;
   convertToJobRows: (rows: EditableTableRowData[]) => JobRow[];
+  exportConfig?: CustomExportConfig;
 }
 
 export function ReviewJobsView({
@@ -119,6 +121,7 @@ export function ReviewJobsView({
   mobileHistoryOpen,
   onMobileHistoryChange,
   convertToJobRows,
+  exportConfig,
 }: ReviewJobsViewProps) {
   if (isMobile) {
     if (!selectedGroupSummary) {
@@ -276,6 +279,7 @@ export function ReviewJobsView({
                 onSelectionChange={onSelectionChange}
                 getRowId={(row) => row.id as string}
                 className="flex-1 flex flex-col min-h-0"
+                customExportConfig={exportConfig}
               />
             </div>
           )}
@@ -537,6 +541,7 @@ export function ReviewJobsView({
                     onSelectionChange={onSelectionChange}
                     getRowId={(row) => row.id as string}
                     className="flex-1 flex flex-col min-h-0"
+                    customExportConfig={exportConfig}
                   />
                 </div>
               )}

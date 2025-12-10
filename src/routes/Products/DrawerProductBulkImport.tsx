@@ -41,21 +41,10 @@ const BULK_FILE_ACCEPT = ".csv,.xls,.xlsx";
 
 type BulkProductColumnKey =
   | "name"
-  | "sku"
-  | "category"
-  | "type"
-  | "description"
-  | "registrationNumber"
-  | "labelUrl"
-  | "labelMetadata"
   | "stock_quantity"
   | "stock_unitOfMeasureQuantity"
-  | "stock_price"
-  | "stock_unitOfMeasurePrice"
-  | "stock_type"
   | "stock_ddtCode"
-  | "stock_companySupplierName"
-  | "stock_invoiceDate";
+  | "stock_ddtDate";
 
 type BulkProductColumnDefinition = {
   key: BulkProductColumnKey;
@@ -66,16 +55,6 @@ type BulkProductColumnDefinition = {
 const BULK_PRODUCT_COLUMN_DEFINITIONS: ReadonlyArray<BulkProductColumnDefinition> =
   [
     { key: "name", label: "Nome prodotto", required: true },
-    { key: "sku", label: "SKU", required: true },
-    { key: "category", label: "Categoria" },
-    { key: "type", label: "Tipologia" },
-    { key: "description", label: "Descrizione" },
-    {
-      key: "registrationNumber",
-      label: "Numero di registrazione",
-    },
-    { key: "labelUrl", label: "URL etichetta" },
-    { key: "labelMetadata", label: "Metadati etichetta" },
     {
       key: "stock_quantity",
       label: "Quantità stock",
@@ -86,58 +65,21 @@ const BULK_PRODUCT_COLUMN_DEFINITIONS: ReadonlyArray<BulkProductColumnDefinition
       label: "Unità di misura stock",
       required: true,
     },
-    { key: "stock_price", label: "Prezzo stock" },
-    { key: "stock_unitOfMeasurePrice", label: "Unità di misura prezzo" },
-    { key: "stock_type", label: "Tipo stock (IN/OUT)" },
     { key: "stock_ddtCode", label: "Codice DDT" },
-    { key: "stock_companySupplierName", label: "Fornitore" },
-    { key: "stock_invoiceDate", label: "Data fattura", required: true },
+    { key: "stock_ddtDate", label: "Data DDT", required: true },
   ] as const;
 
-const BULK_MINIMAL_COLUMN_KEYS: ReadonlyArray<BulkProductColumnKey> = [
-  "name",
-  "sku",
-  "stock_quantity",
-  "stock_unitOfMeasureQuantity",
-  "stock_ddtCode",
-  "stock_invoiceDate",
-];
-
-type BulkTemplateType = "minimal" | "complete";
 type BulkTemplateRow = Partial<Record<BulkProductColumnKey, string>>;
 
-const BULK_TEMPLATE_ROWS: Record<BulkTemplateType, BulkTemplateRow[]> = {
-  minimal: [
-    {
-      name: "Prodotto Minimo",
-      sku: "SKU-MIN-001",
-      stock_quantity: "50",
-      stock_unitOfMeasureQuantity: "kg",
-      stock_ddtCode: "DDT-001",
-      stock_invoiceDate: "2023-11-29T10:00:00Z",
-    },
-  ],
-  complete: [
-    {
-      name: "Prodotto Completo",
-      sku: "SKU-COMP-001",
-      category: "FERTILIZER",
-      type: "Liquido",
-      description: "Esempio con tutti i campi disponibili",
-      registrationNumber: "REG-001",
-      labelUrl: "https://example.com/label.pdf",
-      labelMetadata: '{"color":"green","density":"1.05"}',
-      stock_quantity: "125",
-      stock_unitOfMeasureQuantity: "kg",
-      stock_price: "25.5",
-      stock_unitOfMeasurePrice: "EUR",
-      stock_type: "IN",
-      stock_ddtCode: "DDT-001",
-      stock_companySupplierName: "Fornitore SPA",
-      stock_invoiceDate: "2023-11-29T10:00:00Z",
-    },
-  ],
-};
+const BULK_TEMPLATE_ROWS: BulkTemplateRow[] = [
+  {
+    name: "Prodotto esempio",
+    stock_quantity: "50",
+    stock_unitOfMeasureQuantity: "kg",
+    stock_ddtCode: "DDT-001",
+    stock_ddtDate: "2024-01-15",
+  },
+];
 
 class EmptyRowDetector {
   public static isEmpty(row: BulkProductFileRow): boolean {
@@ -155,24 +97,17 @@ class EmptyRowDetector {
 
 
 class BulkProductTemplateBuilder {
-  private static getColumns(
-    type: BulkTemplateType
-  ): BulkProductColumnDefinition[] {
-    if (type === "minimal") {
-      return BULK_PRODUCT_COLUMN_DEFINITIONS.filter((column) =>
-        BULK_MINIMAL_COLUMN_KEYS.includes(column.key)
-      );
-    }
+  private static getColumns(): BulkProductColumnDefinition[] {
     return [...BULK_PRODUCT_COLUMN_DEFINITIONS];
   }
 
-  private static getRows(type: BulkTemplateType): BulkTemplateRow[] {
-    return BULK_TEMPLATE_ROWS[type];
+  private static getRows(): BulkTemplateRow[] {
+    return BULK_TEMPLATE_ROWS;
   }
 
-  public static buildCsv(type: BulkTemplateType): string {
-    const columns = this.getColumns(type);
-    const rows = this.getRows(type);
+  public static buildCsv(): string {
+    const columns = this.getColumns();
+    const rows = this.getRows();
     const labeledRows = rows.map((row) => {
       return columns.reduce<Record<string, string>>((acc, column) => {
         const value = row[column.key] ?? "";
@@ -188,16 +123,13 @@ class BulkProductTemplateBuilder {
     });
   }
 
-  public static downloadTemplate(type: BulkTemplateType): void {
-    const csv = this.buildCsv(type);
+  public static downloadTemplate(): void {
+    const csv = this.buildCsv();
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download =
-      type === "minimal"
-        ? "products-bulk-template-minimo.csv"
-        : "products-bulk-template-completo.csv";
+    link.download = "products-bulk-template.csv";
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -564,8 +496,7 @@ function DrawerProductBulkImport({
                   <Info className="h-4 w-4" />
                   <AlertTitle>Formato richiesto</AlertTitle>
                   <AlertDescription>
-                    Il file può contenere le seguenti colonne ( * = obbligatorio
-                    nel template minimo):
+                    Il file deve contenere le seguenti colonne ( * = obbligatorio):
                     <div className="flex flex-wrap gap-2">
                       {BULK_PRODUCT_COLUMN_DEFINITIONS.map((column) => (
                         <Badge
@@ -733,31 +664,10 @@ function DrawerProductBulkImport({
             <Button
               type="button"
               variant="outline"
-              onClick={() =>
-                BulkProductTemplateBuilder.downloadTemplate("minimal")
-              }
+              onClick={() => BulkProductTemplateBuilder.downloadTemplate()}
             >
               <FileDown className="mr-2 h-4 w-4" />
-              Template dati minimi
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={async () => {
-                try {
-                  await productsApiService.downloadTemplate();
-                  toast.success("Template scaricato con successo");
-                } catch (error) {
-                  toast.error(
-                    error instanceof Error
-                      ? error.message
-                      : "Errore durante il download del template"
-                  );
-                }
-              }}
-            >
-              <FileDown className="mr-2 h-4 w-4" />
-              Template completo
+              Scarica template
             </Button>
             <Button
               type="button"
