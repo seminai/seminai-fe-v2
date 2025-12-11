@@ -591,6 +591,11 @@ export default function NewProductionUnit(): React.ReactElement {
           customSowingDate: importedUnit.startDate,
           customFloweringDate: null,
           customHarvestingDate: importedUnit.endDate,
+          // Salva i dati originali dall'import per usarli come fallback
+          importedCropName: importedUnit.cropName || null,
+          importedCropType: importedUnit.cropType || null,
+          importedVariety: importedUnit.variety || null,
+          importedCompanyId: result.companyId || null,
         };
       }
     );
@@ -645,7 +650,9 @@ export default function NewProductionUnit(): React.ReactElement {
       setAllocatedFields(new Map(unitToEdit.allocations));
       setEditingUnitId(unitId);
       setSelectedFieldIds(new Set()); // Reset selezione visuale
-      setCurrentStep(1);
+      // Vai direttamente al form di modifica (step 2) invece che alla selezione campi
+      setStep2ShowList(false);
+      setCurrentStep(2);
     }
   };
 
@@ -688,15 +695,12 @@ export default function NewProductionUnit(): React.ReactElement {
       // Preparazione dei dati per la chiamata API
       const request = {
         productionUnits: unitsWithAllocations.map((unit) => {
+          // Cerca la crop locale, ma non è obbligatoria se abbiamo i dati importati
+          const crop = unit.cropCode
+            ? cropVarieties.find((v) => v.code === unit.cropCode)
+            : null;
 
-          const crop = cropVarieties.find((v) => v.code === unit.cropCode);
-          if (!crop) {
-            throw new Error(
-              `Coltura non trovata per il codice: ${unit.cropCode}`
-            );
-          }
-
-          // Raggruppa per campo base e verifica che esistano
+          // Raggruppa per campo base
           const allocationsByField = Array.from(
             unit.allocations.entries()
           ).reduce<Map<string, number>>((acc, [allocationKey, areaHa]) => {
@@ -711,8 +715,10 @@ export default function NewProductionUnit(): React.ReactElement {
             ? allFields.find((f) => f.id === firstAllocatedFieldId)
             : undefined;
 
+          // Determina companyId: usa quello del campo locale, quello importato, o quello selezionato
           const companyId =
             matchedField?.companyId ??
+            unit.importedCompanyId ??
             (selectedCompanyId !== "all" ? selectedCompanyId : null);
 
           if (!companyId) {
@@ -721,34 +727,40 @@ export default function NewProductionUnit(): React.ReactElement {
             );
           }
 
-          if (!matchedField) {
-            console.warn(
-              `Campo non trovato in cache per l'unità "${unit.name}", uso comunque l'ID dal CSV.`
-            );
+          // Usa le date importate o quelle calcolate dalla crop locale
+          let finalSowingDate = unit.customSowingDate;
+          let finalFloweringDate = unit.customFloweringDate;
+          let finalHarvestingDate = unit.customHarvestingDate;
+
+          if (crop) {
+            const cropDates = calculateCropDates(crop, dateRange.start);
+            finalSowingDate = finalSowingDate || cropDates.sowingDate;
+            finalFloweringDate = finalFloweringDate || cropDates.floweringDate;
+            finalHarvestingDate = finalHarvestingDate || cropDates.harvestingDate;
           }
 
-          // Calcola le date della coltura in base al periodo selezionato
-          // Se l'utente ha personalizzato le date, usale, altrimenti usa quelle calcolate
-          const cropDates = calculateCropDates(crop, dateRange.start);
+          // Fallback per le date se ancora mancanti
+          const now = new Date();
+          finalSowingDate = finalSowingDate || now;
+          finalFloweringDate = finalFloweringDate || null;
+          finalHarvestingDate = finalHarvestingDate || null;
 
-          const finalSowingDate = unit.customSowingDate || cropDates.sowingDate;
-          const finalFloweringDate =
-            unit.customFloweringDate || cropDates.floweringDate;
-          const finalHarvestingDate =
-            unit.customHarvestingDate || cropDates.harvestingDate;
-
+          // Usa dati crop locale se disponibili, altrimenti usa i dati importati
+          const cropName = crop?.species || unit.importedCropName || unit.name;
+          const cropType = crop?.cropType || unit.importedCropType || unit.name;
           const resolvedVariety =
-            (unit.cultivarId &&
-              cultivarCatalog?.getCultivarName(unit.cultivarId)) ||
-            crop.code;
+            (unit.cultivarId && cultivarCatalog?.getCultivarName(unit.cultivarId)) ||
+            crop?.code ||
+            unit.importedVariety ||
+            unit.name;
 
           return {
             name: unit.name,
             companyId,
-            cropName: crop.species,
-            cropType: crop.cropType,
+            cropName,
+            cropType,
             variety: resolvedVariety,
-            protocoll: "", // TODO: aggiungere se necessario
+            protocoll: "",
             allocations: Array.from(allocationsByField.entries()).map(
               ([fieldId, areaHa]) => ({
                 fieldId,
@@ -757,9 +769,9 @@ export default function NewProductionUnit(): React.ReactElement {
             ),
             protectionStructure: unit.protectionStructure || "",
             startDate: finalSowingDate.toISOString(),
-            floweringDate: finalFloweringDate.toISOString(),
-            harvestingDate: finalHarvestingDate.toISOString(),
-            endDate: finalHarvestingDate.toISOString(),
+            floweringDate: finalFloweringDate?.toISOString() || null,
+            harvestingDate: finalHarvestingDate?.toISOString() || null,
+            endDate: finalHarvestingDate?.toISOString() || null,
             occupazione: unit.occupazione || null,
             destinazioneDiUso: unit.destinazioneDiUso || null,
             acquaTotalePeridoL: unit.acquaTotalePeridoL || null,
@@ -1516,7 +1528,16 @@ export default function NewProductionUnit(): React.ReactElement {
                 setCurrentStep(1);
               }}
               onNext={handleCreateProductionUnits}
-              onCancel={() => setCurrentStep(1)}
+              onCancel={() => {
+                // Se stiamo modificando un'unità, torna alla lista
+                // Se stiamo creando una nuova, torna alla selezione campi
+                if (editingUnitId) {
+                  setStep2ShowList(true);
+                  setEditingUnitId(null);
+                } else {
+                  setCurrentStep(1);
+                }
+              }}
               isCreating={isCreating}
             />
           )}

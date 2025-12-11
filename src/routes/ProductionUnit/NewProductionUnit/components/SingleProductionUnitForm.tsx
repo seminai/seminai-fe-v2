@@ -263,8 +263,15 @@ export const SingleProductionUnitForm: React.FC<
   }, [recommendedHarvestDate, harvestDateManuallyEdited, setFormData]);
 
   const handleSave = () => {
-    if (!formData.name || !formData.cropCode) {
-      toast.error("Compila tutti i campi obbligatori: Nome e Coltura");
+    // Nome è obbligatorio, coltura può venire dai dati importati
+    if (!formData.name) {
+      toast.error("Compila il campo Nome");
+      return;
+    }
+
+    // Coltura è obbligatoria solo se non abbiamo dati importati
+    if (!formData.cropCode && !formData.importedCropName) {
+      toast.error("Seleziona una coltura");
       return;
     }
 
@@ -556,11 +563,45 @@ export const SingleProductionUnitForm: React.FC<
         <CardContent className="space-y-4">
           {/* Prima: Selezione Coltura */}
           <div>
-            <label className="text-sm font-medium">Coltura *</label>
+            <label className="text-sm font-medium">Coltura</label>
             <p className="text-xs text-gray-500 mt-1 mb-2">
-              Seleziona prima la coltura per auto-compilare il nome dell'unità
-              produttiva
+              {formData.importedCropName && !formData.cropCode
+                ? "Dati coltura importati dal backend. Puoi opzionalmente abbinare a una coltura locale."
+                : "Seleziona prima la coltura per auto-compilare il nome dell'unità produttiva"}
             </p>
+
+            {/* Mostra dati importati se presenti e non abbinati */}
+            {formData.importedCropName && !selectedCrop && (
+              <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded text-sm">
+                <p className="font-medium text-amber-900 mb-1">
+                  Dati importati dal backend:
+                </p>
+                <div className="grid grid-cols-2 gap-2 text-amber-800">
+                  {formData.importedCropName && (
+                    <div>
+                      <span className="text-xs text-amber-600">Nome coltura:</span>
+                      <p className="font-medium">{formData.importedCropName}</p>
+                    </div>
+                  )}
+                  {formData.importedCropType && (
+                    <div>
+                      <span className="text-xs text-amber-600">Tipo:</span>
+                      <p className="font-medium">{formData.importedCropType}</p>
+                    </div>
+                  )}
+                  {formData.importedVariety && (
+                    <div>
+                      <span className="text-xs text-amber-600">Varietà:</span>
+                      <p className="font-medium">{formData.importedVariety}</p>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-amber-600 mt-2">
+                  Questi dati verranno usati se non selezioni una coltura locale.
+                </p>
+              </div>
+            )}
+
             <Select
               value={formData.cropCode}
               onValueChange={(value) => {
@@ -579,7 +620,7 @@ export const SingleProductionUnitForm: React.FC<
               }}
             >
               <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Seleziona una varietà..." />
+                <SelectValue placeholder={formData.importedCropName ? "(Opzionale) Abbina a coltura locale..." : "Seleziona una varietà..."} />
               </SelectTrigger>
               <SelectContent className="max-h-[400px]">
                 <div className="sticky top-0 z-10 bg-white border-b p-2">
@@ -986,7 +1027,7 @@ export const SingleProductionUnitForm: React.FC<
       <div className="flex justify-between gap-4 pt-6 border-t">
         <Button variant="outline" onClick={onCancel}>
           <ChevronLeft className="mr-2 h-4 w-4" />
-          Indietro - Modifica Campi
+          {editingUnitId ? "Annulla Modifiche" : "Indietro - Modifica Campi"}
         </Button>
         <Button onClick={handleSave} size="lg">
           {editingUnitId
