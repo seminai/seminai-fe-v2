@@ -22,6 +22,11 @@ export type ProductionUnitInput = {
   customSowingDate?: Date | null;
   customFloweringDate?: Date | null;
   customHarvestingDate?: Date | null;
+  // Dati originali dall'import (usati come fallback se cropCode non è abbinato)
+  importedCropName?: string | null;
+  importedCropType?: string | null;
+  importedVariety?: string | null;
+  importedCompanyId?: string | null;
 };
 
 export type DateRange = {
