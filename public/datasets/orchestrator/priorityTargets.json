@@ -1,0 +1,341 @@
+{
+  "description": "Avversità prioritarie da coprire per l'orchestratore dosaggi, organizzate per coltura",
+  "defaultTargets": [],
+  "targets": {
+    "fungine": [
+      {
+        "id": "peronospora",
+        "label": "Peronospora",
+        "scientificName": "Plasmopara viticola",
+        "description": "Malattia fungina che colpisce foglie, germogli e grappoli",
+        "crops": ["vite", "pomodoro", "patata", "orticole"],
+        "severity": "high",
+        "aliases": ["downy mildew", "muffa", "peronospora della vite"]
+      },
+      {
+        "id": "oidio",
+        "label": "Oidio",
+        "scientificName": "Erysiphe necator",
+        "description": "Mal bianco che forma una patina polverulenta sulle foglie",
+        "crops": ["vite", "melo", "pero", "zucchine", "orticole"],
+        "severity": "high",
+        "aliases": ["powdery mildew", "mal bianco", "nebbia"]
+      },
+      {
+        "id": "botrite",
+        "label": "Botrite",
+        "scientificName": "Botrytis cinerea",
+        "description": "Muffa grigia che attacca fiori, frutti e tessuti vegetali",
+        "crops": ["vite", "fragola", "orticole", "floreali"],
+        "severity": "high",
+        "aliases": ["botrytis", "muffa grigia", "marciume grigio"]
+      },
+      {
+        "id": "mal_esca",
+        "label": "Mal dell'esca",
+        "scientificName": "Phaeomoniella chlamydospora",
+        "description": "Malattia del legno della vite",
+        "crops": ["vite"],
+        "severity": "high",
+        "aliases": ["esca", "malattia del legno"]
+      },
+      {
+        "id": "escoriosi",
+        "label": "Escoriosi",
+        "scientificName": "Phomopsis viticola",
+        "description": "Malattia fungina che colpisce tralci e foglie",
+        "crops": ["vite"],
+        "severity": "medium",
+        "aliases": ["phomopsis", "necrosi corticale"]
+      },
+      {
+        "id": "black_rot",
+        "label": "Black rot",
+        "scientificName": "Guignardia bidwellii",
+        "description": "Marciume nero che colpisce foglie, germogli e grappoli",
+        "crops": ["vite"],
+        "severity": "medium",
+        "aliases": ["marciume nero", "rot nero"]
+      },
+      {
+        "id": "alternaria",
+        "label": "Alternaria",
+        "scientificName": "Alternaria spp.",
+        "description": "Malattia fungina che causa macchie fogliari",
+        "crops": ["pomodoro", "patata", "carota", "orticole"],
+        "severity": "medium",
+        "aliases": ["alternariosi", "macchia bruna"]
+      },
+      {
+        "id": "fusarium",
+        "label": "Fusarium",
+        "scientificName": "Fusarium spp.",
+        "description": "Malattia fungina del terreno",
+        "crops": ["cereali", "orticole", "mais"],
+        "severity": "high",
+        "aliases": ["fusariosi", "marciume basale"]
+      },
+      {
+        "id": "septoria",
+        "label": "Septoria",
+        "scientificName": "Septoria spp.",
+        "description": "Malattia fungina delle foglie",
+        "crops": ["frumento", "cereali", "pomodoro"],
+        "severity": "medium",
+        "aliases": ["septoriosi", "macchia settoriale"]
+      },
+      {
+        "id": "ticchiolatura",
+        "label": "Ticchiolatura",
+        "scientificName": "Venturia inaequalis",
+        "description": "Malattia fungina che causa macchie su foglie e frutti",
+        "crops": ["melo", "pero"],
+        "severity": "high",
+        "aliases": ["scab", "rogna"]
+      },
+      {
+        "id": "monilia",
+        "label": "Monilia",
+        "scientificName": "Monilinia spp.",
+        "description": "Marciume bruno dei frutti",
+        "crops": ["pesco", "ciliegio", "albicocco", "susino"],
+        "severity": "high",
+        "aliases": ["moniliosi", "marciume bruno"]
+      },
+      {
+        "id": "occhio_pavone",
+        "label": "Occhio di pavone",
+        "scientificName": "Spilocaea oleaginea",
+        "description": "Malattia fungina fogliare dell'olivo",
+        "crops": ["olivo"],
+        "severity": "medium",
+        "aliases": ["cicloconio", "peacock eye"]
+      },
+      {
+        "id": "antracnosi",
+        "label": "Antracnosi",
+        "scientificName": "Colletotrichum spp.",
+        "description": "Malattia che causa lesioni su foglie e frutti",
+        "crops": ["olivo", "fragola", "orticole"],
+        "severity": "medium",
+        "aliases": ["anthracnose", "lebbra"]
+      }
+    ],
+    "batteriche": [
+      {
+        "id": "psa_kiwi",
+        "label": "PSA (Pseudomonas syringae pv. actinidiae)",
+        "scientificName": "Pseudomonas syringae pv. actinidiae",
+        "description": "Cancro batterico del kiwi",
+        "crops": ["actinidia", "kiwi"],
+        "severity": "high",
+        "aliases": ["cancro batterico", "batteriosi kiwi"]
+      },
+      {
+        "id": "erwinia",
+        "label": "Colpo di fuoco batterico",
+        "scientificName": "Erwinia amylovora",
+        "description": "Malattia batterica devastante delle pomacee",
+        "crops": ["melo", "pero", "cotogno"],
+        "severity": "high",
+        "aliases": ["fire blight", "erwinia"]
+      },
+      {
+        "id": "xylella",
+        "label": "Xylella fastidiosa",
+        "scientificName": "Xylella fastidiosa",
+        "description": "Batterio che causa il disseccamento rapido dell'olivo",
+        "crops": ["olivo"],
+        "severity": "critical",
+        "aliases": ["CoDiRO", "disseccamento rapido"]
+      },
+      {
+        "id": "rogna_olivo",
+        "label": "Rogna dell'olivo",
+        "scientificName": "Pseudomonas savastanoi",
+        "description": "Malattia batterica che causa tumori su rami e tronco",
+        "crops": ["olivo"],
+        "severity": "medium",
+        "aliases": ["tubercolosi olivo", "olive knot"]
+      }
+    ],
+    "insetti": [
+      {
+        "id": "tignoletta",
+        "label": "Tignoletta",
+        "scientificName": "Lobesia botrana",
+        "description": "Lepidottero che attacca i grappoli della vite",
+        "crops": ["vite"],
+        "severity": "high",
+        "aliases": ["lobesia", "tignola della vite"]
+      },
+      {
+        "id": "tignola",
+        "label": "Tignola",
+        "scientificName": "Eupoecilia ambiguella",
+        "description": "Lepidottero che danneggia fiori e acini",
+        "crops": ["vite"],
+        "severity": "medium",
+        "aliases": ["eupoecilia", "tignola dell'uva"]
+      },
+      {
+        "id": "scafoideo",
+        "label": "Scafoideo",
+        "scientificName": "Scaphoideus titanus",
+        "description": "Cicalina vettore della flavescenza dorata",
+        "crops": ["vite"],
+        "severity": "high",
+        "aliases": ["cicalina", "vettore flavescenza"]
+      },
+      {
+        "id": "cimice_asiatica",
+        "label": "Cimice asiatica",
+        "scientificName": "Halyomorpha halys",
+        "description": "Insetto polifago che causa danni a frutti e ortaggi",
+        "crops": ["pero", "melo", "pesco", "kiwi", "orticole"],
+        "severity": "high",
+        "aliases": ["brown marmorated stink bug", "cimice marmorata"]
+      },
+      {
+        "id": "mosca_olivo",
+        "label": "Mosca dell'olivo",
+        "scientificName": "Bactrocera oleae",
+        "description": "Dittero che depone le uova nelle olive",
+        "crops": ["olivo"],
+        "severity": "high",
+        "aliases": ["dacus", "mosca olearia"]
+      },
+      {
+        "id": "mosca_frutta",
+        "label": "Mosca della frutta",
+        "scientificName": "Ceratitis capitata",
+        "description": "Dittero polifago che attacca molti tipi di frutta",
+        "crops": ["pesco", "albicocco", "agrumi", "fico"],
+        "severity": "high",
+        "aliases": ["ceratite", "medfly"]
+      },
+      {
+        "id": "carpocapsa",
+        "label": "Carpocapsa",
+        "scientificName": "Cydia pomonella",
+        "description": "Verme delle mele e delle pere",
+        "crops": ["melo", "pero", "noce"],
+        "severity": "high",
+        "aliases": ["cydia", "verme delle mele", "codling moth"]
+      },
+      {
+        "id": "afidi",
+        "label": "Afidi",
+        "scientificName": "Aphidoidea",
+        "description": "Insetti fitomizi che succhiano la linfa",
+        "crops": ["vite", "orticole", "fruttiferi", "cereali"],
+        "severity": "medium",
+        "aliases": ["pidocchi delle piante", "aphids", "gorgoglioni"]
+      },
+      {
+        "id": "tripidi",
+        "label": "Tripidi",
+        "scientificName": "Thysanoptera",
+        "description": "Piccoli insetti che danneggiano foglie e fiori",
+        "crops": ["orticole", "floreali", "vite"],
+        "severity": "medium",
+        "aliases": ["thrips", "tisanotteri"]
+      },
+      {
+        "id": "cocciniglie",
+        "label": "Cocciniglie",
+        "scientificName": "Coccoidea",
+        "description": "Insetti che si nutrono della linfa delle piante",
+        "crops": ["vite", "agrumi", "olivo", "fruttiferi"],
+        "severity": "medium",
+        "aliases": ["scale insects", "coccidi"]
+      },
+      {
+        "id": "piralide",
+        "label": "Piralide del mais",
+        "scientificName": "Ostrinia nubilalis",
+        "description": "Lepidottero che attacca il mais",
+        "crops": ["mais", "peperone"],
+        "severity": "high",
+        "aliases": ["european corn borer", "piralide"]
+      },
+      {
+        "id": "dorifora",
+        "label": "Dorifora della patata",
+        "scientificName": "Leptinotarsa decemlineata",
+        "description": "Coleottero defogliatore della patata",
+        "crops": ["patata", "melanzana", "peperone"],
+        "severity": "high",
+        "aliases": ["colorado potato beetle", "coleottero"]
+      }
+    ],
+    "acari": [
+      {
+        "id": "ragnetto_rosso",
+        "label": "Ragnetto rosso",
+        "scientificName": "Panonychus ulmi",
+        "description": "Acaro che causa bronzatura delle foglie",
+        "crops": ["vite", "melo", "pero", "pesco"],
+        "severity": "medium",
+        "aliases": ["panonychus", "european red mite"]
+      },
+      {
+        "id": "tetranychus",
+        "label": "Ragnetto giallo",
+        "scientificName": "Tetranychus urticae",
+        "description": "Acaro polifago che attacca molte colture",
+        "crops": ["orticole", "fragola", "vite", "ornamentali"],
+        "severity": "medium",
+        "aliases": ["two-spotted spider mite", "ragnetto comune"]
+      },
+      {
+        "id": "eriofide_vite",
+        "label": "Eriofide della vite",
+        "scientificName": "Colomerus vitis",
+        "description": "Acaro che causa erinosi e arricciamento",
+        "crops": ["vite"],
+        "severity": "medium",
+        "aliases": ["erinosi", "acariosi"]
+      }
+    ],
+    "virali": [
+      {
+        "id": "flavescenza_dorata",
+        "label": "Flavescenza dorata",
+        "scientificName": "Phytoplasma",
+        "description": "Fitoplasmosi trasmessa dallo scafoideo",
+        "crops": ["vite"],
+        "severity": "critical",
+        "aliases": ["giallume", "grapevine yellows"]
+      },
+      {
+        "id": "legno_nero",
+        "label": "Legno nero",
+        "scientificName": "Bois noir phytoplasma",
+        "description": "Fitoplasmosi della vite",
+        "crops": ["vite"],
+        "severity": "high",
+        "aliases": ["bois noir", "stolbur"]
+      },
+      {
+        "id": "sharka",
+        "label": "Sharka",
+        "scientificName": "Plum pox virus",
+        "description": "Virosi delle drupacee",
+        "crops": ["pesco", "albicocco", "susino"],
+        "severity": "critical",
+        "aliases": ["plum pox", "vaiolatura"]
+      }
+    ]
+  },
+  "presets": {
+    "vite_standard": ["peronospora", "oidio", "botrite", "tignoletta"],
+    "vite_completo": ["peronospora", "oidio", "botrite", "tignoletta", "scafoideo", "mal_esca", "escoriosi"],
+    "olivo_standard": ["mosca_olivo", "occhio_pavone", "rogna_olivo"],
+    "pomacee_standard": ["ticchiolatura", "carpocapsa", "afidi"],
+    "drupacee_standard": ["monilia", "mosca_frutta", "afidi"],
+    "orticole_standard": ["peronospora", "alternaria", "afidi", "tripidi"],
+    "cereali_standard": ["fusarium", "septoria", "afidi"]
+  }
+}
+

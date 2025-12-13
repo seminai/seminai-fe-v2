@@ -1,0 +1,80 @@
+{
+  "description": "Ordine di priorità delle categorie di prodotti fitosanitari per l'orchestratore dosaggi",
+  "defaultPriority": [
+    "fungicide",
+    "insecticide",
+    "herbicide",
+    "acaricide"
+  ],
+  "categories": [
+    {
+      "id": "fungicide",
+      "label": "Fungicida",
+      "description": "Prodotti per il controllo delle malattie fungine",
+      "aliases": ["fungicidi", "antifungini", "anticrittogamici"]
+    },
+    {
+      "id": "insecticide",
+      "label": "Insetticida",
+      "description": "Prodotti per il controllo degli insetti nocivi",
+      "aliases": ["insetticidi", "antiparassitari"]
+    },
+    {
+      "id": "herbicide",
+      "label": "Erbicida",
+      "description": "Prodotti per il controllo delle erbe infestanti",
+      "aliases": ["erbicidi", "diserbanti"]
+    },
+    {
+      "id": "acaricide",
+      "label": "Acaricida",
+      "description": "Prodotti per il controllo degli acari",
+      "aliases": ["acaricidi", "antiacaro"]
+    },
+    {
+      "id": "nematocide",
+      "label": "Nematocida",
+      "description": "Prodotti per il controllo dei nematodi",
+      "aliases": ["nematocidi"]
+    },
+    {
+      "id": "molluscicide",
+      "label": "Molluschicida",
+      "description": "Prodotti per il controllo di lumache e limacce",
+      "aliases": ["molluschicidi", "antilumaca"]
+    },
+    {
+      "id": "rodenticide",
+      "label": "Rodenticida",
+      "description": "Prodotti per il controllo dei roditori",
+      "aliases": ["rodenticidi", "topicidi"]
+    },
+    {
+      "id": "plant_growth_regulator",
+      "label": "Regolatore di crescita",
+      "description": "Prodotti per regolare la crescita delle piante",
+      "aliases": ["fitoregolatori", "regolatori"]
+    },
+    {
+      "id": "bactericide",
+      "label": "Battericida",
+      "description": "Prodotti per il controllo delle malattie batteriche",
+      "aliases": ["battericidi", "antibatterici"]
+    },
+    {
+      "id": "biological",
+      "label": "Biologico",
+      "description": "Prodotti di origine biologica o naturale",
+      "aliases": ["biologici", "biocontrollo", "biostimolanti"]
+    }
+  ],
+  "presets": {
+    "vite": ["fungicide", "insecticide", "acaricide", "herbicide"],
+    "olivo": ["fungicide", "insecticide", "herbicide", "bactericide"],
+    "frutteto": ["fungicide", "insecticide", "acaricide", "herbicide"],
+    "orticole": ["fungicide", "insecticide", "herbicide", "nematocide"],
+    "cereali": ["fungicide", "herbicide", "insecticide"],
+    "biologico": ["biological", "fungicide", "insecticide"]
+  }
+}
+

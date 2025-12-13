@@ -269,7 +269,10 @@ function MobileBottomBar({
     jobActive;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-20 mx-auto mb-safe w-full max-w-screen-sm">
+    <nav
+      data-mobile-bottom-bar="true"
+      className="fixed bottom-0 left-0 right-0 z-20 mx-auto mb-safe w-full max-w-screen-sm"
+    >
       <div className="m-3 rounded-2xl backdrop-blur-xl bg-white/20 supports-backdrop-blur:bg-white/30 border border-white/25 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_8px_32px_0_rgba(31,38,135,0.2)]">
         <ul className="flex items-center justify-center gap-1">
           {canViewMenuItem("dashboard", userRole) && (
