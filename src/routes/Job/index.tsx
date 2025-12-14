@@ -1251,6 +1251,60 @@ class JobProductsFormatter {
   }
 }
 
+class JobIdFormatter {
+  public static format(jobId: string | null | undefined): string {
+    if (!jobId) {
+      return "-";
+    }
+
+    const trimmed = jobId.trim();
+
+    // Se è solo un numero, lo lascia così
+    if (/^\d+$/.test(trimmed)) {
+      return trimmed;
+    }
+
+    // Prendi la prima parte prima dello spazio (se presente)
+    const firstPart = trimmed.split(/\s+/)[0];
+
+    // Gestione formato <numero>-<companyId(UUID)>: mostra solo il numero
+    const uuidPattern =
+      /^(\d+)-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
+    const uuidMatch = firstPart.match(uuidPattern);
+    if (uuidMatch) {
+      return uuidMatch[1];
+    }
+
+    // Altri formati con trattini: <numero>-<...>-<companyName> => mostra "<numero> - <companyNameFirstWord>"
+    if (firstPart.includes("-")) {
+      const parts = firstPart.split("-");
+      const number = parts[0]?.trim();
+      if (!number || !/^\d+$/.test(number)) {
+        return trimmed;
+      }
+
+      const lastPart = parts[parts.length - 1]?.trim();
+      if (!lastPart || lastPart === number) {
+        return number;
+      }
+
+      // Se l'ultima parte sembra un pezzo di UUID/hex, meglio mostrare solo il numero
+      const looksLikeHex = /^[0-9a-f]{8,}$/i.test(lastPart);
+      if (looksLikeHex) {
+        return number;
+      }
+
+      // Nome azienda massimo una parola (primo token “word-like”)
+      const companyFirstWord =
+        lastPart.split(/[^A-Za-zÀ-ÖØ-öø-ÿ0-9]+/).filter(Boolean)[0] ?? lastPart;
+      return `${number} - ${companyFirstWord}`;
+    }
+
+    // Fallback: ritorna il jobId originale
+    return trimmed;
+  }
+}
+
 class JobTableRowBuilder {
   private readonly jobWithRelations: JobWithRelations;
   private readonly productsFormatter: JobProductsFormatter;
@@ -1267,7 +1321,7 @@ class JobTableRowBuilder {
 
     return {
       id: job.id,
-      jobCode: job.jobId ?? "-",
+      jobCode: JobIdFormatter.format(job.jobId),
       dateOfOpeation: new Date(job.dateOfOpeation),
       createdAt: new Date(job.createdAt),
       companyName: company.name,
@@ -1833,14 +1887,17 @@ export default function JobPage() {
 
   // Rows per la vista "Tutte" ottenuti dal dettaglio del jobId corrente
   const jobIdOptions = useMemo(() => {
-    return sortedAllJobGroups.map((group) => ({
-      value: group.jobId,
-      label: `Operazione ${group.jobId} creata il ${new Date(
-        group.createdAt
-      ).toLocaleDateString("it-IT")}`,
-      jobId: group.jobId,
-      createdAt: group.createdAt,
-    }));
+    return sortedAllJobGroups.map((group) => {
+      const formattedJobId = JobIdFormatter.format(group.jobId);
+      return {
+        value: group.jobId,
+        label: `Operazione ${formattedJobId} creata il ${new Date(
+          group.createdAt
+        ).toLocaleDateString("it-IT")}`,
+        jobId: formattedJobId,
+        createdAt: group.createdAt,
+      };
+    });
   }, [sortedAllJobGroups]);
 
   useEffect(() => {
