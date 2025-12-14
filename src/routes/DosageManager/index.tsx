@@ -81,6 +81,7 @@ import {
   type OrchestratorDatasets,
   OrchestratorLabels,
 } from "./orchestrator";
+import { ImportMethodPolicy, type ImportMethod } from "./importMethod";
 class DosageJobDetailsManager {
   public async load(job: DosageJob): Promise<DosageJob> {
     if (job.state === "completed" && job.result) {
@@ -529,6 +530,13 @@ class ProductionUnitTableColumnsFactory {
           ProductionUnitTableColumnsFactory.renderUnitInfo(row),
       },
       {
+        id: "companyName",
+        title: "Azienda",
+        width: "200px",
+        render: (_value, row) =>
+          ProductionUnitTableColumnsFactory.renderCompany(row),
+      },
+      {
         id: "variety",
         title: "Varietà",
         width: "200px",
@@ -572,8 +580,18 @@ class ProductionUnitTableColumnsFactory {
         <p className="text-sm text-neutral-500">
           {data.cropName} - {data.cropType}
         </p>
-        <p className="text-xs text-neutral-500">{data.companyName}</p>
+        <p className="text-xs text-neutral-500">{data.variety || "N/D"}</p>
       </div>
+    );
+  }
+
+  private static renderCompany(row: Record<string, unknown>): ReactElement {
+    const data = ProductionUnitTableColumnsFactory.asRow(row);
+
+    return (
+      <span className="text-sm font-medium text-neutral-900">
+        {data.companyName || "-"}
+      </span>
     );
   }
 
@@ -1156,8 +1174,11 @@ function LiveLogEventCard({ event }: { event: DosageLogEvent }): ReactElement {
 
 export default function DosageManager() {
   const { state: sidebarState, isMobile } = useSidebar();
-  const { productionUnits, isLoading: loadingUnits } = useProductionUnit();
+  const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([]);
   const { companies } = useCompanies();
+  const { productionUnits, isLoading: loadingUnits } = useProductionUnit({
+    companyIds: selectedCompanyIds,
+  });
   const {
     products: warehouseInventory,
     isLoading: isWarehouseProductsLoading,
@@ -1166,12 +1187,13 @@ export default function DosageManager() {
   const [currentPage, setCurrentPage] = useState<"manage" | "history">(
     "manage"
   );
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
   const [products, setProducts] = useState<DosageProduct[]>([]);
   const [productSources, setProductSources] = useState<
     Map<string, "warehouse" | "csv" | "ddt">
   >(new Map());
+  const [selectedImportMethod, setSelectedImportMethod] =
+    useState<ImportMethod | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [strategy, setStrategy] = useState<DosageStrategy>("avg");
@@ -1815,11 +1837,16 @@ export default function DosageManager() {
         return;
       }
 
+      // Non fare chiamate se non ci sono job attivi (tutti completati)
+      if (activeJobs.length === 0) {
+        return;
+      }
+
       await fetchJobsFromApi();
     }, POLLING_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [fetchJobsFromApi]);
+  }, [fetchJobsFromApi, activeJobs.length]);
 
   useEffect(() => {
     setSelectedActiveJobIds((prev) => {
@@ -1839,6 +1866,12 @@ export default function DosageManager() {
       }
 
       if (isResumeSyncInProgressRef.current) {
+        return;
+      }
+
+      // Non fare chiamate se non ci sono job attivi (tutti completati)
+      // Fai eccezione solo se ci sono live logs aperti
+      if (activeJobs.length === 0 && !isLiveLogsDrawerOpen) {
         return;
       }
 
@@ -1873,14 +1906,13 @@ export default function DosageManager() {
     isLiveLogsDrawerOpen,
     liveLogsJobId,
     reconnectLiveLogs,
+    activeJobs.length,
   ]);
 
-  // Filter production units by selected company and search query
+  // Filter production units by search query (company filtering is done by API)
   const filteredUnits = useMemo(() => {
-    if (!selectedCompanyId) return [];
-    let units = productionUnits.filter(
-      (unit) => unit.companyId === selectedCompanyId
-    );
+    if (selectedCompanyIds.length === 0) return [];
+    let units = productionUnits;
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -1893,7 +1925,7 @@ export default function DosageManager() {
     }
 
     return units;
-  }, [productionUnits, selectedCompanyId, searchQuery]);
+  }, [productionUnits, selectedCompanyIds, searchQuery]);
 
   // Get selected units data
   const selectedUnits = useMemo(() => {
@@ -1937,10 +1969,10 @@ export default function DosageManager() {
       return;
     }
 
-    if (!selectedCompanyId) {
+    if (selectedCompanyIds.length === 0) {
       toast.error("Nessuna azienda selezionata", {
         description:
-          "Seleziona un'azienda prima di importare i prodotti dal magazzino.",
+          "Seleziona almeno un'azienda prima di importare i prodotti dal magazzino.",
       });
       return;
     }
@@ -1952,9 +1984,9 @@ export default function DosageManager() {
       return;
     }
 
-    // Filter products by selected company
-    const companyProducts = warehouseInventory.filter(
-      (product) => product.warehouse.company.id === selectedCompanyId
+    // Filter products by selected companies
+    const companyProducts = warehouseInventory.filter((product) =>
+      selectedCompanyIds.includes(product.warehouse.company.id)
     );
 
     if (companyProducts.length === 0) {
@@ -2025,15 +2057,29 @@ export default function DosageManager() {
     toast.success("Prodotti importati dal magazzino", {
       description: `${importedCount} prodotti aggiunti alla tabella`,
     });
-  }, [isWarehouseProductsLoading, warehouseInventory, selectedCompanyId]);
+  }, [isWarehouseProductsLoading, warehouseInventory, selectedCompanyIds]);
 
-  const selectedCompanyName = useMemo(() => {
-    if (!selectedCompanyId) {
-      return null;
+  const handleSelectImportMethod = useCallback((method: ImportMethod) => {
+    setSelectedImportMethod((current) => {
+      if (ImportMethodPolicy.canSelect(current, method)) {
+        return method;
+      }
+      return current;
+    });
+  }, []);
+
+  const handleResetImportMethod = useCallback(() => {
+    setSelectedImportMethod(null);
+  }, []);
+
+  const selectedCompanyNames = useMemo(() => {
+    if (selectedCompanyIds.length === 0) {
+      return [];
     }
-    const company = companies.find((item) => item.id === selectedCompanyId);
-    return company?.name ?? null;
-  }, [companies, selectedCompanyId]);
+    return companies
+      .filter((company) => selectedCompanyIds.includes(company.id))
+      .map((company) => company.name);
+  }, [companies, selectedCompanyIds]);
 
   const selectedUnitsCount = selectedUnitIds.length;
   const selectedProductsCount = products.length;
@@ -2070,11 +2116,15 @@ export default function DosageManager() {
       selectedProductsCount === 1
         ? "1 prodotto"
         : `${selectedProductsCount} prodotti`;
-    if (selectedCompanyName) {
-      return `Selezionati per ${selectedCompanyName}: ${unitLabel} e ${productLabel}`;
+    if (selectedCompanyNames.length > 0) {
+      const companiesLabel =
+        selectedCompanyNames.length === 1
+          ? selectedCompanyNames[0]
+          : `${selectedCompanyNames.length} aziende`;
+      return `Selezionati per ${companiesLabel}: ${unitLabel} e ${productLabel}`;
     }
     return `Selezionati: ${unitLabel} e ${productLabel}`;
-  }, [selectedCompanyName, selectedProductsCount, selectedUnitsCount]);
+  }, [selectedCompanyNames, selectedProductsCount, selectedUnitsCount]);
 
   const handleShowJobDetails = useCallback(
     async (job: DosageJob) => {
@@ -2321,9 +2371,10 @@ export default function DosageManager() {
       });
 
       // Reset form fields
-      setSelectedCompanyId("");
+      setSelectedCompanyIds([]);
       setProducts([]);
       setProductSources(new Map());
+      setSelectedImportMethod(null);
       setStrategy("avg");
       setOutStockLimiter(true);
       setOrchestratorSettings(OrchestratorDefaultsFactory.create());
@@ -2339,9 +2390,7 @@ export default function DosageManager() {
     }
   };
 
-  const totalUnits = productionUnits.filter(
-    (unit) => !selectedCompanyId || unit.companyId === selectedCompanyId
-  ).length;
+  const totalUnits = productionUnits.length;
 
   const orchestratorSummary = useMemo(() => {
     const objective = orchestratorSettings.objective ?? "balanced";
@@ -2396,8 +2445,8 @@ export default function DosageManager() {
         {currentPage === "manage" ? (
           <ManageSection
             companies={companies}
-            selectedCompanyId={selectedCompanyId}
-            setSelectedCompanyId={setSelectedCompanyId}
+            selectedCompanyIds={selectedCompanyIds}
+            setSelectedCompanyIds={setSelectedCompanyIds}
             selectedUnitIds={selectedUnitIds}
             setSelectedUnitIds={setSelectedUnitIds}
             searchQuery={searchQuery}
@@ -2433,6 +2482,9 @@ export default function DosageManager() {
             renderEmptyProductsPlaceholder={() =>
               dosagePlaceholderRenderer.renderEmptyProductsPlaceholder()
             }
+            selectedImportMethod={selectedImportMethod}
+            onSelectImportMethod={handleSelectImportMethod}
+            onResetImportMethod={handleResetImportMethod}
           />
         ) : (
           <HistorySection
@@ -2467,8 +2519,12 @@ export default function DosageManager() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm text-neutral-500">
-              {selectedCompanyName
-                ? `Azienda selezionata: ${selectedCompanyName}`
+              {selectedCompanyNames.length > 0
+                ? `Aziend${
+                    selectedCompanyNames.length === 1 ? "a" : "e"
+                  } selezionat${
+                    selectedCompanyNames.length === 1 ? "a" : "e"
+                  }: ${selectedCompanyNames.join(", ")}`
                 : "Nessuna azienda selezionata"}
             </p>
             <p className="text-sm text-neutral-500">

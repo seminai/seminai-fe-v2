@@ -20,6 +20,8 @@ interface ImportProductsProps {
   onProductsChange?: (products: DosageProduct[]) => void;
   onCloseParentDrawer?: () => void;
   onOpenParentDrawer?: () => void;
+  disabled?: boolean;
+  onSelectImportMethod?: () => void;
 }
 
 type CsvRow = {
@@ -40,6 +42,8 @@ export function ImportProducts({
   onProductsChange,
   onCloseParentDrawer,
   onOpenParentDrawer,
+  disabled,
+  onSelectImportMethod,
 }: ImportProductsProps): React.ReactElement {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -248,6 +252,10 @@ export function ImportProducts({
   };
 
   const handleOpenDrawer = (): void => {
+    if (disabled) {
+      return;
+    }
+    onSelectImportMethod?.();
     onCloseParentDrawer?.();
     setShouldRestoreParentDrawer(true);
     setIsDrawerOpen(true);
@@ -255,7 +263,12 @@ export function ImportProducts({
 
   return (
     <>
-      <Button variant="outline" className="gap-2" onClick={handleOpenDrawer}>
+      <Button
+        variant="outline"
+        className="gap-2"
+        onClick={handleOpenDrawer}
+        disabled={disabled}
+      >
         <Upload className="h-4 w-4" />
         Importa Prodotti CSV
       </Button>

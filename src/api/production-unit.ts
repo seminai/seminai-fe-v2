@@ -80,6 +80,36 @@ export async function getProductionUnits(
   return (await response.json()) as ProductionUnitsResponse;
 }
 
+export type GetProductionUnitsByCompaniesRequest = {
+  companyIds: string[];
+};
+
+export async function getProductionUnitsByCompanies(
+  request: GetProductionUnitsByCompaniesRequest,
+  baseUrl: string = BASE_URL
+): Promise<ProductionUnitsResponse> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/production-units/get-production-unit-by-companies`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(request),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(
+      errorText || "Failed to load production units by companies"
+    );
+  }
+
+  return (await response.json()) as ProductionUnitsResponse;
+}
+
 // Types for creating production units
 export type ProductionUnitCreateAllocation = {
   fieldId: string;
@@ -432,6 +462,12 @@ class ProductionUnitApiService {
 
   public async getAll(): Promise<ProductionUnitsResponse> {
     return await getProductionUnits(this.baseUrl);
+  }
+
+  public async getByCompanies(
+    request: GetProductionUnitsByCompaniesRequest
+  ): Promise<ProductionUnitsResponse> {
+    return await getProductionUnitsByCompanies(request, this.baseUrl);
   }
 
   public async bulkCreate(

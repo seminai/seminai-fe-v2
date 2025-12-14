@@ -2,13 +2,27 @@ import { useQuery } from "@tanstack/react-query";
 import {
   productionUnitApiService,
   type ProductionUnitsResponse,
+  type GetProductionUnitsByCompaniesRequest,
 } from "@/api/production-unit";
-export function useProductionUnit() {
-  // Query per ottenere tutte le unità produttive
+
+interface UseProductionUnitOptions {
+  companyIds?: string[];
+}
+
+export function useProductionUnit(options?: UseProductionUnitOptions) {
+  const companyIds = options?.companyIds ?? [];
+
+  // Query per ottenere le unità produttive
+  // Se companyIds è fornito, filtra per aziende, altrimenti ottiene tutte le unità produttive
   const productionUnitsQuery = useQuery<ProductionUnitsResponse, Error>({
-    queryKey: ["production-units"],
+    queryKey: ["production-units", companyIds],
     queryFn: async () => {
-      return await productionUnitApiService.getAll();
+      if (companyIds.length === 0) {
+        // Nessun filtro: ottieni tutte le unità produttive
+        return await productionUnitApiService.getAll();
+      }
+      // Filtra per aziende specifiche
+      return await productionUnitApiService.getByCompanies({ companyIds });
     },
   });
 
