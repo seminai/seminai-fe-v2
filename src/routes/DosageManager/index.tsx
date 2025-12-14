@@ -1294,18 +1294,6 @@ export default function DosageManager() {
       .load()
       .then((datasets) => {
         setOrchestratorDatasets(datasets);
-        setOrchestratorSettings((prev) => {
-          if (
-            Array.isArray(prev.categoryPriority) &&
-            prev.categoryPriority.length > 0
-          ) {
-            return prev;
-          }
-          return {
-            ...prev,
-            categoryPriority: datasets.defaultCategoryPriority,
-          };
-        });
       })
       .catch((error) => {
         console.error("Failed to load orchestrator datasets", error);
@@ -2357,13 +2345,15 @@ export default function DosageManager() {
 
   const orchestratorSummary = useMemo(() => {
     const objective = orchestratorSettings.objective ?? "balanced";
-    const intensity = orchestratorSettings.intensity ?? "medium";
+    const intensity = orchestratorSettings.intensity ?? null;
     const cats = orchestratorSettings.categoryPriority?.length ?? 0;
     const targets = orchestratorSettings.priorityTargets?.length ?? 0;
-    const llm = orchestratorSettings.useLlmForSelection ?? true;
+    const llm = true;
     return {
       objectiveLabel: OrchestratorLabels.objective(objective),
-      intensityLabel: OrchestratorLabels.intensity(intensity),
+      intensityLabel: intensity
+        ? OrchestratorLabels.intensity(intensity)
+        : "Nessun limite",
       categoriesCount: cats,
       targetsCount: targets,
       llm,

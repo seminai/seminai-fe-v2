@@ -57,13 +57,9 @@ export class OrchestratorDefaultsFactory {
   public static create(): DosageOrchestratorSettings {
     return {
       objective: "balanced",
-      intensity: "medium",
-      maxApplicationsPerProductPerUnit: 2,
-      allowOutsideProductionTreatments: true,
-      categoryPriority: ["fungicide", "insecticide", "herbicide", "acaricide"],
+      categoryPriority: [],
       priorityTargets: [],
       agronomicNotes: null,
-      useLlmForSelection: true,
     };
   }
 }
@@ -225,18 +221,12 @@ export class OrchestratorRequestBuilder {
   ): DosageOrchestratorSettings {
     const next: DosageOrchestratorSettings = { ...settings };
 
-    if (next.useLlmForSelection === undefined) {
-      next.useLlmForSelection = true;
-    }
+    // Forced orchestrator flags (not configurable via UI)
+    next.useLlmForSelection = true;
+    next.allowOutsideProductionTreatments = true;
 
-    if (
-      !Array.isArray(next.categoryPriority) ||
-      next.categoryPriority.length === 0
-    ) {
-      next.categoryPriority =
-        datasets?.defaultCategoryPriority ??
-        OrchestratorDefaultsFactory.create().categoryPriority ??
-        [];
+    if (!Array.isArray(next.categoryPriority)) {
+      next.categoryPriority = [];
     }
 
     if (typeof next.agronomicNotes === "string") {

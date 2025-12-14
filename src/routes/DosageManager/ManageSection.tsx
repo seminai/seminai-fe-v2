@@ -182,6 +182,9 @@ export function ManageSection({
   const [showMaxLimits, setShowMaxLimits] = useState(false);
   const categoryPriority = orchestratorSettings.categoryPriority ?? [];
   const priorityTargets = orchestratorSettings.priorityTargets ?? [];
+  const intensityValue = (orchestratorSettings.intensity ?? "none") as
+    | OrchestratorIntensity
+    | "none";
 
   const categoryOptions = useMemo<MultiSearchableSelectOption[]>(
     () =>
@@ -537,10 +540,19 @@ export function ManageSection({
                         Intensità
                       </Label>
                       <Select
-                        value={
-                          (orchestratorSettings.intensity ?? "medium") as string
-                        }
+                        value={intensityValue as string}
                         onValueChange={(value) => {
+                          if (value === "none") {
+                            setOrchestratorSettings((prev) => {
+                              const next: DosageOrchestratorSettings = {
+                                ...prev,
+                              };
+                              delete (next as Record<string, unknown>)
+                                .intensity;
+                              return next;
+                            });
+                            return;
+                          }
                           setOrchestratorSettings((prev) => ({
                             ...prev,
                             intensity: value as OrchestratorIntensity,
@@ -551,6 +563,7 @@ export function ManageSection({
                           <SelectValue placeholder="Seleziona intensità" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="none">Nessun limite</SelectItem>
                           {(
                             ["low", "medium", "high"] as OrchestratorIntensity[]
                           ).map((opt) => (
@@ -585,10 +598,13 @@ export function ManageSection({
                             </Label>
                             <Input
                               inputMode="numeric"
-                              placeholder={`Default da intensità: ${OrchestratorIntensityDefaults.getMaxProductsPerUnit(
-                                (orchestratorSettings.intensity ??
-                                  "medium") as OrchestratorIntensity
-                              )}`}
+                              placeholder={
+                                orchestratorSettings.intensity
+                                  ? `Default da intensità: ${OrchestratorIntensityDefaults.getMaxProductsPerUnit(
+                                      orchestratorSettings.intensity as OrchestratorIntensity
+                                    )}`
+                                  : "Default da intensità: Nessun limite"
+                              }
                               value={
                                 orchestratorSettings.maxProductsPerUnit ===
                                 undefined
@@ -621,10 +637,14 @@ export function ManageSection({
                             <Input
                               inputMode="numeric"
                               placeholder="2"
-                              value={String(
-                                orchestratorSettings.maxApplicationsPerProductPerUnit ??
-                                  2
-                              )}
+                              value={
+                                orchestratorSettings.maxApplicationsPerProductPerUnit ===
+                                undefined
+                                  ? ""
+                                  : String(
+                                      orchestratorSettings.maxApplicationsPerProductPerUnit
+                                    )
+                              }
                               onChange={(e) => {
                                 setOrchestratorSettings((prev) =>
                                   OrchestratorSettingsUpdater.setNumber(
@@ -667,63 +687,7 @@ export function ManageSection({
                     </div>
 
                     <div className="space-y-3">
-                      <div className="flex items-start gap-3">
-                        <Checkbox
-                          id="allowOutsideProductionTreatments"
-                          checked={
-                            orchestratorSettings.allowOutsideProductionTreatments ??
-                            true
-                          }
-                          onCheckedChange={(checked) =>
-                            setOrchestratorSettings((prev) => ({
-                              ...prev,
-                              allowOutsideProductionTreatments:
-                                checked === true,
-                            }))
-                          }
-                          className="mt-0.5"
-                        />
-                        <div className="flex-1 space-y-1">
-                          <Label
-                            htmlFor="allowOutsideProductionTreatments"
-                            className="text-sm font-medium text-neutral-900 cursor-pointer"
-                          >
-                            Consenti pre-semina / post-raccolta
-                          </Label>
-                          <p className="text-xs text-neutral-500">
-                            Se disattivo, limita ai soli trattamenti in finestra
-                            produttiva.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3">
-                        <Checkbox
-                          id="useLlmForSelection"
-                          checked={
-                            orchestratorSettings.useLlmForSelection ?? true
-                          }
-                          onCheckedChange={(checked) =>
-                            setOrchestratorSettings((prev) => ({
-                              ...prev,
-                              useLlmForSelection: checked === true,
-                            }))
-                          }
-                          className="mt-0.5"
-                        />
-                        <div className="flex-1 space-y-1">
-                          <Label
-                            htmlFor="useLlmForSelection"
-                            className="text-sm font-medium text-neutral-900 cursor-pointer"
-                          >
-                            Usa LLM per la selezione (default attivo)
-                          </Label>
-                          <p className="text-xs text-neutral-500">
-                            Più lento, ma può migliorare la qualità della
-                            selezione.
-                          </p>
-                        </div>
-                      </div>
+                      {/* Forced params (hidden): allowOutsideProductionTreatments=true, useLlmForSelection=true */}
                     </div>
                   </div>
 
