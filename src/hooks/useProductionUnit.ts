@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   productionUnitApiService,
   type ProductionUnitsResponse,
-  type GetProductionUnitsByCompaniesRequest,
 } from "@/api/production-unit";
 
 interface UseProductionUnitOptions {
@@ -28,8 +27,7 @@ export function useProductionUnit(options?: UseProductionUnitOptions) {
 
   return {
     // Dati e stati della query
-    productionUnits:
-      productionUnitsQuery.data?.data.productionUnits ?? [],
+    productionUnits: productionUnitsQuery.data?.data.productionUnits ?? [],
     isLoading: productionUnitsQuery.isLoading,
     isError: productionUnitsQuery.isError,
     error: productionUnitsQuery.error,
@@ -38,4 +36,3 @@ export function useProductionUnit(options?: UseProductionUnitOptions) {
     refetch: productionUnitsQuery.refetch,
   };
 }
-
