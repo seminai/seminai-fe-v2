@@ -26,11 +26,14 @@ import {
   ListChecks,
   PanelLeftClose,
   PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
   Package,
   ChevronLeft,
   ChevronRight,
   X,
   Eraser,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type JobGroupSummaryItem, type JobHistoryEntry } from "@/api/jobs";
@@ -82,6 +85,8 @@ interface ReviewJobsViewProps {
   onMobileHistoryChange: (open: boolean) => void;
   convertToJobRows: (rows: EditableTableRowData[]) => JobRow[];
   exportConfig?: CustomExportConfig;
+  isRightSidebarOpen: boolean;
+  onToggleRightSidebar: (open: boolean) => void;
 }
 
 export function ReviewJobsView({
@@ -122,6 +127,8 @@ export function ReviewJobsView({
   onMobileHistoryChange,
   convertToJobRows,
   exportConfig,
+  isRightSidebarOpen,
+  onToggleRightSidebar,
 }: ReviewJobsViewProps) {
   if (isMobile) {
     if (!selectedGroupSummary) {
@@ -557,7 +564,7 @@ export function ReviewJobsView({
         )}
       </div>
 
-      {selectedGroupSummary && (
+      {selectedGroupSummary && isRightSidebarOpen && (
         <>
           <div
             onMouseDown={onResizeStart}
@@ -572,7 +579,7 @@ export function ReviewJobsView({
             </div>
           </div>
           <div
-            className="flex-shrink-0 overflow-hidden flex flex-col"
+            className="flex-shrink-0 overflow-hidden flex flex-col bg-white border-l border-slate-200"
             style={{ width: `${historyPanelWidth}px` }}
           >
             <div className="flex-shrink-0 p-3 bg-white border-b border-slate-200 flex items-center justify-between">
@@ -609,6 +616,15 @@ export function ReviewJobsView({
                     >
                       <Brain className="h-4 w-4 text-slate-500" />
                     </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onToggleRightSidebar(false)}
+                      className="h-7 w-7 p-0"
+                      title="Chiudi pannello"
+                    >
+                      <PanelRightClose className="h-4 w-4 text-slate-500" />
+                    </Button>
                   </div>
                 </>
               ) : (
@@ -616,23 +632,41 @@ export function ReviewJobsView({
                   <span className="text-sm font-medium text-slate-700">
                     Storico
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onRightSidebarModeChange("details")}
-                    className="h-7 w-7 p-0"
-                    title="Chiudi storico"
-                  >
-                    <X className="h-4 w-4 text-slate-500" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onRightSidebarModeChange("details")}
+                      className="h-7 w-7 p-0"
+                      title="Mostra dettagli"
+                    >
+                      <X className="h-4 w-4 text-slate-500" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onToggleRightSidebar(false)}
+                      className="h-7 w-7 p-0"
+                      title="Chiudi pannello"
+                    >
+                      <PanelRightClose className="h-4 w-4 text-slate-500" />
+                    </Button>
+                  </div>
                 </>
               )}
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden bg-slate-50">
               {rightSidebarMode === "details" ? (
-                <JobSelectedDetails
-                  selectedRows={convertToJobRows(selectedReviewRows)}
-                />
+                selectedReviewRows.length > 0 ? (
+                  <JobSelectedDetails
+                    selectedRows={convertToJobRows(selectedReviewRows)}
+                  />
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm">
+                    <Sparkles className="h-8 w-8 mb-2 opacity-50" />
+                    <p>Seleziona una o più operazioni per vedere i dettagli</p>
+                  </div>
+                )
               ) : (
                 <HistoryPanel
                   history={selectedGroupHistory}
@@ -645,6 +679,17 @@ export function ReviewJobsView({
             </div>
           </div>
         </>
+      )}
+      {selectedGroupSummary && !isRightSidebarOpen && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onToggleRightSidebar(true)}
+          className="h-8 w-8 p-0 border-l border-slate-200 rounded-none"
+          title="Apri pannello dettagli"
+        >
+          <PanelRightOpen className="h-4 w-4 text-slate-500" />
+        </Button>
       )}
     </div>
   );

@@ -32,6 +32,8 @@ interface ImportProductsFromDdtProps {
   onProductsChange?: (products: DosageProduct[]) => void;
   onCloseParentDrawer?: () => void;
   onOpenParentDrawer?: () => void;
+  disabled?: boolean;
+  onSelectImportMethod?: () => void;
 }
 
 interface ProductsImporterService {
@@ -295,6 +297,8 @@ export function ImportProductsFromDdt({
   onProductsChange,
   onCloseParentDrawer,
   onOpenParentDrawer,
+  disabled,
+  onSelectImportMethod,
 }: ImportProductsFromDdtProps): ReactElement {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -414,6 +418,10 @@ export function ImportProductsFromDdt({
   };
 
   const handleOpenDrawer = (): void => {
+    if (disabled) {
+      return;
+    }
+    onSelectImportMethod?.();
     onCloseParentDrawer?.();
     setShouldRestoreParentDrawer(true);
     setIsDrawerOpen(true);
@@ -462,7 +470,12 @@ export function ImportProductsFromDdt({
 
   return (
     <>
-      <Button variant="outline" className="gap-2" onClick={handleOpenDrawer}>
+      <Button
+        variant="outline"
+        className="gap-2"
+        onClick={handleOpenDrawer}
+        disabled={disabled}
+      >
         <UploadCloud className="h-4 w-4" />
         Importa prodotti da DDT
       </Button>

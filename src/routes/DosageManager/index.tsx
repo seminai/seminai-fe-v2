@@ -32,6 +32,7 @@ import {
   type DosageStrategy,
   type DosageUnitOfProduction,
 } from "@/api/dosage-agent";
+import type { DosageOrchestratorSettings } from "@/api/dosage-agent";
 import {
   productLabelsApiService,
   type ProductLabelDetails,
@@ -72,6 +73,15 @@ import {
 } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
+import { useSidebar } from "@/components/ui/sidebar";
+import {
+  OrchestratorDatasetsLoader,
+  OrchestratorDefaultsFactory,
+  OrchestratorRequestBuilder,
+  type OrchestratorDatasets,
+  OrchestratorLabels,
+} from "./orchestrator";
+import { ImportMethodPolicy, type ImportMethod } from "./importMethod";
 class DosageJobDetailsManager {
   public async load(job: DosageJob): Promise<DosageJob> {
     if (job.state === "completed" && job.result) {
@@ -396,32 +406,58 @@ class DosageStrategyOptionsFactory {
     outStockLimiter: boolean
   ): string {
     return [
-      "curl -X POST https://<host>/dosage-agent/start-job \\",
-      "",
-      '  -H "Authorization: Bearer <JWT_TOKEN>" \\',
+      'curl -X POST "https://<host>/dosage-agent/start-job" \\',
       "",
       '  -H "Content-Type: application/json" \\',
       "",
+      '  -H "Authorization: Bearer <JWT_TOKEN>" \\',
+      "",
       "  -d '{",
-      '        "products": [',
-      "          {",
-      '            "productId": "123",',
-      '            "quantity": 100,',
-      '            "quantityUnitOfMeasure": "kg",',
-      '            "loadWarehouse": true',
-      "          }",
-      "        ],",
-      '        "unitOfProduction": [',
-      "          {",
-      '            "id": "unit-001",',
-      '            "cropName": "Vite",',
-      '            "cropVariety": "Trebbiano",',
-      '            "disciplinari": ["disciplinare-2025"]',
-      "          }",
-      "        ],",
-      `        "strategy": "${strategy}",`,
-      `        "outStockLimiter": ${outStockLimiter}`,
-      "      }'",
+      '    "products": [',
+      "      {",
+      '        "productName": "TELDOR PLUS",',
+      '        "registrationNumber": "17754",',
+      '        "quantity": 50,',
+      '        "quantityUnitOfMeasure": "L",',
+      '        "loadWarehouse": true',
+      "      },",
+      "      {",
+      '        "productName": "FORUM R WDG",',
+      '        "registrationNumber": "11693",',
+      '        "quantity": 20,',
+      '        "quantityUnitOfMeasure": "kg",',
+      '        "loadWarehouse": true',
+      "      }",
+      "    ],",
+      '    "unitOfProduction": [',
+      "      {",
+      '        "id": "uuid-unita-1",',
+      '        "cropName": "Vite",',
+      '        "variety": "Sangiovese",',
+      '        "areaHa": 5.2',
+      "      },",
+      "      {",
+      '        "id": "uuid-unita-2",',
+      '        "cropName": "Vite",',
+      '        "variety": "Trebbiano",',
+      '        "areaHa": 3.8',
+      "      }",
+      "    ],",
+      `    "strategy": "${strategy}",`,
+      `    "outStockLimiter": ${outStockLimiter},`,
+      '    "orchestrator": {',
+      '      "objective": "balanced",',
+      '      "intensity": "medium",',
+      '      "maxProductsPerUnit": 6,',
+      '      "maxApplicationsPerProductPerUnit": 2,',
+      '      "maxTotalJobs": 100,',
+      '      "allowOutsideProductionTreatments": true,',
+      '      "categoryPriority": ["fungicide", "insecticide", "herbicide", "acaricide"],',
+      '      "priorityTargets": ["Peronospora", "Oidio", "Botrite"],',
+      '      "agronomicNotes": "Pressione oidio alta quest anno, evitare rame se possibile",',
+      '      "useLlmForSelection": true',
+      "    }",
+      "  }'",
     ].join("\n");
   }
 }
@@ -494,6 +530,13 @@ class ProductionUnitTableColumnsFactory {
           ProductionUnitTableColumnsFactory.renderUnitInfo(row),
       },
       {
+        id: "companyName",
+        title: "Azienda",
+        width: "200px",
+        render: (_value, row) =>
+          ProductionUnitTableColumnsFactory.renderCompany(row),
+      },
+      {
         id: "variety",
         title: "Varietà",
         width: "200px",
@@ -537,8 +580,18 @@ class ProductionUnitTableColumnsFactory {
         <p className="text-sm text-neutral-500">
           {data.cropName} - {data.cropType}
         </p>
-        <p className="text-xs text-neutral-500">{data.companyName}</p>
+        <p className="text-xs text-neutral-500">{data.variety || "N/D"}</p>
       </div>
+    );
+  }
+
+  private static renderCompany(row: Record<string, unknown>): ReactElement {
+    const data = ProductionUnitTableColumnsFactory.asRow(row);
+
+    return (
+      <span className="text-sm font-medium text-neutral-900">
+        {data.companyName || "-"}
+      </span>
     );
   }
 
@@ -1120,8 +1173,12 @@ function LiveLogEventCard({ event }: { event: DosageLogEvent }): ReactElement {
 }
 
 export default function DosageManager() {
-  const { productionUnits, isLoading: loadingUnits } = useProductionUnit();
+  const { state: sidebarState, isMobile } = useSidebar();
+  const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([]);
   const { companies } = useCompanies();
+  const { productionUnits, isLoading: loadingUnits } = useProductionUnit({
+    companyIds: selectedCompanyIds,
+  });
   const {
     products: warehouseInventory,
     isLoading: isWarehouseProductsLoading,
@@ -1130,16 +1187,23 @@ export default function DosageManager() {
   const [currentPage, setCurrentPage] = useState<"manage" | "history">(
     "manage"
   );
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
   const [products, setProducts] = useState<DosageProduct[]>([]);
   const [productSources, setProductSources] = useState<
     Map<string, "warehouse" | "csv" | "ddt">
   >(new Map());
+  const [selectedImportMethod, setSelectedImportMethod] =
+    useState<ImportMethod | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [strategy, setStrategy] = useState<DosageStrategy>("avg");
   const [outStockLimiter, setOutStockLimiter] = useState<boolean>(true);
+  const [orchestratorSettings, setOrchestratorSettings] =
+    useState<DosageOrchestratorSettings>(() =>
+      OrchestratorDefaultsFactory.create()
+    );
+  const [orchestratorDatasets, setOrchestratorDatasets] =
+    useState<OrchestratorDatasets | null>(null);
 
   const editableTableRef = useRef<EditableTable>(null);
 
@@ -1159,6 +1223,69 @@ export default function DosageManager() {
   const [labelError, setLabelError] = useState<string | null>(null);
   const [isLabelLoading, setIsLabelLoading] = useState(false);
   const labelRequestId = useRef(0);
+
+  const footerRef = useRef<HTMLDivElement | null>(null);
+  const [footerHeight, setFooterHeight] = useState<number>(0);
+  const [mobileBottomOccupied, setMobileBottomOccupied] = useState<number>(0);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setFooterHeight(0);
+      setMobileBottomOccupied(0);
+      return;
+    }
+
+    const el = footerRef.current;
+    if (!el) {
+      return;
+    }
+
+    const update = () => {
+      setFooterHeight(el.getBoundingClientRect().height);
+    };
+
+    update();
+
+    const observer = new ResizeObserver(() => update());
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileBottomOccupied(0);
+      return;
+    }
+
+    const el = document.querySelector<HTMLElement>(
+      '[data-mobile-bottom-bar="true"]'
+    );
+    if (!el) {
+      setMobileBottomOccupied(0);
+      return;
+    }
+
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      const occupied = Math.max(window.innerHeight - rect.top, 0);
+      setMobileBottomOccupied(occupied);
+    };
+
+    update();
+
+    const observer = new ResizeObserver(() => update());
+    observer.observe(el);
+
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+    };
+  }, [isMobile]);
 
   const {
     isLiveLogsDrawerOpen,
@@ -1181,6 +1308,18 @@ export default function DosageManager() {
     } catch (error) {
       console.error("Failed to load dosage jobs", error);
     }
+  }, []);
+
+  useEffect(() => {
+    const loader = new OrchestratorDatasetsLoader();
+    loader
+      .load()
+      .then((datasets) => {
+        setOrchestratorDatasets(datasets);
+      })
+      .catch((error) => {
+        console.error("Failed to load orchestrator datasets", error);
+      });
   }, []);
   const strategyOptions = useMemo(
     () => DosageStrategyOptionsFactory.create(),
@@ -1698,11 +1837,16 @@ export default function DosageManager() {
         return;
       }
 
+      // Non fare chiamate se non ci sono job attivi (tutti completati)
+      if (activeJobs.length === 0) {
+        return;
+      }
+
       await fetchJobsFromApi();
     }, POLLING_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [fetchJobsFromApi]);
+  }, [fetchJobsFromApi, activeJobs.length]);
 
   useEffect(() => {
     setSelectedActiveJobIds((prev) => {
@@ -1722,6 +1866,12 @@ export default function DosageManager() {
       }
 
       if (isResumeSyncInProgressRef.current) {
+        return;
+      }
+
+      // Non fare chiamate se non ci sono job attivi (tutti completati)
+      // Fai eccezione solo se ci sono live logs aperti
+      if (activeJobs.length === 0 && !isLiveLogsDrawerOpen) {
         return;
       }
 
@@ -1756,14 +1906,13 @@ export default function DosageManager() {
     isLiveLogsDrawerOpen,
     liveLogsJobId,
     reconnectLiveLogs,
+    activeJobs.length,
   ]);
 
-  // Filter production units by selected company and search query
+  // Filter production units by search query (company filtering is done by API)
   const filteredUnits = useMemo(() => {
-    if (!selectedCompanyId) return [];
-    let units = productionUnits.filter(
-      (unit) => unit.companyId === selectedCompanyId
-    );
+    if (selectedCompanyIds.length === 0) return [];
+    let units = productionUnits;
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -1776,7 +1925,7 @@ export default function DosageManager() {
     }
 
     return units;
-  }, [productionUnits, selectedCompanyId, searchQuery]);
+  }, [productionUnits, selectedCompanyIds, searchQuery]);
 
   // Get selected units data
   const selectedUnits = useMemo(() => {
@@ -1820,10 +1969,10 @@ export default function DosageManager() {
       return;
     }
 
-    if (!selectedCompanyId) {
+    if (selectedCompanyIds.length === 0) {
       toast.error("Nessuna azienda selezionata", {
         description:
-          "Seleziona un'azienda prima di importare i prodotti dal magazzino.",
+          "Seleziona almeno un'azienda prima di importare i prodotti dal magazzino.",
       });
       return;
     }
@@ -1835,9 +1984,9 @@ export default function DosageManager() {
       return;
     }
 
-    // Filter products by selected company
-    const companyProducts = warehouseInventory.filter(
-      (product) => product.warehouse.company.id === selectedCompanyId
+    // Filter products by selected companies
+    const companyProducts = warehouseInventory.filter((product) =>
+      selectedCompanyIds.includes(product.warehouse.company.id)
     );
 
     if (companyProducts.length === 0) {
@@ -1908,15 +2057,29 @@ export default function DosageManager() {
     toast.success("Prodotti importati dal magazzino", {
       description: `${importedCount} prodotti aggiunti alla tabella`,
     });
-  }, [isWarehouseProductsLoading, warehouseInventory, selectedCompanyId]);
+  }, [isWarehouseProductsLoading, warehouseInventory, selectedCompanyIds]);
 
-  const selectedCompanyName = useMemo(() => {
-    if (!selectedCompanyId) {
-      return null;
+  const handleSelectImportMethod = useCallback((method: ImportMethod) => {
+    setSelectedImportMethod((current) => {
+      if (ImportMethodPolicy.canSelect(current, method)) {
+        return method;
+      }
+      return current;
+    });
+  }, []);
+
+  const handleResetImportMethod = useCallback(() => {
+    setSelectedImportMethod(null);
+  }, []);
+
+  const selectedCompanyNames = useMemo(() => {
+    if (selectedCompanyIds.length === 0) {
+      return [];
     }
-    const company = companies.find((item) => item.id === selectedCompanyId);
-    return company?.name ?? null;
-  }, [companies, selectedCompanyId]);
+    return companies
+      .filter((company) => selectedCompanyIds.includes(company.id))
+      .map((company) => company.name);
+  }, [companies, selectedCompanyIds]);
 
   const selectedUnitsCount = selectedUnitIds.length;
   const selectedProductsCount = products.length;
@@ -1953,11 +2116,15 @@ export default function DosageManager() {
       selectedProductsCount === 1
         ? "1 prodotto"
         : `${selectedProductsCount} prodotti`;
-    if (selectedCompanyName) {
-      return `Selezionati per ${selectedCompanyName}: ${unitLabel} e ${productLabel}`;
+    if (selectedCompanyNames.length > 0) {
+      const companiesLabel =
+        selectedCompanyNames.length === 1
+          ? selectedCompanyNames[0]
+          : `${selectedCompanyNames.length} aziende`;
+      return `Selezionati per ${companiesLabel}: ${unitLabel} e ${productLabel}`;
     }
     return `Selezionati: ${unitLabel} e ${productLabel}`;
-  }, [selectedCompanyName, selectedProductsCount, selectedUnitsCount]);
+  }, [selectedCompanyNames, selectedProductsCount, selectedUnitsCount]);
 
   const handleShowJobDetails = useCallback(
     async (job: DosageJob) => {
@@ -2188,6 +2355,10 @@ export default function DosageManager() {
         unitOfProduction: unitsOfProduction,
         strategy,
         outStockLimiter,
+        orchestrator: OrchestratorRequestBuilder.build(
+          orchestratorSettings,
+          orchestratorDatasets
+        ),
       });
 
       const jobId = response.data.jobId;
@@ -2200,11 +2371,13 @@ export default function DosageManager() {
       });
 
       // Reset form fields
-      setSelectedCompanyId("");
+      setSelectedCompanyIds([]);
       setProducts([]);
       setProductSources(new Map());
+      setSelectedImportMethod(null);
       setStrategy("avg");
       setOutStockLimiter(true);
+      setOrchestratorSettings(OrchestratorDefaultsFactory.create());
       setSelectedUnitIds([]);
       setSearchQuery("");
     } catch (error) {
@@ -2217,12 +2390,27 @@ export default function DosageManager() {
     }
   };
 
-  const totalUnits = productionUnits.filter(
-    (unit) => !selectedCompanyId || unit.companyId === selectedCompanyId
-  ).length;
+  const totalUnits = productionUnits.length;
+
+  const orchestratorSummary = useMemo(() => {
+    const objective = orchestratorSettings.objective ?? "balanced";
+    const intensity = orchestratorSettings.intensity ?? null;
+    const cats = orchestratorSettings.categoryPriority?.length ?? 0;
+    const targets = orchestratorSettings.priorityTargets?.length ?? 0;
+    const llm = true;
+    return {
+      objectiveLabel: OrchestratorLabels.objective(objective),
+      intensityLabel: intensity
+        ? OrchestratorLabels.intensity(intensity)
+        : "Nessun limite",
+      categoriesCount: cats,
+      targetsCount: targets,
+      llm,
+    };
+  }, [orchestratorSettings]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex min-h-svh flex-col">
       <PageHeader
         title="Gestione Dosaggi"
         totalItems={totalUnits}
@@ -2246,12 +2434,19 @@ export default function DosageManager() {
         </Button>
       </PageHeader>
 
-      <div className="flex-1 overflow-auto px-4 md:px-6 pb-6">
+      <div
+        className="flex-1 overflow-auto px-4 md:px-6"
+        style={{
+          paddingBottom: isMobile
+            ? Math.max(footerHeight + mobileBottomOccupied + 24, 160) // evita overlay con bottom navbar + footer
+            : 160, // desktop: lascia comunque spazio sotto
+        }}
+      >
         {currentPage === "manage" ? (
           <ManageSection
             companies={companies}
-            selectedCompanyId={selectedCompanyId}
-            setSelectedCompanyId={setSelectedCompanyId}
+            selectedCompanyIds={selectedCompanyIds}
+            setSelectedCompanyIds={setSelectedCompanyIds}
             selectedUnitIds={selectedUnitIds}
             setSelectedUnitIds={setSelectedUnitIds}
             searchQuery={searchQuery}
@@ -2280,10 +2475,16 @@ export default function DosageManager() {
             selectedStrategyOption={selectedStrategyOption}
             outStockLimiter={outStockLimiter}
             setOutStockLimiter={setOutStockLimiter}
+            orchestratorSettings={orchestratorSettings}
+            setOrchestratorSettings={setOrchestratorSettings}
+            orchestratorDatasets={orchestratorDatasets}
             editableTableRef={editableTableRef}
             renderEmptyProductsPlaceholder={() =>
               dosagePlaceholderRenderer.renderEmptyProductsPlaceholder()
             }
+            selectedImportMethod={selectedImportMethod}
+            onSelectImportMethod={handleSelectImportMethod}
+            onResetImportMethod={handleResetImportMethod}
           />
         ) : (
           <HistorySection
@@ -2302,16 +2503,39 @@ export default function DosageManager() {
         )}
       </div>
 
-      <div className="flex-shrink-0 border-t bg-white px-4 md:px-6 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.08)]">
+      <div
+        ref={footerRef}
+        className="fixed bottom-0 right-0 z-40 flex-shrink-0  bg-white/95 backdrop-blur px-4 md:px-6 py-4 mb-4 shadow-md rounded-md"
+        style={{
+          bottom: isMobile ? mobileBottomOccupied : undefined,
+          left: isMobile
+            ? 0
+            : sidebarState === "collapsed"
+            ? "calc(var(--sidebar-width-icon) + 1rem)"
+            : "var(--sidebar-width)",
+          marginBottom: isMobile ? 0 : undefined,
+        }}
+      >
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm text-neutral-500">
-              {selectedCompanyName
-                ? `Azienda selezionata: ${selectedCompanyName}`
+              {selectedCompanyNames.length > 0
+                ? `Aziend${
+                    selectedCompanyNames.length === 1 ? "a" : "e"
+                  } selezionat${
+                    selectedCompanyNames.length === 1 ? "a" : "e"
+                  }: ${selectedCompanyNames.join(", ")}`
                 : "Nessuna azienda selezionata"}
             </p>
             <p className="text-sm text-neutral-500">
               Strategia selezionata: {selectedStrategyOption.label}
+            </p>
+            <p className="text-sm text-neutral-500">
+              Orchestrator: {orchestratorSummary.objectiveLabel} •{" "}
+              {orchestratorSummary.intensityLabel} • cat.{" "}
+              {orchestratorSummary.categoriesCount} • target{" "}
+              {orchestratorSummary.targetsCount} • LLM{" "}
+              {orchestratorSummary.llm ? "ON" : "OFF"}
             </p>
             <p className="text-base font-medium text-neutral-900">
               {selectionSummary}

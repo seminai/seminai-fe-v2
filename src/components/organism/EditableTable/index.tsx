@@ -92,6 +92,12 @@ export interface EditableTableProps {
   isModify?: boolean;
   isVertical?: boolean;
   addButton?: boolean;
+  /**
+   * Controls how the "Add" action creates a new row.
+   * - drawer: opens the right-side create drawer (default, legacy behavior)
+   * - inline: inserts an editable row directly into the table
+   */
+  createMode?: "drawer" | "inline";
   onAddClick?: () => void;
   alwaysEdit?: boolean; // Force edit mode without toggle (useful for vertical detail views)
   lastComponent?:
@@ -324,6 +330,7 @@ export class EditableTable extends React.Component<
     isModify: false,
     isVertical: false,
     addButton: false,
+    createMode: "drawer",
     alwaysEdit: false,
     getRowId: (_row: Record<string, unknown>, index: number) => index,
     newRowDefaults: {},
@@ -1068,6 +1075,11 @@ export class EditableTable extends React.Component<
   }
 
   public prefillCreateRow = (data: Record<string, unknown>): void => {
+    if (this.props.createMode === "inline") {
+      this.addInlineRow(data);
+      return;
+    }
+
     const freshRow = this.createEmptyRow();
     const mergedData = { ...freshRow.data };
     const updatedTouched: Record<string, boolean> = {};
@@ -1267,9 +1279,50 @@ export class EditableTable extends React.Component<
     });
   };
 
+  private addInlineRow = (prefill?: Record<string, unknown>): void => {
+    const draftRow = this.createEmptyRow();
+    const mergedData = { ...draftRow.data };
+    const nextTouched: Record<string, boolean> = {};
+
+    if (prefill && typeof prefill === "object") {
+      for (const column of this.props.columns) {
+        const value = prefill[column.id];
+        if (value !== undefined) {
+          mergedData[column.id] = value;
+          nextTouched[column.id] = true;
+        }
+      }
+    }
+
+    const createdRow: InternalRow = {
+      ...draftRow,
+      data: mergedData,
+      isNew: true,
+      isDirty: true,
+    };
+
+    this.setState((prev) => ({
+      rows: [createdRow, ...prev.rows],
+      touched: {
+        ...prev.touched,
+        [createdRow.id]: Object.fromEntries(
+          this.props.columns.map((c) => [
+            c.id,
+            Boolean(nextTouched[c.id]) || false,
+          ])
+        ),
+      },
+      selected: {},
+    }));
+  };
+
   private handleAddButtonClick = (): void => {
     if (typeof this.props.onAddClick === "function") {
       this.props.onAddClick();
+      return;
+    }
+    if (this.props.createMode === "inline") {
+      this.addInlineRow();
       return;
     }
     this.openCreateDrawer();
