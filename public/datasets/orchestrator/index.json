@@ -1,0 +1,74 @@
+{
+  "description": "Configurazioni per l'orchestratore dei dosaggi fitosanitari",
+  "version": "1.0.0",
+  "lastUpdated": "2024-12-12",
+  "files": {
+    "categoryPriority": {
+      "path": "./categoryPriority.json",
+      "description": "Ordine di priorità delle categorie di prodotti fitosanitari"
+    },
+    "priorityTargets": {
+      "path": "./priorityTargets.json",
+      "description": "Avversità prioritarie organizzate per tipologia e coltura"
+    }
+  },
+  "parameters": {
+    "objective": {
+      "type": "string",
+      "default": "balanced",
+      "options": ["minimize_interventions", "maximize_coverage", "balanced", "cost_effective"],
+      "description": "Obiettivo dell'ottimizzazione"
+    },
+    "intensity": {
+      "type": "string",
+      "default": "medium",
+      "options": {
+        "low": { "maxProductsPerUnit": 3, "description": "Bassa intensità - max 3 prodotti/unità" },
+        "medium": { "maxProductsPerUnit": 6, "description": "Media intensità - max 6 prodotti/unità" },
+        "high": { "maxProductsPerUnit": 10, "description": "Alta intensità - max 10 prodotti/unità" }
+      },
+      "description": "Intensità del piano di trattamento"
+    },
+    "maxProductsPerUnit": {
+      "type": "number",
+      "default": null,
+      "description": "Override esplicito del numero massimo di prodotti per unità produttiva"
+    },
+    "maxApplicationsPerProductPerUnit": {
+      "type": "number",
+      "default": 2,
+      "description": "Numero massimo di applicazioni per prodotto per unità produttiva"
+    },
+    "maxTotalJobs": {
+      "type": "number",
+      "default": null,
+      "description": "Limite massimo sul numero totale di job creati"
+    },
+    "allowOutsideProductionTreatments": {
+      "type": "boolean",
+      "default": true,
+      "description": "Consenti trattamenti pre-semina e post-raccolta"
+    },
+    "categoryPriority": {
+      "type": "array",
+      "default": ["fungicide", "insecticide", "herbicide", "acaricide"],
+      "description": "Ordine di priorità delle categorie di prodotti"
+    },
+    "priorityTargets": {
+      "type": "array",
+      "default": [],
+      "description": "Lista delle avversità prioritarie da coprire"
+    },
+    "agronomicNotes": {
+      "type": "string",
+      "default": null,
+      "description": "Note agronomiche testuali per contestualizzare il piano"
+    },
+    "useLlmForSelection": {
+      "type": "boolean",
+      "default": true,
+      "description": "Usa LLM per affinare la selezione dei prodotti (più lento ma più preciso)"
+    }
+  }
+}
+

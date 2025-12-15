@@ -34,11 +34,44 @@ export type DosageUnitOfProduction = {
 
 export type DosageStrategy = "min" | "max" | "avg" | "current";
 
+export type OrchestratorObjective =
+  | "minimize_interventions"
+  | "maximize_coverage"
+  | "balanced"
+  | "cost_effective";
+
+export type OrchestratorIntensity = "low" | "medium" | "high";
+
+export type DosageOrchestratorSettings = {
+  objective?: OrchestratorObjective;
+  intensity?: OrchestratorIntensity;
+  /**
+   * Explicit override of the maximum number of products per production unit.
+   * If omitted, the backend can derive it from `intensity`.
+   */
+  maxProductsPerUnit?: number;
+  /** Maximum applications per product per production unit. */
+  maxApplicationsPerProductPerUnit?: number;
+  /** Hard limit on the total number of jobs created by the orchestrator. */
+  maxTotalJobs?: number;
+  /** Allow pre-sowing / post-harvest treatments. */
+  allowOutsideProductionTreatments?: boolean;
+  /** Priority order for product categories (higher first). */
+  categoryPriority?: string[];
+  /** Priority targets (adversities) to cover. */
+  priorityTargets?: string[];
+  /** Free-text agronomic context notes. */
+  agronomicNotes?: string | null;
+  /** Use LLM to refine selection (slower but can be more accurate). */
+  useLlmForSelection?: boolean;
+};
+
 export type StartDosageJobRequest = {
   products: DosageProduct[];
   unitOfProduction: DosageUnitOfProduction[];
   strategy: DosageStrategy;
   outStockLimiter: boolean;
+  orchestrator?: DosageOrchestratorSettings;
 };
 
 export type StartDosageJobResponse = {
