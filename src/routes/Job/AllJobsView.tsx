@@ -19,7 +19,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check, ChevronsUpDown, Search } from "lucide-react";
-import { GripVertical, Brain, Eraser, X } from "lucide-react";
+import {
+  GripVertical,
+  Brain,
+  Eraser,
+  X,
+  PanelRightClose,
+  PanelRightOpen,
+  Sparkles,
+} from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
@@ -70,6 +78,8 @@ interface AllJobsViewProps {
   ) => void;
   showSelectionSummary?: boolean;
   exportConfig?: CustomExportConfig;
+  isRightSidebarOpen: boolean;
+  onToggleRightSidebar: (open: boolean) => void;
 }
 
 export function JobIdMultiSelect({
@@ -242,6 +252,8 @@ export function AllJobsView({
   onProductClick,
   showSelectionSummary = false,
   exportConfig,
+  isRightSidebarOpen,
+  onToggleRightSidebar,
 }: AllJobsViewProps) {
   const hasError = Boolean(error);
   const errorMessage =
@@ -313,98 +325,140 @@ export function AllJobsView({
         </div>
       </div>
 
-      <div
-        onMouseDown={onResizeStart}
-        className={cn(
-          "w-1 flex-shrink-0 cursor-col-resize bg-slate-200 hover:bg-slate-300 transition-colors relative group",
-          isResizing && "bg-slate-400"
-        )}
-        style={{ userSelect: "none" }}
-      >
-        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <GripVertical className="h-4 w-4 text-slate-500" />
-        </div>
-      </div>
-
-      <div
-        className="flex-shrink-0 overflow-hidden flex flex-col bg-white border-l border-slate-200"
-        style={{ width: `${historyPanelWidth}px` }}
-      >
-        <div className="flex-shrink-0 p-3 border-b border-slate-200 flex items-center justify-between">
-          {rightSidebarMode === "details" ? (
-            <>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-slate-700">
-                  Dettagli
-                </span>
-                {selectedRows.length > 0 && (
-                  <Badge variant="outline" className="text-xs">
-                    {selectedRows.length}
-                  </Badge>
-                )}
-              </div>
-              {selectedRows.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onClearSelection}
-                  className="h-7 w-7 p-0"
-                  title="Pulisci selezione"
-                >
-                  <Eraser className="h-4 w-4 text-slate-500" />
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onRightSidebarModeChange("history")}
-                className="h-7 w-7 p-0 ml-1"
-                title="Mostra storico"
-              >
-                <Brain className="h-4 w-4 text-slate-500" />
-              </Button>
-            </>
-          ) : (
-            <>
-              <span className="text-sm font-medium text-slate-700">
-                Storico
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onRightSidebarModeChange("details")}
-                className="h-7 w-7 p-0"
-                title="Chiudi storico"
-              >
-                <X className="h-4 w-4 text-slate-500" />
-              </Button>
-            </>
-          )}
-        </div>
-        <div className="flex-1 overflow-hidden bg-slate-50">
-          {rightSidebarMode === "details" ? (
-            selectedRows.length > 0 ? (
-              <JobSelectedDetails
-                selectedRows={convertToJobRows(selectedRows)}
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center text-slate-400 text-sm">
-                Seleziona una o più operazioni per vedere i dettagli
-              </div>
-            )
-          ) : selectedRowsHistory.length > 0 ? (
-            <HistoryPanel
-              history={selectedRowsHistory}
-              jobCode={(selectedRows[0]?.jobCode as string | undefined) ?? ""}
-              onProductClick={(name, reg) => onProductClick(name, reg, false)}
-            />
-          ) : (
-            <div className="h-full flex items-center justify-center text-slate-400 text-sm">
-              Nessuno storico disponibile per la selezione corrente
+      {isRightSidebarOpen && (
+        <>
+          <div
+            onMouseDown={onResizeStart}
+            className={cn(
+              "w-1 flex-shrink-0 cursor-col-resize bg-slate-200 hover:bg-slate-300 transition-colors relative group ",
+              isResizing && "bg-slate-400"
+            )}
+            style={{ userSelect: "none" }}
+          >
+            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 flex items-center justify-center opacity-0 group-hover:opacity-100  transition-opacity">
+              <GripVertical className="h-4 w-4 text-slate-500" />
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+
+          <div
+            className="flex-shrink-0 overflow-hidden flex flex-col bg-white border-l border-slate-200"
+            style={{ width: `${historyPanelWidth}px` }}
+          >
+            <div className="flex-shrink-0 p-3 border-b border-slate-200 flex items-center justify-between">
+              {rightSidebarMode === "details" ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Dettagli
+                    </span>
+                    {selectedRows.length > 0 && (
+                      <Badge variant="outline" className="text-xs">
+                        {selectedRows.length}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {selectedRows.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onClearSelection}
+                        className="h-7 w-7 p-0"
+                        title="Pulisci selezione"
+                      >
+                        <Eraser className="h-4 w-4 text-slate-500" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onRightSidebarModeChange("history")}
+                      className="h-7 w-7 p-0"
+                      title="Mostra storico"
+                    >
+                      <Brain className="h-4 w-4 text-slate-500" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onToggleRightSidebar(false)}
+                      className="h-7 w-7 p-0"
+                      title="Chiudi pannello"
+                    >
+                      <PanelRightClose className="h-4 w-4 text-slate-500" />
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-medium text-slate-700">
+                    Storico
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onRightSidebarModeChange("details")}
+                      className="h-7 w-7 p-0"
+                      title="Mostra dettagli"
+                    >
+                      <X className="h-4 w-4 text-slate-500" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onToggleRightSidebar(false)}
+                      className="h-7 w-7 p-0"
+                      title="Chiudi pannello"
+                    >
+                      <PanelRightClose className="h-4 w-4 text-slate-500" />
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex-1 overflow-hidden bg-slate-50">
+              {rightSidebarMode === "details" ? (
+                selectedRows.length > 0 ? (
+                  <JobSelectedDetails
+                    selectedRows={convertToJobRows(selectedRows)}
+                  />
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm">
+                    <Sparkles className="h-8 w-8 mb-2 opacity-50" />
+                    <p>Seleziona una o più operazioni per vedere i dettagli</p>
+                  </div>
+                )
+              ) : selectedRowsHistory.length > 0 ? (
+                <HistoryPanel
+                  history={selectedRowsHistory}
+                  jobCode={
+                    (selectedRows[0]?.jobCode as string | undefined) ?? ""
+                  }
+                  onProductClick={(name, reg) =>
+                    onProductClick(name, reg, false)
+                  }
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center text-slate-400 text-sm">
+                  Nessuno storico disponibile per la selezione corrente
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+      {!isRightSidebarOpen && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onToggleRightSidebar(true)}
+          className="h-8 w-8 p-2  border-slate-200 rounded-lg"
+          title="Apri pannello dettagli"
+        >
+          <PanelRightOpen className="h-4 w-4 text-slate-500" />
+        </Button>
+      )}
     </div>
   );
 }
