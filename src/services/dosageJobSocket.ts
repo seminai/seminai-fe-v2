@@ -76,25 +76,47 @@ class DosageJobSocketService {
     // Disconnetti da eventuali connessioni precedenti
     this.disconnect();
 
-    const token = authService.getAuthToken();
-    if (!token) {
-      this.connectionState = "error";
-      callbacks.onError?.(new Error("Token di autenticazione non disponibile"));
-      return;
-    }
+    // Prova a ottenere il token con un meccanismo di retry
+    // per gestire casi in cui il token non è ancora disponibile
+    const attemptConnection = (retryCount = 0): void => {
+      const token = authService.getAuthToken();
 
-    this.callbacks = callbacks;
-    this.currentJobId = jobId;
-    this.connectionState = "connecting";
+      if (!token) {
+        // Se non c'è token e abbiamo ancora tentativi disponibili, riprova
+        const MAX_RETRIES = 3;
+        const RETRY_DELAY_MS = 100; // Delay base di 100ms
 
-    this.socket = io(SERVER_URL, {
-      auth: {
-        token,
-      },
-      transports: ["websocket", "polling"],
-    });
+        if (retryCount < MAX_RETRIES) {
+          setTimeout(() => {
+            attemptConnection(retryCount + 1);
+          }, RETRY_DELAY_MS * (retryCount + 1)); // Delay crescente: 100ms, 200ms, 300ms
+          return;
+        }
 
-    this.setupEventListeners();
+        // Dopo tutti i tentativi, mostra l'errore
+        this.connectionState = "error";
+        callbacks.onError?.(
+          new Error("Token di autenticazione non disponibile")
+        );
+        return;
+      }
+
+      // Token disponibile, procedi con la connessione
+      this.callbacks = callbacks;
+      this.currentJobId = jobId;
+      this.connectionState = "connecting";
+
+      this.socket = io(SERVER_URL, {
+        auth: {
+          token,
+        },
+        transports: ["websocket", "polling"],
+      });
+
+      this.setupEventListeners();
+    };
+
+    attemptConnection();
   }
 
   /**

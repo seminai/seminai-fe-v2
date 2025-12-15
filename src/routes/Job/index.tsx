@@ -1612,6 +1612,7 @@ export default function JobPage() {
   const [rightSidebarMode, setRightSidebarMode] = useState<
     "details" | "history"
   >("details");
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState<boolean>(true);
 
   const isMobile = useIsMobile();
 
@@ -2432,6 +2433,8 @@ export default function JobPage() {
       onProductClick={handleOpenLabel}
       showSelectionSummary={isMobile}
       exportConfig={jobExportConfig}
+      isRightSidebarOpen={isRightSidebarOpen}
+      onToggleRightSidebar={setIsRightSidebarOpen}
     />
   );
 
@@ -2475,6 +2478,8 @@ export default function JobPage() {
       onMobileHistoryChange={setMobileHistoryOpen}
       convertToJobRows={convertToJobRows}
       exportConfig={jobExportConfig}
+      isRightSidebarOpen={isRightSidebarOpen}
+      onToggleRightSidebar={setIsRightSidebarOpen}
     />
   );
 
