@@ -36,6 +36,7 @@ import {
   diffEditable,
   type EditableUserState,
 } from "@/utils/user-edit";
+import { Pencil } from "lucide-react";
 
 const currencyFormatter = new Intl.NumberFormat("it-IT", {
   style: "currency",
@@ -209,9 +210,45 @@ export default function Settings() {
   } = useTokenCosts();
 
   const userData = data?.data.user;
+  const qdcApiKey = data?.data.qdcApiKey ?? null;
+  const ifarmingApiKey = data?.data.ifarmingApiKey ?? null;
   const [editable, setEditable] = React.useState<EditableUserState | null>(
     userData ? createEditableUserState(userData) : null
   );
+
+  const [editingQdc, setEditingQdc] = React.useState(qdcApiKey === null);
+  const [editingIfarming, setEditingIfarming] = React.useState(
+    ifarmingApiKey === null
+  );
+  const [qdcValue, setQdcValue] = React.useState("");
+  const [ifarmingValue, setIfarmingValue] = React.useState("");
+  const [qdcOriginalValue, setQdcOriginalValue] = React.useState("");
+  const [ifarmingOriginalValue, setIfarmingOriginalValue] = React.useState("");
+
+  React.useEffect(() => {
+    if (qdcApiKey === null) {
+      setEditingQdc(true);
+      setQdcValue("");
+      setQdcOriginalValue("");
+    } else if (!editingQdc) {
+      setQdcValue(qdcApiKey);
+      setQdcOriginalValue(qdcApiKey);
+    }
+  }, [qdcApiKey, editingQdc]);
+
+  React.useEffect(() => {
+    if (ifarmingApiKey === null) {
+      setEditingIfarming(true);
+      setIfarmingValue("");
+      setIfarmingOriginalValue("");
+    } else if (!editingIfarming) {
+      setIfarmingValue(ifarmingApiKey);
+      setIfarmingOriginalValue(ifarmingApiKey);
+    }
+  }, [ifarmingApiKey, editingIfarming]);
+
+  const isQdcModified = editingQdc && qdcValue !== qdcOriginalValue;
+  const isIfarmingModified = editingIfarming && ifarmingValue !== ifarmingOriginalValue;
 
   const usageRows = React.useMemo(() => {
     return usages.map((usage) => new TokenUsageViewModel(usage));
@@ -315,6 +352,32 @@ export default function Settings() {
       onError: (e: unknown) => {
         const message =
           e instanceof Error ? e.message : "Password update failed";
+        toast.error(message);
+      },
+    });
+
+  const { mutateAsync: saveApiKeysAsync, isPending: isSavingApiKeys } =
+    useMutation({
+      mutationFn: async (payload: {
+        qdcApiKey?: string | null;
+        ifarmingApiKey?: string | null;
+      }) => {
+        return await updateCurrentUserWithBearer(payload);
+      },
+      onSuccess: async (_, variables) => {
+        await queryClient.invalidateQueries({ queryKey: ["users", "me"] });
+        toast.success("Credenziali API aggiornate");
+        if (variables.qdcApiKey !== undefined) {
+          setQdcOriginalValue(variables.qdcApiKey ?? "");
+          setEditingQdc(false);
+        }
+        if (variables.ifarmingApiKey !== undefined) {
+          setIfarmingOriginalValue(variables.ifarmingApiKey ?? "");
+          setEditingIfarming(false);
+        }
+      },
+      onError: (e: unknown) => {
+        const message = e instanceof Error ? e.message : "Update failed";
         toast.error(message);
       },
     });
@@ -569,6 +632,151 @@ export default function Settings() {
             >
               {isChangingPassword ? "Aggiornamento…" : "Cambia password"}
             </Button>
+          </div>
+        </Card>
+        <Card className="p-4 md:col-span-2 shadow-none">
+          <h2 className="font-medium mb-4">Credenziali API</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid gap-1.5">
+              <Label htmlFor="qdcApiKey">QDC API Key</Label>
+              <div className="flex items-center gap-2">
+                <img
+                  src="/image/qdc_logo.png"
+                  alt="QDC Logo"
+                  className="h-8 w-8 object-contain"
+                />
+                <Input
+                  id="qdcApiKey"
+                  type="password"
+                  placeholder={
+                    qdcApiKey === null
+                      ? "Inserisci credenziali"
+                      : undefined
+                  }
+                  value={editingQdc ? qdcValue : "••••••••••••••••"}
+                  readOnly={!editingQdc}
+                  disabled={!editingQdc}
+                  onChange={(e) => setQdcValue(e.target.value)}
+                  className={!editingQdc ? "pr-10" : ""}
+                />
+                {!editingQdc && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10"
+                    onClick={() => {
+                      const original = qdcApiKey ?? "";
+                      setEditingQdc(true);
+                      setQdcValue(original);
+                      setQdcOriginalValue(original);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+                {editingQdc && isQdcModified && (
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setQdcValue(qdcOriginalValue);
+                        if (qdcApiKey === null && qdcOriginalValue === "") {
+                          // Rimani in editing se era null e non c'era valore originale
+                        } else {
+                          setEditingQdc(false);
+                        }
+                      }}
+                    >
+                      Annulla
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={isSavingApiKeys}
+                      onClick={async () => {
+                        await saveApiKeysAsync({ qdcApiKey: qdcValue || null });
+                      }}
+                    >
+                      {isSavingApiKeys ? "Salvataggio…" : "Salva"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="ifarmingApiKey">iFarming API Key</Label>
+              <div className="flex items-center gap-2">
+                <img
+                  src="/image/ifarming_logo.png"
+                  alt="iFarming Logo"
+                  className="h-8 w-8 object-contain"
+                />
+                <Input
+                  id="ifarmingApiKey"
+                  type="password"
+                  placeholder={
+                    ifarmingApiKey === null
+                      ? "Inserisci credenziali"
+                      : undefined
+                  }
+                  value={editingIfarming ? ifarmingValue : "••••••••••••••••"}
+                  readOnly={!editingIfarming}
+                  disabled={!editingIfarming}
+                  onChange={(e) => setIfarmingValue(e.target.value)}
+                  className={!editingIfarming ? "pr-10" : ""}
+                />
+                {!editingIfarming && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10"
+                    onClick={() => {
+                      const original = ifarmingApiKey ?? "";
+                      setEditingIfarming(true);
+                      setIfarmingValue(original);
+                      setIfarmingOriginalValue(original);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+                {editingIfarming && isIfarmingModified && (
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIfarmingValue(ifarmingOriginalValue);
+                        if (ifarmingApiKey === null && ifarmingOriginalValue === "") {
+                          // Rimani in editing se era null e non c'era valore originale
+                        } else {
+                          setEditingIfarming(false);
+                        }
+                      }}
+                    >
+                      Annulla
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={isSavingApiKeys}
+                      onClick={async () => {
+                        await saveApiKeysAsync({
+                          ifarmingApiKey: ifarmingValue || null,
+                        });
+                      }}
+                    >
+                      {isSavingApiKeys ? "Salvataggio…" : "Salva"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </Card>
       </div>

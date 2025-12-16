@@ -85,12 +85,20 @@ export type Product = {
   registrationNumber: string | null;
 };
 
+export type Machine = {
+  id: string;
+  name: string;
+  identifier: string;
+  lastPositiveRevisionDate: string | null;
+};
+
 export type JobWithRelations = {
   job: Job;
   productionUnit: ProductionUnit;
   fields: Field[];
   company: Company;
   products: Product[];
+  machine: Machine | null;
 };
 
 export type GetJobsResponse = {
@@ -104,6 +112,7 @@ export type UpdateJobPayload = {
   isVerified?: boolean;
   quantity?: number;
   dateOfOpeation?: string;
+  machineId?: string | null;
 };
 
 export type UpdateJobResponse = {
