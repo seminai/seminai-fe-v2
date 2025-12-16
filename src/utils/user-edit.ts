@@ -55,7 +55,9 @@ export function diffEditable(
   (Object.keys(state.current) as (keyof UpdateCurrentUserRequest)[]).forEach(
     (k) => {
       if ((state.current[k] ?? "") !== (state.original[k] ?? "")) {
-        result[k] = state.current[k];
+        const value = state.current[k];
+        // Convert null to undefined to match the type
+        result[k] = value === null ? undefined : value;
       }
     }
   );

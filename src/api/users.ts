@@ -25,6 +25,8 @@ export type UsersMeResponse = {
   status: "success";
   data: {
     user: CurrentUser;
+    qdcApiKey: string | null;
+    ifarmingApiKey: string | null;
   };
 };
 
@@ -40,7 +42,10 @@ export type UpdateCurrentUserRequest = Partial<
     | "address"
     | "profilePictureUrl"
   >
->;
+> & {
+  qdcApiKey?: string | null;
+  ifarmingApiKey?: string | null;
+};
 
 export type UpdateCurrentUserResponse = UsersMeResponse;
 

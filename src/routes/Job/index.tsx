@@ -4,6 +4,8 @@ import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLabelsSummary } from "@/hooks/useLabelsSummary";
 import { useLabel } from "@/hooks/useLabel";
+import { machinesApiService, type Machine } from "@/api/machines";
+import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/organism/Header";
 import { userSettingsIndexDBManager } from "@/utils/userSettingsIndexDBManager";
 import {
@@ -1317,7 +1319,8 @@ class JobTableRowBuilder {
   }
 
   public build(): Record<string, unknown> {
-    const { job, productionUnit, company, fields } = this.jobWithRelations;
+    const { job, productionUnit, company, fields, machine } =
+      this.jobWithRelations;
 
     return {
       id: job.id,
@@ -1342,10 +1345,13 @@ class JobTableRowBuilder {
       isVerified: job.isVerified ? "Verificato" : "Non Verificato",
       stock: job.quantity,
       alertNotes: job.alertNotes ?? null,
+      machineName: machine?.name ?? "-",
+      machineId: machine?.id ?? null,
       _isVerifiedBoolean: job.isVerified,
       _originalStock: job.quantity,
       _originalQuantity: job.quantity,
       _originalDateOfOperation: new Date(job.dateOfOpeation),
+      _originalMachineId: machine?.id ?? null,
       _companyId: company.id,
       _productionUnitId: productionUnit.id,
       _history: job.history ?? [],
@@ -2022,6 +2028,54 @@ export default function JobPage() {
     );
   }, [selectedGroupJobs]);
 
+  // Trova tutte le company uniche dalle righe
+  const uniqueCompanyIds = useMemo(() => {
+    const companyIds = new Set<string>();
+    allGroupRows.forEach((row) => {
+      const companyId = row._companyId as string | undefined;
+      if (companyId) {
+        companyIds.add(companyId);
+      }
+    });
+    selectedGroupRows.forEach((row) => {
+      const companyId = row._companyId as string | undefined;
+      if (companyId) {
+        companyIds.add(companyId);
+      }
+    });
+    return Array.from(companyIds);
+  }, [allGroupRows, selectedGroupRows]);
+
+  // Carica le macchine per tutte le company uniche
+  const machinesQueries = useQuery({
+    queryKey: ["machines-by-companies", uniqueCompanyIds],
+    queryFn: async () => {
+      const machinesByCompany = new Map<string, Machine[]>();
+      await Promise.all(
+        uniqueCompanyIds.map(async (companyId) => {
+          try {
+            const machines = await machinesApiService.listByCompany(companyId);
+            machinesByCompany.set(companyId, machines);
+          } catch (error) {
+            console.error(
+              `Error loading machines for company ${companyId}:`,
+              error
+            );
+            machinesByCompany.set(companyId, []);
+          }
+        })
+      );
+      return machinesByCompany;
+    },
+    enabled: uniqueCompanyIds.length > 0,
+    staleTime: 1000 * 60 * 5, // 5 minuti
+    refetchOnWindowFocus: true,
+  });
+
+  const machinesByCompanyMap = useMemo(() => {
+    return machinesQueries.data ?? new Map<string, Machine[]>();
+  }, [machinesQueries.data]);
+
   // Indice del gruppo selezionato e navigazione tra gruppi
   const currentGroupIndex = useMemo(() => {
     if (!selectedGroupSummary) return -1;
@@ -2176,6 +2230,51 @@ export default function JobPage() {
       width: "200px",
       readOnly: true,
     },
+    {
+      id: "machineId",
+      title: "Macchina",
+      type: "select",
+      width: "200px",
+      readOnly: false,
+      getOptions: (rowData) => {
+        const companyId = rowData._companyId as string | undefined;
+        if (!companyId) {
+          return [];
+        }
+        const machines = machinesByCompanyMap.get(companyId) ?? [];
+        return machines.map((machine) => ({
+          label: machine.name,
+          value: machine.id,
+        }));
+      },
+      placeholder: "Seleziona macchina",
+      enableSearch: true,
+      searchPlaceholder: "Cerca macchina...",
+      emptyStateMessage: "Nessuna macchina disponibile",
+      noneOptionLabel: "Nessuna macchina",
+      onValueChange: ({ value, rowData }) => {
+        const companyId = rowData._companyId as string | undefined;
+        if (!companyId) {
+          return { machineId: null, machineName: "-" };
+        }
+        const machines = machinesByCompanyMap.get(companyId) ?? [];
+        const stringValue = String(value ?? "");
+        const selectedMachine = machines.find((m) => m.id === stringValue);
+        return {
+          machineId: stringValue && stringValue !== "" ? stringValue : null,
+          machineName: selectedMachine?.name ?? "-",
+        };
+      },
+      render: (_value, row) => {
+        const machineName = (row.machineName as string | undefined) ?? "-";
+        const label = machineName !== "-" ? machineName : "-";
+        return (
+          <span className={label === "-" ? "text-muted-foreground" : ""}>
+            {label}
+          </span>
+        );
+      },
+    },
   ];
 
   // Colonne semplificate per la vista review
@@ -2257,6 +2356,51 @@ export default function JobPage() {
       width: "200px",
       readOnly: true,
     },
+    {
+      id: "machineId",
+      title: "Macchina",
+      type: "select",
+      width: "150px",
+      readOnly: false,
+      getOptions: (rowData) => {
+        const companyId = rowData._companyId as string | undefined;
+        if (!companyId) {
+          return [];
+        }
+        const machines = machinesByCompanyMap.get(companyId) ?? [];
+        return machines.map((machine) => ({
+          label: machine.name,
+          value: machine.id,
+        }));
+      },
+      placeholder: "Seleziona macchina",
+      enableSearch: true,
+      searchPlaceholder: "Cerca macchina...",
+      emptyStateMessage: "Nessuna macchina disponibile",
+      noneOptionLabel: "Nessuna macchina",
+      onValueChange: ({ value, rowData }) => {
+        const companyId = rowData._companyId as string | undefined;
+        if (!companyId) {
+          return { machineId: null, machineName: "-" };
+        }
+        const machines = machinesByCompanyMap.get(companyId) ?? [];
+        const stringValue = String(value ?? "");
+        const selectedMachine = machines.find((m) => m.id === stringValue);
+        return {
+          machineId: stringValue && stringValue !== "" ? stringValue : null,
+          machineName: selectedMachine?.name ?? "-",
+        };
+      },
+      render: (_value, row) => {
+        const machineName = (row.machineName as string | undefined) ?? "-";
+        const label = machineName !== "-" ? machineName : "-";
+        return (
+          <span className={label === "-" ? "text-muted-foreground" : ""}>
+            {label}
+          </span>
+        );
+      },
+    },
   ];
 
   // Gestisce il salvataggio delle modifiche
@@ -2290,6 +2434,7 @@ export default function JobPage() {
           isVerified?: boolean;
           quantity?: number;
           dateOfOpeation?: string;
+          machineId?: string | null;
         } = {};
 
         // 1. Aggiorna lo stato di verifica se modificato
@@ -2310,6 +2455,15 @@ export default function JobPage() {
         ) {
           // Converti la data in formato ISO string per l'API
           updatePayload.dateOfOpeation = newDateOfOperation.toISOString();
+        }
+
+        // 4. Aggiorna la macchina se modificata
+        const newMachineId =
+          (row.machineId as string | null | undefined) ?? null;
+        const originalMachineId =
+          (row._originalMachineId as string | null | undefined) ?? null;
+        if (newMachineId !== originalMachineId) {
+          updatePayload.machineId = newMachineId;
         }
 
         // Esegui l'aggiornamento se ci sono modifiche

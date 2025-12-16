@@ -33,9 +33,7 @@ function useMachinesService() {
   return useMemo(() => machinesApiService, []);
 }
 
-export function useMachines(
-  companyId?: string
-): CompanyMachinesHookResult {
+export function useMachines(companyId?: string): CompanyMachinesHookResult {
   const queryClient = useQueryClient();
   const service = useMachinesService();
 
@@ -65,6 +63,10 @@ export function useMachines(
       await queryClient.invalidateQueries({
         queryKey: ["company-machines", companyId],
       });
+      // Invalida anche la query usata nella pagina Job
+      await queryClient.invalidateQueries({
+        queryKey: ["machines-by-companies"],
+      });
       toast.success("Macchine create correttamente");
     },
     onError: (error: unknown) => {
@@ -88,6 +90,10 @@ export function useMachines(
       await queryClient.invalidateQueries({
         queryKey: ["company-machines", companyId],
       });
+      // Invalida anche la query usata nella pagina Job
+      await queryClient.invalidateQueries({
+        queryKey: ["machines-by-companies"],
+      });
       toast.success("Macchina aggiornata correttamente");
     },
     onError: (error: unknown) => {
@@ -110,6 +116,10 @@ export function useMachines(
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["company-machines", companyId],
+      });
+      // Invalida anche la query usata nella pagina Job
+      await queryClient.invalidateQueries({
+        queryKey: ["machines-by-companies"],
       });
       toast.success("Macchine eliminate correttamente");
     },
@@ -145,4 +155,3 @@ export function useMachines(
     isDeleting: bulkDeleteMutation.isPending,
   };
 }
-

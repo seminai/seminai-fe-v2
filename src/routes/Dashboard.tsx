@@ -6,11 +6,12 @@ import { useProducts } from "@/hooks/useProducts";
 import { useLabelsSummary } from "@/hooks/useLabelsSummary";
 import { useMe, UserRole } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/organism/Header";
+import { Button } from "@/components/ui/button";
 import TasksAgriIcon from "@/components/icons/TasksAgriIcon";
 import BarnAgriIcon from "@/components/icons/BarnAgriIcon";
 import BottleAgriIcon from "@/components/icons/BottleAgriIcon";
 import TagAgriIcon from "@/components/icons/TagAgriIcon";
-import { IoChevronForwardOutline } from "react-icons/io5";
+import { IoChevronForwardOutline, IoAddCircleOutline } from "react-icons/io5";
 import { cn } from "@/lib/utils";
 import type { LabelSummary } from "@/api/labels";
 
@@ -173,10 +174,20 @@ function GeneralDashboard(): React.ReactElement {
 
   const isLoading = isLoadingJobs || isLoadingCompanies || isLoadingProducts;
 
+  const quickCreateButton = (
+    <Button
+      onClick={() => navigate("/create-company-field-production")}
+      className="gap-2"
+    >
+      <IoAddCircleOutline className="w-5 h-5" />
+      Crea Rapido
+    </Button>
+  );
+
   if (isLoading) {
     return (
       <div className="flex flex-col h-full overflow-hidden">
-        <PageHeader title="Dashboard" />
+        <PageHeader title="Dashboard" rightElement={quickCreateButton} />
 
         <div className="flex-1 overflow-auto p-6 ">
           <div className="max-w-7xl mx-auto">
@@ -189,7 +200,7 @@ function GeneralDashboard(): React.ReactElement {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <PageHeader title="Dashboard" />
+      <PageHeader title="Dashboard" rightElement={quickCreateButton} />
 
       <div className="flex-1 overflow-auto p-6 ">
         <div className="max-w-7xl mx-auto">
