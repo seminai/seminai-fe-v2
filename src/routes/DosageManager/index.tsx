@@ -1584,41 +1584,6 @@ export default function DosageManager() {
     });
   };
 
-  // Gestisce l'eliminazione dalla tabella editabile
-  const handleDeleteProducts = (
-    removed: Array<Record<string, unknown>>
-  ): void => {
-    const removedProducts = convertTableRowsToProducts(removed);
-    setProducts((prev) =>
-      prev.filter(
-        (p) =>
-          !removedProducts.some(
-            (r) =>
-              r.productName === p.productName &&
-              r.registrationNumber === p.registrationNumber
-          )
-      )
-    );
-    // Rimuovi anche le sorgenti dei prodotti eliminati
-    setProductSources((prevSources) => {
-      const updated = new Map(prevSources);
-      removedProducts.forEach((product) => {
-        const key = `${product.productName}-${product.registrationNumber}`;
-        updated.delete(key);
-      });
-      return updated;
-    });
-    // Rimuovi anche dalla selezione i prodotti eliminati
-    setSelectedProductIds((prev) => {
-      const removedIds = removedProducts.map(
-        (p) => `${p.productName}-${p.registrationNumber}`
-      );
-      return prev.filter((id) => !removedIds.includes(id));
-    });
-    toast.info("Prodotti rimossi", {
-      description: `${removed.length} prodotti eliminati`,
-    });
-  };
 
   // Converte i prodotti in formato per la tabella
   const productsAsRows = useMemo(() => {
