@@ -78,6 +78,7 @@ interface ManageSectionProps {
   handleUnitSelectionChange: (rows: Array<Record<string, unknown>>) => void;
   products: DosageProduct[];
   setProducts: Dispatch<SetStateAction<DosageProduct[]>>;
+  setSelectedProductIds: Dispatch<SetStateAction<string[]>>;
   setProductSources: Dispatch<
     SetStateAction<Map<string, "warehouse" | "csv" | "ddt">>
   >;
@@ -88,6 +89,7 @@ interface ManageSectionProps {
     updated: Array<Record<string, unknown>>;
   }) => void;
   handleDeleteProducts: (removed: Array<Record<string, unknown>>) => void;
+  handleProductSelectionChange: (rows: Array<Record<string, unknown>>) => void;
   handleAddRowsFromCsv: (rows: Array<Record<string, unknown>>) => void;
   handleAddRowsFromDdt: (rows: Array<Record<string, unknown>>) => void;
   handleImportFromWarehouse: () => void;
@@ -161,11 +163,13 @@ export function ManageSection({
   handleUnitSelectionChange,
   products,
   setProducts,
+  setSelectedProductIds,
   setProductSources,
   productColumns,
   productsAsRows,
   handleSaveProducts,
   handleDeleteProducts,
+  handleProductSelectionChange,
   handleAddRowsFromCsv,
   handleAddRowsFromDdt,
   handleImportFromWarehouse,
@@ -480,6 +484,7 @@ export function ManageSection({
                       onResetImportMethod();
                       setShowAutomaticCompilation(false);
                       setProducts([]);
+                      setSelectedProductIds([]);
                       setProductSources(new Map());
                     }}
                   >
@@ -506,7 +511,8 @@ export function ManageSection({
               addButton={true}
               createMode="inline"
               onSave={handleSaveProducts}
-              onDeleteSelected={handleDeleteProducts}
+              onSelectionChange={handleProductSelectionChange}
+              showDeleteAction={false}
               getRowId={(row, index) =>
                 `${row.productName}-${row.registrationNumber}-${index}`
               }
