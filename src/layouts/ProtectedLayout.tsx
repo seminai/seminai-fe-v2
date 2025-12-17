@@ -212,7 +212,7 @@ class ManageMenuController {
     },
     {
       key: "products",
-      label: "Prodotti",
+      label: "Magazzino",
       path: "/products",
       icon: BottleAgriIcon,
     },
@@ -412,7 +412,7 @@ function MobileManageMenu({
           {manageVisibility.products && (
             <DropdownMenuItem onClick={() => navigate("/products")}>
               <BottleAgriIcon className="size-4 mr-2" size={16} />
-              Prodotti
+              Magazzino
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -787,31 +787,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                   </Link>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
-                            )}
-
-                            {manageVisibility.productionUnit && (
-                              <SidebarMenuItem key="production-unit">
-                                <SidebarMenuButton
-                                  asChild
-                                  isActive={productionUnitActive}
-                                  tooltip="Unità Produttive"
-                                  size="lg"
-                                  className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
-                                >
-                                  <Link
-                                    to="/production-unit"
-                                    className="flex items-center gap-3"
-                                  >
-                                    <PlantGrowAgriIcon
-                                      className="size-5"
-                                      size={20}
-                                    />
-                                    <span>Unità Produttive</span>
-                                  </Link>
-                                </SidebarMenuButton>
-                              </SidebarMenuItem>
-                            )}
-
+                            )}{" "}
                             {manageVisibility.fields && (
                               <SidebarMenuItem key="fields">
                                 <SidebarMenuButton
@@ -834,13 +810,34 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
                             )}
-
+                            {manageVisibility.productionUnit && (
+                              <SidebarMenuItem key="production-unit">
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={productionUnitActive}
+                                  tooltip="Unità Produttive"
+                                  size="lg"
+                                  className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                                >
+                                  <Link
+                                    to="/production-unit"
+                                    className="flex items-center gap-3"
+                                  >
+                                    <PlantGrowAgriIcon
+                                      className="size-5"
+                                      size={20}
+                                    />
+                                    <span>Unità Produttive</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            )}
                             {manageVisibility.products && (
                               <SidebarMenuItem key="products">
                                 <SidebarMenuButton
                                   asChild
                                   isActive={productsActive}
-                                  tooltip="Prodotti"
+                                  tooltip="Magazzino"
                                   size="lg"
                                   className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
                                 >
@@ -852,7 +849,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                       className="size-5"
                                       size={20}
                                     />
-                                    <span>Prodotti</span>
+                                    <span>Magazzino</span>
                                   </Link>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
