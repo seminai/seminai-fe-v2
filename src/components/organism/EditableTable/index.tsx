@@ -2232,7 +2232,7 @@ export class EditableTable extends React.Component<
                     key={c.id}
                     data-slot="table-row"
                     className={cn(
-                      "transition-colors hover:bg-muted/10 border-agri-green-50",
+                      "transition-colors hover:bg-muted/30 border-agri-green-50",
                       colHasRequiredMissing && "bg-red-50/30"
                     )}
                   >
@@ -2273,7 +2273,7 @@ export class EditableTable extends React.Component<
                 <tr
                   data-slot="table-row"
                   className={cn(
-                    "transition-colors hover:bg-muted/10 border-agri-green-50"
+                    "transition-colors hover:bg-muted/30 border-agri-green-50"
                   )}
                 >
                   <td
@@ -2693,7 +2693,7 @@ export class EditableTable extends React.Component<
                     key={row.id}
                     data-slot="table-row"
                     className={cn(
-                      "transition-colors hover:bg-muted/10 border-agri-green-50",
+                      "transition-colors hover:bg-agri-green-50 border-agri-green-100",
                       rowHasRequiredMissing && "bg-red-50/30"
                     )}
                   >

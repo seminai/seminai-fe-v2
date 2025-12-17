@@ -1188,6 +1188,7 @@ export default function DosageManager() {
     "manage"
   );
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [products, setProducts] = useState<DosageProduct[]>([]);
   const [productSources, setProductSources] = useState<
     Map<string, "warehouse" | "csv" | "ddt">
@@ -1607,6 +1608,13 @@ export default function DosageManager() {
       });
       return updated;
     });
+    // Rimuovi anche dalla selezione i prodotti eliminati
+    setSelectedProductIds((prev) => {
+      const removedIds = removedProducts.map(
+        (p) => `${p.productName}-${p.registrationNumber}`
+      );
+      return prev.filter((id) => !removedIds.includes(id));
+    });
     toast.info("Prodotti rimossi", {
       description: `${removed.length} prodotti eliminati`,
     });
@@ -1956,6 +1964,23 @@ export default function DosageManager() {
     []
   );
 
+  const handleProductSelectionChange = useCallback(
+    (rows: Array<Record<string, unknown>>) => {
+      const ids = rows
+        .map((row) => {
+          const productName = row.productName as string | undefined;
+          const registrationNumber = row.registrationNumber as string | undefined;
+          if (productName && registrationNumber) {
+            return `${productName}-${registrationNumber}`;
+          }
+          return null;
+        })
+        .filter((id): id is string => Boolean(id));
+      setSelectedProductIds(ids);
+    },
+    []
+  );
+
   const handleActiveJobsSelectionChange = useCallback(
     (rows: Array<Record<string, unknown>>) => {
       const ids = rows.map((row) => ActiveJobsTableRowBuilder.extractId(row));
@@ -2082,7 +2107,7 @@ export default function DosageManager() {
   }, [companies, selectedCompanyIds]);
 
   const selectedUnitsCount = selectedUnitIds.length;
-  const selectedProductsCount = products.length;
+  const selectedProductsCount = selectedProductIds.length;
   const isCalculateDisabled =
     isSubmitting || selectedProductsCount === 0 || selectedUnitsCount === 0;
 
@@ -2106,6 +2131,20 @@ export default function DosageManager() {
   useEffect(() => {
     setOutStockLimiter(defaultOutStockLimiter);
   }, [defaultOutStockLimiter]);
+
+  // Sincronizza selectedProductIds quando i prodotti vengono rimossi
+  useEffect(() => {
+    setSelectedProductIds((prev) => {
+      return prev.filter((productId) => {
+        const [productName, registrationNumber] = productId.split("-", 2);
+        return products.some(
+          (p) =>
+            p.productName === productName &&
+            p.registrationNumber === registrationNumber
+        );
+      });
+    });
+  }, [products]);
 
   const selectionSummary = useMemo(() => {
     const unitLabel =
@@ -2308,9 +2347,9 @@ export default function DosageManager() {
   }, [handleCancelJobs, isCancellingJobs, selectedActiveJobIds]);
 
   const handleCalculateDosages = async () => {
-    if (products.length === 0) {
-      toast.error("Nessun prodotto caricato", {
-        description: "Importa almeno un prodotto prima di calcolare i dosaggi",
+    if (selectedProductIds.length === 0) {
+      toast.error("Nessun prodotto selezionato", {
+        description: "Seleziona almeno un prodotto prima di calcolare i dosaggi",
       });
       return;
     }
@@ -2326,6 +2365,12 @@ export default function DosageManager() {
     setIsSubmitting(true);
 
     try {
+      // Filter products to only include selected ones
+      const selectedProducts = products.filter((product) => {
+        const productId = `${product.productName}-${product.registrationNumber}`;
+        return selectedProductIds.includes(productId);
+      });
+
       // Prepare units of production
       const unitsOfProduction: DosageUnitOfProduction[] = selectedUnits.map(
         (unit) => ({
@@ -2351,7 +2396,7 @@ export default function DosageManager() {
 
       // Start job
       const response = await dosageAgentApiService.startJob({
-        products,
+        products: selectedProducts,
         unitOfProduction: unitsOfProduction,
         strategy,
         outStockLimiter,
@@ -2379,6 +2424,7 @@ export default function DosageManager() {
       setOutStockLimiter(true);
       setOrchestratorSettings(OrchestratorDefaultsFactory.create());
       setSelectedUnitIds([]);
+      setSelectedProductIds([]);
       setSearchQuery("");
     } catch (error) {
       toast.error("Errore durante l'avvio del calcolo", {
@@ -2458,11 +2504,13 @@ export default function DosageManager() {
             handleUnitSelectionChange={handleUnitSelectionChange}
             products={products}
             setProducts={setProducts}
+            setSelectedProductIds={setSelectedProductIds}
             setProductSources={setProductSources}
             productColumns={productColumns}
             productsAsRows={productsAsRows}
             handleSaveProducts={handleSaveProducts}
             handleDeleteProducts={handleDeleteProducts}
+            handleProductSelectionChange={handleProductSelectionChange}
             handleAddRowsFromCsv={handleAddRowsFromCsv}
             handleAddRowsFromDdt={handleAddRowsFromDdt}
             handleImportFromWarehouse={handleImportFromWarehouse}
