@@ -72,6 +72,8 @@ export type StartDosageJobRequest = {
   strategy: DosageStrategy;
   outStockLimiter: boolean;
   orchestrator?: DosageOrchestratorSettings;
+  startAt?: string;
+  endAt?: string;
 };
 
 export type StartDosageJobResponse = {

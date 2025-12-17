@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useProducts } from "@/hooks/useProducts";
@@ -1173,6 +1174,7 @@ function LiveLogEventCard({ event }: { event: DosageLogEvent }): ReactElement {
 }
 
 export default function DosageManager() {
+  const queryClient = useQueryClient();
   const { state: sidebarState, isMobile } = useSidebar();
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([]);
   const { companies } = useCompanies();
@@ -1205,6 +1207,8 @@ export default function DosageManager() {
     );
   const [orchestratorDatasets, setOrchestratorDatasets] =
     useState<OrchestratorDatasets | null>(null);
+  const [startAt, setStartAt] = useState<string>("");
+  const [endAt, setEndAt] = useState<string>("");
 
   const editableTableRef = useRef<EditableTable>(null);
 
@@ -1224,6 +1228,8 @@ export default function DosageManager() {
   const [labelError, setLabelError] = useState<string | null>(null);
   const [isLabelLoading, setIsLabelLoading] = useState(false);
   const labelRequestId = useRef(0);
+  const [isImportingFromWarehouse, setIsImportingFromWarehouse] =
+    useState(false);
 
   const footerRef = useRef<HTMLDivElement | null>(null);
   const [footerHeight, setFooterHeight] = useState<number>(0);
@@ -1303,13 +1309,44 @@ export default function DosageManager() {
   const isHistoryPage = currentPage === "history";
   const fetchJobsFromApi = useCallback(async () => {
     try {
+      const previousJobs = jobs;
       const response = await dosageAgentApiService.listJobs();
       const normalized = response.data.map(normalizeJob);
       setJobs(normalized);
+
+      // Verifica se qualche job è passato da active a completed
+      // e invalida la cache di React Query per i job groups
+      // Solo se ci sono job precedenti e almeno un job è stato completato
+      if (previousJobs.length > 0 && normalized.length > 0) {
+        const hasJobCompleted = normalized.some((newJob) => {
+          const oldJob = previousJobs.find((j) => j.id === newJob.id);
+          if (!oldJob) return false;
+          const wasActive =
+            oldJob.state === "queued" ||
+            oldJob.state === "waiting" ||
+            oldJob.state === "active" ||
+            oldJob.state === "delayed";
+          const isNowCompleted = newJob.state === "completed";
+          return wasActive && isNowCompleted;
+        });
+
+        if (hasJobCompleted) {
+          // Invalida la cache per i job groups quando un job viene completato
+          // Non fa refetch automatico, solo marca come stale
+          queryClient.invalidateQueries({
+            queryKey: ["job-groups-summary"],
+            refetchType: "none", // Non fare refetch automatico
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["job-group-detail"],
+            refetchType: "none", // Non fare refetch automatico
+          });
+        }
+      }
     } catch (error) {
       console.error("Failed to load dosage jobs", error);
     }
-  }, []);
+  }, [jobs, queryClient]);
 
   useEffect(() => {
     const loader = new OrchestratorDatasetsLoader();
@@ -1504,9 +1541,16 @@ export default function DosageManager() {
       if (!editableTableRef.current) {
         return;
       }
-      editableTableRef.current.addRows(rows);
+      // Se la sorgente è DDT, imposta loadWarehouse a false
+      const rowsWithLoadWarehouse = rows.map((row) => {
+        if (source === "ddt") {
+          return { ...row, loadWarehouse: false };
+        }
+        return row;
+      });
+      editableTableRef.current.addRows(rowsWithLoadWarehouse);
       // Aggiorna anche lo stato dei prodotti per mantenere la sincronizzazione
-      const newProducts = convertTableRowsToProducts(rows);
+      const newProducts = convertTableRowsToProducts(rowsWithLoadWarehouse);
       setProducts((prev) => {
         const existingIds = new Set(
           prev.map((p) => `${p.productName}-${p.registrationNumber}`)
@@ -1795,10 +1839,11 @@ export default function DosageManager() {
     return `${selectedActiveJobIds.length} job selezionati`;
   }, [selectedActiveJobIds]);
 
-  // Load jobs from IndexedDB on mount
+  // Load jobs from API on mount - solo una volta
   useEffect(() => {
     void fetchJobsFromApi();
-  }, [fetchJobsFromApi]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo al mount, non quando fetchJobsFromApi cambia
 
   // Poll active jobs
   useEffect(() => {
@@ -1955,7 +2000,7 @@ export default function DosageManager() {
   );
 
   const handleImportFromWarehouse = useCallback(async () => {
-    if (isWarehouseProductsLoading) {
+    if (isWarehouseProductsLoading || isImportingFromWarehouse) {
       return;
     }
 
@@ -1987,26 +2032,50 @@ export default function DosageManager() {
       return;
     }
 
+    setIsImportingFromWarehouse(true);
+    const toastId = toast.loading("Caricamento prodotti da magazzino...", {
+      description: "Elaborazione in corso...",
+    });
+
     let mappedProducts: DosageProduct[] = [];
     try {
+      toast.loading("Recupero prodotti dal magazzino...", {
+        id: toastId,
+        description: `Analisi di ${companyProducts.length} prodotti...`,
+      });
+
       mappedProducts = await WarehouseProductsMapper.toDosageProducts(
         companyProducts
       );
+
+      toast.loading("Elaborazione prodotti...", {
+        id: toastId,
+        description: `Elaborazione di ${mappedProducts.length} prodotti...`,
+      });
     } catch (error) {
       console.error("Failed to import warehouse products:", error);
       toast.error("Importazione dal magazzino non riuscita", {
+        id: toastId,
         description:
           error instanceof Error ? error.message : "Riprova più tardi.",
       });
+      setIsImportingFromWarehouse(false);
       return;
     }
 
     if (mappedProducts.length === 0) {
       toast.info("Nessun prodotto importabile", {
+        id: toastId,
         description: "I prodotti disponibili non hanno quantità valide.",
       });
+      setIsImportingFromWarehouse(false);
       return;
     }
+
+    toast.loading("Aggiunta prodotti alla tabella...", {
+      id: toastId,
+      description: `Aggiunta di ${mappedProducts.length} prodotti...`,
+    });
 
     let importedCount = 0;
     setProducts((prev) => {
@@ -2036,8 +2105,11 @@ export default function DosageManager() {
       return [...prev, ...uniqueProducts];
     });
 
+    setIsImportingFromWarehouse(false);
+
     if (importedCount === 0) {
       toast.info("Tutti i prodotti di magazzino sono già presenti", {
+        id: toastId,
         description:
           "Rimuovi quelli non necessari oppure aggiorna il magazzino.",
       });
@@ -2045,9 +2117,15 @@ export default function DosageManager() {
     }
 
     toast.success("Prodotti importati dal magazzino", {
+      id: toastId,
       description: `${importedCount} prodotti aggiunti alla tabella`,
     });
-  }, [isWarehouseProductsLoading, warehouseInventory, selectedCompanyIds]);
+  }, [
+    isWarehouseProductsLoading,
+    isImportingFromWarehouse,
+    warehouseInventory,
+    selectedCompanyIds,
+  ]);
 
   const handleSelectImportMethod = useCallback((method: ImportMethod) => {
     setSelectedImportMethod((current) => {
@@ -2327,6 +2405,58 @@ export default function DosageManager() {
       return;
     }
 
+    // Validate date range against selected units
+    if (startAt || endAt) {
+      const startDates = selectedUnits
+        .map((unit) => unit.productionUnit.startDate)
+        .filter((date): date is string => Boolean(date));
+
+      if (startDates.length === 0) {
+        toast.error("Date non valide", {
+          description:
+            "Le unità produttive selezionate non hanno date di inizio valide",
+        });
+        return;
+      }
+
+      const minDate = startDates.reduce((earliest, current) => {
+        return current < earliest ? current : earliest;
+      }, startDates[0]);
+
+      const endDates = selectedUnits
+        .map((unit) => unit.productionUnit.endDate)
+        .filter((date): date is string => Boolean(date));
+
+      const maxDate =
+        endDates.length > 0
+          ? endDates.reduce((latest, current) => {
+              return current > latest ? current : latest;
+            }, endDates[0])
+          : undefined;
+
+      if (startAt && startAt < minDate) {
+        toast.error("Data inizio non valida", {
+          description: `La data di inizio non può essere prima del ${new Date(minDate).toLocaleDateString("it-IT")}`,
+        });
+        return;
+      }
+
+      if (endAt) {
+        if (maxDate && endAt > maxDate) {
+          toast.error("Data fine non valida", {
+            description: `La data di fine non può essere dopo il ${new Date(maxDate).toLocaleDateString("it-IT")}`,
+          });
+          return;
+        }
+        if (startAt && endAt < startAt) {
+          toast.error("Date non valide", {
+            description: "La data di fine non può essere prima della data di inizio",
+          });
+          return;
+        }
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -2359,8 +2489,10 @@ export default function DosageManager() {
         })
       );
 
-      // Start job
-      const response = await dosageAgentApiService.startJob({
+      // Prepare request payload
+      const requestPayload: Parameters<
+        typeof dosageAgentApiService.startJob
+      >[0] = {
         products: selectedProducts,
         unitOfProduction: unitsOfProduction,
         strategy,
@@ -2369,12 +2501,34 @@ export default function DosageManager() {
           orchestratorSettings,
           orchestratorDatasets
         ),
-      });
+      };
+
+      // Add optional date fields if provided
+      if (startAt) {
+        requestPayload.startAt = startAt;
+      }
+      if (endAt) {
+        requestPayload.endAt = endAt;
+      }
+
+      // Start job
+      const response = await dosageAgentApiService.startJob(requestPayload);
 
       const jobId = response.data.jobId;
 
       // Reload jobs from API
       await fetchJobsFromApi();
+
+      // Invalida la cache di React Query per i job groups quando si avvia un nuovo job
+      // Non fa refetch automatico, solo marca come stale
+      queryClient.invalidateQueries({
+        queryKey: ["job-groups-summary"],
+        refetchType: "none", // Non fare refetch automatico
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["job-group-detail"],
+        refetchType: "none", // Non fare refetch automatico
+      });
 
       toast.success("Calcolo dosaggi avviato", {
         description: `Job ID: ${jobId}`,
@@ -2391,6 +2545,8 @@ export default function DosageManager() {
       setSelectedUnitIds([]);
       setSelectedProductIds([]);
       setSearchQuery("");
+      setStartAt("");
+      setEndAt("");
     } catch (error) {
       toast.error("Errore durante l'avvio del calcolo", {
         description:
@@ -2479,6 +2635,7 @@ export default function DosageManager() {
             handleAddRowsFromDdt={handleAddRowsFromDdt}
             handleImportFromWarehouse={handleImportFromWarehouse}
             isWarehouseProductsLoading={isWarehouseProductsLoading}
+            isImportingFromWarehouse={isImportingFromWarehouse}
             handleRegistryProductSelected={handleRegistryProductSelected}
             renderProductLabelAction={renderProductLabelAction}
             strategy={strategy}
@@ -2497,6 +2654,10 @@ export default function DosageManager() {
             selectedImportMethod={selectedImportMethod}
             onSelectImportMethod={handleSelectImportMethod}
             onResetImportMethod={handleResetImportMethod}
+            startAt={startAt}
+            setStartAt={setStartAt}
+            endAt={endAt}
+            setEndAt={setEndAt}
           />
         ) : (
           <HistorySection
