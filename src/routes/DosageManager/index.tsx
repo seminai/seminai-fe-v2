@@ -2509,7 +2509,6 @@ export default function DosageManager() {
             productColumns={productColumns}
             productsAsRows={productsAsRows}
             handleSaveProducts={handleSaveProducts}
-            handleDeleteProducts={handleDeleteProducts}
             handleProductSelectionChange={handleProductSelectionChange}
             handleAddRowsFromCsv={handleAddRowsFromCsv}
             handleAddRowsFromDdt={handleAddRowsFromDdt}
