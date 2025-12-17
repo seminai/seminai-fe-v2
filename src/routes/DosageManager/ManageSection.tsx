@@ -363,44 +363,31 @@ export function ManageSection({
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                {" "}
                 {(!selectedImportMethod ||
                   ImportMethodPolicy.isSelected(
                     selectedImportMethod,
-                    "csv"
+                    "registry"
                   )) && (
-                  <ImportProducts
-                    onAddRows={handleAddRowsFromCsv}
-                    onProductsChange={setProducts}
+                  <Button
+                    variant={showAutomaticCompilation ? "default" : "outline"}
+                    className="gap-2"
+                    onClick={() => {
+                      onSelectImportMethod("registry");
+                      setShowAutomaticCompilation((prev) => !prev);
+                    }}
                     disabled={
                       !!selectedImportMethod &&
                       !ImportMethodPolicy.isSelected(
                         selectedImportMethod,
-                        "csv"
+                        "registry"
                       )
                     }
-                    onSelectImportMethod={() => onSelectImportMethod("csv")}
-                  />
-                )}
-
-                {(!selectedImportMethod ||
-                  ImportMethodPolicy.isSelected(
-                    selectedImportMethod,
-                    "ddt"
-                  )) && (
-                  <ImportProductsFromDdt
-                    onAddRows={handleAddRowsFromDdt}
-                    onProductsChange={setProducts}
-                    disabled={
-                      !!selectedImportMethod &&
-                      !ImportMethodPolicy.isSelected(
-                        selectedImportMethod,
-                        "ddt"
-                      )
-                    }
-                    onSelectImportMethod={() => onSelectImportMethod("ddt")}
-                  />
-                )}
-
+                  >
+                    <Upload className="h-4 w-4" />
+                    <span>Importa prodotti</span>
+                  </Button>
+                )}{" "}
                 {(!selectedImportMethod ||
                   ImportMethodPolicy.isSelected(
                     selectedImportMethod,
@@ -448,32 +435,42 @@ export function ManageSection({
                     )}
                   </Button>
                 )}
-
                 {(!selectedImportMethod ||
                   ImportMethodPolicy.isSelected(
                     selectedImportMethod,
-                    "registry"
+                    "csv"
                   )) && (
-                  <Button
-                    variant={showAutomaticCompilation ? "default" : "outline"}
-                    className="gap-2"
-                    onClick={() => {
-                      onSelectImportMethod("registry");
-                      setShowAutomaticCompilation((prev) => !prev);
-                    }}
+                  <ImportProducts
+                    onAddRows={handleAddRowsFromCsv}
+                    onProductsChange={setProducts}
                     disabled={
                       !!selectedImportMethod &&
                       !ImportMethodPolicy.isSelected(
                         selectedImportMethod,
-                        "registry"
+                        "csv"
                       )
                     }
-                  >
-                    <Upload className="h-4 w-4" />
-                    <span>Importa prodotti</span>
-                  </Button>
+                    onSelectImportMethod={() => onSelectImportMethod("csv")}
+                  />
                 )}
-
+                {(!selectedImportMethod ||
+                  ImportMethodPolicy.isSelected(
+                    selectedImportMethod,
+                    "ddt"
+                  )) && (
+                  <ImportProductsFromDdt
+                    onAddRows={handleAddRowsFromDdt}
+                    onProductsChange={setProducts}
+                    disabled={
+                      !!selectedImportMethod &&
+                      !ImportMethodPolicy.isSelected(
+                        selectedImportMethod,
+                        "ddt"
+                      )
+                    }
+                    onSelectImportMethod={() => onSelectImportMethod("ddt")}
+                  />
+                )}
                 {selectedImportMethod && (
                   <Button
                     variant="ghost"
