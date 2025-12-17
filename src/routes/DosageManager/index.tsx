@@ -1524,7 +1524,7 @@ export default function DosageManager() {
         quantity: Number(row.quantity) || 0,
         quantityUnitOfMeasure: String(row.quantityUnitOfMeasure || ""),
         loadWarehouse:
-          typeof row.loadWarehouse === "boolean" ? row.loadWarehouse : true,
+          typeof row.loadWarehouse === "boolean" ? row.loadWarehouse : false,
         supplierName: row.supplierName ? String(row.supplierName) : undefined,
         supplierVat: row.supplierVat ? String(row.supplierVat) : undefined,
       }));
@@ -1541,9 +1541,9 @@ export default function DosageManager() {
       if (!editableTableRef.current) {
         return;
       }
-      // Se la sorgente è DDT, imposta loadWarehouse a false
+      // Se la sorgente è DDT o CSV, imposta loadWarehouse a false
       const rowsWithLoadWarehouse = rows.map((row) => {
-        if (source === "ddt") {
+        if (source === "ddt" || source === "csv") {
           return { ...row, loadWarehouse: false };
         }
         return row;
@@ -1627,7 +1627,6 @@ export default function DosageManager() {
       description: `${payload.created.length} creati, ${payload.updated.length} aggiornati`,
     });
   };
-
 
   // Converte i prodotti in formato per la tabella
   const productsAsRows = useMemo(() => {
@@ -1979,7 +1978,9 @@ export default function DosageManager() {
       const ids = rows
         .map((row) => {
           const productName = row.productName as string | undefined;
-          const registrationNumber = row.registrationNumber as string | undefined;
+          const registrationNumber = row.registrationNumber as
+            | string
+            | undefined;
           if (productName && registrationNumber) {
             return `${productName}-${registrationNumber}`;
           }
@@ -2392,7 +2393,8 @@ export default function DosageManager() {
   const handleCalculateDosages = async () => {
     if (selectedProductIds.length === 0) {
       toast.error("Nessun prodotto selezionato", {
-        description: "Seleziona almeno un prodotto prima di calcolare i dosaggi",
+        description:
+          "Seleziona almeno un prodotto prima di calcolare i dosaggi",
       });
       return;
     }
@@ -2436,7 +2438,9 @@ export default function DosageManager() {
 
       if (startAt && startAt < minDate) {
         toast.error("Data inizio non valida", {
-          description: `La data di inizio non può essere prima del ${new Date(minDate).toLocaleDateString("it-IT")}`,
+          description: `La data di inizio non può essere prima del ${new Date(
+            minDate
+          ).toLocaleDateString("it-IT")}`,
         });
         return;
       }
@@ -2444,13 +2448,16 @@ export default function DosageManager() {
       if (endAt) {
         if (maxDate && endAt > maxDate) {
           toast.error("Data fine non valida", {
-            description: `La data di fine non può essere dopo il ${new Date(maxDate).toLocaleDateString("it-IT")}`,
+            description: `La data di fine non può essere dopo il ${new Date(
+              maxDate
+            ).toLocaleDateString("it-IT")}`,
           });
           return;
         }
         if (startAt && endAt < startAt) {
           toast.error("Date non valide", {
-            description: "La data di fine non può essere prima della data di inizio",
+            description:
+              "La data di fine non può essere prima della data di inizio",
           });
           return;
         }
