@@ -30,11 +30,13 @@ import {
   type EditableColumn,
 } from "@/components/organism/EditableTable";
 import {
+  Calendar,
   ChevronDown,
   ChevronUp,
   Loader2,
   Lock,
   Package,
+  Settings,
   Upload,
   X,
 } from "lucide-react";
@@ -93,6 +95,7 @@ interface ManageSectionProps {
   handleAddRowsFromDdt: (rows: Array<Record<string, unknown>>) => void;
   handleImportFromWarehouse: () => void;
   isWarehouseProductsLoading: boolean;
+  isImportingFromWarehouse: boolean;
   handleRegistryProductSelected: (record: FitosanitariDatasetRecord) => void;
   renderProductLabelAction: (row: Record<string, unknown>) => ReactElement;
   editableTableRef: RefObject<EditableTable | null>;
@@ -117,6 +120,10 @@ interface ManageSectionProps {
   selectedImportMethod: ImportMethod | null;
   onSelectImportMethod: (method: ImportMethod) => void;
   onResetImportMethod: () => void;
+  startAt: string;
+  setStartAt: Dispatch<SetStateAction<string>>;
+  endAt: string;
+  setEndAt: Dispatch<SetStateAction<string>>;
 }
 
 class OrchestratorCategoryPriorityList {
@@ -152,6 +159,7 @@ export function ManageSection({
   companies,
   selectedCompanyIds,
   setSelectedCompanyIds,
+  selectedUnitIds,
   setSelectedUnitIds,
   searchQuery,
   setSearchQuery,
@@ -172,6 +180,7 @@ export function ManageSection({
   handleAddRowsFromDdt,
   handleImportFromWarehouse,
   isWarehouseProductsLoading,
+  isImportingFromWarehouse,
   handleRegistryProductSelected,
   renderProductLabelAction,
   editableTableRef,
@@ -188,6 +197,10 @@ export function ManageSection({
   selectedImportMethod,
   onSelectImportMethod,
   onResetImportMethod,
+  startAt,
+  setStartAt,
+  endAt,
+  setEndAt,
 }: ManageSectionProps): ReactElement {
   const [showMaxLimits, setShowMaxLimits] = useState(false);
   const [showAutomaticCompilation, setShowAutomaticCompilation] =
@@ -208,6 +221,48 @@ export function ManageSection({
       })),
     [orchestratorDatasets]
   );
+
+  // Calculate valid date range from selected production units
+  const validDateRange = useMemo(() => {
+    if (selectedUnitIds.length === 0) {
+      return { minDate: undefined, maxDate: undefined };
+    }
+
+    const selectedUnits = filteredUnits.filter((unit) =>
+      selectedUnitIds.includes(unit.productionUnit.id)
+    );
+
+    if (selectedUnits.length === 0) {
+      return { minDate: undefined, maxDate: undefined };
+    }
+
+    // Find the earliest startDate
+    const startDates = selectedUnits
+      .map((unit) => unit.productionUnit.startDate)
+      .filter((date): date is string => Boolean(date));
+
+    if (startDates.length === 0) {
+      return { minDate: undefined, maxDate: undefined };
+    }
+
+    const minDate = startDates.reduce((earliest, current) => {
+      return current < earliest ? current : earliest;
+    }, startDates[0]);
+
+    // Find the latest endDate (if any)
+    const endDates = selectedUnits
+      .map((unit) => unit.productionUnit.endDate)
+      .filter((date): date is string => Boolean(date));
+
+    const maxDate =
+      endDates.length > 0
+        ? endDates.reduce((latest, current) => {
+            return current > latest ? current : latest;
+          }, endDates[0])
+        : undefined;
+
+    return { minDate, maxDate };
+  }, [selectedUnitIds, filteredUnits]);
 
   const targetOptions = useMemo<MultiSearchableSelectOption[]>(
     () =>
@@ -260,6 +315,9 @@ export function ManageSection({
               setOutStockLimiter(true);
               // Reset orchestrator ai valori di default
               setOrchestratorSettings(OrchestratorDefaultsFactory.create());
+              // Reset date di trattamento
+              setStartAt("");
+              setEndAt("");
             }}
           />
         </div>
@@ -402,6 +460,7 @@ export function ManageSection({
                     }}
                     disabled={
                       isWarehouseProductsLoading ||
+                      isImportingFromWarehouse ||
                       selectedCompanyIds.length === 0 ||
                       (!!selectedImportMethod &&
                         !ImportMethodPolicy.isSelected(
@@ -417,10 +476,14 @@ export function ManageSection({
                         : "Importa prodotti dal magazzino dell'azienda selezionata"
                     }
                   >
-                    {isWarehouseProductsLoading ? (
+                    {isWarehouseProductsLoading || isImportingFromWarehouse ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Importazione...</span>
+                        <span>
+                          {isImportingFromWarehouse
+                            ? "Importazione in corso..."
+                            : "Caricamento..."}
+                        </span>
                       </>
                     ) : (
                       <>
@@ -602,6 +665,164 @@ export function ManageSection({
           </div>
         </div>
 
+        {/* Treatment Dates Section - Between stock protection and orchestrator */}
+        {selectedUnitIds.length > 0 && (
+          <div
+            className={
+              selectedCompanyIds.length > 0
+                ? "rounded-2xl border border-neutral-200 bg-white"
+                : "rounded-2xl border border-neutral-200 bg-white pointer-events-none opacity-50"
+            }
+          >
+            <Accordion type="single" collapsible>
+              <AccordionItem value="treatment-dates" className="border-0">
+                <AccordionTrigger className="px-4 md:px-6">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-5 w-5 text-neutral-600 flex-shrink-0" />
+                    <div className="flex flex-col">
+                      <span className="text-base font-medium text-neutral-900">
+                        Periodo di trattamento (opzionale)
+                      </span>
+                      <span className="text-sm text-neutral-500">
+                        Specifica il periodo di inizio e fine per l'applicazione
+                        dei trattamenti
+                      </span>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 md:px-6">
+                  <div className="space-y-4">
+                    <p className="text-sm text-neutral-600">
+                      Se non specificato, verrà utilizzato l'intero periodo di
+                      produzione.
+                    </p>
+                    {validDateRange.minDate && (
+                      <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+                        <p className="text-xs font-medium text-blue-900">
+                          Range valido: dal{" "}
+                          {new Date(validDateRange.minDate).toLocaleDateString(
+                            "it-IT"
+                          )}
+                          {validDateRange.maxDate
+                            ? ` al ${new Date(
+                                validDateRange.maxDate
+                              ).toLocaleDateString("it-IT")}`
+                            : " in poi"}
+                        </p>
+                        <p className="text-xs text-blue-700 mt-1">
+                          Il periodo deve essere compreso tra la prima data di
+                          inizio e l'ultima data di fine delle unità produttive
+                          selezionate.
+                        </p>
+                      </div>
+                    )}
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="startAt"
+                          className="text-sm font-medium text-neutral-900"
+                        >
+                          Data inizio trattamenti
+                        </Label>
+                        <Input
+                          id="startAt"
+                          type="date"
+                          value={startAt}
+                          onChange={(e) => {
+                            const newStartAt = e.target.value;
+                            setStartAt(newStartAt);
+                            // Se la data fine è prima della nuova data inizio, resettala
+                            if (endAt && newStartAt && endAt < newStartAt) {
+                              setEndAt("");
+                            }
+                          }}
+                          className="bg-white"
+                          placeholder="Seleziona data inizio"
+                          min={validDateRange.minDate}
+                          max={validDateRange.maxDate}
+                        />
+                        <p className="text-xs text-neutral-500">
+                          Data di inizio del periodo di trattamento
+                        </p>
+                        {startAt &&
+                          validDateRange.minDate &&
+                          startAt < validDateRange.minDate && (
+                            <p className="text-xs text-red-600">
+                              La data non può essere prima del{" "}
+                              {new Date(
+                                validDateRange.minDate
+                              ).toLocaleDateString("it-IT")}
+                            </p>
+                          )}
+                        {startAt &&
+                          validDateRange.maxDate &&
+                          startAt > validDateRange.maxDate && (
+                            <p className="text-xs text-red-600">
+                              La data non può essere dopo il{" "}
+                              {new Date(
+                                validDateRange.maxDate
+                              ).toLocaleDateString("it-IT")}
+                            </p>
+                          )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="endAt"
+                          className="text-sm font-medium text-neutral-900"
+                        >
+                          Data fine trattamenti
+                        </Label>
+                        <Input
+                          id="endAt"
+                          type="date"
+                          value={endAt}
+                          onChange={(e) => setEndAt(e.target.value)}
+                          className="bg-white"
+                          placeholder="Seleziona data fine"
+                          min={
+                            startAt && startAt >= (validDateRange.minDate || "")
+                              ? startAt
+                              : validDateRange.minDate
+                          }
+                          max={validDateRange.maxDate}
+                        />
+                        <p className="text-xs text-neutral-500">
+                          Data di fine del periodo di trattamento
+                        </p>
+                        {endAt &&
+                          validDateRange.minDate &&
+                          endAt < validDateRange.minDate && (
+                            <p className="text-xs text-red-600">
+                              La data non può essere prima del{" "}
+                              {new Date(
+                                validDateRange.minDate
+                              ).toLocaleDateString("it-IT")}
+                            </p>
+                          )}
+                        {endAt &&
+                          validDateRange.maxDate &&
+                          endAt > validDateRange.maxDate && (
+                            <p className="text-xs text-red-600">
+                              La data non può essere dopo il{" "}
+                              {new Date(
+                                validDateRange.maxDate
+                              ).toLocaleDateString("it-IT")}
+                            </p>
+                          )}
+                        {endAt && startAt && endAt < startAt && (
+                          <p className="text-xs text-red-600">
+                            La data fine non può essere prima della data inizio
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+        )}
+
         {/* Orchestrator Section */}
         <div
           className={
@@ -610,17 +831,20 @@ export function ManageSection({
               : "rounded-2xl border border-neutral-200 bg-white pointer-events-none opacity-50"
           }
         >
-          <Accordion type="single" collapsible defaultValue="orchestrator">
+          <Accordion type="single" collapsible>
             <AccordionItem value="orchestrator" className="border-0">
               <AccordionTrigger className="px-4 md:px-6">
-                <div className="flex flex-col">
-                  <span className="text-base font-medium text-neutral-900">
-                    Parametri strategia
-                  </span>
-                  <span className="text-sm text-neutral-500">
-                    Impostazioni avanzate per ottimizzare selezione e
-                    pianificazione
-                  </span>
+                <div className="flex items-center gap-3">
+                  <Settings className="h-5 w-5 text-neutral-600 flex-shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="text-base font-medium text-neutral-900">
+                      Parametri strategia
+                    </span>
+                    <span className="text-sm text-neutral-500">
+                      Impostazioni avanzate per ottimizzare selezione e
+                      pianificazione
+                    </span>
+                  </div>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-4 md:px-6">
