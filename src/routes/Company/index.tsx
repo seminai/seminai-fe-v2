@@ -299,6 +299,7 @@ export default function Company(): React.ReactElement {
             }
             onSave={handleSave}
             onOpenDetails={handleOpenDetails}
+            exportFileName="aziende"
             newRowDefaults={{
               name: "",
               vatNumber: "",

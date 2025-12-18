@@ -108,10 +108,13 @@ export type UpdateProductResponse = {
 export type BulkFromDdtEntry = {
   productName: string;
   registrationNumber?: string;
+  productCategory?: string;
   quantity: number;
   quantityUnitOfMeasure: string;
   supplierName?: string;
   supplierVat?: string;
+  ddtDate?: string;
+  orderNumber?: string;
 };
 
 export type BulkFromDdtFileResult = {
@@ -122,10 +125,13 @@ export type BulkFromDdtFileResult = {
 export type BulkFromDdtSuggestedProduct = {
   productName: string;
   registrationNumber?: string | null;
+  productCategory?: string | null;
   quantity: number;
   quantityUnitOfMeasure: string;
   supplierName?: string | null;
   supplierVat?: string | null;
+  ddtDate?: string | null;
+  orderNumber?: string | null;
 };
 
 export type BulkFromDdtToProductListResponse = {

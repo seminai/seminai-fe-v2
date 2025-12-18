@@ -394,7 +394,8 @@ function ProductionUnitCyclesSection({
       floweringDate: formatDateForInput(cycle.floweringDate),
       harvestingDate: formatDateForInput(cycle.harvestingDate),
       destinazioneDiUso:
-        (cycle as { destinazioneDiUso?: string | null }).destinazioneDiUso ?? "",
+        (cycle as { destinazioneDiUso?: string | null }).destinazioneDiUso ??
+        "",
     });
   };
 
@@ -506,7 +507,9 @@ function ProductionUnitCyclesSection({
                   >
                     {(cycle as { status?: string }).status ?? "N/D"}
                   </Badge>
-                  {cycle.variety && <Badge variant="outline">{cycle.variety}</Badge>}
+                  {cycle.variety && (
+                    <Badge variant="outline">{cycle.variety}</Badge>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -555,7 +558,9 @@ function ProductionUnitCyclesSection({
             {isEditing ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
                 <div>
-                  <Label className="text-xs text-gray-500">Data Fioritura</Label>
+                  <Label className="text-xs text-gray-500">
+                    Data Fioritura
+                  </Label>
                   <Input
                     type="date"
                     value={cycleForm.floweringDate}
@@ -814,7 +819,8 @@ const buildProductionUnitColumns = (
         if (!fields || fields.length === 0) {
           return <span className="text-gray-400">0 campi</span>;
         }
-        const countLabel = fields.length === 1 ? "1 campo" : `${fields.length} campi`;
+        const countLabel =
+          fields.length === 1 ? "1 campo" : `${fields.length} campi`;
         return <Badge variant="secondary">{countLabel}</Badge>;
       },
       onValueChange: ({ value, rowData }) => {
@@ -1675,6 +1681,7 @@ export default function ProductionUnit(): React.ReactElement {
               onSave={handleBulkSave}
               onDeleteSelected={handleDeleteSelected}
               showDeleteAction={true}
+              exportFileName="unitaproduttive"
               detailsRenderer={renderDetails}
               detailsTitle="Dettagli Unità Produttiva"
               className="bg-background"

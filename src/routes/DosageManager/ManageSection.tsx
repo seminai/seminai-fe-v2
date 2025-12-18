@@ -371,6 +371,7 @@ export function ManageSection({
               showDeleteAction={false}
               getRowId={(row) => (row as { id: string }).id}
               className="bg-white rounded-2xl border border-neutral-200"
+              exportFileName="unitaproduttive_selezione"
             />
           )}
         </div>
@@ -575,6 +576,7 @@ export function ManageSection({
                 `${row.productName}-${row.registrationNumber}-${index}`
               }
               lastComponent={renderProductLabelAction}
+              exportFileName="prodotti_dosaggio"
             />
           </div>
           {products.length === 0 && renderEmptyProductsPlaceholder()}

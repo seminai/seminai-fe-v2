@@ -1513,6 +1513,20 @@ export default function DosageManager() {
       required: false,
       placeholder: "Partita IVA",
     },
+    {
+      id: "orderNumber",
+      title: "Codice DDT",
+      type: "text",
+      required: false,
+      placeholder: "Codice DDT",
+    },
+    {
+      id: "ddtDate",
+      title: "Data DDT",
+      type: "text",
+      required: false,
+      placeholder: "Data DDT",
+    },
   ];
 
   // Converte i dati della tabella in DosageProduct[]
@@ -1527,6 +1541,8 @@ export default function DosageManager() {
           typeof row.loadWarehouse === "boolean" ? row.loadWarehouse : false,
         supplierName: row.supplierName ? String(row.supplierName) : undefined,
         supplierVat: row.supplierVat ? String(row.supplierVat) : undefined,
+        ddtDate: row.ddtDate ? String(row.ddtDate) : undefined,
+        orderNumber: row.orderNumber ? String(row.orderNumber) : undefined,
       }));
     },
     []
@@ -1638,6 +1654,8 @@ export default function DosageManager() {
       supplierName: product.supplierName || "",
       supplierVat: product.supplierVat || "",
       loadWarehouse: product.loadWarehouse,
+      ddtDate: product.ddtDate || "",
+      orderNumber: product.orderNumber || "",
     }));
   }, [products]);
 

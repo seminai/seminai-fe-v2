@@ -44,11 +44,7 @@ const buildMachinesColumns = (): EditableColumn[] => {
         }
         try {
           const date = new Date(value);
-          return (
-            <span>
-              {format(date, "dd/MM/yyyy", { locale: it })}
-            </span>
-          );
+          return <span>{format(date, "dd/MM/yyyy", { locale: it })}</span>;
         } catch {
           return <span className="text-muted-foreground">-</span>;
         }
@@ -142,7 +138,9 @@ export function CompanyMachinesPanel({
       const machinesToCreate = payload.created.map((row) => ({
         name: String(row.name || ""),
         identifier: String(row.identifier || ""),
-        lastPositiveRevisionDate: formatDateForApi(row.lastPositiveRevisionDate),
+        lastPositiveRevisionDate: formatDateForApi(
+          row.lastPositiveRevisionDate
+        ),
       }));
 
       await bulkCreate(machinesToCreate);
@@ -278,6 +276,7 @@ export function CompanyMachinesPanel({
           }
           onSave={handleSave}
           onDeleteSelected={handleDelete}
+          exportFileName="macchine"
           newRowDefaults={{
             name: "",
             identifier: "",
@@ -289,4 +288,3 @@ export function CompanyMachinesPanel({
     </div>
   );
 }
-

@@ -48,7 +48,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { EditableTable, type EditableColumn } from "@/components/organism/EditableTable";
+import {
+  EditableTable,
+  type EditableColumn,
+} from "@/components/organism/EditableTable";
 
 interface CompanyFilesPanelProps {
   companyId: string;
@@ -115,7 +118,9 @@ class FileViewer extends React.Component<FileViewerProps> {
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
       mimeType === "application/msword"
     ) {
-      this.iframeRef.current.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(file.url)}`;
+      this.iframeRef.current.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(
+        file.url
+      )}`;
       return;
     }
 
@@ -352,7 +357,10 @@ class UploadDrawer extends React.Component<
 
     return (
       <Drawer open={isOpen} onOpenChange={onClose}>
-        <DrawerContent className="max-h-[90vh]" data-vaul-drawer-direction="right">
+        <DrawerContent
+          className="max-h-[90vh]"
+          data-vaul-drawer-direction="right"
+        >
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">
               <Upload className="h-5 w-5" />
@@ -563,7 +571,7 @@ class CompanyFilesPanel extends React.Component<
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + " " + sizes[i];
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   };
 
   private getFileIcon = (file: CompanyFile): React.ReactNode => {
@@ -695,6 +703,7 @@ class CompanyFilesPanel extends React.Component<
         getRowId={(row) => row.id as string}
         onDeleteSelected={this.handleDeleteSelected}
         showDeleteAction={true}
+        exportFileName="documenti"
         lastComponent={(row) => {
           const file = row as unknown as CompanyFile;
           return (
@@ -734,14 +743,8 @@ class CompanyFilesPanel extends React.Component<
   };
 
   private renderFilesSection(): React.ReactNode {
-    const {
-      files,
-      isLoading,
-      isError,
-      error,
-      onRetry,
-      companyName,
-    } = this.props;
+    const { files, isLoading, isError, error, onRetry, companyName } =
+      this.props;
 
     const groupedFiles = this.groupFilesByPath();
 

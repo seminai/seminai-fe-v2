@@ -23,6 +23,8 @@ export function useJobGroupsSummary() {
     },
     enabled: true,
     retry: 1,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   if (error) {
@@ -56,6 +58,8 @@ export function useJobGroupDetail(jobId: string | null) {
     },
     enabled: !!jobId,
     retry: 1,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   if (error) {

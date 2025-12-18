@@ -959,6 +959,7 @@ export default function LabelDetailPage(): React.ReactElement {
                       }
                     }}
                     className="bg-background"
+                    exportFileName="etichetta_dettaglio"
                   />
 
                   {!isFertilizer ? (

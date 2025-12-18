@@ -396,6 +396,7 @@ function ProductsPage() {
           onAddClick={() => setImportDrawerOpen(true)}
           onDeleteSelected={handleDeleteSelected}
           getRowId={(row) => (row as ProductTableRow).id}
+          exportFileName="prodotti"
           lastComponent={(row) => {
             const data = row as ProductTableRow;
             return (
