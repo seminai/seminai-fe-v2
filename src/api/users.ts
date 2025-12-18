@@ -78,6 +78,11 @@ export async function getCurrentUserWithBearer(
   return (await response.json()) as UsersMeResponse;
 }
 
+export type ClearCacheResponse = {
+  status: "success";
+  message: string;
+};
+
 class UsersApiService {
   private readonly baseUrl: string;
 
@@ -129,6 +134,26 @@ class UsersApiService {
 
     return (await response.json()) as UsersMeResponse;
   }
+
+  public async clearCacheWithBearer(): Promise<ClearCacheResponse> {
+    const response = await authenticatedHttpClient.request(
+      `${this.baseUrl}/users/me/cache`,
+      {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await safeReadText(response);
+      throw new Error(errorText || "Cache clear failed");
+    }
+
+    return (await response.json()) as ClearCacheResponse;
+  }
 }
 
 export const usersApiService = new UsersApiService(BASE_URL);
@@ -150,4 +175,12 @@ export async function uploadProfilePictureWithBearer(
   const service =
     baseUrl === BASE_URL ? usersApiService : new UsersApiService(baseUrl);
   return await service.uploadProfilePictureWithBearer(file);
+}
+
+export async function clearCacheWithBearer(
+  baseUrl: string = BASE_URL
+): Promise<ClearCacheResponse> {
+  const service =
+    baseUrl === BASE_URL ? usersApiService : new UsersApiService(baseUrl);
+  return await service.clearCacheWithBearer();
 }

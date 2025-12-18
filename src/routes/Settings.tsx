@@ -13,6 +13,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useTokenCosts } from "@/hooks/useTokenCosts";
 import { Spinner } from "@/components/ui/spinner";
@@ -21,6 +35,7 @@ import { toast } from "sonner";
 import {
   updateCurrentUserWithBearer,
   type UpdateCurrentUserRequest,
+  clearCacheWithBearer,
 } from "@/api/users";
 import { uploadProfilePictureWithBearer } from "@/api/users";
 import { type TokenUsage } from "@/api/token-costs";
@@ -36,7 +51,7 @@ import {
   diffEditable,
   type EditableUserState,
 } from "@/utils/user-edit";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2, HardDrive } from "lucide-react";
 
 const currencyFormatter = new Intl.NumberFormat("it-IT", {
   style: "currency",
@@ -381,6 +396,29 @@ export default function Settings() {
         toast.error(message);
       },
     });
+
+  const [clearCacheDialogOpen, setClearCacheDialogOpen] = React.useState(false);
+  const [clearCacheConfirmText, setClearCacheConfirmText] = React.useState("");
+
+  const { mutateAsync: clearCacheAsync, isPending: isClearingCache } =
+    useMutation({
+      mutationFn: async () => {
+        return await clearCacheWithBearer();
+      },
+      onSuccess: () => {
+        toast.success("Cache eliminata con successo");
+        setClearCacheDialogOpen(false);
+        setClearCacheConfirmText("");
+      },
+      onError: (e: unknown) => {
+        const message =
+          e instanceof Error ? e.message : "Errore durante l'eliminazione della cache";
+        toast.error(message);
+      },
+    });
+
+  const isClearCacheConfirmValid =
+    clearCacheConfirmText.trim().toLowerCase() === "elimina";
 
   if (isLoading) {
     return (
@@ -779,7 +817,77 @@ export default function Settings() {
             </div>
           </div>
         </Card>
+        <Card className="p-4 md:col-span-2 shadow-none">
+          <Accordion type="single" collapsible>
+            <AccordionItem value="cache-management" className="border-0">
+              <AccordionTrigger className="hover:no-underline py-2">
+                <div className="flex items-center gap-2">
+                  <HardDrive className="h-4 w-4 text-gray-600" />
+                  <span className="font-medium">Gestione cache</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <p className="text-sm text-gray-600 mb-4">
+                  Elimina la cache locale associata al tuo account. Questa
+                  azione è irreversibile.
+                </p>
+                <Button
+                  variant="destructive"
+                  onClick={() => setClearCacheDialogOpen(true)}
+                  disabled={isClearingCache}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Pulisci cache
+                </Button>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </Card>
       </div>
+
+      <Dialog open={clearCacheDialogOpen} onOpenChange={setClearCacheDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Conferma eliminazione cache</DialogTitle>
+            <DialogDescription>
+              Questa azione eliminerà la cache associata al tuo account. Per
+              confermare, digita <strong>elimina</strong> nel campo sottostante.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="clearCacheConfirm">
+              Digita "elimina" per confermare
+            </Label>
+            <Input
+              id="clearCacheConfirm"
+              value={clearCacheConfirmText}
+              onChange={(e) => setClearCacheConfirmText(e.target.value)}
+              placeholder="elimina"
+              className="mt-2"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setClearCacheDialogOpen(false);
+                setClearCacheConfirmText("");
+              }}
+            >
+              Annulla
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={!isClearCacheConfirmValid || isClearingCache}
+              onClick={async () => {
+                await clearCacheAsync();
+              }}
+            >
+              {isClearingCache ? "Eliminazione…" : "Elimina cache"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card className="p-4 shadow-none mt-6">
         <div className="flex items-center justify-between gap-2 mb-4">
