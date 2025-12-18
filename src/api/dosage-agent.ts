@@ -10,6 +10,8 @@ export type DosageProduct = {
   loadWarehouse: boolean;
   supplierName?: string;
   supplierVat?: string;
+  ddtDate?: string;
+  orderNumber?: string;
 };
 
 export type DosageUnitOfProduction = {

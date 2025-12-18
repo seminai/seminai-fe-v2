@@ -234,6 +234,7 @@ export default function Label(): React.ReactElement {
             onDeleteSelected={handleDeleteSelected}
             onOpenDetails={(row) => navigate(`/label/${row.id}`)}
             className="bg-background"
+            exportFileName="etichette"
           />
         )}
       </div>

@@ -1,8 +1,15 @@
 import type { ReactElement } from "react";
 import { Button } from "@/components/ui/button";
-import { EditableTable, type EditableColumn } from "@/components/organism/EditableTable";
+import {
+  EditableTable,
+  type EditableColumn,
+} from "@/components/organism/EditableTable";
 import { Loader2, Trash2, Clock } from "lucide-react";
-import { type ActiveJobTableRow, type JobHistoryTableRow, type DosageJob } from "./types";
+import {
+  type ActiveJobTableRow,
+  type JobHistoryTableRow,
+  type DosageJob,
+} from "./types";
 
 interface HistorySectionProps {
   activeJobsCount: number;
@@ -41,7 +48,9 @@ export function HistorySection({
                 <h3 className="text-base font-semibold text-neutral-900">
                   Job attivi ({activeJobsCount})
                 </h3>
-                <p className="text-sm text-neutral-500">{activeSelectionLabel}</p>
+                <p className="text-sm text-neutral-500">
+                  {activeSelectionLabel}
+                </p>
               </div>
               <Button
                 variant="destructive"
@@ -72,12 +81,13 @@ export function HistorySection({
               onSelectionChange={onActiveSelectionChange}
               getRowId={(row) => (row as ActiveJobTableRow).id}
               className="bg-white"
+              exportFileName="calcoli_attivi"
             />
             <div className="flex items-start gap-3 rounded-xl border border-neutral-100 bg-neutral-50 p-4">
               <Loader2 className="h-4 w-4 animate-spin text-neutral-500 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-neutral-600 leading-tight">
-                Ci vorranno da 1 a massimo 10 minuti per elaborare i dosaggi. Puoi annullare i job selezionandoli nella
-                tabella.
+                Ci vorranno da 1 a massimo 10 minuti per elaborare i dosaggi.
+                Puoi annullare i job selezionandoli nella tabella.
               </p>
             </div>
           </section>
@@ -102,6 +112,7 @@ export function HistorySection({
                 onOpenJobDetails(typedRow.job);
               }}
               className="bg-white rounded-2xl border border-neutral-200"
+              exportFileName="storico_calcoli"
             />
           )}
         </section>
@@ -109,4 +120,3 @@ export function HistorySection({
     </div>
   );
 }
-

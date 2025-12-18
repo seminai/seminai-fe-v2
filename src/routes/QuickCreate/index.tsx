@@ -6,7 +6,10 @@ import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { EditableTable, type EditableColumn } from "@/components/organism/EditableTable";
+import {
+  EditableTable,
+  type EditableColumn,
+} from "@/components/organism/EditableTable";
 import {
   type ExtractedCompany,
   type ExtractedField,
@@ -16,12 +19,23 @@ import {
 } from "@/api/quick-create";
 import { useCompanies } from "@/hooks/useCompanies";
 import { cn } from "@/lib/utils";
-import { IoCloudUploadOutline, IoCheckmarkCircle, IoArrowBack, IoArrowForward, IoAddCircleOutline } from "react-icons/io5";
+import {
+  IoCloudUploadOutline,
+  IoCheckmarkCircle,
+  IoArrowBack,
+  IoArrowForward,
+  IoAddCircleOutline,
+} from "react-icons/io5";
 
 /**
  * Represents the current step in the quick create wizard
  */
-type WizardStep = "select-company" | "upload" | "company" | "fields" | "production-units";
+type WizardStep =
+  | "select-company"
+  | "upload"
+  | "company"
+  | "fields"
+  | "production-units";
 
 /**
  * Controller for the quick create wizard state
@@ -112,37 +126,58 @@ const COMPANY_COLUMNS: EditableColumn[] = [
  * Configuration for the fields table columns
  */
 const FIELDS_COLUMNS: EditableColumn[] = [
-  { id: "name", title: "Nome Campo", type: "text", required: true, width: "200px" },
+  {
+    id: "name",
+    title: "Nome Campo",
+    type: "text",
+    required: true,
+    width: "200px",
+  },
   { id: "city", title: "Città", type: "text", width: "150px" },
   { id: "foglio", title: "Foglio", type: "text", width: "80px" },
   { id: "particella", title: "Particella", type: "text", width: "100px" },
   { id: "sezione", title: "Sezione", type: "text", width: "80px" },
   { id: "subalterno", title: "Subalterno", type: "text", width: "100px" },
   { id: "uso", title: "Uso", type: "text", width: "150px" },
-  { 
-    id: "superficieCatastaleMq", 
-    title: "Superficie (mq)", 
-    type: "number", 
+  {
+    id: "superficieCatastaleMq",
+    title: "Superficie (mq)",
+    type: "number",
     width: "120px",
     render: (value: unknown) => {
       if (value === null || value === undefined) return "-";
       const num = typeof value === "number" ? value : Number(value);
       return isNaN(num) ? "-" : num.toLocaleString("it-IT");
-    }
+    },
   },
-  { 
-    id: "gisHa", 
-    title: "Superficie GIS (ha)", 
-    type: "number", 
+  {
+    id: "gisHa",
+    title: "Superficie GIS (ha)",
+    type: "number",
     width: "120px",
     render: (value: unknown) => {
       if (value === null || value === undefined) return "-";
       const num = typeof value === "number" ? value : Number(value);
-      return isNaN(num) ? "-" : num.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
-    }
+      return isNaN(num)
+        ? "-"
+        : num.toLocaleString("it-IT", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 4,
+          });
+    },
   },
-  { id: "inizioConduzione", title: "Inizio Conduzione", type: "text", width: "130px" },
-  { id: "fineConduzione", title: "Fine Conduzione", type: "text", width: "130px" },
+  {
+    id: "inizioConduzione",
+    title: "Inizio Conduzione",
+    type: "text",
+    width: "130px",
+  },
+  {
+    id: "fineConduzione",
+    title: "Fine Conduzione",
+    type: "text",
+    width: "130px",
+  },
   { id: "latitude", title: "Latitudine", type: "number", width: "100px" },
   { id: "longitude", title: "Longitudine", type: "number", width: "100px" },
 ];
@@ -156,16 +191,21 @@ const PRODUCTION_UNITS_COLUMNS: EditableColumn[] = [
   { id: "particella", title: "Particella", type: "text", width: "100px" },
   { id: "sezione", title: "Sezione", type: "text", width: "80px" },
   { id: "subalterno", title: "Subalterno", type: "text", width: "100px" },
-  { 
-    id: "areaHa", 
-    title: "Area (ha)", 
-    type: "number", 
+  {
+    id: "areaHa",
+    title: "Area (ha)",
+    type: "number",
     width: "120px",
     render: (value: unknown) => {
       if (value === null || value === undefined) return "-";
       const num = typeof value === "number" ? value : Number(value);
-      return isNaN(num) ? "-" : num.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
-    }
+      return isNaN(num)
+        ? "-"
+        : num.toLocaleString("it-IT", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 4,
+          });
+    },
   },
   { id: "startDate", title: "Data Inizio", type: "text", width: "120px" },
   { id: "endDate", title: "Data Fine", type: "text", width: "120px" },
@@ -184,7 +224,7 @@ const PRODUCTION_UNITS_COLUMNS: EditableColumn[] = [
         return cropName ? String(cropName) : "-";
       }
       return "-";
-    }
+    },
   },
   {
     id: "cropCode",
@@ -200,7 +240,7 @@ const PRODUCTION_UNITS_COLUMNS: EditableColumn[] = [
         return cropCode ? String(cropCode) : "-";
       }
       return "-";
-    }
+    },
   },
   {
     id: "fieldName",
@@ -214,7 +254,8 @@ const PRODUCTION_UNITS_COLUMNS: EditableColumn[] = [
       if (allocations && Array.isArray(allocations) && allocations.length > 0) {
         const firstAllocation = allocations[0];
         if (typeof firstAllocation === "object" && firstAllocation !== null) {
-          const fieldName = (firstAllocation as Record<string, unknown>).fieldName;
+          const fieldName = (firstAllocation as Record<string, unknown>)
+            .fieldName;
           // If fieldName is an object, try to get the name property
           if (fieldName && typeof fieldName === "object") {
             const name = (fieldName as Record<string, unknown>).name;
@@ -247,17 +288,23 @@ interface FileDropZoneProps {
 /**
  * File drop zone component for drag and drop file upload
  */
-function FileDropZone({ onFileSelect, isDisabled }: FileDropZoneProps): React.ReactElement {
+function FileDropZone({
+  onFileSelect,
+  isDisabled,
+}: FileDropZoneProps): React.ReactElement {
   const [isDragging, setIsDragging] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleDragEnter = React.useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isDisabled) {
-      setIsDragging(true);
-    }
-  }, [isDisabled]);
+  const handleDragEnter = React.useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!isDisabled) {
+        setIsDragging(true);
+      }
+    },
+    [isDisabled]
+  );
 
   const handleDragLeave = React.useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -332,10 +379,12 @@ function FileDropZone({ onFileSelect, isDisabled }: FileDropZoneProps): React.Re
       />
 
       <div className="flex flex-col items-center text-center">
-        <div className={cn(
-          "flex items-center justify-center w-24 h-24 rounded-full mb-6 transition-colors",
-          isDragging ? "bg-agri-green-100" : "bg-neutral-100"
-        )}>
+        <div
+          className={cn(
+            "flex items-center justify-center w-24 h-24 rounded-full mb-6 transition-colors",
+            isDragging ? "bg-agri-green-100" : "bg-neutral-100"
+          )}
+        >
           <IoCloudUploadOutline
             className={cn(
               "w-12 h-12 transition-colors",
@@ -539,25 +588,36 @@ export default function QuickCreatePage(): React.ReactElement {
   const controller = React.useMemo(() => new QuickCreateWizardController(), []);
 
   // State
-  const [currentStep, setCurrentStep] = React.useState<WizardStep>("select-company");
+  const [currentStep, setCurrentStep] =
+    React.useState<WizardStep>("select-company");
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [selectedCompanyId, setSelectedCompanyId] = React.useState<string>("");
   const [error, setError] = React.useState<string | null>(null);
-  const [showCreateCompanyForm, setShowCreateCompanyForm] = React.useState(false);
+  const [showCreateCompanyForm, setShowCreateCompanyForm] =
+    React.useState(false);
   const [newCompanyName, setNewCompanyName] = React.useState("");
   const [newCompanyVatNumber, setNewCompanyVatNumber] = React.useState("");
   const [newCompanyFiscalCode, setNewCompanyFiscalCode] = React.useState("");
   const [newCompanyCuaa, setNewCompanyCuaa] = React.useState("");
 
   // Extracted data
-  const [companyData, setCompanyData] = React.useState<ExtractedCompany | null>(null);
+  const [companyData, setCompanyData] = React.useState<ExtractedCompany | null>(
+    null
+  );
   const [fieldsData, setFieldsData] = React.useState<ExtractedField[]>([]);
-  const [productionUnitsData, setProductionUnitsData] = React.useState<ExtractedProductionUnit[]>([]);
+  const [productionUnitsData, setProductionUnitsData] = React.useState<
+    ExtractedProductionUnit[]
+  >([]);
 
   // Companies hook
-  const { companies, isLoading: isLoadingCompanies, createCompanies, isCreating: isCreatingCompany } = useCompanies({
+  const {
+    companies,
+    isLoading: isLoadingCompanies,
+    createCompanies,
+    isCreating: isCreatingCompany,
+  } = useCompanies({
     onCreateSuccess: (response) => {
       if (response.data.companies.length > 0) {
         setSelectedCompanyId(response.data.companies[0].id);
@@ -588,17 +648,22 @@ export default function QuickCreatePage(): React.ReactElement {
     setError(null);
 
     try {
-      const response: ExtractFromCsvResponse = await quickCreateApiService.extractFromCsv(
-        selectedFile,
-        selectedCompanyId || undefined
-      );
+      const response: ExtractFromCsvResponse =
+        await quickCreateApiService.extractFromCsv(
+          selectedFile,
+          selectedCompanyId || undefined
+        );
 
       setCompanyData(response.data.company);
       setFieldsData(response.data.fields);
       setProductionUnitsData(response.data.productionUnits);
       setCurrentStep("company");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Errore durante l'elaborazione del file");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Errore durante l'elaborazione del file"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -624,11 +689,19 @@ export default function QuickCreatePage(): React.ReactElement {
       // Navigate to company page after successful save
       navigate("/company");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Errore durante il salvataggio");
+      setError(
+        err instanceof Error ? err.message : "Errore durante il salvataggio"
+      );
     } finally {
       setIsSaving(false);
     }
-  }, [companyData, fieldsData, productionUnitsData, selectedCompanyId, navigate]);
+  }, [
+    companyData,
+    fieldsData,
+    productionUnitsData,
+    selectedCompanyId,
+    navigate,
+  ]);
 
   /**
    * Handle action button click based on current step
@@ -682,7 +755,10 @@ export default function QuickCreatePage(): React.ReactElement {
    * Handle company table save
    */
   const handleCompanySave = React.useCallback(
-    (payload: { created: Array<Record<string, unknown>>; updated: Array<Record<string, unknown>> }) => {
+    (payload: {
+      created: Array<Record<string, unknown>>;
+      updated: Array<Record<string, unknown>>;
+    }) => {
       if (payload.updated.length > 0) {
         setCompanyData(payload.updated[0] as unknown as ExtractedCompany);
       }
@@ -694,8 +770,14 @@ export default function QuickCreatePage(): React.ReactElement {
    * Handle fields table save
    */
   const handleFieldsSave = React.useCallback(
-    (payload: { created: Array<Record<string, unknown>>; updated: Array<Record<string, unknown>> }) => {
-      const allFields = [...payload.created, ...payload.updated] as unknown as ExtractedField[];
+    (payload: {
+      created: Array<Record<string, unknown>>;
+      updated: Array<Record<string, unknown>>;
+    }) => {
+      const allFields = [
+        ...payload.created,
+        ...payload.updated,
+      ] as unknown as ExtractedField[];
       if (allFields.length > 0) {
         setFieldsData(allFields);
       }
@@ -707,8 +789,14 @@ export default function QuickCreatePage(): React.ReactElement {
    * Handle production units table save
    */
   const handleProductionUnitsSave = React.useCallback(
-    (payload: { created: Array<Record<string, unknown>>; updated: Array<Record<string, unknown>> }) => {
-      const allUnits = [...payload.created, ...payload.updated] as unknown as ExtractedProductionUnit[];
+    (payload: {
+      created: Array<Record<string, unknown>>;
+      updated: Array<Record<string, unknown>>;
+    }) => {
+      const allUnits = [
+        ...payload.created,
+        ...payload.updated,
+      ] as unknown as ExtractedProductionUnit[];
       if (allUnits.length > 0) {
         setProductionUnitsData(allUnits);
       }
@@ -732,12 +820,17 @@ export default function QuickCreatePage(): React.ReactElement {
   const normalizedProductionUnitsData = React.useMemo(() => {
     return productionUnitsData.map((unit) => {
       const normalized = { ...unit } as Record<string, unknown>;
-      
+
       // Extract fieldName from allocations as a string
-      if (normalized.allocations && Array.isArray(normalized.allocations) && normalized.allocations.length > 0) {
+      if (
+        normalized.allocations &&
+        Array.isArray(normalized.allocations) &&
+        normalized.allocations.length > 0
+      ) {
         const firstAllocation = normalized.allocations[0];
         if (typeof firstAllocation === "object" && firstAllocation !== null) {
-          const fieldName = (firstAllocation as Record<string, unknown>).fieldName;
+          const fieldName = (firstAllocation as Record<string, unknown>)
+            .fieldName;
           if (fieldName && typeof fieldName === "object") {
             // If fieldName is an object, extract the name
             const name = (fieldName as Record<string, unknown>).name;
@@ -751,7 +844,7 @@ export default function QuickCreatePage(): React.ReactElement {
       } else {
         normalized.fieldName = null;
       }
-      
+
       return normalized;
     });
   }, [productionUnitsData]);
@@ -773,7 +866,13 @@ export default function QuickCreatePage(): React.ReactElement {
         ]);
       }
     },
-    [newCompanyName, newCompanyFiscalCode, newCompanyVatNumber, newCompanyCuaa, createCompanies]
+    [
+      newCompanyName,
+      newCompanyFiscalCode,
+      newCompanyVatNumber,
+      newCompanyCuaa,
+      createCompanies,
+    ]
   );
 
   /**
@@ -801,7 +900,8 @@ export default function QuickCreatePage(): React.ReactElement {
               Seleziona Azienda (Opzionale)
             </h2>
             <p className="text-neutral-500 mb-8 text-center max-w-lg">
-              Seleziona un'azienda esistente oppure continua senza selezionarne una. Puoi anche crearne una nuova.
+              Seleziona un'azienda esistente oppure continua senza selezionarne
+              una. Puoi anche crearne una nuova.
             </p>
             <div className="w-full max-w-md space-y-4">
               <div className="flex items-end gap-2">
@@ -841,9 +941,7 @@ export default function QuickCreatePage(): React.ReactElement {
                   </h3>
                   <form onSubmit={handleCreateCompany} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="new-company-name">
-                        Nome Azienda *
-                      </Label>
+                      <Label htmlFor="new-company-name">Nome Azienda *</Label>
                       <Input
                         id="new-company-name"
                         value={newCompanyName}
@@ -872,16 +970,16 @@ export default function QuickCreatePage(): React.ReactElement {
                       <Input
                         id="new-company-fiscal-code"
                         value={newCompanyFiscalCode}
-                        onChange={(e) => setNewCompanyFiscalCode(e.target.value)}
+                        onChange={(e) =>
+                          setNewCompanyFiscalCode(e.target.value)
+                        }
                         placeholder="Codice fiscale"
                         required
                         disabled={isCreatingCompany}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="new-company-cuaa">
-                        CUAA
-                      </Label>
+                      <Label htmlFor="new-company-cuaa">CUAA</Label>
                       <Input
                         id="new-company-cuaa"
                         value={newCompanyCuaa}
@@ -901,7 +999,11 @@ export default function QuickCreatePage(): React.ReactElement {
                       </Button>
                       <Button
                         type="submit"
-                        disabled={isCreatingCompany || !newCompanyName.trim() || !newCompanyFiscalCode.trim()}
+                        disabled={
+                          isCreatingCompany ||
+                          !newCompanyName.trim() ||
+                          !newCompanyFiscalCode.trim()
+                        }
                       >
                         {isCreatingCompany ? (
                           <>
@@ -927,9 +1029,13 @@ export default function QuickCreatePage(): React.ReactElement {
               Carica File
             </h2>
             <p className="text-neutral-500 mb-8 text-center max-w-lg">
-              Carica un file CSV o Excel contenente i dati di azienda, campi e unità produttive
+              Carica un file CSV o Excel contenente i dati di azienda, campi e
+              unità produttive
             </p>
-            <FileDropZone onFileSelect={handleFileSelect} isDisabled={isLoading} />
+            <FileDropZone
+              onFileSelect={handleFileSelect}
+              isDisabled={isLoading}
+            />
             {selectedFile && (
               <div className="mt-6 flex items-center gap-3 px-4 py-3 bg-agri-green-50 rounded-xl">
                 <IoCheckmarkCircle className="w-5 h-5 text-agri-green-600" />
@@ -949,7 +1055,10 @@ export default function QuickCreatePage(): React.ReactElement {
       case "company":
         return (
           <div className="flex flex-col flex-1 p-6 pb-24">
-            <StepperIndicator currentStep={currentStep} controller={controller} />
+            <StepperIndicator
+              currentStep={currentStep}
+              controller={controller}
+            />
             <h2 className="text-xl font-semibold text-neutral-800 mb-6 text-center">
               Conferma i dati dell'azienda
             </h2>
@@ -960,7 +1069,8 @@ export default function QuickCreatePage(): React.ReactElement {
                 isVertical
                 alwaysEdit
                 onSave={handleCompanySave}
-                getRowId={(row) => row.fiscalCode as string || "company"}
+                getRowId={(row) => (row.fiscalCode as string) || "company"}
+                exportFileName="azienda"
               />
             )}
             {error && (
@@ -974,7 +1084,10 @@ export default function QuickCreatePage(): React.ReactElement {
       case "fields":
         return (
           <div className="flex flex-col flex-1 p-6 pb-24">
-            <StepperIndicator currentStep={currentStep} controller={controller} />
+            <StepperIndicator
+              currentStep={currentStep}
+              controller={controller}
+            />
             <h2 className="text-xl font-semibold text-neutral-800 mb-2 text-center">
               Conferma i campi
             </h2>
@@ -989,8 +1102,11 @@ export default function QuickCreatePage(): React.ReactElement {
               addButton
               createMode="inline"
               onSave={handleFieldsSave}
-              getRowId={(row, index) => row.name as string || `field-${index}`}
+              getRowId={(row, index) =>
+                (row.name as string) || `field-${index}`
+              }
               showDeleteAction
+              exportFileName="campi"
             />
             {error && (
               <div className="mt-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700">
@@ -1003,7 +1119,10 @@ export default function QuickCreatePage(): React.ReactElement {
       case "production-units":
         return (
           <div className="flex flex-col flex-1 p-6 pb-24">
-            <StepperIndicator currentStep={currentStep} controller={controller} />
+            <StepperIndicator
+              currentStep={currentStep}
+              controller={controller}
+            />
             <h2 className="text-xl font-semibold text-neutral-800 mb-2 text-center">
               Conferma le unità produttive
             </h2>
@@ -1012,14 +1131,21 @@ export default function QuickCreatePage(): React.ReactElement {
             </p>
             <EditableTable
               columns={PRODUCTION_UNITS_COLUMNS}
-              rows={normalizedProductionUnitsData as unknown as Array<Record<string, unknown>>}
+              rows={
+                normalizedProductionUnitsData as unknown as Array<
+                  Record<string, unknown>
+                >
+              }
               isModify
               alwaysEdit
               addButton
               createMode="inline"
               onSave={handleProductionUnitsSave}
-              getRowId={(row, index) => `pu-${row.cropCode || ""}-${row.varietyCode || ""}-${index}`}
+              getRowId={(row, index) =>
+                `pu-${row.cropCode || ""}-${row.varietyCode || ""}-${index}`
+              }
               showDeleteAction
+              exportFileName="unitaproduttive"
             />
             {error && (
               <div className="mt-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700">
@@ -1041,7 +1167,11 @@ export default function QuickCreatePage(): React.ReactElement {
         {isProcessing ? (
           <LoadingContent
             isVisible={true}
-            message={isLoading ? "Elaborazione file in corso..." : "Salvataggio in corso..."}
+            message={
+              isLoading
+                ? "Elaborazione file in corso..."
+                : "Salvataggio in corso..."
+            }
           />
         ) : (
           renderContent()
@@ -1059,4 +1189,3 @@ export default function QuickCreatePage(): React.ReactElement {
     </div>
   );
 }
-

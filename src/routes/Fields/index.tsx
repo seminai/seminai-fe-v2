@@ -368,9 +368,9 @@ export default function Fields(): React.ReactElement {
       await fieldsApiService.bulkDelete({ ids });
 
       toast.success("Campi eliminati", {
-        description: `${ids.length} camp${ids.length === 1 ? "o" : "i"} eliminat${
+        description: `${ids.length} camp${
           ids.length === 1 ? "o" : "i"
-        } con successo`,
+        } eliminat${ids.length === 1 ? "o" : "i"} con successo`,
       });
       refetch();
     } catch (error) {
@@ -421,6 +421,7 @@ export default function Fields(): React.ReactElement {
             onSave={handleSave}
             onDeleteSelected={handleDeleteSelected}
             showDeleteAction={true}
+            exportFileName="campi"
             newRowDefaults={{
               companyName: "",
               name: "",

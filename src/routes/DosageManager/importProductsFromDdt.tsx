@@ -122,6 +122,12 @@ class DdtProductImportManager {
         const supplierVat = entry.supplierVat
           ? entry.supplierVat.toString().trim()
           : undefined;
+        const ddtDate = entry.ddtDate
+          ? entry.ddtDate.toString().trim()
+          : undefined;
+        const orderNumber = entry.orderNumber
+          ? entry.orderNumber.toString().trim()
+          : undefined;
 
         products.push({
           productName,
@@ -131,6 +137,8 @@ class DdtProductImportManager {
           loadWarehouse: true,
           supplierName,
           supplierVat,
+          ddtDate,
+          orderNumber,
         });
       });
     });
@@ -161,6 +169,8 @@ class DdtProductImportManager {
       supplierName: product.supplierName || "",
       supplierVat: product.supplierVat || "",
       loadWarehouse: product.loadWarehouse,
+      ddtDate: product.ddtDate || "",
+      orderNumber: product.orderNumber || "",
     }));
   }
 
@@ -281,6 +291,16 @@ class DdtProductImportManager {
         ? entry.supplierVat.toString().trim()
         : undefined;
 
+    const ddtDate =
+      entry.ddtDate && entry.ddtDate !== null
+        ? entry.ddtDate.toString().trim()
+        : undefined;
+
+    const orderNumber =
+      entry.orderNumber && entry.orderNumber !== null
+        ? entry.orderNumber.toString().trim()
+        : undefined;
+
     return {
       productName,
       registrationNumber,
@@ -288,6 +308,8 @@ class DdtProductImportManager {
       quantityUnitOfMeasure,
       supplierName,
       supplierVat,
+      ddtDate,
+      orderNumber,
     };
   }
 }

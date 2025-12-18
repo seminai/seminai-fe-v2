@@ -24,9 +24,16 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/ui/drawer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { IoOpenOutline, IoDownloadOutline } from "react-icons/io5";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import Papa from "papaparse";
+import * as XLSX from "xlsx";
 import {
   CheckCircle2,
   Loader2,
@@ -120,6 +127,12 @@ export interface EditableTableProps {
   children?: React.ReactNode;
   onSelectionChange?: (selectedRows: Array<Record<string, unknown>>) => void;
   showDeleteAction?: boolean;
+  /**
+   * Nome dell'area/sezione usato per il nome del file esportato.
+   * Il file sarà nominato come: <exportFileName>_<ddmmyy_hhmm>.<estensione>
+   * Default: "export"
+   */
+  exportFileName?: string;
   customExportConfig?: CustomExportConfig;
 }
 
@@ -1255,20 +1268,151 @@ export class EditableTable extends React.Component<
     return String(value);
   }
 
+  private generateExportFileName(extension: string): string {
+    const baseName = this.props.exportFileName || "export";
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, "0");
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const year = String(now.getFullYear()).slice(-2);
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const dateTime = `${day}${month}${year}_${hours}${minutes}`;
+    return `${baseName}_${dateTime}.${extension}`;
+  }
+
   private downloadCsv(content: string): void {
     const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute(
-      "download",
-      `editable-table-${new Date().toISOString().replace(/[:.]/g, "-")}.csv`
-    );
+    link.setAttribute("download", this.generateExportFileName("csv"));
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   }
+
+  private handleExportExcel = (): void => {
+    if (this.props.columns.length === 0) {
+      return;
+    }
+
+    const filteredRows = this.getFilteredRows();
+
+    let headers: string[];
+    let data: unknown[][];
+
+    if (
+      this.props.customExportConfig &&
+      this.props.customExportConfig.columns.length > 0
+    ) {
+      headers = this.props.customExportConfig.columns.map(
+        (column) => column.header
+      );
+      data = filteredRows.map((row) =>
+        this.props.customExportConfig!.columns.map((column) =>
+          this.formatExportValue(column.accessor(row.data))
+        )
+      );
+    } else {
+      // Find indices of quantity and unit of measure columns
+      const quantityColumnIndex = this.props.columns.findIndex(
+        (col) => col.id === "quantity"
+      );
+      const umColumnIndex = this.props.columns.findIndex(
+        (col) =>
+          col.id === "quantityUnitOfMeasure" ||
+          col.id === "unitOfMeasureQuantity" ||
+          col.id === "unitOfMeasure"
+      );
+
+      const hasUmInData =
+        filteredRows.length > 0 &&
+        (filteredRows[0].data.unitOfMeasureQuantity !== undefined ||
+          filteredRows[0].data.quantityUnitOfMeasure !== undefined);
+
+      headers = this.props.columns
+        .map((column, index) => {
+          if (index === umColumnIndex && quantityColumnIndex !== -1) {
+            return null;
+          }
+          return column.title || column.id;
+        })
+        .filter((header): header is string => header !== null);
+
+      data = filteredRows.map((row) => {
+        return this.props.columns
+          .map((column, index) => {
+            if (index === umColumnIndex && quantityColumnIndex !== -1) {
+              return null;
+            }
+
+            const value = row.data[column.id];
+
+            if (index === quantityColumnIndex) {
+              const quantityValue = value;
+              let umValue: unknown = undefined;
+              if (umColumnIndex !== -1) {
+                umValue = row.data[this.props.columns[umColumnIndex].id];
+              } else if (hasUmInData) {
+                umValue =
+                  row.data.unitOfMeasureQuantity ??
+                  row.data.quantityUnitOfMeasure ??
+                  row.data.unitOfMeasure;
+              }
+
+              if (quantityValue === undefined || quantityValue === null) {
+                return "";
+              }
+
+              const quantityStr = String(quantityValue);
+              const umStr = umValue ? String(umValue).trim() : "";
+
+              return umStr ? `${quantityStr} ${umStr}` : quantityStr;
+            }
+
+            if (value === undefined || value === null) {
+              return "";
+            }
+
+            if (column.type === "date") {
+              const dateValue = this.toDateObject(value);
+              if (dateValue) {
+                return format(dateValue, "dd/MM/yyyy", { locale: it });
+              }
+              return "";
+            }
+
+            return String(value);
+          })
+          .filter((cell): cell is string => cell !== null);
+      });
+    }
+
+    // Create worksheet data with headers
+    const worksheetData = [headers, ...data];
+
+    // Create workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    // Auto-size columns
+    const columnWidths = headers.map((header, colIndex) => {
+      const maxLength = Math.max(
+        header.length,
+        ...data.map((row) => String(row[colIndex] || "").length)
+      );
+      return { wch: Math.min(maxLength + 2, 50) };
+    });
+    worksheet["!cols"] = columnWidths;
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Dati");
+
+    // Generate filename and download
+    const filename = this.generateExportFileName("xlsx");
+    XLSX.writeFile(workbook, filename);
+  };
 
   private openCreateDrawer = (): void => {
     const draftRow = this.createEmptyRow();
@@ -2153,17 +2297,34 @@ export class EditableTable extends React.Component<
             <div className="flex flex-wrap items-center gap-2">
               {!showEditActions && leftActions}
               {!showEditActions && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground cursor-pointer"
-                  onClick={this.handleExportCsv}
-                  disabled={this.props.columns.length === 0}
-                  aria-label="Esporta CSV"
-                >
-                  <IoDownloadOutline className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Esporta File</span>
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground cursor-pointer"
+                      disabled={this.props.columns.length === 0}
+                      aria-label="Esporta"
+                    >
+                      <IoDownloadOutline className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Export</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="z-[100]">
+                    <DropdownMenuItem
+                      onSelect={this.handleExportCsv}
+                      className="cursor-pointer"
+                    >
+                      Esporta CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={this.handleExportExcel}
+                      className="cursor-pointer"
+                    >
+                      Esporta Excel
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -2403,17 +2564,34 @@ export class EditableTable extends React.Component<
           <div className="flex flex-wrap items-center gap-2">
             {!showEditActions && !anySelected && leftActions}
             {!showEditActions && !anySelected && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground cursor-pointer"
-                onClick={this.handleExportCsv}
-                disabled={this.props.columns.length === 0}
-                aria-label="Esporta CSV"
-              >
-                <IoDownloadOutline className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Esporta File</span>
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground cursor-pointer"
+                    disabled={this.props.columns.length === 0}
+                    aria-label="Esporta"
+                  >
+                    <IoDownloadOutline className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Export</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="z-[100]">
+                  <DropdownMenuItem
+                    onSelect={this.handleExportCsv}
+                    className="cursor-pointer"
+                  >
+                    Esporta CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={this.handleExportExcel}
+                    className="cursor-pointer"
+                  >
+                    Esporta Excel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             {!showEditActions && (
               <span className="text-sm text-gray-600">

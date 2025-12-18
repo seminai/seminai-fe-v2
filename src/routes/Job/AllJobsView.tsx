@@ -318,6 +318,7 @@ export function AllJobsView({
                   getRowId={(row) => row.id as string}
                   onSelectionChange={onSelectionChange}
                   customExportConfig={exportConfig}
+                  exportFileName="operazioni"
                 />
               </div>
             </div>
