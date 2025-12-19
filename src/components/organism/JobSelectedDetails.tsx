@@ -24,8 +24,14 @@ import {
   ChevronUp,
   FileText,
   Bot,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 export interface AlertNotes {
   dose_um?: string;
@@ -523,8 +529,17 @@ export function JobSelectedDetails({
                     {/* Stock - Utilizzato e Necessario affiancati */}
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <span className="text-xs font-medium text-red-700 uppercase tracking-wide block">
+                        <span className="text-xs font-medium text-red-700 uppercase tracking-wide flex items-center gap-1">
                           Stock mancante
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3 w-3 cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-slate-900 text-white border border-slate-700 shadow-lg">
+                              Quantità mancante per tutti i trattamenti con{" "}
+                              {row.productName}
+                            </TooltipContent>
+                          </Tooltip>
                         </span>
                         {formatter.getStockOut() &&
                         matchesSearch(formatter.getStockOut()) ? (
@@ -538,8 +553,17 @@ export function JobSelectedDetails({
                         )}
                       </div>
                       <div className="space-y-1">
-                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide block">
-                          Stock Necessario
+                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                          Stock Totale
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3 w-3 cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-slate-900 text-white border border-slate-700 shadow-lg">
+                              Quantità necessaria per tutti i trattamenti con{" "}
+                              {row.productName}
+                            </TooltipContent>
+                          </Tooltip>
                         </span>
                         {formatter.getTotalStockRequired() &&
                         matchesSearch(formatter.getTotalStockRequired()) ? (
