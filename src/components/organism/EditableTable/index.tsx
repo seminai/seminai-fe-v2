@@ -2151,8 +2151,12 @@ export class EditableTable extends React.Component<
       <Drawer
         open={bulkEditDrawerOpen}
         onOpenChange={this.handleBulkEditDrawerOpenChange}
+        modal={false}
       >
-        <DrawerContent data-vaul-drawer-direction="right">
+        <DrawerContent
+          data-vaul-drawer-direction="right"
+          className="shadow-2xl rounded-2xl"
+        >
           <DrawerHeader>
             <DrawerTitle>Modifica {selectionCount} elementi</DrawerTitle>
             <DrawerDescription>
