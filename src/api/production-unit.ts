@@ -192,6 +192,12 @@ export async function deleteProductionUnit(
   }
 }
 
+// Types for field allocation in updates
+export type FieldAllocationInput = {
+  fieldId: string;
+  areaHa: number;
+};
+
 // Types for update
 export type ProductionUnitUpdateInput = {
   name?: string;
@@ -208,6 +214,7 @@ export type ProductionUnitUpdateInput = {
   occupazione?: string | null;
   destinazioneDiUso?: string | null;
   acquaTotalePeridoL?: number | null;
+  allocations?: FieldAllocationInput[];
 };
 
 export type ProductionUnitUpdateResponse = {

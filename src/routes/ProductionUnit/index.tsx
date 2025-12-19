@@ -1,9 +1,11 @@
 import * as React from "react";
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   type ProductionUnit,
   type ProductionUnitUpdateInput,
   type FieldInfo,
+  type FieldAllocationInput,
+  productionUnitApiService,
 } from "@/api/production-unit";
 import {
   type ProductionCycle,
@@ -19,10 +21,11 @@ import {
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useFields } from "@/hooks/useFields";
+import { useFieldsAvailability } from "@/hooks/useFieldsAvailability";
 import { PageHeader } from "@/components/organism/Header";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Plus, Pencil, Save, X } from "lucide-react";
+import { Plus, Pencil, Save, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,13 +40,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useProductionUnitCycles } from "@/hooks/useProductionUnitCycles";
 
@@ -67,6 +63,13 @@ const formatDateForInput = (dateStr: string | null | undefined): string => {
   if (!dateStr) return "";
   return String(dateStr).split("T")[0] ?? "";
 };
+
+// Opzioni per il campo Protocollo
+const PROTOCOLL_OPTIONS = [
+  { label: "Biologico", value: "bio" },
+  { label: "Convenzionale", value: "convenzionale" },
+  { label: "In conversione", value: "in conversione" },
+];
 
 type CropPeriod = {
   minDate: string;
@@ -367,6 +370,338 @@ const getStatusStyle = (status?: string): string => {
       return "bg-slate-100 text-slate-800";
   }
 };
+
+// === Fields Allocation Section ===
+
+type FieldAllocationRow = {
+  id: string;
+  fieldId: string;
+  fieldName: string;
+  companyName: string;
+  sauHa: number;
+  areaAvailable: number;
+  areaHa: number;
+  isNew?: boolean;
+};
+
+type FieldsAllocationSectionProps = {
+  productionUnitId: string;
+  companyId: string;
+  startDate: string | null;
+  endDate: string | null;
+  currentFields: FieldInfo[];
+  isEditing: boolean;
+  onSaveSuccess?: () => void;
+};
+
+function FieldsAllocationSection({
+  productionUnitId,
+  companyId,
+  startDate,
+  endDate,
+  currentFields,
+  isEditing,
+  onSaveSuccess,
+}: FieldsAllocationSectionProps): React.ReactElement {
+  const [allocations, setAllocations] = useState<FieldAllocationRow[]>([]);
+  const [selectedFieldToAdd, setSelectedFieldToAdd] = useState<string>("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Formatta le date per la query
+  const formattedStartDate = startDate ? startDate.split("T")[0] : "";
+  const formattedEndDate = endDate ? endDate.split("T")[0] : "";
+
+  // Ottieni i campi disponibili nel range di date
+  const {
+    companies: availableCompanies,
+    isLoading: isLoadingAvailability,
+  } = useFieldsAvailability(formattedStartDate, formattedEndDate, {
+    enabled: isEditing && !!formattedStartDate && !!formattedEndDate,
+  });
+
+  // Trova i campi disponibili per la company dell'unità produttiva
+  const availableFieldsForCompany = useMemo(() => {
+    const companyData = availableCompanies.find((c) => c.companyId === companyId);
+    if (!companyData) return [];
+    
+    // Filtra i campi già allocati
+    const allocatedFieldIds = new Set(allocations.map((a) => a.fieldId));
+    return companyData.fields.filter((f) => !allocatedFieldIds.has(f.id) && f.areaAvailable > 0);
+  }, [availableCompanies, companyId, allocations]);
+
+  // Opzioni per il dropdown dei campi disponibili
+  const availableFieldOptions = useMemo(() => {
+    return availableFieldsForCompany.map((f) => ({
+      label: `${f.name} (${f.areaAvailable.toFixed(2)} Ha disponibili)`,
+      value: f.id,
+    }));
+  }, [availableFieldsForCompany]);
+
+  // Inizializza le allocazioni dai campi correnti
+  useEffect(() => {
+    const initialAllocations: FieldAllocationRow[] = currentFields.map((field) => ({
+      id: field.id,
+      fieldId: field.id,
+      fieldName: field.name,
+      companyName: "",
+      sauHa: field.sauHa,
+      areaAvailable: field.sauHa,
+      areaHa: field.areaHaOnField,
+      isNew: false,
+    }));
+    setAllocations(initialAllocations);
+  }, [currentFields]);
+
+  const handleAddField = () => {
+    if (!selectedFieldToAdd) return;
+
+    const fieldData = availableFieldsForCompany.find((f) => f.id === selectedFieldToAdd);
+    if (!fieldData) return;
+
+    const newAllocation: FieldAllocationRow = {
+      id: `new-${Date.now()}`,
+      fieldId: fieldData.id,
+      fieldName: fieldData.name,
+      companyName: "",
+      sauHa: fieldData.sauHa,
+      areaAvailable: fieldData.areaAvailable,
+      areaHa: fieldData.areaAvailable,
+      isNew: true,
+    };
+
+    setAllocations((prev) => [...prev, newAllocation]);
+    setSelectedFieldToAdd("");
+  };
+
+  const handleRemoveAllocation = (allocationId: string) => {
+    setAllocations((prev) => prev.filter((a) => a.id !== allocationId));
+  };
+
+  const handleAreaChange = (allocationId: string, newArea: number) => {
+    setAllocations((prev) =>
+      prev.map((a) => {
+        if (a.id === allocationId) {
+          // Limita l'area al massimo disponibile
+          const maxArea = a.isNew ? a.areaAvailable : a.sauHa;
+          const validArea = Math.min(Math.max(0, newArea), maxArea);
+          return { ...a, areaHa: validArea };
+        }
+        return a;
+      })
+    );
+  };
+
+  const handleSaveAllocations = async () => {
+    if (allocations.length === 0) {
+      toast.error("Devi selezionare almeno un campo");
+      return;
+    }
+
+    const totalArea = allocations.reduce((sum, a) => sum + a.areaHa, 0);
+    if (totalArea === 0) {
+      toast.error("L'area totale deve essere maggiore di 0");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const allocationInputs: FieldAllocationInput[] = allocations.map((a) => ({
+        fieldId: a.fieldId,
+        areaHa: a.areaHa,
+      }));
+
+      await productionUnitApiService.update(productionUnitId, {
+        areaHa: totalArea,
+        allocations: allocationInputs,
+      });
+
+      toast.success("Allocazioni campi aggiornate con successo");
+      onSaveSuccess?.();
+    } catch (error) {
+      console.error("Errore salvataggio allocazioni:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Errore nel salvataggio delle allocazioni"
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Calcola area totale allocata
+  const totalAllocatedArea = allocations.reduce((sum, a) => sum + a.areaHa, 0);
+
+  return (
+    <div className="mt-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h4 className="text-base font-semibold">Campi Allocati</h4>
+        {isEditing && (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleSaveAllocations}
+            disabled={isSaving}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isSaving ? (
+              <>
+                <Spinner size={14} ariaLabel="Salvataggio" />
+                <span className="ml-2">Salvataggio...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Salva Allocazioni
+              </>
+            )}
+          </Button>
+        )}
+      </div>
+
+      {/* Area totale */}
+      <div className="text-sm text-gray-600">
+        Area totale allocata:{" "}
+        <span className="font-semibold">
+          {totalAllocatedArea.toFixed(2)} Ha
+        </span>
+      </div>
+
+      {/* Tabella allocazioni */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-2 text-left font-medium text-gray-600">
+                Campo
+              </th>
+              <th className="px-4 py-2 text-left font-medium text-gray-600">
+                SAU (Ha)
+              </th>
+              <th className="px-4 py-2 text-left font-medium text-gray-600">
+                Area Allocata (Ha)
+              </th>
+              {isEditing && (
+                <th className="px-4 py-2 text-center font-medium text-gray-600 w-20">
+                  Azioni
+                </th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {allocations.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={isEditing ? 4 : 3}
+                  className="px-4 py-6 text-center text-gray-500"
+                >
+                  Nessun campo allocato
+                </td>
+              </tr>
+            ) : (
+              allocations.map((allocation) => (
+                <tr key={allocation.id} className="border-t border-gray-100">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span>{allocation.fieldName}</span>
+                      {allocation.isNew && (
+                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                          Nuovo
+                        </Badge>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {allocation.sauHa.toFixed(2)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {isEditing ? (
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max={allocation.isNew ? allocation.areaAvailable : allocation.sauHa}
+                        value={allocation.areaHa}
+                        onChange={(e) =>
+                          handleAreaChange(
+                            allocation.id,
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
+                        className="w-28 h-8"
+                      />
+                    ) : (
+                      <span>{allocation.areaHa.toFixed(2)}</span>
+                    )}
+                  </td>
+                  {isEditing && (
+                    <td className="px-4 py-3 text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveAllocation(allocation.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </td>
+                  )}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Aggiungi campo */}
+      {isEditing && (
+        <div className="flex items-end gap-3 pt-2">
+          <div className="flex-1">
+            <Label className="text-xs text-gray-500 mb-1 block">
+              Aggiungi Campo
+            </Label>
+            {isLoadingAvailability ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Spinner size={14} ariaLabel="Caricamento campi" />
+                <span>Caricamento campi disponibili...</span>
+              </div>
+            ) : !formattedStartDate || !formattedEndDate ? (
+              <p className="text-sm text-gray-500">
+                Imposta le date di inizio e fine per vedere i campi disponibili
+              </p>
+            ) : availableFieldOptions.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                Nessun campo disponibile nel periodo selezionato
+              </p>
+            ) : (
+              <SearchableSelect
+                value={selectedFieldToAdd}
+                options={availableFieldOptions}
+                placeholder="Seleziona un campo..."
+                searchPlaceholder="Cerca campo..."
+                emptyMessage="Nessun campo trovato"
+                noneOptionLabel="Nessuna selezione"
+                onChange={setSelectedFieldToAdd}
+              />
+            )}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAddField}
+            disabled={!selectedFieldToAdd}
+            className="h-9"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Aggiungi
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// === Production Unit Cycles Section ===
 
 function ProductionUnitCyclesSection({
   productionUnitId,
@@ -785,7 +1120,17 @@ const buildProductionUnitColumns = (
     {
       id: "protocoll",
       title: "Protocollo",
-      type: "text",
+      type: "select",
+      options: PROTOCOLL_OPTIONS,
+      placeholder: "Seleziona protocollo",
+      enableSearch: true,
+      searchPlaceholder: "Cerca protocollo...",
+      emptyStateMessage: "Nessun protocollo trovato",
+      noneOptionLabel: "Nessuna selezione",
+      render: (value: unknown) => {
+        const option = PROTOCOLL_OPTIONS.find((o) => o.value === value);
+        return option?.label ?? String(value ?? "-");
+      },
     },
     {
       id: "areaHa",
@@ -879,8 +1224,6 @@ export default function ProductionUnit(): React.ReactElement {
   const [cropCatalog, setCropCatalog] = useState<CropCatalog | null>(null);
   const [isCatalogLoading, setIsCatalogLoading] = useState<boolean>(true);
   const [catalogError, setCatalogError] = useState<Error | null>(null);
-  const [selectedField, setSelectedField] = useState<FieldInfo | null>(null);
-  const [isFieldDrawerOpen, setIsFieldDrawerOpen] = useState(false);
 
   const { productionUnits, isLoading, error, refetch } = useProductionUnit();
   const { companies } = useCompanies();
@@ -892,16 +1235,6 @@ export default function ProductionUnit(): React.ReactElement {
     }
     return new CompanyDirectory(companies, availableFields);
   }, [companies, availableFields]);
-
-  const handleFieldClick = useCallback((field: FieldInfo) => {
-    setSelectedField(field);
-    setIsFieldDrawerOpen(true);
-  }, []);
-
-  const handleCloseFieldDrawer = useCallback(() => {
-    setIsFieldDrawerOpen(false);
-    setSelectedField(null);
-  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -1276,26 +1609,6 @@ export default function ProductionUnit(): React.ReactElement {
             <p className="text-sm">{productionUnit.companyName}</p>
           </div>
 
-          {/* Campi - Non modificabile */}
-          <div className="col-span-2">
-            <Label className="text-sm font-medium text-gray-500">Campi</Label>
-            {productionUnit.fields && productionUnit.fields.length > 0 ? (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {productionUnit.fields.map((field) => (
-                  <Badge
-                    key={field.id}
-                    variant="secondary"
-                    className="cursor-pointer hover:bg-blue-100 transition-colors"
-                    onClick={() => handleFieldClick(field)}
-                  >
-                    {field.name} ({field.areaHaOnField} Ha)
-                  </Badge>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm">-</p>
-            )}
-          </div>
 
           {/* Coltura */}
           <div>
@@ -1381,18 +1694,23 @@ export default function ProductionUnit(): React.ReactElement {
               Protocollo
             </Label>
             {isEditing ? (
-              <Input
-                value={editFormData.protocoll || ""}
-                onChange={(e) =>
+              <SearchableSelect
+                value={editFormData.protocoll ?? ""}
+                options={PROTOCOLL_OPTIONS}
+                placeholder="Seleziona protocollo"
+                searchPlaceholder="Cerca protocollo..."
+                emptyMessage="Nessun protocollo trovato"
+                noneOptionLabel="Nessuna selezione"
+                onChange={(selected) =>
                   setEditFormData({
                     ...editFormData,
-                    protocoll: e.target.value,
+                    protocoll: selected,
                   })
                 }
-                className="mt-1"
+                wrapperClassName="mt-1"
               />
             ) : (
-              <p className="text-sm">{pu.protocoll}</p>
+              <p className="text-sm">{pu.protocoll || "-"}</p>
             )}
           </div>
 
@@ -1461,54 +1779,6 @@ export default function ProductionUnit(): React.ReactElement {
               />
             ) : (
               <p className="text-sm">{formatDateDDMMYYYY(pu.startDate)}</p>
-            )}
-          </div>
-
-          {/* Data Fioritura */}
-          <div>
-            <Label className="text-sm font-medium text-gray-500">
-              Data Fioritura
-            </Label>
-            {isEditing ? (
-              <Input
-                type="date"
-                value={formatDateForInput(editFormData.floweringDate || "")}
-                onChange={(e) =>
-                  setEditFormData({
-                    ...editFormData,
-                    floweringDate: e.target.value
-                      ? new Date(e.target.value).toISOString()
-                      : null,
-                  })
-                }
-                className="mt-1"
-              />
-            ) : (
-              <p className="text-sm">{formatDateDDMMYYYY(pu.floweringDate)}</p>
-            )}
-          </div>
-
-          {/* Data Raccolta */}
-          <div>
-            <Label className="text-sm font-medium text-gray-500">
-              Data Raccolta
-            </Label>
-            {isEditing ? (
-              <Input
-                type="date"
-                value={formatDateForInput(editFormData.harvestingDate || "")}
-                onChange={(e) =>
-                  setEditFormData({
-                    ...editFormData,
-                    harvestingDate: e.target.value
-                      ? new Date(e.target.value).toISOString()
-                      : null,
-                  })
-                }
-                className="mt-1"
-              />
-            ) : (
-              <p className="text-sm">{formatDateDDMMYYYY(pu.harvestingDate)}</p>
             )}
           </div>
 
@@ -1605,6 +1875,18 @@ export default function ProductionUnit(): React.ReactElement {
           </div>
         </div>
 
+        {/* Sezione Campi Allocati */}
+        <FieldsAllocationSection
+          productionUnitId={pu.id}
+          companyId={productionUnit.companyId}
+          startDate={pu.startDate}
+          endDate={pu.endDate}
+          currentFields={productionUnit.fields || []}
+          isEditing={isEditing}
+          onSaveSuccess={() => refetch()}
+        />
+
+        {/* Sezione Cicli Produttivi */}
         <ProductionUnitCyclesSection productionUnitId={pu.id} />
 
         {/* Pulsanti azioni */}
@@ -1738,75 +2020,6 @@ export default function ProductionUnit(): React.ReactElement {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Drawer dettagli campo */}
-      <Sheet open={isFieldDrawerOpen} onOpenChange={setIsFieldDrawerOpen}>
-        <SheetContent className="w-[400px] sm:w-[540px] bg-white p-2">
-          <SheetHeader>
-            <SheetTitle>Dettagli Campo</SheetTitle>
-            <SheetDescription>
-              Visualizza le informazioni del campo selezionato
-            </SheetDescription>
-          </SheetHeader>
-          {selectedField && (
-            <div className="mt-6 space-y-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-500">
-                  Nome Campo
-                </Label>
-                <p className="text-sm mt-1">{selectedField.name}</p>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-500">
-                  Area SAU (Ha)
-                </Label>
-                <p className="text-sm mt-1">
-                  {selectedField.sauHa.toLocaleString("it-IT", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </p>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-500">
-                  Area GIS (Ha)
-                </Label>
-                <p className="text-sm mt-1">
-                  {selectedField.gisHa !== null
-                    ? selectedField.gisHa.toLocaleString("it-IT", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })
-                    : "-"}
-                </p>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-500">
-                  Area Occupata dall'Unità Produttiva (Ha)
-                </Label>
-                <p className="text-sm mt-1">
-                  {selectedField.areaHaOnField.toLocaleString("it-IT", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </p>
-              </div>
-
-              <div className="pt-4 border-t">
-                <Button
-                  variant="outline"
-                  onClick={handleCloseFieldDrawer}
-                  className="w-full"
-                >
-                  Chiudi
-                </Button>
-              </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }

@@ -24,7 +24,6 @@ import {
   type Product,
   type JobHistoryEntry,
 } from "@/api/jobs";
-import { stocksApiService, type CreateStockPayload } from "@/api/stocks";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1343,12 +1342,10 @@ class JobTableRowBuilder {
       avversity: job.avversity ?? "-",
       note: job.note,
       isVerified: job.isVerified ? "Verificato" : "Non Verificato",
-      stock: job.quantity,
       alertNotes: job.alertNotes ?? null,
       machineName: machine?.name ?? "-",
       machineId: machine?.id ?? null,
       _isVerifiedBoolean: job.isVerified,
-      _originalStock: job.quantity,
       _originalQuantity: job.quantity,
       _originalDateOfOperation: new Date(job.dateOfOpeation),
       _originalMachineId: machine?.id ?? null,
@@ -2185,7 +2182,7 @@ export default function JobPage() {
       title: "Quantità",
       type: "number",
       width: "120px",
-      readOnly: true,
+      readOnly: false,
     },
     {
       id: "unitOfMeasureQuantity",
@@ -2201,12 +2198,19 @@ export default function JobPage() {
       width: "180px",
       readOnly: true,
     },
-
     {
-      id: "stock",
-      title: "Stock",
+      id: "quantityPerHa",
+      title: "Quantità per ha",
       type: "number",
-      width: "120px",
+      width: "150px",
+      readOnly: true,
+      render: (value, row) => {
+        const quantity = Number(row.quantity ?? 0);
+        const treatedSurface = Number(row.treatedSurface ?? 0);
+        if (treatedSurface === 0) return "-";
+        const quantityPerHa = quantity / treatedSurface;
+        return quantityPerHa.toFixed(4);
+      },
     },
 
     {
@@ -2350,6 +2354,24 @@ export default function JobPage() {
       readOnly: true,
     },
     {
+      id: "quantityPerHa",
+      title: "Quantità per ha",
+      type: "number",
+      width: "130px",
+      readOnly: true,
+      render: (value, row) => {
+        const quantity = Number(row.quantity ?? 0);
+        const treatedSurface = Number(row.treatedSurface ?? 0);
+        if (treatedSurface === 0) return "-";
+        const quantityPerHa = quantity / treatedSurface;
+        return (
+          <span className="font-mono text-sm">
+            {quantityPerHa.toFixed(4)}
+          </span>
+        );
+      },
+    },
+    {
       id: "note",
       title: "Note",
       type: "text",
@@ -2413,11 +2435,8 @@ export default function JobPage() {
       for (const row of payload.updated) {
         const jobId = row.id as string;
         const isVerified = row._isVerifiedBoolean as boolean;
-        const newStock = Number(row.stock);
-        const originalStock = Number(row._originalStock);
         const newQuantity = Number(row.quantity);
         const originalQuantity = Number(row._originalQuantity ?? row.quantity);
-        const companyId = row._companyId as string;
         const newDateOfOperation = row.dateOfOpeation
           ? row.dateOfOpeation instanceof Date
             ? row.dateOfOpeation
@@ -2469,23 +2488,6 @@ export default function JobPage() {
         // Esegui l'aggiornamento se ci sono modifiche
         if (Object.keys(updatePayload).length > 0) {
           await jobsApiService.updateJob(jobId, updatePayload);
-        }
-
-        // 3. Gestisci le modifiche dello stock
-        if (newStock !== originalStock) {
-          const difference = newStock - originalStock;
-
-          // Crea un movimento di stock
-          const stockPayload: CreateStockPayload = {
-            companyId,
-            productId: jobId, // Assuming jobId as productId, adjust as needed
-            quantity: Math.abs(difference),
-            unitOfMeasureQuantity: row.unitOfMeasureQuantity as string,
-            type: difference > 0 ? "IN" : "OUT",
-            jobId,
-          };
-
-          await stocksApiService.create(stockPayload);
         }
       }
 
