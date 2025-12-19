@@ -2593,14 +2593,32 @@ export class EditableTable extends React.Component<
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            {!showEditActions && (
-              <span className="text-sm text-gray-600">
-                {anySelected
-                  ? `${this.selectedIds.length} element${
-                      this.selectedIds.length === 1 ? "o" : "i"
-                    } selezionat${this.selectedIds.length === 1 ? "o" : "i"}`
-                  : ""}
-              </span>
+            {anySelected && !showEditActions && (
+              <Button
+                onClick={() => this.toggleSelectAll(false)}
+                className={cn(
+                  "border border-gray-200 text-gray-500 hover:bg-gray-50"
+                )}
+                variant="ghost"
+                size="sm"
+                aria-label="De-seleziona"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="h-4 w-4 mr-2"
+                >
+                  <path d="M18 6L6 18" />
+                  <path d="M6 6l12 12" />
+                </svg>
+                <span>
+                  De-seleziona {this.selectedIds.length} element
+                  {this.selectedIds.length === 1 ? "o" : "i"}
+                </span>
+              </Button>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">

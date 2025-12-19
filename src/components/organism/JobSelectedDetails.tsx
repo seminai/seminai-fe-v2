@@ -2,6 +2,12 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   Search,
   Package,
   Calendar,
@@ -17,6 +23,7 @@ import {
   ChevronDown,
   ChevronUp,
   FileText,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +40,8 @@ export interface AlertNotes {
   acqua_max_um?: string;
   dose_massima?: number;
   stock_out_um?: string;
+  stock_in_warehouse?: number;
+  stock_in_warehouse_um?: string;
   epoca_impiego?: string;
   note_tecniche?: string;
   frasi_pericolo?: string[];
@@ -50,6 +59,14 @@ export interface AlertNotes {
   colture_target_fuori_periodo_di_produzione?: string | null;
   colture_target_fuori_periodo_di_produzione_llm?: string | null;
   ddt_date_is_ok?: boolean | null;
+  ddt_date_conformity?: string | boolean | null;
+  ddt_date_after_treatment?: string | boolean | null;
+  waterHlJob?: number | null;
+  acquaMaxJob?: number | null;
+  acquaMaxJob_um?: string | null;
+  principio_attivo?: string | null;
+  dose_minima_hl_job?: number | null;
+  dose_massima_hl_job?: number | null;
 }
 
 export interface JobRow {
@@ -326,6 +343,20 @@ export function JobSelectedDetails({
                       </span>
                     </div>
                   )}
+                  {row.alertNotes?.principio_attivo &&
+                    matchesSearch(row.alertNotes.principio_attivo) && (
+                      <div className="flex items-start gap-1.5">
+                        <Sparkles className="h-3.5 w-3.5 text-slate-500 mt-0.5 shrink-0" />
+                        <div className="flex-1">
+                          <span className="text-xs font-medium text-slate-500 uppercase tracking-wide block mb-0.5">
+                            Principio Attivo
+                          </span>
+                          <span className="text-sm text-slate-700 font-medium">
+                            {row.alertNotes.principio_attivo}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   <div className="text-xs text-slate-600 font-mono">
                     {row.quantity} {row.unitOfMeasureQuantity}
                   </div>
@@ -368,6 +399,40 @@ export function JobSelectedDetails({
                         )}
                       </div>
                     </div>
+
+                    {/* Acqua per Job */}
+                    {(row.alertNotes?.waterHlJob !== null &&
+                      row.alertNotes?.waterHlJob !== undefined) ||
+                    (row.alertNotes?.acquaMaxJob !== null &&
+                      row.alertNotes?.acquaMaxJob !== undefined) ? (
+                      <div className="grid grid-cols-2 gap-3 items-start">
+                        {row.alertNotes?.waterHlJob !== null &&
+                        row.alertNotes?.waterHlJob !== undefined ? (
+                          <div className="space-y-1">
+                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                              <Droplet className="h-3 w-3" />
+                              Acqua (hl) Job
+                            </span>
+                            <p className="text-sm text-slate-700 font-medium">
+                              {row.alertNotes.waterHlJob} hl
+                            </p>
+                          </div>
+                        ) : null}
+                        {row.alertNotes?.acquaMaxJob !== null &&
+                        row.alertNotes?.acquaMaxJob !== undefined ? (
+                          <div className="space-y-1">
+                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                              <Droplet className="h-3 w-3 text-slate-500" />
+                              Acqua Max Job
+                            </span>
+                            <p className="text-sm text-slate-700">
+                              {row.alertNotes.acquaMaxJob}{" "}
+                              {row.alertNotes.acquaMaxJob_um ?? "L"}
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
 
                     {/* Epoca Impiego */}
                     <div className="space-y-1">
@@ -504,6 +569,47 @@ export function JobSelectedDetails({
                           </div>
                         </div>
                       </div>
+                    )}
+
+                    {/* Data DDT After Treatment */}
+                    {row.alertNotes?.ddt_date_after_treatment === true && (
+                      <div className="bg-red-50 rounded-lg p-2 border border-red-200">
+                        <div className="flex items-start gap-1.5">
+                          <FileX className="h-3.5 w-3.5 text-red-600 mt-0.5 shrink-0" />
+                          <div className="flex-1">
+                            <span className="text-xs font-medium text-red-700 block mb-0.5">
+                              Data DDT Dopo Trattamento
+                            </span>
+                            <p className="text-xs text-red-600 leading-relaxed">
+                              La data del DDT è successiva alla data del
+                              trattamento
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Note AI */}
+                    {row.note && matchesSearch(row.note) && (
+                      <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="note-ai" className="border-0">
+                          <AccordionTrigger className="py-2 hover:no-underline">
+                            <div className="flex items-center gap-1.5 w-full">
+                              <Bot className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                              <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                                Note AI
+                              </span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-2 pb-0">
+                            <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                              <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
+                                {row.note}
+                              </p>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
                     )}
 
                     {/* Malattie */}
