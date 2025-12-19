@@ -1330,7 +1330,7 @@ class JobTableRowBuilder {
       productionUnitName: productionUnit.name,
       cropName: productionUnit.cropName,
       cropType: productionUnit.cropType,
-      fields: fields.map((field) => field.name).join(", "),
+      fields: fields.length,
       category: job.category,
       quantity: job.quantity,
       unitOfMeasureQuantity: job.unitOfMeasureQuantity,
@@ -1352,6 +1352,26 @@ class JobTableRowBuilder {
       _companyId: company.id,
       _productionUnitId: productionUnit.id,
       _history: job.history ?? [],
+      stockInWarehouse:
+        (job.alertNotes as AlertNotes | undefined)?.stock_in_warehouse ?? null,
+      stockInWarehouseUm:
+        (job.alertNotes as AlertNotes | undefined)?.stock_in_warehouse_um ??
+        null,
+      principioAttivo:
+        (job.alertNotes as AlertNotes | undefined)?.principio_attivo ?? null,
+      doseMinimaHlJob:
+        (job.alertNotes as AlertNotes | undefined)?.dose_minima_hl_job ?? null,
+      doseMassimaHlJob:
+        (job.alertNotes as AlertNotes | undefined)?.dose_massima_hl_job ?? null,
+      doseMinima:
+        (job.alertNotes as AlertNotes | undefined)?.dose_minima ?? null,
+      doseMassima:
+        (job.alertNotes as AlertNotes | undefined)?.dose_massima ?? null,
+      doseUm: (job.alertNotes as AlertNotes | undefined)?.dose_um ?? null,
+      acquaHl:
+        (job.alertNotes as AlertNotes | undefined)?.acquaMaxJob ??
+        (job.alertNotes as AlertNotes | undefined)?.waterHlJob ??
+        null,
     };
   }
 }
@@ -2204,7 +2224,7 @@ export default function JobPage() {
       type: "number",
       width: "150px",
       readOnly: true,
-      render: (value, row) => {
+      render: (_, row) => {
         const quantity = Number(row.quantity ?? 0);
         const treatedSurface = Number(row.treatedSurface ?? 0);
         if (treatedSurface === 0) return "-";
@@ -2221,18 +2241,119 @@ export default function JobPage() {
       readOnly: true,
     },
     {
+      id: "stockInWarehouse",
+      title: "Stock in Magazzino",
+      type: "text",
+      width: "180px",
+      readOnly: true,
+      render: (value, row) => {
+        const stock = value as number | null | undefined;
+        const unit = row.stockInWarehouseUm as string | null | undefined;
+        if (stock === null || stock === undefined) return "-";
+        return (
+          <span className="font-mono text-sm">
+            {stock} {unit ?? ""}
+          </span>
+        );
+      },
+    },
+    {
       id: "cropType",
       title: "Tipo Coltura",
       type: "text",
       width: "150px",
       readOnly: true,
     },
+
     {
       id: "fields",
       title: "Campi",
       type: "text",
       width: "200px",
       readOnly: true,
+    },
+    {
+      id: "principioAttivo",
+      title: "Principio Attivo",
+      type: "text",
+      width: "200px",
+      readOnly: true,
+      render: (value) => {
+        const principioAttivo = value as string | null | undefined;
+        if (!principioAttivo) return "-";
+        return (
+          <span className="text-sm font-medium text-slate-700">
+            {principioAttivo}
+          </span>
+        );
+      },
+    },
+    {
+      id: "doseEtichetta",
+      title: "Dose Etichetta",
+      type: "text",
+      width: "150px",
+      readOnly: true,
+      render: (_value, row) => {
+        const doseMinima = row.doseMinima as number | null | undefined;
+        const doseMassima = row.doseMassima as number | null | undefined;
+        const doseUm = row.doseUm as string | null | undefined;
+
+        if (doseMinima === null && doseMassima === null) return "-";
+
+        const unit = doseUm ? ` ${doseUm}` : "";
+
+        if (doseMinima !== null && doseMassima !== null) {
+          if (doseMinima === doseMassima) {
+            return (
+              <span className="text-sm font-mono text-slate-700">
+                {doseMinima}
+                {unit}
+              </span>
+            );
+          }
+          return (
+            <span className="text-sm font-mono text-slate-700">
+              {doseMinima} - {doseMassima}
+              {unit}
+            </span>
+          );
+        }
+
+        if (doseMinima !== null) {
+          return (
+            <span className="text-sm font-mono text-slate-700">
+              {doseMinima}
+              {unit}
+            </span>
+          );
+        }
+
+        if (doseMassima !== null) {
+          return (
+            <span className="text-sm font-mono text-slate-700">
+              {doseMassima}
+              {unit}
+            </span>
+          );
+        }
+
+        return "-";
+      },
+    },
+    {
+      id: "acquaHl",
+      title: "Acqua (hl)",
+      type: "text",
+      width: "120px",
+      readOnly: true,
+      render: (value) => {
+        const acquaHl = value as number | null | undefined;
+        if (acquaHl === null || acquaHl === undefined) return "-";
+        return (
+          <span className="text-sm font-mono text-slate-700">{acquaHl} hl</span>
+        );
+      },
     },
     {
       id: "machineId",
@@ -2359,15 +2480,13 @@ export default function JobPage() {
       type: "number",
       width: "130px",
       readOnly: true,
-      render: (value, row) => {
+      render: (_value, row) => {
         const quantity = Number(row.quantity ?? 0);
         const treatedSurface = Number(row.treatedSurface ?? 0);
         if (treatedSurface === 0) return "-";
         const quantityPerHa = quantity / treatedSurface;
         return (
-          <span className="font-mono text-sm">
-            {quantityPerHa.toFixed(4)}
-          </span>
+          <span className="font-mono text-sm">{quantityPerHa.toFixed(4)}</span>
         );
       },
     },
