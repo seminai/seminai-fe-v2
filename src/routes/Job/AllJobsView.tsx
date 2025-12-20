@@ -80,6 +80,8 @@ interface AllJobsViewProps {
   exportConfig?: CustomExportConfig;
   isRightSidebarOpen: boolean;
   onToggleRightSidebar: (open: boolean) => void;
+  showAddButton?: boolean;
+  newRowDefaults?: Partial<Record<string, unknown>>;
 }
 
 export function JobIdMultiSelect({
@@ -254,6 +256,8 @@ export function AllJobsView({
   exportConfig,
   isRightSidebarOpen,
   onToggleRightSidebar,
+  showAddButton = true,
+  newRowDefaults,
 }: AllJobsViewProps) {
   const hasError = Boolean(error);
   const errorMessage =
@@ -299,7 +303,7 @@ export function AllJobsView({
             </div>
           )}
 
-          {jobsLength === 0 && !isLoading ? (
+          {jobsLength === 0 && !isLoading && !showAddButton ? (
             <div className="text-center py-16 text-neutral-500">
               <p>Nessuna operazione trovata</p>
             </div>
@@ -307,6 +311,9 @@ export function AllJobsView({
             <div className="h-full flex flex-col relative">
               <div className="flex-1 min-h-0">
                 <EditableTable
+                  addButton={showAddButton}
+                  createMode="inline"
+                  newRowDefaults={newRowDefaults}
                   columns={columns}
                   rows={rows}
                   isModify={true}
