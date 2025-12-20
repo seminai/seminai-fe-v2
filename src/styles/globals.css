@@ -344,3 +344,12 @@ body {
 [data-sonner-toast] [style*="color"] {
   color: #000000 !important;
 }
+
+/* Non-modal drawer: allow interaction with elements behind */
+[data-slot="drawer-portal"]:has([data-modal="false"]) {
+  pointer-events: none;
+}
+
+[data-slot="drawer-portal"]:has([data-modal="false"]) [data-slot="drawer-content"] {
+  pointer-events: auto;
+}

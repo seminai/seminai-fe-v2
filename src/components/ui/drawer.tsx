@@ -63,12 +63,17 @@ function DrawerContent({
       {modal && <DrawerOverlay />}
       <DrawerPrimitive.Content
         data-slot="drawer-content"
+        data-modal={modal}
         className={cn(
           "group/drawer-content bg-white fixed z-50 flex h-auto flex-col",
           "data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=top]:rounded-b-lg",
           "data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-24 data-[vaul-drawer-direction=bottom]:max-h-[80vh] data-[vaul-drawer-direction=bottom]:rounded-t-lg",
-          "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-[90vw] data-[vaul-drawer-direction=right]:sm:w-[900px] data-[vaul-drawer-direction=right]:max-w-[900px]",
-          "data-[vaul-drawer-direction=left]:inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:w-[90vw] data-[vaul-drawer-direction=left]:sm:w-[900px] data-[vaul-drawer-direction=left]:max-w-[900px]",
+          "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-[90vw] data-[vaul-drawer-direction=right]:sm:w-[400px] data-[vaul-drawer-direction=right]:max-w-[400px]",
+          "data-[vaul-drawer-direction=left]:inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:w-[90vw] data-[vaul-drawer-direction=left]:sm:w-[400px] data-[vaul-drawer-direction=left]:max-w-[400px]",
+          // Non-modal drawer styles: shadow e border per distinguerla
+          "data-[modal=false]:shadow-2xl",
+          "data-[modal=false][data-vaul-drawer-direction=right]:border-l data-[modal=false][data-vaul-drawer-direction=right]:border-neutral-200",
+          "data-[modal=false][data-vaul-drawer-direction=left]:border-r data-[modal=false][data-vaul-drawer-direction=left]:border-neutral-200",
           className
         )}
         {...props}

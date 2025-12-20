@@ -334,8 +334,7 @@ interface EditableTableState {
   columnFilterSelectedDates: Record<string, Date | undefined>; // Date singole per colonna
   // Bulk edit state
   bulkEditDrawerOpen: boolean;
-  bulkEditSelectedColumnId?: string;
-  bulkEditValue: unknown;
+  bulkEditValues: Record<string, unknown>;
 }
 
 export class EditableTable extends React.Component<
@@ -385,8 +384,7 @@ export class EditableTable extends React.Component<
       columnFilterDateRanges: {},
       columnFilterSelectedDates: {},
       bulkEditDrawerOpen: false,
-      bulkEditSelectedColumnId: undefined,
-      bulkEditValue: "",
+      bulkEditValues: {},
     };
   }
 
@@ -2028,16 +2026,14 @@ export class EditableTable extends React.Component<
   private openBulkEditDrawer = (): void => {
     this.setState({
       bulkEditDrawerOpen: true,
-      bulkEditSelectedColumnId: undefined,
-      bulkEditValue: "",
+      bulkEditValues: {},
     });
   };
 
   private closeBulkEditDrawer = (): void => {
     this.setState({
       bulkEditDrawerOpen: false,
-      bulkEditSelectedColumnId: undefined,
-      bulkEditValue: "",
+      bulkEditValues: {},
     });
   };
 
@@ -2047,15 +2043,16 @@ export class EditableTable extends React.Component<
     }
   };
 
-  private handleBulkEditColumnChange = (columnId: string): void => {
-    this.setState({
-      bulkEditSelectedColumnId: columnId,
-      bulkEditValue: "",
-    });
-  };
-
-  private handleBulkEditValueChange = (value: unknown): void => {
-    this.setState({ bulkEditValue: value });
+  private handleBulkEditValueChange = (
+    columnId: string,
+    value: unknown
+  ): void => {
+    this.setState((prev) => ({
+      bulkEditValues: {
+        ...prev.bulkEditValues,
+        [columnId]: value,
+      },
+    }));
   };
 
   private getEditableColumns(): EditableColumn[] {
@@ -2063,15 +2060,18 @@ export class EditableTable extends React.Component<
   }
 
   private applyBulkEdit = (): void => {
-    const { bulkEditSelectedColumnId, bulkEditValue } = this.state;
-    if (!bulkEditSelectedColumnId) {
+    const { bulkEditValues } = this.state;
+
+    // Get only columns that have a value set (not undefined/empty)
+    const columnsToUpdate = Object.entries(bulkEditValues).filter(
+      ([, value]) => value !== undefined && value !== ""
+    );
+
+    if (columnsToUpdate.length === 0) {
       return;
     }
 
     const selectedIdsSet = new Set(this.selectedIds);
-    const column = this.props.columns.find(
-      (c) => c.id === bulkEditSelectedColumnId
-    );
 
     this.setState((prev) => {
       const updatedRows = prev.rows.map((row) => {
@@ -2079,32 +2079,36 @@ export class EditableTable extends React.Component<
           return row;
         }
 
-        const baseRowData = {
-          ...row.data,
-          [bulkEditSelectedColumnId]: bulkEditValue,
-        };
+        const updatedData = { ...row.data };
+        let allComputedUpdates: Record<string, unknown> = {};
 
-        // Apply onValueChange if defined for the column
-        const computedUpdates = column?.onValueChange
-          ? column.onValueChange({
-              value: bulkEditValue,
-              rowData: baseRowData,
-              columnId: bulkEditSelectedColumnId,
-            })
-          : undefined;
+        // Apply each column update
+        for (const [columnId, value] of columnsToUpdate) {
+          updatedData[columnId] = value;
 
-        const sanitizedUpdates =
-          computedUpdates && typeof computedUpdates === "object"
-            ? (computedUpdates as Record<string, unknown>)
-            : undefined;
+          // Apply onValueChange if defined for the column
+          const column = this.props.columns.find((c) => c.id === columnId);
+          if (column?.onValueChange) {
+            const computedUpdates = column.onValueChange({
+              value,
+              rowData: updatedData,
+              columnId,
+            });
+            if (computedUpdates && typeof computedUpdates === "object") {
+              allComputedUpdates = {
+                ...allComputedUpdates,
+                ...(computedUpdates as Record<string, unknown>),
+              };
+            }
+          }
+        }
 
         return {
           ...row,
           isDirty: true,
           data: {
-            ...row.data,
-            [bulkEditSelectedColumnId]: bulkEditValue,
-            ...(sanitizedUpdates ?? {}),
+            ...updatedData,
+            ...allComputedUpdates,
           },
         };
       });
@@ -2112,108 +2116,88 @@ export class EditableTable extends React.Component<
       // Update touched state for all modified rows
       const updatedTouched = { ...prev.touched };
       selectedIdsSet.forEach((rowId) => {
-        updatedTouched[rowId] = {
-          ...(updatedTouched[rowId] || {}),
-          [bulkEditSelectedColumnId]: true,
-        };
+        const touchedCols = updatedTouched[rowId] || {};
+        for (const [columnId] of columnsToUpdate) {
+          touchedCols[columnId] = true;
+        }
+        updatedTouched[rowId] = touchedCols;
       });
 
       return {
         rows: updatedRows,
         touched: updatedTouched,
         bulkEditDrawerOpen: false,
-        bulkEditSelectedColumnId: undefined,
-        bulkEditValue: "",
+        bulkEditValues: {},
       };
     });
   };
 
   private renderBulkEditDrawer(): React.ReactNode {
-    const { bulkEditDrawerOpen, bulkEditSelectedColumnId, bulkEditValue } =
-      this.state;
+    const { bulkEditDrawerOpen, bulkEditValues } = this.state;
     const editableColumns = this.getEditableColumns();
-    const selectedColumn = editableColumns.find(
-      (c) => c.id === bulkEditSelectedColumnId
-    );
     const selectionCount = this.selectedIds.length;
 
-    // Create a fake row for the input renderer
-    const fakeRow: InternalRow = {
-      id: "bulk-edit-fake-row",
-      data: { [bulkEditSelectedColumnId ?? ""]: bulkEditValue },
-      isNew: false,
-      isDirty: false,
-    };
-
-    const canApply = Boolean(bulkEditSelectedColumnId);
+    // Check if at least one field has a value
+    const hasAnyValue = Object.values(bulkEditValues).some(
+      (v) => v !== undefined && v !== ""
+    );
 
     return (
       <Drawer
         open={bulkEditDrawerOpen}
         onOpenChange={this.handleBulkEditDrawerOpenChange}
         modal={false}
+        direction="right"
       >
         <DrawerContent
           data-vaul-drawer-direction="right"
-          className="shadow-2xl rounded-2xl"
+          className="shadow-2xl rounded-r-none rounded-l-2xl border-l border-neutral-200"
         >
           <DrawerHeader>
             <DrawerTitle>Modifica {selectionCount} elementi</DrawerTitle>
             <DrawerDescription>
-              Seleziona il campo da modificare e inserisci il nuovo valore. La
-              modifica verrà applicata a tutti gli elementi selezionati.
+              Compila i campi che vuoi modificare. Solo i campi compilati
+              verranno applicati a tutti gli elementi selezionati.
             </DrawerDescription>
           </DrawerHeader>
-          <div className="p-6 space-y-6">
-            {/* Column selector */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">
-                Campo da modificare
-              </label>
-              <select
-                className={cn(
-                  "w-full file:text-foreground placeholder:text-foreground/40 flex h-10 min-w-0 rounded-xl bg-white/70 dark:bg-input/30 backdrop-blur px-3 py-2 text-base transition-all outline-none md:text-sm",
-                  "border border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20",
-                  "focus-visible:ring-2 focus-visible:ring-[#0A84FF]/80 focus-visible:border-transparent"
-                )}
-                value={bulkEditSelectedColumnId ?? ""}
-                onChange={(e) =>
-                  this.handleBulkEditColumnChange(e.target.value)
-                }
-              >
-                <option value="">Seleziona un campo...</option>
-                {editableColumns.map((col) => (
-                  <option key={col.id} value={col.id}>
-                    {col.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-5">
+              {editableColumns.map((col) => {
+                // Create a fake row for each column input
+                const fakeRow: InternalRow = {
+                  id: `bulk-edit-fake-row-${col.id}`,
+                  data: { [col.id]: bulkEditValues[col.id] ?? "" },
+                  isNew: false,
+                  isDirty: false,
+                };
 
-            {/* Value input - only show when column is selected */}
-            {selectedColumn && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Nuovo valore
-                </label>
-                {this.renderInput(fakeRow, selectedColumn, {
-                  onChange: (_row, _col, value) =>
-                    this.handleBulkEditValueChange(value),
-                  touchedOverride: {},
-                })}
-              </div>
-            )}
-
-            {/* Action buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={this.closeBulkEditDrawer}>
-                Annulla
-              </Button>
-              <Button onClick={this.applyBulkEdit} disabled={!canApply}>
-                Applica a {selectionCount} element
-                {selectionCount === 1 ? "o" : "i"}
-              </Button>
+                return (
+                  <div key={col.id} className="space-y-1.5">
+                    <label className="text-sm font-medium text-neutral-700">
+                      {col.title}
+                      {col.required && (
+                        <span className="text-red-500 ml-1">*</span>
+                      )}
+                    </label>
+                    {this.renderInput(fakeRow, col, {
+                      onChange: (_row, _col, value) =>
+                        this.handleBulkEditValueChange(col.id, value),
+                      touchedOverride: {},
+                    })}
+                  </div>
+                );
+              })}
             </div>
+          </div>
+          {/* Action buttons - sticky footer */}
+          <div className="flex justify-end gap-3 p-4 border-t bg-white">
+            <Button variant="outline" onClick={this.closeBulkEditDrawer}>
+              Annulla
+            </Button>
+            <Button onClick={this.applyBulkEdit} disabled={!hasAnyValue}>
+              Applica a {selectionCount} element
+              {selectionCount === 1 ? "o" : "i"}
+            </Button>
           </div>
         </DrawerContent>
       </Drawer>
