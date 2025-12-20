@@ -51,6 +51,10 @@ import {
 import { cn } from "@/lib/utils";
 import AllJobsView, { JobIdMultiSelect } from "./AllJobsView";
 import ReviewJobsView from "./ReviewJobsView";
+import {
+  getAuthorizedFitosanitariRecords,
+  type FitosanitariDatasetRecord,
+} from "@/services/fitosanitariRegistry";
 
 // Component to display job history in a Sheet
 interface JobHistorySheetProps {
@@ -1317,6 +1321,18 @@ class JobTableRowBuilder {
     );
   }
 
+  private getVerificationStatus(): string {
+    const { job } = this.jobWithRelations;
+
+    // Se conformityChecked è false, mostra "Conformità non verificata"
+    if (!job.conformityChecked) {
+      return "Conformità non verificata";
+    }
+
+    // Se conformityChecked è true, mostra lo stato standard
+    return job.isVerified ? "Verificato" : "Non Verificato";
+  }
+
   public build(): Record<string, unknown> {
     const { job, productionUnit, company, fields, machine } =
       this.jobWithRelations;
@@ -1341,11 +1357,12 @@ class JobTableRowBuilder {
       treatedSurface: job.treatedSurface,
       avversity: job.avversity ?? "-",
       note: job.note,
-      isVerified: job.isVerified ? "Verificato" : "Non Verificato",
+      isVerified: this.getVerificationStatus(),
       alertNotes: job.alertNotes ?? null,
       machineName: machine?.name ?? "-",
       machineId: machine?.id ?? null,
       _isVerifiedBoolean: job.isVerified,
+      _conformityChecked: job.conformityChecked,
       _originalQuantity: job.quantity,
       _originalDateOfOperation: new Date(job.dateOfOpeation),
       _originalMachineId: machine?.id ?? null,
@@ -1812,6 +1829,118 @@ export default function JobPage() {
     [groupsSidebarWidth]
   );
   const { labels } = useLabelsSummary();
+  const { productionUnits } = useProductionUnit();
+
+  // Carica i prodotti fitosanitari autorizzati
+  const [fitosanitariProducts, setFitosanitariProducts] = useState<
+    FitosanitariDatasetRecord[]
+  >([]);
+  const [isLoadingFitosanitari, setIsLoadingFitosanitari] =
+    useState<boolean>(true);
+
+  useEffect(() => {
+    getAuthorizedFitosanitariRecords()
+      .then((records) => {
+        setFitosanitariProducts(records);
+      })
+      .catch((error) => {
+        console.error("Error loading fitosanitari products:", error);
+      })
+      .finally(() => {
+        setIsLoadingFitosanitari(false);
+      });
+  }, []);
+
+  // Opzioni prodotti fitosanitari per le select
+  const fitosanitariOptions = useMemo(() => {
+    return fitosanitariProducts.map((product) => ({
+      label: `${product.productName} (Reg. ${product.registrationNumber}) - ${product.activeIngredients}`,
+      value: product.registrationNumber,
+      productName: product.productName,
+      activeIngredients: product.activeIngredients,
+      activity: product.activity,
+    }));
+  }, [fitosanitariProducts]);
+
+  // Map per lookup veloce dei prodotti fitosanitari
+  const fitosanitariMap = useMemo(() => {
+    const map = new Map<string, FitosanitariDatasetRecord>();
+    fitosanitariProducts.forEach((product) => {
+      map.set(product.registrationNumber, product);
+    });
+    return map;
+  }, [fitosanitariProducts]);
+
+  // Opzioni unità produttive per le select
+  const productionUnitSelectOptions = useMemo(() => {
+    return productionUnits.map((pu) => ({
+      label: `${pu.productionUnit.name} (${pu.productionUnit.cropName})`,
+      value: pu.productionUnit.name, // Usa il nome come value per il filtro
+      id: pu.productionUnit.id, // Mantiene l'ID per la logica interna
+      name: pu.productionUnit.name,
+      cropName: pu.productionUnit.cropName,
+      cropType: pu.productionUnit.cropType,
+      companyId: pu.companyId,
+      companyName: pu.companyName,
+    }));
+  }, [productionUnits]);
+
+  // Map per lookup veloce delle unità produttive per nome
+  const productionUnitMap = useMemo(() => {
+    const map = new Map<string, (typeof productionUnitSelectOptions)[0]>();
+    productionUnitSelectOptions.forEach((pu) => {
+      map.set(pu.name, pu); // Lookup per nome
+    });
+    return map;
+  }, [productionUnitSelectOptions]);
+
+  // Opzioni aziende uniche per il primo step della selezione
+  const companySelectOptions = useMemo(() => {
+    const companiesMap = new Map<string, { id: string; name: string }>();
+    productionUnits.forEach((pu) => {
+      if (!companiesMap.has(pu.companyId)) {
+        companiesMap.set(pu.companyId, {
+          id: pu.companyId,
+          name: pu.companyName,
+        });
+      }
+    });
+    return Array.from(companiesMap.values()).map((company) => ({
+      label: `${company.name}`,
+      value: `company:${company.id}`,
+      companyId: company.id,
+      companyName: company.name,
+      isCompany: true,
+    }));
+  }, [productionUnits]);
+
+  // Funzione per ottenere le opzioni della select unità produttiva in base al contesto
+  const getProductionUnitOptions = (rowData: Record<string, unknown>) => {
+    // Per le righe esistenti, usa _companyId se _selectedCompanyForPU non è impostato
+    const selectedCompanyId =
+      (rowData._selectedCompanyForPU as string | undefined) ||
+      (rowData._companyId as string | undefined);
+
+    if (!selectedCompanyId) {
+      // Nessuna azienda selezionata: mostra le aziende
+      return companySelectOptions;
+    }
+
+    // Azienda selezionata: mostra le unità produttive di quell'azienda + opzione per tornare indietro
+    const filteredPUs = productionUnitSelectOptions.filter(
+      (pu) => pu.companyId === selectedCompanyId
+    );
+
+    return [
+      {
+        label: "🔵 Pulisci filtro (torna alle aziende)",
+        value: "clear_filter",
+        isBackOption: true,
+      },
+      ...filteredPUs,
+    ];
+  };
+
   const bulkVerifier = useMemo(() => new JobBulkVerifier(jobsApiService), []);
   const jobExportConfig = useMemo(
     () => new JobExportConfigBuilder().build(),
@@ -2138,16 +2267,38 @@ export default function JobPage() {
       id: "isVerified",
       title: "Stato Verifica",
       type: "select",
-      width: "180px",
-      options: ["Verificato", "Non Verificato"],
+      width: "220px",
+      options: ["Verificato", "Non Verificato", "Conformità non verificata"],
       onValueChange: ({ value }) => {
-        // Aggiorna anche il valore booleano nascosto
+        // Gestisce i 3 stati possibili
+        if (value === "Conformità non verificata") {
+          return {
+            _isVerifiedBoolean: false,
+            _conformityChecked: false,
+          };
+        }
         return {
           _isVerifiedBoolean: value === "Verificato",
+          _conformityChecked: true,
         };
       },
       render: (value) => {
-        const isVerified = value === "Verificato";
+        const stringValue = value as string;
+        const isVerified = stringValue === "Verificato";
+        const isConformityNotChecked =
+          stringValue === "Conformità non verificata";
+
+        if (isConformityNotChecked) {
+          return (
+            <Badge
+              variant="outline"
+              className="bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300"
+            >
+              {stringValue}
+            </Badge>
+          );
+        }
+
         return (
           <Badge
             variant={isVerified ? "default" : "destructive"}
@@ -2157,7 +2308,7 @@ export default function JobPage() {
                 : "bg-red-500 hover:bg-red-600 text-white animate-pulse"
             }
           >
-            {value as string}
+            {stringValue}
           </Badge>
         );
       },
@@ -2168,6 +2319,7 @@ export default function JobPage() {
       type: "date",
       width: "150px",
       readOnly: false,
+      required: true,
       render: (value) => {
         if (!value) return "-";
         const date = value instanceof Date ? value : new Date(value as string);
@@ -2178,9 +2330,94 @@ export default function JobPage() {
     {
       id: "productionUnitName",
       title: "Unità Produttiva",
-      type: "text",
-      width: "200px",
-      readOnly: true,
+      type: "select",
+      width: "280px",
+      readOnly: false,
+      required: true,
+      getOptions: getProductionUnitOptions,
+      placeholder: "Seleziona azienda...",
+      enableSearch: true,
+      searchPlaceholder: "Cerca azienda o unità produttiva...",
+      emptyStateMessage: "Nessuna opzione trovata",
+      onValueChange: ({ value, rowData }) => {
+        const stringValue = String(value);
+
+        // Se clicca su "pulisci filtro", torna alla selezione aziende
+        if (stringValue === "clear_filter") {
+          return {
+            _selectedCompanyForPU: "",
+            _productionUnitId: "",
+            productionUnitName: "",
+            cropName: "",
+            cropType: "",
+            _companyId: "",
+            companyName: "",
+          };
+        }
+
+        // Se seleziona un'azienda (value inizia con "company:")
+        if (stringValue.startsWith("company:")) {
+          const companyId = stringValue.replace("company:", "");
+          const company = companySelectOptions.find(
+            (c) => c.companyId === companyId
+          );
+          return {
+            _selectedCompanyForPU: companyId,
+            _productionUnitId: "", // Reset unità produttiva
+            productionUnitName: "",
+            cropName: "",
+            cropType: "",
+            _companyId: companyId,
+            companyName: company?.companyName ?? "",
+          };
+        }
+
+        // Se seleziona un'unità produttiva (value è il nome)
+        const selectedPu = productionUnitMap.get(stringValue);
+        if (selectedPu) {
+          return {
+            _selectedCompanyForPU: rowData._selectedCompanyForPU, // Mantieni azienda
+            _productionUnitId: selectedPu.id, // Usa l'ID per la logica interna
+            productionUnitName: selectedPu.name,
+            cropName: selectedPu.cropName,
+            cropType: selectedPu.cropType,
+            _companyId: selectedPu.companyId,
+            companyName: selectedPu.companyName,
+          };
+        }
+
+        return {
+          _productionUnitId: "",
+          productionUnitName: stringValue,
+          cropName: "",
+          cropType: "",
+        };
+      },
+      render: (value, row) => {
+        // Il valore della colonna ora è productionUnitName
+        const name =
+          (value as string) || (row.productionUnitName as string | undefined);
+        const companyName = row.companyName as string | undefined;
+        const selectedCompanyForPU = row._selectedCompanyForPU as
+          | string
+          | undefined;
+
+        // Se ha un'unità produttiva selezionata, mostrala
+        if (name) {
+          return <span>{name}</span>;
+        }
+
+        // Se ha solo l'azienda selezionata, mostra placeholder per UP
+        if (selectedCompanyForPU && companyName) {
+          return (
+            <span className="text-muted-foreground italic">
+              {companyName} → scegli UP...
+            </span>
+          );
+        }
+
+        return <span className="text-muted-foreground">-</span>;
+      },
     },
 
     {
@@ -2191,11 +2428,43 @@ export default function JobPage() {
       readOnly: true,
     },
     {
-      id: "productName",
+      id: "productRegistrationNumber",
       title: "Prodotto",
-      type: "text",
-      width: "200px",
-      readOnly: true,
+      type: "select",
+      width: "300px",
+      readOnly: false,
+      required: true,
+      getOptions: () => fitosanitariOptions.slice(0, 200), // Limita per performance
+      placeholder: isLoadingFitosanitari
+        ? "Caricamento..."
+        : "Seleziona prodotto...",
+      enableSearch: true,
+      searchPlaceholder:
+        "Cerca per nome, principio attivo o numero registrazione...",
+      emptyStateMessage: "Nessun prodotto trovato",
+      onValueChange: ({ value }) => {
+        const selectedProduct = fitosanitariMap.get(String(value));
+        if (selectedProduct) {
+          return {
+            productRegistrationNumber: selectedProduct.registrationNumber,
+            productName: selectedProduct.productName,
+            principioAttivo: selectedProduct.activeIngredients,
+          };
+        }
+        return {
+          productRegistrationNumber: value,
+          productName: "",
+          principioAttivo: "",
+        };
+      },
+      render: (_value, row) => {
+        const name = row.productName as string | undefined;
+        return name ? (
+          <span>{name}</span>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        );
+      },
     },
     {
       id: "quantity",
@@ -2203,13 +2472,21 @@ export default function JobPage() {
       type: "number",
       width: "120px",
       readOnly: false,
+      required: true,
     },
     {
       id: "unitOfMeasureQuantity",
       title: "Unità",
-      type: "text",
+      type: "select",
       width: "100px",
-      readOnly: true,
+      readOnly: false,
+      options: [
+        { label: "L", value: "L" },
+        { label: "KG", value: "KG" },
+        { label: "ML", value: "ML" },
+        { label: "G", value: "G" },
+      ],
+      placeholder: "UM",
     },
     {
       id: "treatedSurface",
@@ -2408,13 +2685,37 @@ export default function JobPage() {
       id: "isVerified",
       title: "Stato",
       type: "select",
-      width: "150px",
-      options: ["Verificato", "Non Verificato"],
-      onValueChange: ({ value }) => ({
-        _isVerifiedBoolean: value === "Verificato",
-      }),
+      width: "180px",
+      options: ["Verificato", "Non Verificato", "Conformità non verificata"],
+      onValueChange: ({ value }) => {
+        if (value === "Conformità non verificata") {
+          return {
+            _isVerifiedBoolean: false,
+            _conformityChecked: false,
+          };
+        }
+        return {
+          _isVerifiedBoolean: value === "Verificato",
+          _conformityChecked: true,
+        };
+      },
       render: (value) => {
-        const isVerified = value === "Verificato";
+        const stringValue = value as string;
+        const isVerified = stringValue === "Verificato";
+        const isConformityNotChecked =
+          stringValue === "Conformità non verificata";
+
+        if (isConformityNotChecked) {
+          return (
+            <Badge
+              variant="outline"
+              className="bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300"
+            >
+              Conformità N/V
+            </Badge>
+          );
+        }
+
         return (
           <Badge
             variant={isVerified ? "default" : "destructive"}
@@ -2550,10 +2851,65 @@ export default function JobPage() {
     updated: Array<Record<string, unknown>>;
   }) => {
     try {
-      // Processa solo gli aggiornamenti (non ci dovrebbero essere creazioni)
+      let createdCount = 0;
+      let updatedCount = 0;
+
+      // 1. Processa le nuove righe create
+      if (payload.created.length > 0) {
+        const createPayloads = payload.created
+          .filter((row) => {
+            // Verifica che ci siano i campi obbligatori
+            const productionUnitId = row._productionUnitId as
+              | string
+              | undefined;
+            const productName = row.productName as string | undefined;
+            const productRegNumber = row.productRegistrationNumber as
+              | string
+              | undefined;
+            return productionUnitId && productName && productRegNumber;
+          })
+          .map((row) => {
+            const dateOfOperation = row.dateOfOpeation
+              ? row.dateOfOpeation instanceof Date
+                ? row.dateOfOpeation
+                : new Date(row.dateOfOpeation as string)
+              : new Date();
+
+            return {
+              productionUnitId: row._productionUnitId as string,
+              dateOfOpeation: dateOfOperation.toISOString(),
+              category: (row.category as string) || "TREATMENT",
+              quantity: Number(row.quantity) || 0,
+              unitOfMeasureQuantity:
+                (row.unitOfMeasureQuantity as string) || "L",
+              stocks: [
+                {
+                  product: {
+                    name: row.productName as string,
+                    category: "PESTICIDE",
+                    type: "Fitosanitario",
+                    registrationNumber: row.productRegistrationNumber as string,
+                  },
+                  quantity: -(Number(row.quantity) || 0),
+                  unitOfMeasureQuantity:
+                    (row.unitOfMeasureQuantity as string) || "L",
+                  type: "OUT" as const,
+                },
+              ],
+            };
+          });
+
+        if (createPayloads.length > 0) {
+          await jobsApiService.createProductAndJob(createPayloads);
+          createdCount = createPayloads.length;
+        }
+      }
+
+      // 2. Processa gli aggiornamenti
       for (const row of payload.updated) {
         const jobId = row.id as string;
         const isVerified = row._isVerifiedBoolean as boolean;
+        const conformityChecked = row._conformityChecked as boolean | undefined;
         const newQuantity = Number(row.quantity);
         const originalQuantity = Number(row._originalQuantity ?? row.quantity);
         const newDateOfOperation = row.dateOfOpeation
@@ -2570,6 +2926,7 @@ export default function JobPage() {
         // Prepara il payload di aggiornamento
         const updatePayload: {
           isVerified?: boolean;
+          conformityChecked?: boolean;
           quantity?: number;
           dateOfOpeation?: string;
           machineId?: string | null;
@@ -2580,12 +2937,17 @@ export default function JobPage() {
           updatePayload.isVerified = isVerified;
         }
 
-        // 2. Aggiorna la quantità se modificata
+        // 2. Aggiorna lo stato di conformità se presente
+        if (conformityChecked !== undefined) {
+          updatePayload.conformityChecked = conformityChecked;
+        }
+
+        // 3. Aggiorna la quantità se modificata
         if (newQuantity !== originalQuantity) {
           updatePayload.quantity = newQuantity;
         }
 
-        // 3. Aggiorna la data di operazione se modificata
+        // 4. Aggiorna la data di operazione se modificata
         if (
           newDateOfOperation &&
           originalDateOfOperation &&
@@ -2595,7 +2957,7 @@ export default function JobPage() {
           updatePayload.dateOfOpeation = newDateOfOperation.toISOString();
         }
 
-        // 4. Aggiorna la macchina se modificata
+        // 5. Aggiorna la macchina se modificata
         const newMachineId =
           (row.machineId as string | null | undefined) ?? null;
         const originalMachineId =
@@ -2607,21 +2969,42 @@ export default function JobPage() {
         // Esegui l'aggiornamento se ci sono modifiche
         if (Object.keys(updatePayload).length > 0) {
           await jobsApiService.updateJob(jobId, updatePayload);
+          updatedCount++;
         }
       }
 
-      toast.success("Operazioni aggiornate", {
-        description: `${payload.updated.length} operazioni aggiornate con successo`,
-      });
+      // Mostra toast appropriato
+      const messages: string[] = [];
+      if (createdCount > 0) {
+        messages.push(`${createdCount} operazione/i creata/e`);
+      }
+      if (updatedCount > 0) {
+        messages.push(`${updatedCount} operazione/i aggiornata/e`);
+      }
+
+      if (messages.length > 0) {
+        toast.success("Salvataggio completato", {
+          description: messages.join(", "),
+        });
+      }
 
       // Ricarica i dati
       await Promise.all([refetchGroupsSummary(), refetchGroupDetail()]);
+
+      // Ricarica i job selezionati se presenti
+      if (selectedAllJobIds.length > 0) {
+        const responses = await Promise.all(
+          selectedAllJobIds.map((jobId) => jobsApiService.getGroupDetail(jobId))
+        );
+        const jobs = responses.flatMap((res) => res.data.jobs ?? []);
+        setAllSelectedJobs(jobs);
+      }
     } catch (error) {
-      toast.error("Errore durante l'aggiornamento", {
+      toast.error("Errore durante il salvataggio", {
         description:
           error instanceof Error ? error.message : "Riprova più tardi",
       });
-      console.error("Error updating jobs:", error);
+      console.error("Error saving jobs:", error);
     }
   };
 
@@ -2679,6 +3062,31 @@ export default function JobPage() {
     }
   };
 
+  // Default values for new rows
+  const newRowDefaults = useMemo(
+    () => ({
+      isVerified: "Non Verificato",
+      _isVerifiedBoolean: false,
+      _conformityChecked: true, // Le nuove righe hanno conformità verificata di default
+      dateOfOpeation: new Date(),
+      category: "TREATMENT",
+      unitOfMeasureQuantity: "L",
+      quantity: 0,
+      _isNewRow: true,
+      _selectedCompanyForPU: "", // Per il flusso a due step della selezione UP
+      _productionUnitId: "",
+      productionUnitName: "",
+      cropName: "",
+      cropType: "",
+      _companyId: "",
+      companyName: "",
+      productRegistrationNumber: "",
+      productName: "",
+      principioAttivo: "",
+    }),
+    []
+  );
+
   // Renderizza la vista "Tutte le operazioni"
   const renderAllJobsView = () => (
     <AllJobsView
@@ -2710,6 +3118,8 @@ export default function JobPage() {
       exportConfig={jobExportConfig}
       isRightSidebarOpen={isRightSidebarOpen}
       onToggleRightSidebar={setIsRightSidebarOpen}
+      showAddButton={true}
+      newRowDefaults={newRowDefaults}
     />
   );
 
