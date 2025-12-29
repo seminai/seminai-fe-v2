@@ -1,8 +1,15 @@
 import { toast } from "sonner";
-import { Package, Sprout } from "lucide-react";
+import { Package, Sprout, User, ArrowRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { type JobHistoryEntry } from "@/api/jobs";
+import { Badge } from "@/components/ui/badge";
+import {
+  type JobHistoryEntry,
+  type JobStandardHistoryEntry,
+  type JobModificationEntry,
+  type JobModificationChange,
+  isJobModificationEntry,
+} from "@/api/jobs";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 
 export class HistoryEntryFormatter {
@@ -11,6 +18,7 @@ export class HistoryEntryFormatter {
     dosage_scheduling: "Pianificazione Dosaggio",
     dosage_optimization: "Ottimizzazione Dosaggio",
     job_creation: "Creazione Job",
+    user_modification: "Modifiche Utente",
   };
 
   private static readonly SOURCE_COLORS: Record<string, string> = {
@@ -21,6 +29,7 @@ export class HistoryEntryFormatter {
     linear_programming: "bg-amber-100 text-amber-700",
     automatic_calculation: "bg-cyan-100 text-cyan-700",
     warehouse_stock: "bg-orange-100 text-orange-700",
+    user_modification: "bg-indigo-100 text-indigo-700",
   };
 
   private static readonly SOURCE_LABELS: Record<string, string> = {
@@ -31,6 +40,26 @@ export class HistoryEntryFormatter {
     linear_programming: "Ottimizzazione",
     automatic_calculation: "Calcolo Auto",
     warehouse_stock: "Magazzino",
+    user_modification: "Modifica Utente",
+  };
+
+  // Mapping dei nomi dei campi in italiano
+  private static readonly FIELD_LABELS: Record<string, string> = {
+    quantity: "Quantità",
+    note: "Note",
+    dateOfOpeation: "Data Operazione",
+    isVerified: "Stato Verifica",
+    conformityChecked: "Conformità Verificata",
+    machineId: "Macchina",
+    machineName: "Nome Macchina",
+    treatedSurface: "Superficie Trattata",
+    modeOfApplication: "Modalità Applicazione",
+    avversity: "Avversità",
+    category: "Categoria",
+    unitOfMeasureQuantity: "Unità di Misura",
+    productionUnitId: "Unità Produttiva",
+    productName: "Nome Prodotto",
+    productRegistrationNumber: "Numero Registrazione",
   };
 
   public static formatStep(step: string): string {
@@ -51,10 +80,31 @@ export class HistoryEntryFormatter {
       timeStyle: "short",
     });
   }
+
+  public static formatFieldName(field: string): string {
+    return this.FIELD_LABELS[field] ?? field;
+  }
+
+  public static formatValue(value: unknown): string {
+    if (value === null || value === undefined) {
+      return "-";
+    }
+    if (typeof value === "boolean") {
+      return value ? "Sì" : "No";
+    }
+    if (value instanceof Date) {
+      return value.toLocaleDateString("it-IT");
+    }
+    if (typeof value === "object") {
+      return JSON.stringify(value);
+    }
+    return String(value);
+  }
 }
 
-interface HistoryEntryDetailsProps {
-  entry: JobHistoryEntry;
+// Props per entry standard
+interface StandardHistoryEntryDetailsProps {
+  entry: JobStandardHistoryEntry;
   productionUnits?: Array<{
     productionUnit: { id: string; name: string };
   }>;
@@ -62,12 +112,13 @@ interface HistoryEntryDetailsProps {
   onProductClick?: (productName: string, registrationNumber?: string) => void;
 }
 
-export function HistoryEntryDetails({
+// Componente per visualizzare i dettagli di un'entry standard
+function StandardHistoryEntryDetails({
   entry,
   productionUnits = [],
   variant = "compact",
   onProductClick,
-}: HistoryEntryDetailsProps) {
+}: StandardHistoryEntryDetailsProps) {
   const { productionUnits: availableProductionUnits } = useProductionUnit();
   const metadata = entry.metadata;
   if (!metadata) return null;
@@ -193,6 +244,129 @@ export function HistoryEntryDetails({
         </div>
       )}
     </div>
+  );
+}
+
+// Props per visualizzare una singola modifica
+interface ModificationChangeDisplayProps {
+  change: JobModificationChange;
+  variant?: "compact" | "default";
+}
+
+// Componente per visualizzare una singola modifica
+function ModificationChangeDisplay({
+  change,
+  variant = "compact",
+}: ModificationChangeDisplayProps) {
+  const isCompact = variant === "compact";
+  const textSize = isCompact ? "text-[10px]" : "text-xs";
+
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-1.5 flex-wrap py-1 px-2 rounded bg-slate-50",
+        textSize
+      )}
+    >
+      <span className="font-medium text-slate-600">
+        {HistoryEntryFormatter.formatFieldName(change.field)}:
+      </span>
+      <span className="text-slate-400 line-through">
+        {HistoryEntryFormatter.formatValue(change.oldValue)}
+      </span>
+      <ArrowRight className="h-3 w-3 text-slate-400" />
+      <span className="text-slate-700 font-medium">
+        {HistoryEntryFormatter.formatValue(change.newValue)}
+      </span>
+    </div>
+  );
+}
+
+// Props per entry di modifica utente
+interface ModificationEntryDetailsProps {
+  entry: JobModificationEntry;
+  variant?: "compact" | "default";
+}
+
+// Componente per visualizzare i dettagli di una modifica utente
+export function ModificationEntryDetails({
+  entry,
+  variant = "compact",
+}: ModificationEntryDetailsProps) {
+  const isCompact = variant === "compact";
+  const textSize = isCompact ? "text-[10px]" : "text-xs";
+  const iconSize = isCompact ? "h-3 w-3" : "h-3.5 w-3.5";
+  const spacing = isCompact ? "mt-1.5 space-y-1.5" : "mt-2 space-y-2";
+
+  return (
+    <div className={cn(spacing, textSize, "text-slate-500")}>
+      {/* Info utente che ha effettuato la modifica */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <User className={cn(iconSize, "shrink-0 text-indigo-500")} />
+        <span className="font-medium text-slate-600">Modificato da:</span>
+        <button
+          className="text-slate-700 hover:text-slate-900 font-medium"
+          onClick={() => {
+            toast.info("Utente", {
+              description: `${entry.modifiedBy.name} (${entry.modifiedBy.email})`,
+            });
+          }}
+        >
+          {entry.modifiedBy.name}
+        </button>
+      </div>
+
+      {/* Lista delle modifiche */}
+      {entry.changes.length > 0 && (
+        <div className="space-y-1">
+          <span className="font-medium text-slate-600 text-[10px] uppercase tracking-wide">
+            Modifiche:
+          </span>
+          <div className="space-y-1">
+            {entry.changes.map((change, idx) => (
+              <ModificationChangeDisplay
+                key={`${change.field}-${idx}`}
+                change={change}
+                variant={variant}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Props generiche per HistoryEntryDetails
+interface HistoryEntryDetailsProps {
+  entry: JobHistoryEntry;
+  productionUnits?: Array<{
+    productionUnit: { id: string; name: string };
+  }>;
+  variant?: "compact" | "default";
+  onProductClick?: (productName: string, registrationNumber?: string) => void;
+}
+
+// Componente principale che gestisce entrambi i tipi di entry
+export function HistoryEntryDetails({
+  entry,
+  productionUnits = [],
+  variant = "compact",
+  onProductClick,
+}: HistoryEntryDetailsProps) {
+  // Se è una modifica utente, usa il componente dedicato
+  if (isJobModificationEntry(entry)) {
+    return <ModificationEntryDetails entry={entry} variant={variant} />;
+  }
+
+  // Altrimenti usa il componente standard
+  return (
+    <StandardHistoryEntryDetails
+      entry={entry}
+      productionUnits={productionUnits}
+      variant={variant}
+      onProductClick={onProductClick}
+    />
   );
 }
 

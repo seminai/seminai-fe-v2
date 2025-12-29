@@ -23,6 +23,10 @@ import {
   type JobWithRelations,
   type Product,
   type JobHistoryEntry,
+  type JobModificationEntry,
+  type JobStandardHistoryEntry,
+  isJobModificationEntry,
+  isJobStandardHistoryEntry,
 } from "@/api/jobs";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
@@ -39,22 +43,28 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   History,
-  Package,
-  Sprout,
   FileText,
   Search,
   File,
   AlertTriangle,
   CheckCircle2,
   XCircle,
+  User,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import AllJobsView, { JobIdMultiSelect } from "./AllJobsView";
+import AllJobsView, {
+  JobIdMultiSelect,
+  type RightSidebarMode,
+} from "./AllJobsView";
 import ReviewJobsView from "./ReviewJobsView";
 import {
   getAuthorizedFitosanitariRecords,
   type FitosanitariDatasetRecord,
 } from "@/services/fitosanitariRegistry";
+import {
+  HistoryEntryDetails,
+  HistoryEntryFormatter,
+  ModificationEntryDetails,
+} from "./HistoryEntryDetails";
 
 // Component to display job history in a Sheet
 interface JobHistorySheetProps {
@@ -65,53 +75,10 @@ interface JobHistorySheetProps {
   onProductClick?: (productName: string, registrationNumber?: string) => void;
 }
 
-class HistoryEntryFormatter {
-  private static readonly STEP_LABELS: Record<string, string> = {
-    crop_matching: "Matching Coltura",
-    dosage_scheduling: "Pianificazione Dosaggio",
-    dosage_optimization: "Ottimizzazione Dosaggio",
-    job_creation: "Creazione Job",
-  };
-
-  private static readonly SOURCE_COLORS: Record<string, string> = {
-    crop_taxonomy: "bg-emerald-100 text-emerald-700",
-    label_extraction: "bg-blue-100 text-blue-700",
-    user_input: "bg-green-100 text-green-700",
-    llm_openai: "bg-purple-100 text-purple-700",
-    linear_programming: "bg-amber-100 text-amber-700",
-    automatic_calculation: "bg-cyan-100 text-cyan-700",
-    warehouse_stock: "bg-orange-100 text-orange-700",
-  };
-
-  private static readonly SOURCE_LABELS: Record<string, string> = {
-    crop_taxonomy: "Tassonomia",
-    label_extraction: "Etichetta",
-    user_input: "Input Utente",
-    llm_openai: "AI",
-    linear_programming: "Ottimizzazione",
-    automatic_calculation: "Calcolo Auto",
-    warehouse_stock: "Magazzino",
-  };
-
-  public static formatStep(step: string): string {
-    return this.STEP_LABELS[step] ?? step;
-  }
-
-  public static getSourceColor(source: string): string {
-    return this.SOURCE_COLORS[source] ?? "bg-gray-100 text-gray-700";
-  }
-
-  public static formatSource(source: string): string {
-    return this.SOURCE_LABELS[source] ?? source;
-  }
-
-  public static formatTimestamp(timestamp: string): string {
-    return new Date(timestamp).toLocaleString("it-IT", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  }
-}
+// Tipo per rappresentare entry raggruppate (standard o modifica) nello sheet
+type SheetGroupedEntry =
+  | { type: "standard"; entry: JobStandardHistoryEntry }
+  | { type: "modification"; entry: JobModificationEntry };
 
 function JobHistorySheet({
   open,
@@ -123,15 +90,102 @@ function JobHistorySheet({
   const { productionUnits } = useProductionUnit();
 
   const groupedHistory = useMemo(() => {
-    const groups: Record<string, JobHistoryEntry[]> = {};
+    const groups: Record<string, SheetGroupedEntry[]> = {};
+
     history.forEach((entry) => {
-      if (!groups[entry.step]) {
-        groups[entry.step] = [];
+      if (isJobModificationEntry(entry)) {
+        // Le modifiche utente vanno nel gruppo "user_modification"
+        const stepKey = "user_modification";
+        if (!groups[stepKey]) {
+          groups[stepKey] = [];
+        }
+        groups[stepKey].push({ type: "modification", entry });
+      } else if (isJobStandardHistoryEntry(entry)) {
+        // Entry standard raggruppate per step
+        const stepKey = entry.step;
+        if (!groups[stepKey]) {
+          groups[stepKey] = [];
+        }
+        groups[stepKey].push({ type: "standard", entry });
       }
-      groups[entry.step].push(entry);
     });
+
     return groups;
   }, [history]);
+
+  // Render per entry standard
+  const renderStandardEntry = (
+    entry: JobStandardHistoryEntry,
+    step: string,
+    idx: number
+  ) => (
+    <div
+      key={`${step}-${idx}`}
+      className="flex flex-col gap-1.5 py-3 border-l-2 border-muted pl-3"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-sm font-medium text-foreground leading-tight">
+          {entry.title}
+        </span>
+        <Badge
+          variant="secondary"
+          className={`text-xs shrink-0 ${HistoryEntryFormatter.getSourceColor(
+            entry.source
+          )}`}
+        >
+          {HistoryEntryFormatter.formatSource(entry.source)}
+        </Badge>
+      </div>
+      <span className="text-sm text-foreground/80 font-medium">
+        {String(entry.value)}
+      </span>
+      {entry.metadata?.description && (
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {entry.metadata.description}
+        </p>
+      )}
+      <HistoryEntryDetails
+        entry={entry}
+        productionUnits={productionUnits}
+        variant="default"
+        onProductClick={onProductClick}
+      />
+      <span className="text-xs text-muted-foreground/60">
+        {HistoryEntryFormatter.formatTimestamp(entry.timestamp)}
+      </span>
+    </div>
+  );
+
+  // Render per entry di modifica utente
+  const renderModificationEntry = (
+    entry: JobModificationEntry,
+    step: string,
+    idx: number
+  ) => (
+    <div
+      key={`${step}-mod-${idx}`}
+      className="flex flex-col gap-2 py-3 border-l-2 border-indigo-400 pl-3 bg-indigo-50/50 rounded-r"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-indigo-500" />
+          <span className="text-sm font-medium text-foreground leading-tight">
+            Modifica manuale
+          </span>
+        </div>
+        <Badge
+          variant="secondary"
+          className="text-xs shrink-0 bg-indigo-100 text-indigo-700"
+        >
+          {entry.modifiedBy.name}
+        </Badge>
+      </div>
+      <ModificationEntryDetails entry={entry} variant="default" />
+      <span className="text-xs text-muted-foreground/60">
+        {HistoryEntryFormatter.formatTimestamp(entry.timestamp)}
+      </span>
+    </div>
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -162,43 +216,16 @@ function JobHistorySheet({
                   {HistoryEntryFormatter.formatStep(step)}
                 </h3>
                 <div className="space-y-2 pl-2">
-                  {entries.map((entry, idx) => (
-                    <div
-                      key={`${step}-${idx}`}
-                      className="flex flex-col gap-1.5 py-3 border-l-2 border-muted pl-3"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-sm font-medium text-foreground leading-tight">
-                          {entry.title}
-                        </span>
-                        <Badge
-                          variant="secondary"
-                          className={`text-xs shrink-0 ${HistoryEntryFormatter.getSourceColor(
-                            entry.source
-                          )}`}
-                        >
-                          {HistoryEntryFormatter.formatSource(entry.source)}
-                        </Badge>
-                      </div>
-                      <span className="text-sm text-foreground/80 font-medium">
-                        {String(entry.value)}
-                      </span>
-                      {entry.metadata?.description && (
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          {entry.metadata.description}
-                        </p>
-                      )}
-                      <HistoryEntryDetails
-                        entry={entry}
-                        productionUnits={productionUnits}
-                        variant="default"
-                        onProductClick={onProductClick}
-                      />
-                      <span className="text-xs text-muted-foreground/60">
-                        {HistoryEntryFormatter.formatTimestamp(entry.timestamp)}
-                      </span>
-                    </div>
-                  ))}
+                  {entries.map((groupedEntry, idx) => {
+                    if (groupedEntry.type === "modification") {
+                      return renderModificationEntry(
+                        groupedEntry.entry,
+                        step,
+                        idx
+                      );
+                    }
+                    return renderStandardEntry(groupedEntry.entry, step, idx);
+                  })}
                 </div>
               </div>
             ))}
@@ -1089,146 +1116,6 @@ function LabelDetailSheet({
   );
 }
 
-// Componente helper per mostrare i dettagli del prodotto e dell'unità produttiva
-interface HistoryEntryDetailsProps {
-  entry: JobHistoryEntry;
-  productionUnits: Array<{
-    productionUnit: { id: string; name: string };
-  }>;
-  variant?: "compact" | "default";
-  onProductClick?: (productName: string, registrationNumber?: string) => void;
-}
-
-function HistoryEntryDetails({
-  entry,
-  productionUnits,
-  variant = "compact",
-  onProductClick,
-}: HistoryEntryDetailsProps) {
-  const metadata = entry.metadata;
-  if (!metadata) return null;
-
-  const productionUnit = metadata.productionUnitId
-    ? productionUnits.find(
-        (pu) => pu.productionUnit.id === metadata.productionUnitId
-      )
-    : null;
-
-  const productionUnitName =
-    metadata.productionUnitName || productionUnit?.productionUnit.name || null;
-
-  const hasProductInfo =
-    metadata.productName || metadata.productRegistrationNumber;
-  const hasProductionUnitInfo = productionUnitName || metadata.productionUnitId;
-
-  if (!hasProductInfo && !hasProductionUnitInfo) return null;
-
-  const isCompact = variant === "compact";
-  const textSize = isCompact ? "text-[10px]" : "text-xs";
-  const iconSize = isCompact ? "h-3 w-3" : "h-3.5 w-3.5";
-  const spacing = isCompact ? "mt-1.5 space-y-1" : "mt-2 space-y-1.5";
-
-  return (
-    <div className={cn(spacing, textSize, "text-slate-500")}>
-      {hasProductInfo && (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Package className={cn(iconSize, "shrink-0")} />
-          <span className="font-medium text-slate-600">Prodotto:</span>
-          {metadata.productName && (
-            <button
-              className="text-slate-700 hover:text-slate-900 hover:underline font-medium"
-              onClick={() => {
-                if (onProductClick) {
-                  onProductClick(
-                    metadata.productName!,
-                    metadata.productRegistrationNumber
-                  );
-                } else {
-                  const details = [];
-                  details.push(metadata.productName!);
-                  if (metadata.productRegistrationNumber) {
-                    details.push(`Reg. ${metadata.productRegistrationNumber}`);
-                  }
-                  toast.info("Prodotto", {
-                    description: details.join(" | "),
-                  });
-                }
-              }}
-            >
-              {metadata.productName}
-            </button>
-          )}
-          {metadata.productRegistrationNumber && (
-            <>
-              {metadata.productName && (
-                <span className="text-slate-400">•</span>
-              )}
-              <button
-                className="text-slate-600 hover:text-slate-800 hover:underline font-mono"
-                onClick={() => {
-                  if (onProductClick && metadata.productName) {
-                    onProductClick(
-                      metadata.productName,
-                      metadata.productRegistrationNumber
-                    );
-                  } else {
-                    toast.info("Numero Registrazione", {
-                      description: metadata.productRegistrationNumber,
-                    });
-                  }
-                }}
-              >
-                Reg. {metadata.productRegistrationNumber}
-              </button>
-            </>
-          )}
-        </div>
-      )}
-      {hasProductionUnitInfo && (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Sprout className={cn(iconSize, "shrink-0")} />
-          <span className="font-medium text-slate-600">Unità Produttiva:</span>
-          {productionUnitName && (
-            <button
-              className="text-slate-700 hover:text-slate-900 hover:underline font-medium"
-              onClick={() => {
-                const details = [];
-                details.push(productionUnitName);
-                if (metadata.cropName)
-                  details.push(`Coltura: ${metadata.cropName}`);
-                if (metadata.variety)
-                  details.push(`Varietà: ${metadata.variety}`);
-                if (metadata.areaHa)
-                  details.push(`Superficie: ${metadata.areaHa} ha`);
-                if (metadata.productionUnitId)
-                  details.push(`ID: ${metadata.productionUnitId}`);
-
-                toast.info("Unità Produttiva", {
-                  description: details.join(" | "),
-                });
-              }}
-            >
-              {productionUnitName}
-            </button>
-          )}
-          {metadata.productionUnitId && !productionUnitName && (
-            <button
-              className="text-slate-600 hover:text-slate-800 hover:underline font-mono"
-              onClick={() => {
-                toast.info("ID Unità Produttiva", {
-                  description: metadata.productionUnitId,
-                });
-              }}
-            >
-              {metadata.productionUnitId.substring(0, 8)}...
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // Componente per mostrare lo storico inline (per la vista review)
 class JobProductsFormatter {
   private readonly products: Product[];
@@ -1649,9 +1536,8 @@ export default function JobPage() {
   const [isLoadingSettings, setIsLoadingSettings] = useState<boolean>(true);
   const [isGroupsSidebarOpen, setIsGroupsSidebarOpen] = useState<boolean>(true);
   const [groupsSidebarWidth, setGroupsSidebarWidth] = useState<number>(288); // Default: 288px (w-72)
-  const [rightSidebarMode, setRightSidebarMode] = useState<
-    "details" | "history"
-  >("details");
+  const [rightSidebarMode, setRightSidebarMode] =
+    useState<RightSidebarMode>("details");
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState<boolean>(true);
 
   const isMobile = useIsMobile();
@@ -1854,7 +1740,7 @@ export default function JobPage() {
   // Opzioni prodotti fitosanitari per le select
   const fitosanitariOptions = useMemo(() => {
     return fitosanitariProducts.map((product) => ({
-      label: `${product.productName} (Reg. ${product.registrationNumber}) - ${product.activeIngredients}`,
+      label: `${product.productName} (${product.registrationNumber})`,
       value: product.registrationNumber,
       productName: product.productName,
       activeIngredients: product.activeIngredients,
@@ -1885,11 +1771,13 @@ export default function JobPage() {
     }));
   }, [productionUnits]);
 
-  // Map per lookup veloce delle unità produttive per nome
+  // Map per lookup veloce delle unità produttive per nome e per value
   const productionUnitMap = useMemo(() => {
     const map = new Map<string, (typeof productionUnitSelectOptions)[0]>();
     productionUnitSelectOptions.forEach((pu) => {
       map.set(pu.name, pu); // Lookup per nome
+      map.set(pu.value, pu); // Lookup anche per value (che potrebbe essere diverso dal nome)
+      map.set(pu.id, pu); // Lookup anche per ID
     });
     return map;
   }, [productionUnitSelectOptions]);
@@ -1981,7 +1869,16 @@ export default function JobPage() {
 
     const uniqueHistory = new Map<string, JobHistoryEntry>();
     history.forEach((entry) => {
-      const key = `${entry.step}-${entry.title}-${entry.value}-${entry.timestamp}`;
+      // Genera una chiave univoca in base al tipo di entry
+      let key: string;
+      if (isJobModificationEntry(entry)) {
+        // Per le modifiche utente, usa il timestamp e l'userId
+        key = `mod-${entry.modifiedBy.userId}-${entry.timestamp}`;
+      } else {
+        // Per le entry standard, usa step, title, value e timestamp
+        const standardEntry = entry as JobStandardHistoryEntry;
+        key = `${standardEntry.step}-${standardEntry.title}-${standardEntry.value}-${standardEntry.timestamp}`;
+      }
       if (!uniqueHistory.has(key)) {
         uniqueHistory.set(key, entry);
       }
@@ -2154,7 +2051,16 @@ export default function JobPage() {
     // Rimuovi duplicati e ordina per timestamp
     const uniqueHistory = new Map<string, JobHistoryEntry>();
     allHistory.forEach((entry) => {
-      const key = `${entry.step}-${entry.title}-${entry.value}-${entry.timestamp}`;
+      // Genera una chiave univoca in base al tipo di entry
+      let key: string;
+      if (isJobModificationEntry(entry)) {
+        // Per le modifiche utente, usa il timestamp e l'userId
+        key = `mod-${entry.modifiedBy.userId}-${entry.timestamp}`;
+      } else {
+        // Per le entry standard, usa step, title, value e timestamp
+        const standardEntry = entry as JobStandardHistoryEntry;
+        key = `${standardEntry.step}-${standardEntry.title}-${standardEntry.value}-${standardEntry.timestamp}`;
+      }
       if (!uniqueHistory.has(key)) {
         uniqueHistory.set(key, entry);
       }
@@ -2339,7 +2245,7 @@ export default function JobPage() {
       enableSearch: true,
       searchPlaceholder: "Cerca azienda o unità produttiva...",
       emptyStateMessage: "Nessuna opzione trovata",
-      onValueChange: ({ value, rowData }) => {
+      onValueChange: ({ value }) => {
         const stringValue = String(value);
 
         // Se clicca su "pulisci filtro", torna alla selezione aziende
@@ -2376,7 +2282,7 @@ export default function JobPage() {
         const selectedPu = productionUnitMap.get(stringValue);
         if (selectedPu) {
           return {
-            _selectedCompanyForPU: rowData._selectedCompanyForPU, // Mantieni azienda
+            _selectedCompanyForPU: selectedPu.companyId, // Aggiorna anche questo
             _productionUnitId: selectedPu.id, // Usa l'ID per la logica interna
             productionUnitName: selectedPu.name,
             cropName: selectedPu.cropName,
@@ -2386,11 +2292,15 @@ export default function JobPage() {
           };
         }
 
+        // Fallback: aggiorna anche _companyId e companyName per pulizia
         return {
+          _selectedCompanyForPU: "",
           _productionUnitId: "",
           productionUnitName: stringValue,
           cropName: "",
           cropType: "",
+          _companyId: "",
+          companyName: "",
         };
       },
       render: (value, row) => {
@@ -2431,17 +2341,17 @@ export default function JobPage() {
       id: "productRegistrationNumber",
       title: "Prodotto",
       type: "select",
-      width: "300px",
+      width: "250px",
       readOnly: false,
       required: true,
-      getOptions: () => fitosanitariOptions.slice(0, 200), // Limita per performance
+      getOptions: () => fitosanitariOptions,
       placeholder: isLoadingFitosanitari
         ? "Caricamento..."
         : "Seleziona prodotto...",
       enableSearch: true,
-      searchPlaceholder:
-        "Cerca per nome, principio attivo o numero registrazione...",
+      searchPlaceholder: "Cerca prodotto...",
       emptyStateMessage: "Nessun prodotto trovato",
+      maxVisibleOptions: 50,
       onValueChange: ({ value }) => {
         const selectedProduct = fitosanitariMap.get(String(value));
         if (selectedProduct) {
@@ -2856,6 +2766,14 @@ export default function JobPage() {
 
       // 1. Processa le nuove righe create
       if (payload.created.length > 0) {
+        // Determina il jobId in base alla vista corrente
+        const currentJobId =
+          viewMode === "all"
+            ? selectedAllJobIds.length > 0
+              ? selectedAllJobIds[0]
+              : undefined
+            : selectedGroupCode ?? undefined;
+
         const createPayloads = payload.created
           .filter((row) => {
             // Verifica che ci siano i campi obbligatori
@@ -2876,6 +2794,7 @@ export default function JobPage() {
               : new Date();
 
             return {
+              jobId: currentJobId,
               productionUnitId: row._productionUnitId as string,
               dateOfOpeation: dateOfOperation.toISOString(),
               category: (row.category as string) || "TREATMENT",
@@ -2909,7 +2828,6 @@ export default function JobPage() {
       for (const row of payload.updated) {
         const jobId = row.id as string;
         const isVerified = row._isVerifiedBoolean as boolean;
-        const conformityChecked = row._conformityChecked as boolean | undefined;
         const newQuantity = Number(row.quantity);
         const originalQuantity = Number(row._originalQuantity ?? row.quantity);
         const newDateOfOperation = row.dateOfOpeation
@@ -2937,17 +2855,12 @@ export default function JobPage() {
           updatePayload.isVerified = isVerified;
         }
 
-        // 2. Aggiorna lo stato di conformità se presente
-        if (conformityChecked !== undefined) {
-          updatePayload.conformityChecked = conformityChecked;
-        }
-
-        // 3. Aggiorna la quantità se modificata
+        // 2. Aggiorna la quantità se modificata
         if (newQuantity !== originalQuantity) {
           updatePayload.quantity = newQuantity;
         }
 
-        // 4. Aggiorna la data di operazione se modificata
+        // 3. Aggiorna la data di operazione se modificata
         if (
           newDateOfOperation &&
           originalDateOfOperation &&
@@ -2957,7 +2870,7 @@ export default function JobPage() {
           updatePayload.dateOfOpeation = newDateOfOperation.toISOString();
         }
 
-        // 5. Aggiorna la macchina se modificata
+        // 4. Aggiorna la macchina se modificata
         const newMachineId =
           (row.machineId as string | null | undefined) ?? null;
         const originalMachineId =
@@ -2967,7 +2880,10 @@ export default function JobPage() {
         }
 
         // Esegui l'aggiornamento se ci sono modifiche
+        // NOTA: conformityChecked è sempre false quando si modifica un job,
+        // perché la conformità deve essere riverificata dopo ogni modifica
         if (Object.keys(updatePayload).length > 0) {
+          updatePayload.conformityChecked = false;
           await jobsApiService.updateJob(jobId, updatePayload);
           updatedCount++;
         }
@@ -3087,6 +3003,21 @@ export default function JobPage() {
     []
   );
 
+  // Handler per il successo della conferma conformità
+  const handleConformityConfirmSuccess = async () => {
+    // Ricarica i dati
+    await Promise.all([refetchGroupsSummary(), refetchGroupDetail()]);
+
+    // Ricarica i job selezionati
+    if (selectedAllJobIds.length > 0) {
+      const responses = await Promise.all(
+        selectedAllJobIds.map((jobId) => jobsApiService.getGroupDetail(jobId))
+      );
+      const jobs = responses.flatMap((res) => res.data.jobs ?? []);
+      setAllSelectedJobs(jobs);
+    }
+  };
+
   // Renderizza la vista "Tutte le operazioni"
   const renderAllJobsView = () => (
     <AllJobsView
@@ -3120,6 +3051,10 @@ export default function JobPage() {
       onToggleRightSidebar={setIsRightSidebarOpen}
       showAddButton={true}
       newRowDefaults={newRowDefaults}
+      jobGroupId={
+        selectedAllJobIds.length > 0 ? selectedAllJobIds[0] : undefined
+      }
+      onConformityConfirmSuccess={handleConformityConfirmSuccess}
     />
   );
 
