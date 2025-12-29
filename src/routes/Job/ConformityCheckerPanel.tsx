@@ -710,6 +710,11 @@ function ViolationItem({ violation }: { violation: ConformityViolation }) {
   const config = severityConfig[violation.severity];
   const Icon = config.icon;
 
+  // Verifica se ci sono valori da mostrare per la transizione
+  const hasValues =
+    violation.currentValue !== undefined ||
+    violation.expectedValue !== undefined;
+
   return (
     <div
       className={cn(
@@ -727,10 +732,12 @@ function ViolationItem({ violation }: { violation: ConformityViolation }) {
           <Badge variant="outline" className="text-[10px] px-1.5 py-0">
             {violation.source}
           </Badge>
-          <span>
-            {violation.field}: {String(violation.currentValue)} →{" "}
-            {String(violation.expectedValue)}
-          </span>
+          {hasValues && (
+            <span>
+              {violation.field}: {String(violation.currentValue ?? "-")} →{" "}
+              {String(violation.expectedValue ?? "-")}
+            </span>
+          )}
         </div>
       </div>
     </div>

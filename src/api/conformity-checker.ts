@@ -9,8 +9,8 @@ export interface ConformityViolation {
   severity: "ERROR" | "WARNING" | "INFO";
   source: "LABEL" | "DISCIPLINARI" | "USER_NOTES" | "SYSTEM";
   field: string;
-  currentValue: number | string;
-  expectedValue: number | string;
+  currentValue?: number | string;
+  expectedValue?: number | string;
 }
 
 // Types for job values
