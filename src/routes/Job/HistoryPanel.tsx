@@ -1,17 +1,32 @@
 import { useMemo, useState } from "react";
 
-import { History, Search } from "lucide-react";
+import { History, Search, User } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { type JobHistoryEntry } from "@/api/jobs";
-import { HistoryEntryDetails, HistoryEntryFormatter } from "./HistoryEntryDetails";
+import {
+  type JobHistoryEntry,
+  type JobModificationEntry,
+  type JobStandardHistoryEntry,
+  isJobModificationEntry,
+  isJobStandardHistoryEntry,
+} from "@/api/jobs";
+import {
+  HistoryEntryDetails,
+  HistoryEntryFormatter,
+  ModificationEntryDetails,
+} from "./HistoryEntryDetails";
 
 interface HistoryPanelProps {
   history: JobHistoryEntry[];
   jobCode: string;
   onProductClick?: (productName: string, registrationNumber?: string) => void;
 }
+
+// Tipo per rappresentare entry raggruppate (standard o modifica)
+type GroupedEntry =
+  | { type: "standard"; entry: JobStandardHistoryEntry }
+  | { type: "modification"; entry: JobModificationEntry };
 
 export function HistoryPanel({
   history,
@@ -21,37 +36,141 @@ export function HistoryPanel({
   const [filterText, setFilterText] = useState<string>("");
 
   const groupedHistory = useMemo(() => {
-    const groups: Record<string, JobHistoryEntry[]> = {};
+    const groups: Record<string, GroupedEntry[]> = {};
 
+    // Filtra le entry se c'è un filtro attivo
     let filteredHistory = history;
 
     if (filterText) {
       const searchText = filterText.toLowerCase();
       filteredHistory = filteredHistory.filter((entry) => {
-        return (
-          entry.title.toLowerCase().includes(searchText) ||
-          String(entry.value).toLowerCase().includes(searchText) ||
-          entry.metadata?.description?.toLowerCase().includes(searchText) ||
-          entry.metadata?.productName?.toLowerCase().includes(searchText) ||
-          entry.metadata?.productRegistrationNumber
-            ?.toLowerCase()
-            .includes(searchText) ||
-          entry.metadata?.productionUnitName
-            ?.toLowerCase()
-            .includes(searchText) ||
-          entry.metadata?.cropName?.toLowerCase().includes(searchText)
-        );
+        // Gestione entry standard
+        if (isJobStandardHistoryEntry(entry)) {
+          return (
+            entry.title.toLowerCase().includes(searchText) ||
+            String(entry.value).toLowerCase().includes(searchText) ||
+            entry.metadata?.description?.toLowerCase().includes(searchText) ||
+            entry.metadata?.productName?.toLowerCase().includes(searchText) ||
+            entry.metadata?.productRegistrationNumber
+              ?.toLowerCase()
+              .includes(searchText) ||
+            entry.metadata?.productionUnitName
+              ?.toLowerCase()
+              .includes(searchText) ||
+            entry.metadata?.cropName?.toLowerCase().includes(searchText)
+          );
+        }
+
+        // Gestione entry di modifica utente
+        if (isJobModificationEntry(entry)) {
+          const modEntry = entry;
+          // Cerca nel nome utente, email o nei campi modificati
+          const matchesUser =
+            modEntry.modifiedBy.name.toLowerCase().includes(searchText) ||
+            modEntry.modifiedBy.email.toLowerCase().includes(searchText);
+
+          const matchesChanges = modEntry.changes.some(
+            (change) =>
+              change.field.toLowerCase().includes(searchText) ||
+              String(change.oldValue).toLowerCase().includes(searchText) ||
+              String(change.newValue).toLowerCase().includes(searchText)
+          );
+
+          return matchesUser || matchesChanges;
+        }
+
+        return false;
       });
     }
 
+    // Raggruppa le entry per step
     filteredHistory.forEach((entry) => {
-      if (!groups[entry.step]) {
-        groups[entry.step] = [];
+      if (isJobModificationEntry(entry)) {
+        // Le modifiche utente vanno nel gruppo "user_modification"
+        const stepKey = "user_modification";
+        if (!groups[stepKey]) {
+          groups[stepKey] = [];
+        }
+        groups[stepKey].push({ type: "modification", entry });
+      } else if (isJobStandardHistoryEntry(entry)) {
+        // Entry standard raggruppate per step
+        const stepKey = entry.step;
+        if (!groups[stepKey]) {
+          groups[stepKey] = [];
+        }
+        groups[stepKey].push({ type: "standard", entry });
       }
-      groups[entry.step].push(entry);
     });
+
     return groups;
   }, [history, filterText]);
+
+  // Render per entry standard
+  const renderStandardEntry = (
+    entry: JobStandardHistoryEntry,
+    step: string,
+    idx: number
+  ) => (
+    <div
+      key={`${step}-${idx}`}
+      className="flex flex-col gap-0.5 py-1.5 border-l-2 border-slate-200 pl-2 text-xs"
+    >
+      <div className="flex items-start justify-between gap-1">
+        <span className="font-medium text-slate-700 leading-tight">
+          {entry.title}
+        </span>
+        <Badge
+          variant="secondary"
+          className={`text-[10px] shrink-0 px-1.5 py-0 ${HistoryEntryFormatter.getSourceColor(
+            entry.source
+          )}`}
+        >
+          {HistoryEntryFormatter.formatSource(entry.source)}
+        </Badge>
+      </div>
+      <span className="text-slate-600">{String(entry.value)}</span>
+      {entry.metadata?.description && (
+        <p className="text-[10px] text-slate-500 leading-relaxed">
+          {entry.metadata.description}
+        </p>
+      )}
+      <HistoryEntryDetails entry={entry} onProductClick={onProductClick} />
+      <span className="text-[10px] text-slate-400 mt-0.5">
+        {HistoryEntryFormatter.formatTimestamp(entry.timestamp)}
+      </span>
+    </div>
+  );
+
+  // Render per entry di modifica utente
+  const renderModificationEntry = (
+    entry: JobModificationEntry,
+    step: string,
+    idx: number
+  ) => (
+    <div
+      key={`${step}-mod-${idx}`}
+      className="flex flex-col gap-1 py-2 border-l-2 border-indigo-300 pl-2 text-xs bg-indigo-50/30 rounded-r"
+    >
+      <div className="flex items-start justify-between gap-1">
+        <div className="flex items-center gap-1.5">
+          <User className="h-3.5 w-3.5 text-indigo-500" />
+          <span className="font-medium text-slate-700 leading-tight">
+            Modifica manuale
+          </span>
+        </div>
+        <Badge
+          variant="secondary"
+          className="text-[10px] shrink-0 px-1.5 py-0 bg-indigo-100 text-indigo-700"
+        >
+          {entry.modifiedBy.name}
+        </Badge>
+      </div>
+      <ModificationEntryDetails entry={entry} variant="compact" />
+      <span className="text-[10px] text-slate-400 mt-0.5">
+        {HistoryEntryFormatter.formatTimestamp(entry.timestamp)}
+      </span>
+    </div>
+  );
 
   return (
     <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
@@ -86,38 +205,16 @@ export function HistoryPanel({
                 {HistoryEntryFormatter.formatStep(step)}
               </h4>
               <div className="space-y-1.5">
-                {entries.map((entry, idx) => (
-                  <div
-                    key={`${step}-${idx}`}
-                    className="flex flex-col gap-0.5 py-1.5 border-l-2 border-slate-200 pl-2 text-xs"
-                  >
-                    <div className="flex items-start justify-between gap-1">
-                      <span className="font-medium text-slate-700 leading-tight">
-                        {entry.title}
-                      </span>
-                      <Badge
-                        variant="secondary"
-                        className={`text-[10px] shrink-0 px-1.5 py-0 ${HistoryEntryFormatter.getSourceColor(
-                          entry.source
-                        )}`}
-                      >
-                        {HistoryEntryFormatter.formatSource(entry.source)}
-                      </Badge>
-                    </div>
-                    <span className="text-slate-600">
-                      {String(entry.value)}
-                    </span>
-                    {entry.metadata?.description && (
-                      <p className="text-[10px] text-slate-500 leading-relaxed">
-                        {entry.metadata.description}
-                      </p>
-                    )}
-                    <HistoryEntryDetails
-                      entry={entry}
-                      onProductClick={onProductClick}
-                    />
-                  </div>
-                ))}
+                {entries.map((groupedEntry, idx) => {
+                  if (groupedEntry.type === "modification") {
+                    return renderModificationEntry(
+                      groupedEntry.entry,
+                      step,
+                      idx
+                    );
+                  }
+                  return renderStandardEntry(groupedEntry.entry, step, idx);
+                })}
               </div>
             </div>
           ))}

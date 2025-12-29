@@ -19,6 +19,7 @@ import {
 } from "@/components/organism/JobSelectedDetails";
 import HistoryPanel from "./HistoryPanel";
 import JobGroupCard from "./JobGroupCard";
+import { type RightSidebarMode } from "./AllJobsView";
 import {
   Brain,
   ClipboardCheck,
@@ -72,8 +73,8 @@ interface ReviewJobsViewProps {
   currentGroupIndex: number;
   totalGroups: number;
   historyPanelWidth: number;
-  rightSidebarMode: "details" | "history";
-  onRightSidebarModeChange: (mode: "details" | "history") => void;
+  rightSidebarMode: RightSidebarMode;
+  onRightSidebarModeChange: (mode: RightSidebarMode) => void;
   onResizeStart: (e: React.MouseEvent) => void;
   isResizing: boolean;
   onProductClick: (

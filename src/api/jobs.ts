@@ -27,7 +27,28 @@ export type JobHistoryMetadata = {
   description?: string;
 };
 
-export type JobHistoryEntry = {
+// Tipo per le modifiche manuali dell'utente
+export type JobModificationChange = {
+  field: string;
+  oldValue: unknown;
+  newValue: unknown;
+};
+
+export type JobModificationEntry = {
+  type: "modification";
+  timestamp: string;
+  modifiedBy: {
+    userId: string;
+    name: string;
+    email: string;
+  };
+  changes: JobModificationChange[];
+  previousJobSnapshot?: Record<string, unknown>;
+};
+
+// Entry standard dello storico (senza type o con type diverso da "modification")
+export type JobStandardHistoryEntry = {
+  type?: string;
   step: string;
   title: string;
   value: string | number;
@@ -35,6 +56,22 @@ export type JobHistoryEntry = {
   timestamp: string;
   metadata?: JobHistoryMetadata;
 };
+
+// Union type per supportare entrambi i tipi di entry
+export type JobHistoryEntry = JobStandardHistoryEntry | JobModificationEntry;
+
+// Type guard per distinguere i tipi di entry
+export function isJobModificationEntry(
+  entry: JobHistoryEntry
+): entry is JobModificationEntry {
+  return (entry as JobModificationEntry).type === "modification";
+}
+
+export function isJobStandardHistoryEntry(
+  entry: JobHistoryEntry
+): entry is JobStandardHistoryEntry {
+  return !isJobModificationEntry(entry);
+}
 
 export type Job = {
   id: string;
