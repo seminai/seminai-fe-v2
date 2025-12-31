@@ -2,7 +2,6 @@ import { toast } from "sonner";
 import { Package, Sprout, User, ArrowRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import {
   type JobHistoryEntry,
   type JobStandardHistoryEntry,

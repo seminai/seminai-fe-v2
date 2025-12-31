@@ -53,7 +53,7 @@ interface LiveLogEntry {
 export function ConformityCheckerPanel({
   jobGroupId,
   onConfirmSuccess,
-  onClose,
+  onClose: _onClose,
 }: ConformityCheckerPanelProps) {
   const [notes, setNotes] = useState<string>("");
   const [state, setState] = useState<PanelState>("idle");
@@ -97,8 +97,8 @@ export function ConformityCheckerPanel({
       }
     }
 
-    // Aggiorna la fase corrente per altri tipi di evento
-    if (event.type === "flows" || event.type === "info") {
+    // Aggiorna la fase corrente per eventi info
+    if (event.type === "info") {
       setCurrentPhase(event.message);
     }
   }, []);
