@@ -82,6 +82,7 @@ export interface EditableColumn {
   emptyStateMessage?: string;
   noneOptionLabel?: string;
   readOnly?: boolean; // Column is always read-only even in edit mode
+  maxVisibleOptions?: number; // Limit visible options in searchable select for performance
 }
 
 export interface CustomExportColumn {
@@ -2330,6 +2331,7 @@ export class EditableTable extends React.Component<
               noneOptionLabel={col.noneOptionLabel}
               onChange={(newValue) => handleChange(row, col, newValue)}
               wrapperClassName="w-full"
+              maxVisibleOptions={col.maxVisibleOptions}
             />
           );
         }

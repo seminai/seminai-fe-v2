@@ -21,7 +21,7 @@ export interface FitosanitariDatasetRecord {
 class FitosanitariRegistry {
   private static instance: FitosanitariRegistry | null = null;
   private readonly datasetUrl = "/datasets/fitosanitari/fts_06062025.json";
-  private readonly revokedStatuses = new Set(["revocato"]);
+  private readonly excludedStatuses = new Set(["revocato", "scaduto"]);
   private index: Map<string, string> | null = null;
   private records: FitosanitariDatasetRecord[] | null = null;
 
@@ -78,7 +78,7 @@ class FitosanitariRegistry {
       if (normalizedStatus.length === 0) {
         return true;
       }
-      return !this.revokedStatuses.has(normalizedStatus);
+      return !this.excludedStatuses.has(normalizedStatus);
     });
   }
 
