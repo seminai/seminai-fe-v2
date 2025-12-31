@@ -378,7 +378,7 @@ export async function bulkDeleteProducts(
   // Gestisci risposte vuote (204 No Content o body vuoto)
   const contentType = response.headers.get("content-type");
   const contentLength = response.headers.get("content-length");
-  
+
   if (
     response.status === 204 ||
     contentLength === "0" ||
@@ -422,7 +422,7 @@ export async function importFromCsvExcel(
   const formData = new FormData();
   formData.append("file", payload.file);
   formData.append("companyId", payload.companyId);
-  
+
   if (payload.warehouseId) {
     formData.append("warehouseId", payload.warehouseId);
   }

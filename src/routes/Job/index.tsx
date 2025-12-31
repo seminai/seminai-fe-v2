@@ -23,6 +23,10 @@ import {
   type JobWithRelations,
   type Product,
   type JobHistoryEntry,
+  type JobModificationEntry,
+  type JobStandardHistoryEntry,
+  isJobModificationEntry,
+  isJobStandardHistoryEntry,
 } from "@/api/jobs";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
@@ -39,18 +43,28 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   History,
-  Package,
-  Sprout,
   FileText,
   Search,
   File,
   AlertTriangle,
   CheckCircle2,
   XCircle,
+  User,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import AllJobsView, { JobIdMultiSelect } from "./AllJobsView";
+import AllJobsView, {
+  JobIdMultiSelect,
+  type RightSidebarMode,
+} from "./AllJobsView";
 import ReviewJobsView from "./ReviewJobsView";
+import {
+  getAuthorizedFitosanitariRecords,
+  type FitosanitariDatasetRecord,
+} from "@/services/fitosanitariRegistry";
+import {
+  HistoryEntryDetails,
+  HistoryEntryFormatter,
+  ModificationEntryDetails,
+} from "./HistoryEntryDetails";
 
 // Component to display job history in a Sheet
 interface JobHistorySheetProps {
@@ -61,53 +75,10 @@ interface JobHistorySheetProps {
   onProductClick?: (productName: string, registrationNumber?: string) => void;
 }
 
-class HistoryEntryFormatter {
-  private static readonly STEP_LABELS: Record<string, string> = {
-    crop_matching: "Matching Coltura",
-    dosage_scheduling: "Pianificazione Dosaggio",
-    dosage_optimization: "Ottimizzazione Dosaggio",
-    job_creation: "Creazione Job",
-  };
-
-  private static readonly SOURCE_COLORS: Record<string, string> = {
-    crop_taxonomy: "bg-emerald-100 text-emerald-700",
-    label_extraction: "bg-blue-100 text-blue-700",
-    user_input: "bg-green-100 text-green-700",
-    llm_openai: "bg-purple-100 text-purple-700",
-    linear_programming: "bg-amber-100 text-amber-700",
-    automatic_calculation: "bg-cyan-100 text-cyan-700",
-    warehouse_stock: "bg-orange-100 text-orange-700",
-  };
-
-  private static readonly SOURCE_LABELS: Record<string, string> = {
-    crop_taxonomy: "Tassonomia",
-    label_extraction: "Etichetta",
-    user_input: "Input Utente",
-    llm_openai: "AI",
-    linear_programming: "Ottimizzazione",
-    automatic_calculation: "Calcolo Auto",
-    warehouse_stock: "Magazzino",
-  };
-
-  public static formatStep(step: string): string {
-    return this.STEP_LABELS[step] ?? step;
-  }
-
-  public static getSourceColor(source: string): string {
-    return this.SOURCE_COLORS[source] ?? "bg-gray-100 text-gray-700";
-  }
-
-  public static formatSource(source: string): string {
-    return this.SOURCE_LABELS[source] ?? source;
-  }
-
-  public static formatTimestamp(timestamp: string): string {
-    return new Date(timestamp).toLocaleString("it-IT", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  }
-}
+// Tipo per rappresentare entry raggruppate (standard o modifica) nello sheet
+type SheetGroupedEntry =
+  | { type: "standard"; entry: JobStandardHistoryEntry }
+  | { type: "modification"; entry: JobModificationEntry };
 
 function JobHistorySheet({
   open,
@@ -119,15 +90,102 @@ function JobHistorySheet({
   const { productionUnits } = useProductionUnit();
 
   const groupedHistory = useMemo(() => {
-    const groups: Record<string, JobHistoryEntry[]> = {};
+    const groups: Record<string, SheetGroupedEntry[]> = {};
+
     history.forEach((entry) => {
-      if (!groups[entry.step]) {
-        groups[entry.step] = [];
+      if (isJobModificationEntry(entry)) {
+        // Le modifiche utente vanno nel gruppo "user_modification"
+        const stepKey = "user_modification";
+        if (!groups[stepKey]) {
+          groups[stepKey] = [];
+        }
+        groups[stepKey].push({ type: "modification", entry });
+      } else if (isJobStandardHistoryEntry(entry)) {
+        // Entry standard raggruppate per step
+        const stepKey = entry.step;
+        if (!groups[stepKey]) {
+          groups[stepKey] = [];
+        }
+        groups[stepKey].push({ type: "standard", entry });
       }
-      groups[entry.step].push(entry);
     });
+
     return groups;
   }, [history]);
+
+  // Render per entry standard
+  const renderStandardEntry = (
+    entry: JobStandardHistoryEntry,
+    step: string,
+    idx: number
+  ) => (
+    <div
+      key={`${step}-${idx}`}
+      className="flex flex-col gap-1.5 py-3 border-l-2 border-muted pl-3"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-sm font-medium text-foreground leading-tight">
+          {entry.title}
+        </span>
+        <Badge
+          variant="secondary"
+          className={`text-xs shrink-0 ${HistoryEntryFormatter.getSourceColor(
+            entry.source
+          )}`}
+        >
+          {HistoryEntryFormatter.formatSource(entry.source)}
+        </Badge>
+      </div>
+      <span className="text-sm text-foreground/80 font-medium">
+        {String(entry.value)}
+      </span>
+      {entry.metadata?.description && (
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {entry.metadata.description}
+        </p>
+      )}
+      <HistoryEntryDetails
+        entry={entry}
+        productionUnits={productionUnits}
+        variant="default"
+        onProductClick={onProductClick}
+      />
+      <span className="text-xs text-muted-foreground/60">
+        {HistoryEntryFormatter.formatTimestamp(entry.timestamp)}
+      </span>
+    </div>
+  );
+
+  // Render per entry di modifica utente
+  const renderModificationEntry = (
+    entry: JobModificationEntry,
+    step: string,
+    idx: number
+  ) => (
+    <div
+      key={`${step}-mod-${idx}`}
+      className="flex flex-col gap-2 py-3 border-l-2 border-indigo-400 pl-3 bg-indigo-50/50 rounded-r"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-indigo-500" />
+          <span className="text-sm font-medium text-foreground leading-tight">
+            Modifica manuale
+          </span>
+        </div>
+        <Badge
+          variant="secondary"
+          className="text-xs shrink-0 bg-indigo-100 text-indigo-700"
+        >
+          {entry.modifiedBy.name}
+        </Badge>
+      </div>
+      <ModificationEntryDetails entry={entry} variant="default" />
+      <span className="text-xs text-muted-foreground/60">
+        {HistoryEntryFormatter.formatTimestamp(entry.timestamp)}
+      </span>
+    </div>
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -158,43 +216,16 @@ function JobHistorySheet({
                   {HistoryEntryFormatter.formatStep(step)}
                 </h3>
                 <div className="space-y-2 pl-2">
-                  {entries.map((entry, idx) => (
-                    <div
-                      key={`${step}-${idx}`}
-                      className="flex flex-col gap-1.5 py-3 border-l-2 border-muted pl-3"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-sm font-medium text-foreground leading-tight">
-                          {entry.title}
-                        </span>
-                        <Badge
-                          variant="secondary"
-                          className={`text-xs shrink-0 ${HistoryEntryFormatter.getSourceColor(
-                            entry.source
-                          )}`}
-                        >
-                          {HistoryEntryFormatter.formatSource(entry.source)}
-                        </Badge>
-                      </div>
-                      <span className="text-sm text-foreground/80 font-medium">
-                        {String(entry.value)}
-                      </span>
-                      {entry.metadata?.description && (
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          {entry.metadata.description}
-                        </p>
-                      )}
-                      <HistoryEntryDetails
-                        entry={entry}
-                        productionUnits={productionUnits}
-                        variant="default"
-                        onProductClick={onProductClick}
-                      />
-                      <span className="text-xs text-muted-foreground/60">
-                        {HistoryEntryFormatter.formatTimestamp(entry.timestamp)}
-                      </span>
-                    </div>
-                  ))}
+                  {entries.map((groupedEntry, idx) => {
+                    if (groupedEntry.type === "modification") {
+                      return renderModificationEntry(
+                        groupedEntry.entry,
+                        step,
+                        idx
+                      );
+                    }
+                    return renderStandardEntry(groupedEntry.entry, step, idx);
+                  })}
                 </div>
               </div>
             ))}
@@ -1085,146 +1116,6 @@ function LabelDetailSheet({
   );
 }
 
-// Componente helper per mostrare i dettagli del prodotto e dell'unità produttiva
-interface HistoryEntryDetailsProps {
-  entry: JobHistoryEntry;
-  productionUnits: Array<{
-    productionUnit: { id: string; name: string };
-  }>;
-  variant?: "compact" | "default";
-  onProductClick?: (productName: string, registrationNumber?: string) => void;
-}
-
-function HistoryEntryDetails({
-  entry,
-  productionUnits,
-  variant = "compact",
-  onProductClick,
-}: HistoryEntryDetailsProps) {
-  const metadata = entry.metadata;
-  if (!metadata) return null;
-
-  const productionUnit = metadata.productionUnitId
-    ? productionUnits.find(
-        (pu) => pu.productionUnit.id === metadata.productionUnitId
-      )
-    : null;
-
-  const productionUnitName =
-    metadata.productionUnitName || productionUnit?.productionUnit.name || null;
-
-  const hasProductInfo =
-    metadata.productName || metadata.productRegistrationNumber;
-  const hasProductionUnitInfo = productionUnitName || metadata.productionUnitId;
-
-  if (!hasProductInfo && !hasProductionUnitInfo) return null;
-
-  const isCompact = variant === "compact";
-  const textSize = isCompact ? "text-[10px]" : "text-xs";
-  const iconSize = isCompact ? "h-3 w-3" : "h-3.5 w-3.5";
-  const spacing = isCompact ? "mt-1.5 space-y-1" : "mt-2 space-y-1.5";
-
-  return (
-    <div className={cn(spacing, textSize, "text-slate-500")}>
-      {hasProductInfo && (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Package className={cn(iconSize, "shrink-0")} />
-          <span className="font-medium text-slate-600">Prodotto:</span>
-          {metadata.productName && (
-            <button
-              className="text-slate-700 hover:text-slate-900 hover:underline font-medium"
-              onClick={() => {
-                if (onProductClick) {
-                  onProductClick(
-                    metadata.productName!,
-                    metadata.productRegistrationNumber
-                  );
-                } else {
-                  const details = [];
-                  details.push(metadata.productName!);
-                  if (metadata.productRegistrationNumber) {
-                    details.push(`Reg. ${metadata.productRegistrationNumber}`);
-                  }
-                  toast.info("Prodotto", {
-                    description: details.join(" | "),
-                  });
-                }
-              }}
-            >
-              {metadata.productName}
-            </button>
-          )}
-          {metadata.productRegistrationNumber && (
-            <>
-              {metadata.productName && (
-                <span className="text-slate-400">•</span>
-              )}
-              <button
-                className="text-slate-600 hover:text-slate-800 hover:underline font-mono"
-                onClick={() => {
-                  if (onProductClick && metadata.productName) {
-                    onProductClick(
-                      metadata.productName,
-                      metadata.productRegistrationNumber
-                    );
-                  } else {
-                    toast.info("Numero Registrazione", {
-                      description: metadata.productRegistrationNumber,
-                    });
-                  }
-                }}
-              >
-                Reg. {metadata.productRegistrationNumber}
-              </button>
-            </>
-          )}
-        </div>
-      )}
-      {hasProductionUnitInfo && (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Sprout className={cn(iconSize, "shrink-0")} />
-          <span className="font-medium text-slate-600">Unità Produttiva:</span>
-          {productionUnitName && (
-            <button
-              className="text-slate-700 hover:text-slate-900 hover:underline font-medium"
-              onClick={() => {
-                const details = [];
-                details.push(productionUnitName);
-                if (metadata.cropName)
-                  details.push(`Coltura: ${metadata.cropName}`);
-                if (metadata.variety)
-                  details.push(`Varietà: ${metadata.variety}`);
-                if (metadata.areaHa)
-                  details.push(`Superficie: ${metadata.areaHa} ha`);
-                if (metadata.productionUnitId)
-                  details.push(`ID: ${metadata.productionUnitId}`);
-
-                toast.info("Unità Produttiva", {
-                  description: details.join(" | "),
-                });
-              }}
-            >
-              {productionUnitName}
-            </button>
-          )}
-          {metadata.productionUnitId && !productionUnitName && (
-            <button
-              className="text-slate-600 hover:text-slate-800 hover:underline font-mono"
-              onClick={() => {
-                toast.info("ID Unità Produttiva", {
-                  description: metadata.productionUnitId,
-                });
-              }}
-            >
-              {metadata.productionUnitId.substring(0, 8)}...
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // Componente per mostrare lo storico inline (per la vista review)
 class JobProductsFormatter {
   private readonly products: Product[];
@@ -1317,6 +1208,18 @@ class JobTableRowBuilder {
     );
   }
 
+  private getVerificationStatus(): string {
+    const { job } = this.jobWithRelations;
+
+    // Se conformityChecked è false, mostra "Conformità non verificata"
+    if (!job.conformityChecked) {
+      return "Conformità non verificata";
+    }
+
+    // Se conformityChecked è true, mostra lo stato standard
+    return job.isVerified ? "Verificato" : "Non Verificato";
+  }
+
   public build(): Record<string, unknown> {
     const { job, productionUnit, company, fields, machine } =
       this.jobWithRelations;
@@ -1341,11 +1244,12 @@ class JobTableRowBuilder {
       treatedSurface: job.treatedSurface,
       avversity: job.avversity ?? "-",
       note: job.note,
-      isVerified: job.isVerified ? "Verificato" : "Non Verificato",
+      isVerified: this.getVerificationStatus(),
       alertNotes: job.alertNotes ?? null,
       machineName: machine?.name ?? "-",
       machineId: machine?.id ?? null,
       _isVerifiedBoolean: job.isVerified,
+      _conformityChecked: job.conformityChecked,
       _originalQuantity: job.quantity,
       _originalDateOfOperation: new Date(job.dateOfOpeation),
       _originalMachineId: machine?.id ?? null,
@@ -1632,9 +1536,8 @@ export default function JobPage() {
   const [isLoadingSettings, setIsLoadingSettings] = useState<boolean>(true);
   const [isGroupsSidebarOpen, setIsGroupsSidebarOpen] = useState<boolean>(true);
   const [groupsSidebarWidth, setGroupsSidebarWidth] = useState<number>(288); // Default: 288px (w-72)
-  const [rightSidebarMode, setRightSidebarMode] = useState<
-    "details" | "history"
-  >("details");
+  const [rightSidebarMode, setRightSidebarMode] =
+    useState<RightSidebarMode>("details");
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState<boolean>(true);
 
   const isMobile = useIsMobile();
@@ -1812,6 +1715,120 @@ export default function JobPage() {
     [groupsSidebarWidth]
   );
   const { labels } = useLabelsSummary();
+  const { productionUnits } = useProductionUnit();
+
+  // Carica i prodotti fitosanitari autorizzati
+  const [fitosanitariProducts, setFitosanitariProducts] = useState<
+    FitosanitariDatasetRecord[]
+  >([]);
+  const [isLoadingFitosanitari, setIsLoadingFitosanitari] =
+    useState<boolean>(true);
+
+  useEffect(() => {
+    getAuthorizedFitosanitariRecords()
+      .then((records) => {
+        setFitosanitariProducts(records);
+      })
+      .catch((error) => {
+        console.error("Error loading fitosanitari products:", error);
+      })
+      .finally(() => {
+        setIsLoadingFitosanitari(false);
+      });
+  }, []);
+
+  // Opzioni prodotti fitosanitari per le select
+  const fitosanitariOptions = useMemo(() => {
+    return fitosanitariProducts.map((product) => ({
+      label: `${product.productName} (${product.registrationNumber})`,
+      value: product.registrationNumber,
+      productName: product.productName,
+      activeIngredients: product.activeIngredients,
+      activity: product.activity,
+    }));
+  }, [fitosanitariProducts]);
+
+  // Map per lookup veloce dei prodotti fitosanitari
+  const fitosanitariMap = useMemo(() => {
+    const map = new Map<string, FitosanitariDatasetRecord>();
+    fitosanitariProducts.forEach((product) => {
+      map.set(product.registrationNumber, product);
+    });
+    return map;
+  }, [fitosanitariProducts]);
+
+  // Opzioni unità produttive per le select
+  const productionUnitSelectOptions = useMemo(() => {
+    return productionUnits.map((pu) => ({
+      label: `${pu.productionUnit.name} (${pu.productionUnit.cropName})`,
+      value: pu.productionUnit.name, // Usa il nome come value per il filtro
+      id: pu.productionUnit.id, // Mantiene l'ID per la logica interna
+      name: pu.productionUnit.name,
+      cropName: pu.productionUnit.cropName,
+      cropType: pu.productionUnit.cropType,
+      companyId: pu.companyId,
+      companyName: pu.companyName,
+    }));
+  }, [productionUnits]);
+
+  // Map per lookup veloce delle unità produttive per nome e per value
+  const productionUnitMap = useMemo(() => {
+    const map = new Map<string, (typeof productionUnitSelectOptions)[0]>();
+    productionUnitSelectOptions.forEach((pu) => {
+      map.set(pu.name, pu); // Lookup per nome
+      map.set(pu.value, pu); // Lookup anche per value (che potrebbe essere diverso dal nome)
+      map.set(pu.id, pu); // Lookup anche per ID
+    });
+    return map;
+  }, [productionUnitSelectOptions]);
+
+  // Opzioni aziende uniche per il primo step della selezione
+  const companySelectOptions = useMemo(() => {
+    const companiesMap = new Map<string, { id: string; name: string }>();
+    productionUnits.forEach((pu) => {
+      if (!companiesMap.has(pu.companyId)) {
+        companiesMap.set(pu.companyId, {
+          id: pu.companyId,
+          name: pu.companyName,
+        });
+      }
+    });
+    return Array.from(companiesMap.values()).map((company) => ({
+      label: `${company.name}`,
+      value: `company:${company.id}`,
+      companyId: company.id,
+      companyName: company.name,
+      isCompany: true,
+    }));
+  }, [productionUnits]);
+
+  // Funzione per ottenere le opzioni della select unità produttiva in base al contesto
+  const getProductionUnitOptions = (rowData: Record<string, unknown>) => {
+    // Per le righe esistenti, usa _companyId se _selectedCompanyForPU non è impostato
+    const selectedCompanyId =
+      (rowData._selectedCompanyForPU as string | undefined) ||
+      (rowData._companyId as string | undefined);
+
+    if (!selectedCompanyId) {
+      // Nessuna azienda selezionata: mostra le aziende
+      return companySelectOptions;
+    }
+
+    // Azienda selezionata: mostra le unità produttive di quell'azienda + opzione per tornare indietro
+    const filteredPUs = productionUnitSelectOptions.filter(
+      (pu) => pu.companyId === selectedCompanyId
+    );
+
+    return [
+      {
+        label: "🔵 Pulisci filtro (torna alle aziende)",
+        value: "clear_filter",
+        isBackOption: true,
+      },
+      ...filteredPUs,
+    ];
+  };
+
   const bulkVerifier = useMemo(() => new JobBulkVerifier(jobsApiService), []);
   const jobExportConfig = useMemo(
     () => new JobExportConfigBuilder().build(),
@@ -1852,7 +1869,16 @@ export default function JobPage() {
 
     const uniqueHistory = new Map<string, JobHistoryEntry>();
     history.forEach((entry) => {
-      const key = `${entry.step}-${entry.title}-${entry.value}-${entry.timestamp}`;
+      // Genera una chiave univoca in base al tipo di entry
+      let key: string;
+      if (isJobModificationEntry(entry)) {
+        // Per le modifiche utente, usa il timestamp e l'userId
+        key = `mod-${entry.modifiedBy.userId}-${entry.timestamp}`;
+      } else {
+        // Per le entry standard, usa step, title, value e timestamp
+        const standardEntry = entry as JobStandardHistoryEntry;
+        key = `${standardEntry.step}-${standardEntry.title}-${standardEntry.value}-${standardEntry.timestamp}`;
+      }
       if (!uniqueHistory.has(key)) {
         uniqueHistory.set(key, entry);
       }
@@ -2025,7 +2051,16 @@ export default function JobPage() {
     // Rimuovi duplicati e ordina per timestamp
     const uniqueHistory = new Map<string, JobHistoryEntry>();
     allHistory.forEach((entry) => {
-      const key = `${entry.step}-${entry.title}-${entry.value}-${entry.timestamp}`;
+      // Genera una chiave univoca in base al tipo di entry
+      let key: string;
+      if (isJobModificationEntry(entry)) {
+        // Per le modifiche utente, usa il timestamp e l'userId
+        key = `mod-${entry.modifiedBy.userId}-${entry.timestamp}`;
+      } else {
+        // Per le entry standard, usa step, title, value e timestamp
+        const standardEntry = entry as JobStandardHistoryEntry;
+        key = `${standardEntry.step}-${standardEntry.title}-${standardEntry.value}-${standardEntry.timestamp}`;
+      }
       if (!uniqueHistory.has(key)) {
         uniqueHistory.set(key, entry);
       }
@@ -2138,16 +2173,38 @@ export default function JobPage() {
       id: "isVerified",
       title: "Stato Verifica",
       type: "select",
-      width: "180px",
-      options: ["Verificato", "Non Verificato"],
+      width: "220px",
+      options: ["Verificato", "Non Verificato", "Conformità non verificata"],
       onValueChange: ({ value }) => {
-        // Aggiorna anche il valore booleano nascosto
+        // Gestisce i 3 stati possibili
+        if (value === "Conformità non verificata") {
+          return {
+            _isVerifiedBoolean: false,
+            _conformityChecked: false,
+          };
+        }
         return {
           _isVerifiedBoolean: value === "Verificato",
+          _conformityChecked: true,
         };
       },
       render: (value) => {
-        const isVerified = value === "Verificato";
+        const stringValue = value as string;
+        const isVerified = stringValue === "Verificato";
+        const isConformityNotChecked =
+          stringValue === "Conformità non verificata";
+
+        if (isConformityNotChecked) {
+          return (
+            <Badge
+              variant="outline"
+              className="bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300"
+            >
+              {stringValue}
+            </Badge>
+          );
+        }
+
         return (
           <Badge
             variant={isVerified ? "default" : "destructive"}
@@ -2157,7 +2214,7 @@ export default function JobPage() {
                 : "bg-red-500 hover:bg-red-600 text-white animate-pulse"
             }
           >
-            {value as string}
+            {stringValue}
           </Badge>
         );
       },
@@ -2168,6 +2225,7 @@ export default function JobPage() {
       type: "date",
       width: "150px",
       readOnly: false,
+      required: true,
       render: (value) => {
         if (!value) return "-";
         const date = value instanceof Date ? value : new Date(value as string);
@@ -2178,9 +2236,98 @@ export default function JobPage() {
     {
       id: "productionUnitName",
       title: "Unità Produttiva",
-      type: "text",
-      width: "200px",
-      readOnly: true,
+      type: "select",
+      width: "280px",
+      readOnly: false,
+      required: true,
+      getOptions: getProductionUnitOptions,
+      placeholder: "Seleziona azienda...",
+      enableSearch: true,
+      searchPlaceholder: "Cerca azienda o unità produttiva...",
+      emptyStateMessage: "Nessuna opzione trovata",
+      onValueChange: ({ value }) => {
+        const stringValue = String(value);
+
+        // Se clicca su "pulisci filtro", torna alla selezione aziende
+        if (stringValue === "clear_filter") {
+          return {
+            _selectedCompanyForPU: "",
+            _productionUnitId: "",
+            productionUnitName: "",
+            cropName: "",
+            cropType: "",
+            _companyId: "",
+            companyName: "",
+          };
+        }
+
+        // Se seleziona un'azienda (value inizia con "company:")
+        if (stringValue.startsWith("company:")) {
+          const companyId = stringValue.replace("company:", "");
+          const company = companySelectOptions.find(
+            (c) => c.companyId === companyId
+          );
+          return {
+            _selectedCompanyForPU: companyId,
+            _productionUnitId: "", // Reset unità produttiva
+            productionUnitName: "",
+            cropName: "",
+            cropType: "",
+            _companyId: companyId,
+            companyName: company?.companyName ?? "",
+          };
+        }
+
+        // Se seleziona un'unità produttiva (value è il nome)
+        const selectedPu = productionUnitMap.get(stringValue);
+        if (selectedPu) {
+          return {
+            _selectedCompanyForPU: selectedPu.companyId, // Aggiorna anche questo
+            _productionUnitId: selectedPu.id, // Usa l'ID per la logica interna
+            productionUnitName: selectedPu.name,
+            cropName: selectedPu.cropName,
+            cropType: selectedPu.cropType,
+            _companyId: selectedPu.companyId,
+            companyName: selectedPu.companyName,
+          };
+        }
+
+        // Fallback: aggiorna anche _companyId e companyName per pulizia
+        return {
+          _selectedCompanyForPU: "",
+          _productionUnitId: "",
+          productionUnitName: stringValue,
+          cropName: "",
+          cropType: "",
+          _companyId: "",
+          companyName: "",
+        };
+      },
+      render: (value, row) => {
+        // Il valore della colonna ora è productionUnitName
+        const name =
+          (value as string) || (row.productionUnitName as string | undefined);
+        const companyName = row.companyName as string | undefined;
+        const selectedCompanyForPU = row._selectedCompanyForPU as
+          | string
+          | undefined;
+
+        // Se ha un'unità produttiva selezionata, mostrala
+        if (name) {
+          return <span>{name}</span>;
+        }
+
+        // Se ha solo l'azienda selezionata, mostra placeholder per UP
+        if (selectedCompanyForPU && companyName) {
+          return (
+            <span className="text-muted-foreground italic">
+              {companyName} → scegli UP...
+            </span>
+          );
+        }
+
+        return <span className="text-muted-foreground">-</span>;
+      },
     },
 
     {
@@ -2191,11 +2338,43 @@ export default function JobPage() {
       readOnly: true,
     },
     {
-      id: "productName",
+      id: "productRegistrationNumber",
       title: "Prodotto",
-      type: "text",
-      width: "200px",
-      readOnly: true,
+      type: "select",
+      width: "250px",
+      readOnly: false,
+      required: true,
+      getOptions: () => fitosanitariOptions,
+      placeholder: isLoadingFitosanitari
+        ? "Caricamento..."
+        : "Seleziona prodotto...",
+      enableSearch: true,
+      searchPlaceholder: "Cerca prodotto...",
+      emptyStateMessage: "Nessun prodotto trovato",
+      maxVisibleOptions: 50,
+      onValueChange: ({ value }) => {
+        const selectedProduct = fitosanitariMap.get(String(value));
+        if (selectedProduct) {
+          return {
+            productRegistrationNumber: selectedProduct.registrationNumber,
+            productName: selectedProduct.productName,
+            principioAttivo: selectedProduct.activeIngredients,
+          };
+        }
+        return {
+          productRegistrationNumber: value,
+          productName: "",
+          principioAttivo: "",
+        };
+      },
+      render: (_value, row) => {
+        const name = row.productName as string | undefined;
+        return name ? (
+          <span>{name}</span>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        );
+      },
     },
     {
       id: "quantity",
@@ -2203,13 +2382,21 @@ export default function JobPage() {
       type: "number",
       width: "120px",
       readOnly: false,
+      required: true,
     },
     {
       id: "unitOfMeasureQuantity",
       title: "Unità",
-      type: "text",
+      type: "select",
       width: "100px",
-      readOnly: true,
+      readOnly: false,
+      options: [
+        { label: "L", value: "L" },
+        { label: "KG", value: "KG" },
+        { label: "ML", value: "ML" },
+        { label: "G", value: "G" },
+      ],
+      placeholder: "UM",
     },
     {
       id: "treatedSurface",
@@ -2408,13 +2595,37 @@ export default function JobPage() {
       id: "isVerified",
       title: "Stato",
       type: "select",
-      width: "150px",
-      options: ["Verificato", "Non Verificato"],
-      onValueChange: ({ value }) => ({
-        _isVerifiedBoolean: value === "Verificato",
-      }),
+      width: "180px",
+      options: ["Verificato", "Non Verificato", "Conformità non verificata"],
+      onValueChange: ({ value }) => {
+        if (value === "Conformità non verificata") {
+          return {
+            _isVerifiedBoolean: false,
+            _conformityChecked: false,
+          };
+        }
+        return {
+          _isVerifiedBoolean: value === "Verificato",
+          _conformityChecked: true,
+        };
+      },
       render: (value) => {
-        const isVerified = value === "Verificato";
+        const stringValue = value as string;
+        const isVerified = stringValue === "Verificato";
+        const isConformityNotChecked =
+          stringValue === "Conformità non verificata";
+
+        if (isConformityNotChecked) {
+          return (
+            <Badge
+              variant="outline"
+              className="bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300"
+            >
+              Conformità N/V
+            </Badge>
+          );
+        }
+
         return (
           <Badge
             variant={isVerified ? "default" : "destructive"}
@@ -2550,7 +2761,70 @@ export default function JobPage() {
     updated: Array<Record<string, unknown>>;
   }) => {
     try {
-      // Processa solo gli aggiornamenti (non ci dovrebbero essere creazioni)
+      let createdCount = 0;
+      let updatedCount = 0;
+
+      // 1. Processa le nuove righe create
+      if (payload.created.length > 0) {
+        // Determina il jobId in base alla vista corrente
+        const currentJobId =
+          viewMode === "all"
+            ? selectedAllJobIds.length > 0
+              ? selectedAllJobIds[0]
+              : undefined
+            : selectedGroupCode ?? undefined;
+
+        const createPayloads = payload.created
+          .filter((row) => {
+            // Verifica che ci siano i campi obbligatori
+            const productionUnitId = row._productionUnitId as
+              | string
+              | undefined;
+            const productName = row.productName as string | undefined;
+            const productRegNumber = row.productRegistrationNumber as
+              | string
+              | undefined;
+            return productionUnitId && productName && productRegNumber;
+          })
+          .map((row) => {
+            const dateOfOperation = row.dateOfOpeation
+              ? row.dateOfOpeation instanceof Date
+                ? row.dateOfOpeation
+                : new Date(row.dateOfOpeation as string)
+              : new Date();
+
+            return {
+              jobId: currentJobId,
+              productionUnitId: row._productionUnitId as string,
+              dateOfOpeation: dateOfOperation.toISOString(),
+              category: (row.category as string) || "TREATMENT",
+              quantity: Number(row.quantity) || 0,
+              unitOfMeasureQuantity:
+                (row.unitOfMeasureQuantity as string) || "L",
+              stocks: [
+                {
+                  product: {
+                    name: row.productName as string,
+                    category: "PESTICIDE",
+                    type: "Fitosanitario",
+                    registrationNumber: row.productRegistrationNumber as string,
+                  },
+                  quantity: -(Number(row.quantity) || 0),
+                  unitOfMeasureQuantity:
+                    (row.unitOfMeasureQuantity as string) || "L",
+                  type: "OUT" as const,
+                },
+              ],
+            };
+          });
+
+        if (createPayloads.length > 0) {
+          await jobsApiService.createProductAndJob(createPayloads);
+          createdCount = createPayloads.length;
+        }
+      }
+
+      // 2. Processa gli aggiornamenti
       for (const row of payload.updated) {
         const jobId = row.id as string;
         const isVerified = row._isVerifiedBoolean as boolean;
@@ -2570,6 +2844,7 @@ export default function JobPage() {
         // Prepara il payload di aggiornamento
         const updatePayload: {
           isVerified?: boolean;
+          conformityChecked?: boolean;
           quantity?: number;
           dateOfOpeation?: string;
           machineId?: string | null;
@@ -2605,23 +2880,47 @@ export default function JobPage() {
         }
 
         // Esegui l'aggiornamento se ci sono modifiche
+        // NOTA: conformityChecked è sempre false quando si modifica un job,
+        // perché la conformità deve essere riverificata dopo ogni modifica
         if (Object.keys(updatePayload).length > 0) {
+          updatePayload.conformityChecked = false;
           await jobsApiService.updateJob(jobId, updatePayload);
+          updatedCount++;
         }
       }
 
-      toast.success("Operazioni aggiornate", {
-        description: `${payload.updated.length} operazioni aggiornate con successo`,
-      });
+      // Mostra toast appropriato
+      const messages: string[] = [];
+      if (createdCount > 0) {
+        messages.push(`${createdCount} operazione/i creata/e`);
+      }
+      if (updatedCount > 0) {
+        messages.push(`${updatedCount} operazione/i aggiornata/e`);
+      }
+
+      if (messages.length > 0) {
+        toast.success("Salvataggio completato", {
+          description: messages.join(", "),
+        });
+      }
 
       // Ricarica i dati
       await Promise.all([refetchGroupsSummary(), refetchGroupDetail()]);
+
+      // Ricarica i job selezionati se presenti
+      if (selectedAllJobIds.length > 0) {
+        const responses = await Promise.all(
+          selectedAllJobIds.map((jobId) => jobsApiService.getGroupDetail(jobId))
+        );
+        const jobs = responses.flatMap((res) => res.data.jobs ?? []);
+        setAllSelectedJobs(jobs);
+      }
     } catch (error) {
-      toast.error("Errore durante l'aggiornamento", {
+      toast.error("Errore durante il salvataggio", {
         description:
           error instanceof Error ? error.message : "Riprova più tardi",
       });
-      console.error("Error updating jobs:", error);
+      console.error("Error saving jobs:", error);
     }
   };
 
@@ -2679,6 +2978,46 @@ export default function JobPage() {
     }
   };
 
+  // Default values for new rows
+  const newRowDefaults = useMemo(
+    () => ({
+      isVerified: "Non Verificato",
+      _isVerifiedBoolean: false,
+      _conformityChecked: true, // Le nuove righe hanno conformità verificata di default
+      dateOfOpeation: new Date(),
+      category: "TREATMENT",
+      unitOfMeasureQuantity: "L",
+      quantity: 0,
+      _isNewRow: true,
+      _selectedCompanyForPU: "", // Per il flusso a due step della selezione UP
+      _productionUnitId: "",
+      productionUnitName: "",
+      cropName: "",
+      cropType: "",
+      _companyId: "",
+      companyName: "",
+      productRegistrationNumber: "",
+      productName: "",
+      principioAttivo: "",
+    }),
+    []
+  );
+
+  // Handler per il successo della conferma conformità
+  const handleConformityConfirmSuccess = async () => {
+    // Ricarica i dati
+    await Promise.all([refetchGroupsSummary(), refetchGroupDetail()]);
+
+    // Ricarica i job selezionati
+    if (selectedAllJobIds.length > 0) {
+      const responses = await Promise.all(
+        selectedAllJobIds.map((jobId) => jobsApiService.getGroupDetail(jobId))
+      );
+      const jobs = responses.flatMap((res) => res.data.jobs ?? []);
+      setAllSelectedJobs(jobs);
+    }
+  };
+
   // Renderizza la vista "Tutte le operazioni"
   const renderAllJobsView = () => (
     <AllJobsView
@@ -2710,6 +3049,12 @@ export default function JobPage() {
       exportConfig={jobExportConfig}
       isRightSidebarOpen={isRightSidebarOpen}
       onToggleRightSidebar={setIsRightSidebarOpen}
+      showAddButton={true}
+      newRowDefaults={newRowDefaults}
+      jobGroupId={
+        selectedAllJobIds.length > 0 ? selectedAllJobIds[0] : undefined
+      }
+      onConformityConfirmSuccess={handleConformityConfirmSuccess}
     />
   );
 

@@ -27,11 +27,13 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Sparkles,
+  MessageSquare,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 import HistoryPanel from "./HistoryPanel";
+import ConformityCheckerPanel from "./ConformityCheckerPanel";
 
 type EditableTableRowData = Record<string, unknown>;
 
@@ -46,6 +48,8 @@ interface JobIdOption {
   jobId: string;
   createdAt: string;
 }
+
+export type RightSidebarMode = "details" | "history" | "conformity";
 
 interface AllJobsViewProps {
   error: unknown;
@@ -63,8 +67,8 @@ interface AllJobsViewProps {
   selectedRows: EditableTableRowData[];
   onSelectionChange: (rows: EditableTableRowData[]) => void;
   historyPanelWidth: number;
-  rightSidebarMode: "details" | "history";
-  onRightSidebarModeChange: (mode: "details" | "history") => void;
+  rightSidebarMode: RightSidebarMode;
+  onRightSidebarModeChange: (mode: RightSidebarMode) => void;
   onResizeStart: (e: React.MouseEvent) => void;
   isResizing: boolean;
   selectedRowsHistory: JobHistoryEntry[];
@@ -80,6 +84,10 @@ interface AllJobsViewProps {
   exportConfig?: CustomExportConfig;
   isRightSidebarOpen: boolean;
   onToggleRightSidebar: (open: boolean) => void;
+  showAddButton?: boolean;
+  newRowDefaults?: Partial<Record<string, unknown>>;
+  jobGroupId?: string;
+  onConformityConfirmSuccess?: () => void;
 }
 
 export function JobIdMultiSelect({
@@ -254,6 +262,10 @@ export function AllJobsView({
   exportConfig,
   isRightSidebarOpen,
   onToggleRightSidebar,
+  showAddButton = true,
+  newRowDefaults,
+  jobGroupId,
+  onConformityConfirmSuccess,
 }: AllJobsViewProps) {
   const hasError = Boolean(error);
   const errorMessage =
@@ -299,7 +311,7 @@ export function AllJobsView({
             </div>
           )}
 
-          {jobsLength === 0 && !isLoading ? (
+          {jobsLength === 0 && !isLoading && !showAddButton ? (
             <div className="text-center py-16 text-neutral-500">
               <p>Nessuna operazione trovata</p>
             </div>
@@ -307,6 +319,9 @@ export function AllJobsView({
             <div className="h-full flex flex-col relative">
               <div className="flex-1 min-h-0">
                 <EditableTable
+                  addButton={showAddButton}
+                  createMode="inline"
+                  newRowDefaults={newRowDefaults}
                   columns={columns}
                   rows={rows}
                   isModify={true}
@@ -346,7 +361,7 @@ export function AllJobsView({
             style={{ width: `${historyPanelWidth}px` }}
           >
             <div className="flex-shrink-0 p-3 border-b border-slate-200 flex items-center justify-between">
-              {rightSidebarMode === "details" ? (
+              {rightSidebarMode === "details" && (
                 <>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-slate-700">
@@ -382,6 +397,15 @@ export function AllJobsView({
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => onRightSidebarModeChange("conformity")}
+                      className="h-7 w-7 p-0"
+                      title="Verifica conformità"
+                    >
+                      <MessageSquare className="h-4 w-4 text-slate-500" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => onToggleRightSidebar(false)}
                       className="h-7 w-7 p-0"
                       title="Chiudi pannello"
@@ -390,10 +414,47 @@ export function AllJobsView({
                     </Button>
                   </div>
                 </>
-              ) : (
+              )}
+              {rightSidebarMode === "history" && (
                 <>
                   <span className="text-sm font-medium text-slate-700">
                     Storico
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onRightSidebarModeChange("details")}
+                      className="h-7 w-7 p-0"
+                      title="Mostra dettagli"
+                    >
+                      <X className="h-4 w-4 text-slate-500" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onRightSidebarModeChange("conformity")}
+                      className="h-7 w-7 p-0"
+                      title="Verifica conformità"
+                    >
+                      <MessageSquare className="h-4 w-4 text-slate-500" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onToggleRightSidebar(false)}
+                      className="h-7 w-7 p-0"
+                      title="Chiudi pannello"
+                    >
+                      <PanelRightClose className="h-4 w-4 text-slate-500" />
+                    </Button>
+                  </div>
+                </>
+              )}
+              {rightSidebarMode === "conformity" && (
+                <>
+                  <span className="text-sm font-medium text-slate-700">
+                    Verifica Conformità
                   </span>
                   <div className="flex items-center gap-1">
                     <Button
@@ -419,8 +480,8 @@ export function AllJobsView({
               )}
             </div>
             <div className="flex-1 overflow-hidden bg-slate-50">
-              {rightSidebarMode === "details" ? (
-                selectedRows.length > 0 ? (
+              {rightSidebarMode === "details" &&
+                (selectedRows.length > 0 ? (
                   <JobSelectedDetails
                     selectedRows={convertToJobRows(selectedRows)}
                   />
@@ -429,22 +490,39 @@ export function AllJobsView({
                     <Sparkles className="h-8 w-8 mb-2 opacity-50" />
                     <p>Seleziona una o più operazioni per vedere i dettagli</p>
                   </div>
-                )
-              ) : selectedRowsHistory.length > 0 ? (
-                <HistoryPanel
-                  history={selectedRowsHistory}
-                  jobCode={
-                    (selectedRows[0]?.jobCode as string | undefined) ?? ""
-                  }
-                  onProductClick={(name, reg) =>
-                    onProductClick(name, reg, false)
-                  }
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center text-slate-400 text-sm">
-                  Nessuno storico disponibile per la selezione corrente
-                </div>
-              )}
+                ))}
+              {rightSidebarMode === "history" &&
+                (selectedRowsHistory.length > 0 ? (
+                  <HistoryPanel
+                    history={selectedRowsHistory}
+                    jobCode={
+                      (selectedRows[0]?.jobCode as string | undefined) ?? ""
+                    }
+                    onProductClick={(name, reg) =>
+                      onProductClick(name, reg, false)
+                    }
+                  />
+                ) : (
+                  <div className="h-full flex items-center justify-center text-slate-400 text-sm">
+                    Nessuno storico disponibile per la selezione corrente
+                  </div>
+                ))}
+              {rightSidebarMode === "conformity" &&
+                (jobGroupId ? (
+                  <ConformityCheckerPanel
+                    jobGroupId={jobGroupId}
+                    onConfirmSuccess={onConformityConfirmSuccess}
+                    onClose={() => onRightSidebarModeChange("details")}
+                  />
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm p-4 text-center">
+                    <MessageSquare className="h-8 w-8 mb-2 opacity-50" />
+                    <p>
+                      Seleziona un gruppo di operazioni per verificare la
+                      conformità
+                    </p>
+                  </div>
+                ))}
             </div>
           </div>
         </>

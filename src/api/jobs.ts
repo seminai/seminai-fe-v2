@@ -27,7 +27,28 @@ export type JobHistoryMetadata = {
   description?: string;
 };
 
-export type JobHistoryEntry = {
+// Tipo per le modifiche manuali dell'utente
+export type JobModificationChange = {
+  field: string;
+  oldValue: unknown;
+  newValue: unknown;
+};
+
+export type JobModificationEntry = {
+  type: "modification";
+  timestamp: string;
+  modifiedBy: {
+    userId: string;
+    name: string;
+    email: string;
+  };
+  changes: JobModificationChange[];
+  previousJobSnapshot?: Record<string, unknown>;
+};
+
+// Entry standard dello storico (senza type o con type diverso da "modification")
+export type JobStandardHistoryEntry = {
+  type?: string;
   step: string;
   title: string;
   value: string | number;
@@ -36,12 +57,29 @@ export type JobHistoryEntry = {
   metadata?: JobHistoryMetadata;
 };
 
+// Union type per supportare entrambi i tipi di entry
+export type JobHistoryEntry = JobStandardHistoryEntry | JobModificationEntry;
+
+// Type guard per distinguere i tipi di entry
+export function isJobModificationEntry(
+  entry: JobHistoryEntry
+): entry is JobModificationEntry {
+  return (entry as JobModificationEntry).type === "modification";
+}
+
+export function isJobStandardHistoryEntry(
+  entry: JobHistoryEntry
+): entry is JobStandardHistoryEntry {
+  return !isJobModificationEntry(entry);
+}
+
 export type Job = {
   id: string;
   jobId: string;
   productionUnitId: string;
   dateOfOpeation: string;
   isVerified: boolean;
+  conformityChecked: boolean;
   category: string;
   quantity: number;
   unitOfMeasureQuantity: string;
@@ -127,6 +165,39 @@ export type BulkDeleteJobsPayload = {
 export type BulkDeleteJobsResponse = {
   status: "success" | string;
   data?: unknown;
+};
+
+// Types for create-product-and-job endpoint
+export type CreateJobProductStock = {
+  product: {
+    name: string;
+    category: string;
+    type: string;
+    registrationNumber: string;
+    sku?: string;
+  };
+  quantity: number;
+  unitOfMeasureQuantity: string;
+  price?: number;
+  unitOfMeasurePrice?: string;
+  type: "OUT" | "IN";
+};
+
+export type CreateJobPayload = {
+  productionUnitId: string;
+  dateOfOpeation: string;
+  category: string;
+  quantity: number;
+  unitOfMeasureQuantity: string;
+  stocks: CreateJobProductStock[];
+  jobId?: string; // Optional: if provided, the job will be added to an existing job group
+};
+
+export type CreateProductAndJobResponse = {
+  status: "success" | string;
+  data?: {
+    jobs: JobWithRelations[];
+  };
 };
 
 // Types for groups-summary endpoint
@@ -303,6 +374,38 @@ export async function getJobGroupDetail(
   return jsonData as GetJobGroupDetailResponse;
 }
 
+export async function createProductAndJob(
+  payload: CreateJobPayload[],
+  baseUrl: string = BASE_URL
+): Promise<CreateProductAndJobResponse> {
+  console.log("Creating product and job:", payload);
+
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/jobs/create-product-and-job`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  console.log("Create product and job response status:", response.status);
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    console.error("Create product and job error:", errorText);
+    throw new Error(errorText || "Create product and job failed");
+  }
+
+  const jsonData = await response.json();
+  console.log("Create product and job response data:", jsonData);
+
+  return jsonData as CreateProductAndJobResponse;
+}
+
 class JobsApiService {
   private readonly baseUrl: string;
 
@@ -335,6 +438,12 @@ class JobsApiService {
     jobId: string
   ): Promise<GetJobGroupDetailResponse> {
     return await getJobGroupDetail(jobId, this.baseUrl);
+  }
+
+  public async createProductAndJob(
+    payload: CreateJobPayload[]
+  ): Promise<CreateProductAndJobResponse> {
+    return await createProductAndJob(payload, this.baseUrl);
   }
 }
 
