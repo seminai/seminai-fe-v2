@@ -2383,6 +2383,11 @@ export default function JobPage() {
       width: "120px",
       readOnly: false,
       required: true,
+      render: (value) => {
+        const numValue = Number(value);
+        if (isNaN(numValue)) return "-";
+        return numValue.toFixed(3);
+      },
     },
     {
       id: "unitOfMeasureQuantity",
@@ -2672,11 +2677,15 @@ export default function JobPage() {
       type: "number",
       width: "100px",
       readOnly: false,
-      render: (value, row) => (
-        <span className="font-mono text-sm">
-          {String(value)} {String(row.unitOfMeasureQuantity)}
-        </span>
-      ),
+      render: (value, row) => {
+        const numValue = Number(value);
+        const formattedValue = isNaN(numValue) ? "-" : numValue.toFixed(3);
+        return (
+          <span className="font-mono text-sm">
+            {formattedValue} {String(row.unitOfMeasureQuantity)}
+          </span>
+        );
+      },
     },
     {
       id: "treatedSurface",
