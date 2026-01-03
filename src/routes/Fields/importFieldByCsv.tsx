@@ -1,6 +1,9 @@
 import * as React from "react";
 import { useState } from "react";
-import { type BulkFieldInput } from "@/api/fields";
+import {
+  type BulkFieldInput,
+  fieldsApiService,
+} from "@/api/fields";
 import { type Company } from "@/api/companies";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +26,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { CsvFieldImporter } from "@/components/organism/CsvFieldImporter";
-import { CsvFieldMapper } from "@/utils/csvFieldMapper";
 
 interface ImportFieldByCsvProps {
   companies: Company[];
@@ -33,8 +35,8 @@ interface ImportFieldByCsvProps {
 }
 
 /**
- * ImportFieldByCsv - Componente per gestire l'importazione di campi da file CSV
- * Contiene tutta la logica di parsing, validazione e importazione
+ * ImportFieldByCsv - Componente per gestire l'estrazione automatica di campi da file CSV
+ * Utilizza l'API backend per estrarre automaticamente i dati dei campi
  */
 export function ImportFieldByCsv({
   companies,
@@ -48,10 +50,9 @@ export function ImportFieldByCsv({
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
 
   /**
-   * Gestisce la selezione del file CSV e avvia il processo di importazione
-   * Aggiunge i dati alla tabella senza validazioni bloccanti
+   * Gestisce l'estrazione automatica dei campi tramite API
    */
-  const handleFileSelect = async (file: File): Promise<void> => {
+  const handleExtraction = async (file: File): Promise<void> => {
     if (!selectedCompanyId) {
       toast.error("Seleziona un'azienda prima di importare il file");
       return;
@@ -62,31 +63,65 @@ export function ImportFieldByCsv({
     setImportWarnings([]);
 
     try {
-      const mapper = new CsvFieldMapper(companies);
-      // Passa l'ID dell'azienda selezionata al mapper
-      const result = await mapper.parseFile(file, selectedCompanyId);
+      toast.info("Estrazione campi in corso...", {
+        description: "L'operazione potrebbe richiedere alcuni minuti",
+      });
 
-      // Gestisci gli errori bloccanti (es. file vuoto o corrotto)
-      if (result.errors.length > 0) {
-        setImportErrors(result.errors);
-        toast.error(`Errore nel parsing del file: ${result.errors[0]}`);
+      const response = await fieldsApiService.startJobFieldExtraction(
+        selectedCompanyId,
+        file
+      );
+
+      if (!response.data?.fields || response.data.fields.length === 0) {
+        toast.error("Nessun campo estratto dal file");
         setIsProcessing(false);
         return;
       }
 
-      // Mostra i warnings ma non bloccare l'importazione
-      if (result.warnings.length > 0) {
-        setImportWarnings(result.warnings);
-      }
-
-      if (result.fields.length === 0) {
-        toast.error("Nessun campo trovato nel file");
-        setIsProcessing(false);
-        return;
-      }
+      // Mappa i campi estratti al formato BulkFieldInput
+      const mappedFields: BulkFieldInput[] = response.data.fields.map(
+        (field) => ({
+          companyId: field.companyId,
+          name: field.name,
+          address: field.address || "",
+          sezione: field.sezione || "",
+          foglio: field.foglio || "",
+          particella: field.particella || "",
+          superficieCatastaleMq: field.superficieCatastaleMq || 0,
+          coordinates: field.coordinates || [],
+          latitude: field.latitude,
+          longitude: field.longitude,
+          polygon: field.polygon,
+          gisHa: field.gisHa,
+          sauHa: field.sauHa,
+          ph: field.ph,
+          nitrogen: field.nitrogen,
+          phosphorus: field.phosphorus,
+          potassium: field.potassium,
+          calcium: field.calcium,
+          magnesium: field.magnesium,
+          soilType: field.soilType,
+          uso: field.uso,
+          qualita: field.qualita,
+          subalterno: field.subalterno,
+          nation: field.nation,
+          region: field.region,
+          city: field.city,
+          cap: field.cap,
+          variazioneMq: field.variazioneMq,
+          inizioConduzione: field.inizioConduzione,
+          fineConduzione: field.fineConduzione,
+        })
+      );
 
       // Chiama la callback per aggiungere i campi alla tabella
-      onImportSuccess(result.fields);
+      onImportSuccess(mappedFields);
+
+      toast.success(
+        `${response.data.extractedCount} camp${
+          response.data.extractedCount === 1 ? "o estratto" : "i estratti"
+        } con successo`
+      );
 
       // Chiudi il dialog e resetta lo stato
       setIsDrawerOpen(false);
@@ -97,12 +132,13 @@ export function ImportFieldByCsv({
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Errore sconosciuto";
-      toast.error(`Errore nell'importazione: ${errorMessage}`);
+      toast.error(`Errore nell'estrazione: ${errorMessage}`);
       setImportErrors([errorMessage]);
     } finally {
       setIsProcessing(false);
     }
   };
+
 
   /**
    * Resetta lo stato quando il dialog viene chiuso
@@ -129,9 +165,10 @@ export function ImportFieldByCsv({
         className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white p-2"
       >
         <DrawerHeader>
-          <DrawerTitle>Importa Campi da CSV</DrawerTitle>
+          <DrawerTitle>Estrazione Automatica Campi da CSV</DrawerTitle>
           <DrawerDescription>
-            Seleziona l'azienda e carica un file CSV con i dati dei campi.
+            Seleziona l'azienda e carica un file CSV. Il sistema estrarrà
+            automaticamente i dati dei campi.
           </DrawerDescription>
         </DrawerHeader>
 
@@ -163,7 +200,7 @@ export function ImportFieldByCsv({
             }`}
           >
             <CsvFieldImporter
-              onFileSelect={handleFileSelect}
+              onFileSelect={handleExtraction}
               isProcessing={isProcessing}
             />
           </div>
@@ -177,7 +214,9 @@ export function ImportFieldByCsv({
           {isProcessing && (
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <Spinner size={20} ariaLabel="Elaborazione file" />
-              <span>Elaborazione file in corso...</span>
+              <span>
+                Estrazione campi in corso... (potrebbe richiedere alcuni minuti)
+              </span>
             </div>
           )}
 
@@ -219,30 +258,25 @@ export function ImportFieldByCsv({
           )}
 
           <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium text-sm mb-2">Formato CSV Richiesto:</h4>
-            <p className="text-xs text-gray-600 mb-2">
-              Il file deve supportare il template AGEA/SIAN con le seguenti
-              colonne (o equivalenti):
-            </p>
-            <ul className="text-xs text-gray-600 space-y-1 mb-3">
-              <li>
-                <strong>Campi principali:</strong> Unità Produttiva (Nome),
-                Comune Descrizione (Città), Sezione, Foglio, Particella,
-                Superficie Catastale
-              </li>
-              <li>
-                <strong>Altri campi supportati:</strong> Superficie Agricola,
-                Superficie Grafica, Uso Suolo Primario, Qualità, ecc.
-              </li>
-            </ul>
-            <a
-              href="/templates/campi_esempio.csv"
-              download="campi_esempio.csv"
-              className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-            >
-              <Upload className="h-3 w-3" />
-              Scarica template CSV di esempio (Nuovo formato)
-            </a>
+            <h4 className="font-medium text-sm mb-2">Estrazione Automatica</h4>
+            <div className="text-xs text-gray-600 space-y-2">
+              <p>
+                L'estrazione automatica analizza il file CSV e estrae
+                automaticamente i dati dei campi, inclusi coordinate,
+                informazioni catastali e dati del suolo. L'operazione potrebbe
+                richiedere alcuni minuti.
+              </p>
+              <p className="font-medium text-gray-700">
+                Il sistema estrarrà automaticamente:
+              </p>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>Coordinate geografiche (latitudine, longitudine)</li>
+                <li>Dati catastali (sezione, foglio, particella)</li>
+                <li>Informazioni del suolo (tipo, pH, nutrienti)</li>
+                <li>Superfici (catastale, SAU, GIS)</li>
+                <li>Altri dati disponibili nel file</li>
+              </ul>
+            </div>
           </div>
         </div>
       </DrawerContent>
