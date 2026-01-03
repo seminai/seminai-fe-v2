@@ -92,7 +92,7 @@ const buildFieldsEditColumns = (companies: Company[]): EditableColumn[] => {
       id: "address",
       title: "Indirizzo",
       type: "text",
-      required: true,
+      required: false,
       placeholder: "es. Via Roma 1",
     },
     {

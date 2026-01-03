@@ -295,6 +295,13 @@ class FieldsApiService {
   ): Promise<BulkDeleteFieldsResponse> {
     return await bulkDeleteFields(request, this.baseUrl);
   }
+
+  public async startJobFieldExtraction(
+    companyId: string,
+    file: File
+  ): Promise<FieldExtractionResponse> {
+    return await startJobFieldExtraction(companyId, file, this.baseUrl);
+  }
 }
 
 // Types for fields availability API
@@ -374,6 +381,70 @@ export async function getFieldsAvailability(
   }
 
   return (await response.json()) as FieldsAvailabilityResponse;
+}
+
+export type FieldExtractionResponse = {
+  status: "success";
+  data: {
+    fields: Array<{
+      companyId: string;
+      name: string;
+      coordinates: number[];
+      latitude: number | null;
+      longitude: number | null;
+      polygon: Record<string, unknown> | unknown[] | null;
+      gisHa: number | null;
+      sauHa: number | null;
+      ph: number | null;
+      nitrogen: number | null;
+      phosphorus: number | null;
+      potassium: number | null;
+      calcium: number | null;
+      magnesium: number | null;
+      soilType: string | null;
+      uso: string | null;
+      qualita: string | null;
+      superficieCatastaleMq: number;
+      sezione: string;
+      foglio: string;
+      particella: string;
+      subalterno: string | null;
+      nation: string | null;
+      region: string | null;
+      city: string | null;
+      address: string;
+      cap: string | null;
+      variazioneMq: string | null;
+      inizioConduzione: string | null;
+      fineConduzione: string | null;
+    }>;
+    extractedCount: number;
+  };
+};
+
+export async function startJobFieldExtraction(
+  companyId: string,
+  file: File,
+  baseUrl: string = BASE_URL
+): Promise<FieldExtractionResponse> {
+  const formData = new FormData();
+  formData.append("companyId", companyId);
+  formData.append("file", file);
+
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/fields/start-job-field-extraction`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to extract fields from file");
+  }
+
+  return (await response.json()) as FieldExtractionResponse;
 }
 
 export const fieldsApiService = new FieldsApiService(BASE_URL);
