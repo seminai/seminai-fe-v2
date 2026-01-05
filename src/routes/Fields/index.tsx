@@ -242,7 +242,10 @@ export default function Fields(): React.ReactElement {
       particella: field.particella || "",
       superficieCatastaleMq: field.superficieCatastaleMq || "",
       city: field.city || "",
-      sauHa: field.sauHa || "",
+      sauHa:
+        field.sauHa !== undefined && field.sauHa !== null && field.sauHa !== ""
+          ? field.sauHa
+          : "",
       uso: field.uso || "",
       soilType: field.soilType || "",
       currentProductionUnitLabel: "-",
@@ -285,7 +288,12 @@ export default function Fields(): React.ReactElement {
         particella: String(field.particella || ""),
         superficieCatastaleMq: Number(field.superficieCatastaleMq || 0),
         city: String(field.city || ""),
-        sauHa: field.sauHa ? Number(field.sauHa) : 0,
+        sauHa:
+          field.sauHa !== undefined &&
+          field.sauHa !== null &&
+          field.sauHa !== ""
+            ? Number(field.sauHa)
+            : 0,
         uso: String(field.uso || ""),
         soilType: String(field.soilType || ""),
       };
@@ -310,7 +318,10 @@ export default function Fields(): React.ReactElement {
         updateField.superficieCatastaleMq = Number(field.superficieCatastaleMq);
       if (field.city !== undefined) updateField.city = String(field.city);
       if (field.sauHa !== undefined)
-        updateField.sauHa = field.sauHa ? Number(field.sauHa) : 0;
+        updateField.sauHa =
+          field.sauHa !== null && field.sauHa !== ""
+            ? Number(field.sauHa)
+            : 0;
       if (field.uso !== undefined) updateField.uso = String(field.uso);
       if (field.soilType !== undefined)
         updateField.soilType = String(field.soilType);
