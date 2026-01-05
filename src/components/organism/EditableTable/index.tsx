@@ -1692,7 +1692,7 @@ export class EditableTable extends React.Component<
   };
 
   private handleCancel = (): void => {
-    // Resetta i dati alle props originali
+    // Rimuove tutte le righe non salvate (isNew: true) e resetta i dati alle props originali
     const resetRows: InternalRow[] = (this.props.rows || []).map((r, idx) => ({
       id: String(this.props.getRowId ? this.props.getRowId(r, idx) : idx),
       data: { ...r },
@@ -1703,6 +1703,9 @@ export class EditableTable extends React.Component<
       rows: resetRows,
       touched: {},
       isEditMode: false,
+      createRow: undefined,
+      createTouched: {},
+      createDrawerOpen: false,
     });
   };
 
