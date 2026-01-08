@@ -243,7 +243,7 @@ export default function Fields(): React.ReactElement {
       superficieCatastaleMq: field.superficieCatastaleMq || "",
       city: field.city || "",
       sauHa:
-        field.sauHa !== undefined && field.sauHa !== null && field.sauHa !== ""
+        field.sauHa !== undefined && field.sauHa !== null
           ? field.sauHa
           : "",
       uso: field.uso || "",
