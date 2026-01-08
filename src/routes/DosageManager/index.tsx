@@ -2604,7 +2604,7 @@ export default function DosageManager() {
   return (
     <div className="flex min-h-svh flex-col">
       <PageHeader
-        title="Gestione Dosaggi"
+        title="Genera Dosaggi"
         totalItems={totalUnits}
         filteredItems={filteredUnits.length}
       >

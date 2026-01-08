@@ -707,13 +707,13 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   </SidebarMenuItem>
                 )}
 
-                {/* Gestione Dosaggi - solo in modalità espansa */}
+                {/* Genera Dosaggi - solo in modalità espansa */}
                 {dosageManagerVisible && sidebarOpen && (
                   <SidebarMenuItem key="dosage-manager-expanded">
                     <SidebarMenuButton
                       asChild
                       isActive={dosageManagerActive}
-                      tooltip="Gestione Dosaggi"
+                      tooltip="Genera Dosaggi"
                       size="lg"
                       className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                     >
@@ -722,7 +722,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                         className="flex items-center gap-3"
                       >
                         <SprayAgriIcon className="size-5" size={20} />
-                        <span>Gestione Dosaggi</span>
+                        <span>Genera Dosaggi</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -872,13 +872,13 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
 
                 {/* ICONE IN MODALITÀ COLLASSATA - Solo queste si vedono quando la sidebar è chiusa */}
 
-                {/* Gestione Dosaggi - icona collassata */}
+                {/* Genera Dosaggi - icona collassata */}
                 {dosageManagerVisible && !sidebarOpen && (
                   <SidebarMenuItem key="dosage-manager-collapsed">
                     <SidebarMenuButton
                       asChild
                       isActive={dosageManagerActive}
-                      tooltip="Gestione Dosaggi"
+                      tooltip="Genera Dosaggi"
                       size="lg"
                       className="data-[active=true]:bg-neutral-900/5"
                     >
