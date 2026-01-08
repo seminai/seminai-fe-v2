@@ -3114,7 +3114,7 @@ export default function JobPage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <PageHeader title="Gestione Operazioni">
+      <PageHeader title="Verifica Operazioni">
         {!isMobile && viewMode === "all" && (
           <div className="flex items-center justify-end gap-4 flex-wrap">
             <div className="flex items-center gap-2 text-xs text-slate-500">
