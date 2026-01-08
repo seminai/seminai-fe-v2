@@ -734,13 +734,13 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     <SidebarMenuButton
                       asChild
                       isActive={jobActive}
-                      tooltip="Gestione Operazioni"
+                      tooltip="Verifica Operazioni"
                       size="lg"
                       className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                     >
                       <Link to="/job" className="flex items-center gap-3">
                         <TasksAgriIcon className="size-5" size={20} />
-                        <span>Gestione Operazioni</span>
+                        <span>Verifica Operazioni</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -898,7 +898,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     <SidebarMenuButton
                       asChild
                       isActive={jobActive}
-                      tooltip="Gestione Operazioni"
+                      tooltip="Verifica Operazioni"
                       size="lg"
                       className="data-[active=true]:bg-neutral-900/5"
                     >
