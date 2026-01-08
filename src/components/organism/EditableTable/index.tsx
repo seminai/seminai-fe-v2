@@ -83,6 +83,7 @@ export interface EditableColumn {
   noneOptionLabel?: string;
   readOnly?: boolean; // Column is always read-only even in edit mode
   maxVisibleOptions?: number; // Limit visible options in searchable select for performance
+  keepOpenOnSelect?: (value: string) => boolean; // Funzione per determinare se mantenere aperta la select dopo la selezione
 }
 
 export interface CustomExportColumn {
@@ -2335,6 +2336,7 @@ export class EditableTable extends React.Component<
               onChange={(newValue) => handleChange(row, col, newValue)}
               wrapperClassName="w-full"
               maxVisibleOptions={col.maxVisibleOptions}
+              keepOpenOnSelect={col.keepOpenOnSelect}
             />
           );
         }

@@ -29,6 +29,7 @@ export interface SearchableSelectProps {
   contentClassName?: string;
   maxVisibleOptions?: number;
   maxHeight?: string;
+  keepOpenOnSelect?: (value: string) => boolean; // Funzione per determinare se mantenere aperta la select dopo la selezione
 }
 
 export function SearchableSelect({
@@ -46,9 +47,12 @@ export function SearchableSelect({
   contentClassName,
   maxVisibleOptions,
   maxHeight = "max-h-60",
+  keepOpenOnSelect,
 }: SearchableSelectProps): React.ReactElement {
   const EMPTY_VALUE_TOKEN = "__SEARCHABLE_SELECT_EMPTY__";
   const [searchTerm, setSearchTerm] = React.useState<string>("");
+  const [open, setOpen] = React.useState<boolean>(false);
+  const lastSelectedValueRef = React.useRef<string>("");
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
@@ -84,15 +88,43 @@ export function SearchableSelect({
     (nextValue: string) => {
       const mappedValue =
         nextValue === EMPTY_VALUE_TOKEN ? "" : nextValue ?? "";
+      lastSelectedValueRef.current = mappedValue;
       onChange(mappedValue);
       setSearchTerm("");
+      
+      // Se keepOpenOnSelect è definita e ritorna true per il nuovo valore,
+      // mantieni la select aperta usando setTimeout per assicurarsi che Radix UI
+      // non l'abbia già chiusa
+      if (keepOpenOnSelect && keepOpenOnSelect(mappedValue)) {
+        // Usa setTimeout per riaprire la select dopo che Radix UI ha processato la chiusura
+        setTimeout(() => {
+          setOpen(true);
+        }, 0);
+      }
     },
-    [onChange]
+    [onChange, keepOpenOnSelect]
+  );
+
+  const handleOpenChange = React.useCallback(
+    (newOpen: boolean) => {
+      // Se la select sta per chiudersi e keepOpenOnSelect è definita
+      if (!newOpen && keepOpenOnSelect) {
+        // Controlla se l'ultimo valore selezionato richiede di mantenere aperta la select
+        const valueToCheck = lastSelectedValueRef.current;
+        if (keepOpenOnSelect(valueToCheck)) {
+          // Mantieni la select aperta - non aggiornare lo stato
+          return;
+        }
+      }
+      // Altrimenti aggiorna normalmente lo stato
+      setOpen(newOpen);
+    },
+    [keepOpenOnSelect]
   );
 
   const shouldShowNoneOption = React.useMemo(() => {
-    if (!noneOptionLabel) return false;
-    if (!normalizedSearch) return true;
+    if (!normalizedSearch) return false;
+    if (!noneOptionLabel) return true;
     return noneOptionLabel.toLowerCase().includes(normalizedSearch);
   }, [noneOptionLabel, normalizedSearch]);
 
@@ -106,6 +138,8 @@ export function SearchableSelect({
       value={selectValue}
       onValueChange={handleValueChange}
       disabled={disabled || loading}
+      open={open}
+      onOpenChange={handleOpenChange}
     >
       <SelectTrigger
         className={cn(
