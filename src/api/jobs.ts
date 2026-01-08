@@ -230,6 +230,22 @@ export type GetJobGroupDetailResponse = {
   };
 };
 
+// Types for verified jobs endpoint with pagination
+export type PaginationInfo = {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+export type GetVerifiedJobsResponse = {
+  status: "success" | string;
+  data: {
+    jobs: JobWithRelations[];
+    pagination: PaginationInfo;
+  };
+};
+
 export async function getJobs(
   companyName?: string,
   baseUrl: string = BASE_URL
@@ -406,6 +422,49 @@ export async function createProductAndJob(
   return jsonData as CreateProductAndJobResponse;
 }
 
+export async function getVerifiedJobs(
+  options: {
+    companyName?: string;
+    page?: number;
+    limit?: number;
+  } = {},
+  baseUrl: string = BASE_URL
+): Promise<GetVerifiedJobsResponse> {
+  const url = new URL(`${baseUrl}/jobs/me/verified`);
+  
+  if (options.companyName) {
+    url.searchParams.append("companyName", options.companyName);
+  }
+  if (options.page !== undefined) {
+    url.searchParams.append("page", String(options.page));
+  }
+  if (options.limit !== undefined) {
+    url.searchParams.append("limit", String(options.limit));
+  }
+
+  console.log("Calling verified jobs API:", url.toString());
+
+  const response = await authenticatedHttpClient.request(url.toString(), {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  console.log("Verified jobs API response status:", response.status);
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    console.error("Verified jobs API error response:", errorText);
+    throw new Error(errorText || "Get verified jobs failed");
+  }
+
+  const jsonData = await response.json();
+  console.log("Verified jobs API response data:", jsonData);
+
+  return jsonData as GetVerifiedJobsResponse;
+}
+
 class JobsApiService {
   private readonly baseUrl: string;
 
@@ -444,6 +503,14 @@ class JobsApiService {
     payload: CreateJobPayload[]
   ): Promise<CreateProductAndJobResponse> {
     return await createProductAndJob(payload, this.baseUrl);
+  }
+
+  public async getVerifiedJobs(options?: {
+    companyName?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<GetVerifiedJobsResponse> {
+    return await getVerifiedJobs(options, this.baseUrl);
   }
 }
 
