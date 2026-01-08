@@ -2245,8 +2245,22 @@ export default function JobPage() {
       enableSearch: true,
       searchPlaceholder: "Cerca azienda o unità produttiva...",
       emptyStateMessage: "Nessuna opzione trovata",
-      onValueChange: ({ value }) => {
+      keepOpenOnSelect: (value: string) => {
+        // Mantieni aperta la select quando si seleziona un'azienda (value inizia con "company:")
+        // Chiudila quando si seleziona un'unità produttiva o si clicca su "clear_filter"
+        return value.startsWith("company:");
+      },
+      onValueChange: ({ value, rowData }) => {
         const stringValue = String(value);
+
+        // Preserva i valori del prodotto esistenti
+        const preservedProductData = {
+          productRegistrationNumber:
+            (rowData.productRegistrationNumber as string | undefined) ?? "",
+          productName: (rowData.productName as string | undefined) ?? "",
+          principioAttivo:
+            (rowData.principioAttivo as string | undefined) ?? "",
+        };
 
         // Se clicca su "pulisci filtro", torna alla selezione aziende
         if (stringValue === "clear_filter") {
@@ -2258,6 +2272,7 @@ export default function JobPage() {
             cropType: "",
             _companyId: "",
             companyName: "",
+            ...preservedProductData, // Preserva il prodotto
           };
         }
 
@@ -2275,6 +2290,7 @@ export default function JobPage() {
             cropType: "",
             _companyId: companyId,
             companyName: company?.companyName ?? "",
+            ...preservedProductData, // Preserva il prodotto
           };
         }
 
@@ -2289,6 +2305,7 @@ export default function JobPage() {
             cropType: selectedPu.cropType,
             _companyId: selectedPu.companyId,
             companyName: selectedPu.companyName,
+            ...preservedProductData, // Preserva il prodotto
           };
         }
 
@@ -2301,6 +2318,7 @@ export default function JobPage() {
           cropType: "",
           _companyId: "",
           companyName: "",
+          ...preservedProductData, // Preserva il prodotto
         };
       },
       render: (value, row) => {
@@ -2352,8 +2370,19 @@ export default function JobPage() {
       searchPlaceholder: "Cerca prodotto...",
       emptyStateMessage: "Nessun prodotto trovato",
       maxVisibleOptions: 50,
-      onValueChange: ({ value }) => {
-        const selectedProduct = fitosanitariMap.get(String(value));
+      onValueChange: ({ value, rowData }) => {
+        const stringValue = String(value);
+
+        // Se il valore è vuoto, resetta i campi del prodotto
+        if (!stringValue || stringValue.trim() === "") {
+          return {
+            productRegistrationNumber: "",
+            productName: "",
+            principioAttivo: "",
+          };
+        }
+
+        const selectedProduct = fitosanitariMap.get(stringValue);
         if (selectedProduct) {
           return {
             productRegistrationNumber: selectedProduct.registrationNumber,
@@ -2361,10 +2390,14 @@ export default function JobPage() {
             principioAttivo: selectedProduct.activeIngredients,
           };
         }
+
+        // Se il prodotto non è stato trovato ma c'è un valore, preservalo
+        // Questo può accadere se il valore è stato impostato manualmente o da un'altra fonte
         return {
-          productRegistrationNumber: value,
-          productName: "",
-          principioAttivo: "",
+          productRegistrationNumber: stringValue,
+          productName: (rowData.productName as string | undefined) ?? "",
+          principioAttivo:
+            (rowData.principioAttivo as string | undefined) ?? "",
         };
       },
       render: (_value, row) => {
