@@ -108,6 +108,7 @@ type ManageMenuVisibility = {
   productionUnit: boolean;
   products: boolean;
   jobs: boolean;
+  operations: boolean;
 };
 
 type ManageMenuKey = Exclude<keyof ManageMenuVisibility, "jobs">;
@@ -215,6 +216,12 @@ class ManageMenuController {
       label: "Magazzino",
       path: "/products",
       icon: BottleAgriIcon,
+    },
+    {
+      key: "operations",
+      label: "Operazioni",
+      path: "/operations",
+      icon: TasksAgriIcon,
     },
   ];
 
@@ -592,6 +599,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         menuAvailability.allowProductsMenu &&
         canViewMenuItem("products", userRole),
       jobs: menuAvailability.allowJobsMenu && canViewMenuItem("job", userRole),
+      operations:
+        menuAvailability.allowJobsMenu &&
+        canViewMenuItem("operations", userRole),
     }),
     [
       userRole,
@@ -724,13 +734,13 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     <SidebarMenuButton
                       asChild
                       isActive={jobActive}
-                      tooltip="Operazioni"
+                      tooltip="Gestione Operazioni"
                       size="lg"
                       className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                     >
                       <Link to="/job" className="flex items-center gap-3">
                         <TasksAgriIcon className="size-5" size={20} />
-                        <span>Operazioni</span>
+                        <span>Gestione Operazioni</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -888,7 +898,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     <SidebarMenuButton
                       asChild
                       isActive={jobActive}
-                      tooltip="Operazioni"
+                      tooltip="Gestione Operazioni"
                       size="lg"
                       className="data-[active=true]:bg-neutral-900/5"
                     >

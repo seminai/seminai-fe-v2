@@ -15,6 +15,7 @@ import NewProductionUnit from "./routes/ProductionUnit/NewProductionUnit";
 import DosageManager from "./routes/DosageManager";
 import Products from "./routes/Products";
 import Job from "./routes/Job";
+import Operations from "./routes/Operations";
 import QuickCreate from "./routes/QuickCreate";
 import TermsOfService from "./routes/TermsOfService";
 import PrivacyPolicy from "./routes/PrivacyPolicy";
@@ -39,6 +40,7 @@ function App() {
         <Route path="/new-production-unit" element={<NewProductionUnit />} />
         <Route path="/dosage-manager" element={<DosageManager />} />
         <Route path="/job" element={<Job />} />
+        <Route path="/operations" element={<Operations />} />
         <Route path="/products" element={<Products />} />
         <Route path="/create-company-field-production" element={<QuickCreate />} />
       </Route>
