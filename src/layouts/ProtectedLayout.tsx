@@ -643,6 +643,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const productsActive =
     location.pathname === "/products" ||
     location.pathname.startsWith("/products/");
+  const operationsActive =
+    location.pathname === "/operations" ||
+    location.pathname.startsWith("/operations/");
 
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -751,7 +754,8 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   (manageVisibility.company ||
                     manageVisibility.fields ||
                     manageVisibility.productionUnit ||
-                    manageVisibility.products) && (
+                    manageVisibility.products ||
+                    manageVisibility.operations) && (
                     <Collapsible
                       open={manageMenuOpen}
                       onOpenChange={setManageMenuOpen}
@@ -860,6 +864,28 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                       size={20}
                                     />
                                     <span>Magazzino</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            )}
+                            {manageVisibility.operations && (
+                              <SidebarMenuItem key="operations">
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={operationsActive}
+                                  tooltip="Operazioni"
+                                  size="lg"
+                                  className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                                >
+                                  <Link
+                                    to="/operations"
+                                    className="flex items-center gap-3"
+                                  >
+                                    <TasksAgriIcon
+                                      className="size-5"
+                                      size={20}
+                                    />
+                                    <span>Operazioni</span>
                                   </Link>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
