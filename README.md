@@ -1,4 +1,4 @@
-# Seminai - Frontend
+# Seminai
 
 Seminai è un quaderno di campagna agricolo che rivoluziona e automatizza la gestione dei campi.
 
