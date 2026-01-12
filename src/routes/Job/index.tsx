@@ -5,7 +5,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useLabelsSummary } from "@/hooks/useLabelsSummary";
 import { useLabel } from "@/hooks/useLabel";
 import { machinesApiService, type Machine } from "@/api/machines";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/organism/Header";
 import { userSettingsIndexDBManager } from "@/utils/userSettingsIndexDBManager";
 import {
@@ -1541,6 +1541,7 @@ export default function JobPage() {
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState<boolean>(true);
 
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (isMobile) {
@@ -2946,6 +2947,10 @@ export default function JobPage() {
         });
       }
 
+      // Invalida la cache di React Query per forzare il refetch
+      await queryClient.invalidateQueries({ queryKey: ["job-groups-summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["job-group-detail"] });
+
       // Ricarica i dati
       await Promise.all([refetchGroupsSummary(), refetchGroupDetail()]);
 
@@ -2982,6 +2987,10 @@ export default function JobPage() {
       });
 
       // Ricarica i dati
+      // Invalida la cache di React Query per forzare il refetch
+      await queryClient.invalidateQueries({ queryKey: ["job-groups-summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["job-group-detail"] });
+
       await Promise.all([refetchGroupsSummary(), refetchGroupDetail()]);
     } catch (error) {
       toast.error("Errore durante l'eliminazione", {
@@ -3008,7 +3017,20 @@ export default function JobPage() {
         description: `${verifiedCount} operazioni verificate con successo`,
       });
 
+      // Invalida la cache di React Query per forzare il refetch
+      await queryClient.invalidateQueries({ queryKey: ["job-groups-summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["job-group-detail"] });
+
       await Promise.all([refetchGroupsSummary(), refetchGroupDetail()]);
+
+      // Ricarica i job selezionati se presenti (per la vista "all")
+      if (selectedAllJobIds.length > 0) {
+        const responses = await Promise.all(
+          selectedAllJobIds.map((jobId) => jobsApiService.getGroupDetail(jobId))
+        );
+        const jobs = responses.flatMap((res) => res.data.jobs ?? []);
+        setAllSelectedJobs(jobs);
+      }
     } catch (error) {
       toast.error("Errore durante la verifica", {
         description:
@@ -3047,6 +3069,10 @@ export default function JobPage() {
 
   // Handler per il successo della conferma conformità
   const handleConformityConfirmSuccess = async () => {
+    // Invalida la cache di React Query per forzare il refetch
+    await queryClient.invalidateQueries({ queryKey: ["job-groups-summary"] });
+    await queryClient.invalidateQueries({ queryKey: ["job-group-detail"] });
+
     // Ricarica i dati
     await Promise.all([refetchGroupsSummary(), refetchGroupDetail()]);
 

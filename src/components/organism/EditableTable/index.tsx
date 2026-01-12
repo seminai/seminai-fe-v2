@@ -481,12 +481,27 @@ export class EditableTable extends React.Component<
     }
     const uniqueValues = new Set<string>();
     this.state.rows.forEach((row) => {
-      const rawValue = row.data[columnId];
+      // Per la colonna productRegistrationNumber, usa productName per il filtro
+      let rawValue: unknown;
+      if (columnId === "productRegistrationNumber") {
+        // Usa productName per il filtro, ma fallback a productRegistrationNumber se productName è vuoto o "-"
+        const productName = row.data["productName"];
+        const productRegNumber = row.data["productRegistrationNumber"];
+        if (productName && String(productName).trim() && String(productName).trim() !== "-") {
+          rawValue = productName;
+        } else if (productRegNumber && String(productRegNumber).trim() && String(productRegNumber).trim() !== "-") {
+          rawValue = productRegNumber;
+        } else {
+          return; // Skip se entrambi sono vuoti
+        }
+      } else {
+        rawValue = row.data[columnId];
+      }
       if (rawValue === undefined || rawValue === null) {
         return;
       }
       const parsedValue = String(rawValue).trim();
-      if (parsedValue) {
+      if (parsedValue && parsedValue !== "-") {
         uniqueValues.add(parsedValue);
       }
     });
@@ -826,8 +841,23 @@ export class EditableTable extends React.Component<
       if (selectedValues.size === 0) {
         continue; // Nessun filtro per questa colonna
       }
-      const cellValue = String(row.data[columnId] ?? "").trim();
-      if (!selectedValues.has(cellValue)) {
+      // Per la colonna productRegistrationNumber, usa productName per il filtro
+      let cellValue: string;
+      if (columnId === "productRegistrationNumber") {
+        // Usa productName per il filtro, ma fallback a productRegistrationNumber se productName è vuoto o "-"
+        const productName = row.data["productName"];
+        const productRegNumber = row.data["productRegistrationNumber"];
+        if (productName && String(productName).trim() && String(productName).trim() !== "-") {
+          cellValue = String(productName).trim();
+        } else if (productRegNumber && String(productRegNumber).trim() && String(productRegNumber).trim() !== "-") {
+          cellValue = String(productRegNumber).trim();
+        } else {
+          cellValue = "";
+        }
+      } else {
+        cellValue = String(row.data[columnId] ?? "").trim();
+      }
+      if (!cellValue || !selectedValues.has(cellValue)) {
         return false; // Il valore della cella non è tra quelli selezionati
       }
     }
