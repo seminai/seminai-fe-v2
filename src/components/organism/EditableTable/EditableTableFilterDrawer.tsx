@@ -268,7 +268,7 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
       <Drawer open={open} onOpenChange={onDrawerOpenChange}>
         <DrawerContent 
           data-vaul-drawer-direction="right"
-          className="w-[95vw] max-w-[95vw] sm:w-[85vw] sm:max-w-[500px]"
+          className="w-[95vw] max-w-[95vw] sm:w-1/2 sm:max-w-[50vw]"
         >
           <DrawerHeader className="px-4 sm:px-6">
             <DrawerTitle className="text-lg sm:text-xl">Filtri tabella</DrawerTitle>

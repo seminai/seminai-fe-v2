@@ -146,18 +146,24 @@ export class EditableTableCreateDrawer extends React.PureComponent<EditableTable
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent 
           data-vaul-drawer-direction="right"
-          className="w-[95vw] max-w-[95vw] sm:w-[85vw] sm:max-w-[600px] overflow-x-hidden"
+          className="!w-[95vw] !max-w-[95vw] sm:!w-1/2 sm:!max-w-[50vw] overflow-x-hidden"
         >
           <DrawerHeader className="px-4 sm:px-6">
-            <DrawerTitle className="text-lg sm:text-xl">Nuovo elemento</DrawerTitle>
-            <DrawerDescription className="text-sm">
-              Compila i campi per aggiungere un nuovo elemento alla tabella
-            </DrawerDescription>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+              <div className="flex-1 min-w-0">
+                <DrawerTitle className="text-lg sm:text-xl">Nuovo elemento</DrawerTitle>
+                <DrawerDescription className="text-sm mt-1.5">
+                  Compila i campi per aggiungere un nuovo elemento alla tabella
+                </DrawerDescription>
+              </div>
+              {drawerChildren.length > 0 && (
+                <div className="flex-shrink-0">
+                  {drawerChildren}
+                </div>
+              )}
+            </div>
           </DrawerHeader>
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-180px)]">
-            {drawerChildren.length > 0 && (
-              <div className="space-y-4">{drawerChildren}</div>
-            )}
             {pendingRow ? (
               <div className="space-y-4 sm:space-y-5">
                 {groupedColumns.map(({ group, columns: rowColumns }, groupIndex) => {
