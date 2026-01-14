@@ -202,7 +202,7 @@ export default function CompanyDetailPage(): React.ReactElement {
         </div>
       </div>
 
-      <div className="flex-1 px-3 md:px-6 pb-24 md:pb-10 w-full pt-16">
+      <div className="flex-1 px-3 md:px-6 pb-24 md:pb-10 w-full">
         <div className="mx-auto space-y-6">
           {isLoading ? (
             <div className={glassPanelClass}>
