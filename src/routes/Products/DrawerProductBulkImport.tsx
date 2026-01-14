@@ -391,6 +391,21 @@ function DrawerProductBulkImport({
           </SheetDescription>
         </SheetHeader>
 
+        <div className="space-y-4 p-4">
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => BulkProductTemplateBuilder.downloadTemplate()}
+              className="gap-2"
+            >
+              <FileDown className="h-4 w-4" />
+              Scarica template
+            </Button>
+          </div>
+        </div>
+
         <div className="flex-1 overflow-y-auto px-4">
           <div className="space-y-5 pb-16">
             <div className="space-y-2">
@@ -639,17 +654,6 @@ function DrawerProductBulkImport({
         </div>
 
         <SheetFooter className="flex flex-col gap-4 border-t pt-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => BulkProductTemplateBuilder.downloadTemplate()}
-            >
-              <FileDown className="mr-2 h-4 w-4" />
-              Scarica template
-            </Button>
-          </div>
-
           <div className="flex flex-wrap justify-end gap-3">
             <Button type="button" variant="ghost" onClick={closeDrawer}>
               Annulla

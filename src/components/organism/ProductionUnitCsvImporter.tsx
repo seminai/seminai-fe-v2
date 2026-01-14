@@ -18,12 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  Upload,
-  AlertCircle,
-  CheckCircle,
-  Download,
-} from "lucide-react";
+import { Upload, AlertCircle, CheckCircle, Download } from "lucide-react";
 import {
   extractProductionUnits,
   type ExtractedProductionUnit,
@@ -219,7 +214,10 @@ class ProductionUnitAggregator {
     };
   }
 
-  private mergeUnit(target: AggregatedUnit, source: ImportedProductionUnit): void {
+  private mergeUnit(
+    target: AggregatedUnit,
+    source: ImportedProductionUnit
+  ): void {
     source.allocations.forEach((area, fieldId) => {
       const prev = target.allocations.get(fieldId) ?? 0;
       target.allocations.set(fieldId, parseFloat((prev + area).toFixed(4)));
@@ -227,7 +225,9 @@ class ProductionUnitAggregator {
 
     if (typeof source.totalAreaHa === "number") {
       const current = target.totalAreaHa ?? 0;
-      target.totalAreaHa = parseFloat((current + source.totalAreaHa).toFixed(4));
+      target.totalAreaHa = parseFloat(
+        (current + source.totalAreaHa).toFixed(4)
+      );
     }
 
     source.matchedFieldIds.forEach((fieldId) => {
@@ -236,10 +236,16 @@ class ProductionUnitAggregator {
 
     target.unmatchedAllocations.push(...source.unmatchedAllocations);
 
-    if (!target.startDate || (source.startDate && source.startDate < target.startDate)) {
+    if (
+      !target.startDate ||
+      (source.startDate && source.startDate < target.startDate)
+    ) {
       target.startDate = source.startDate;
     }
-    if (!target.endDate || (source.endDate && source.endDate > target.endDate)) {
+    if (
+      !target.endDate ||
+      (source.endDate && source.endDate > target.endDate)
+    ) {
       target.endDate = source.endDate;
     }
   }
@@ -514,7 +520,9 @@ export const ProductionUnitCsvImporter: React.FC<
         className="!w-1/2 !max-w-[50vw] h-full overflow-y-auto overflow-x-hidden bg-white p-2"
       >
         <DrawerHeader>
-          <DrawerTitle>Estrazione Automatica Unità Produttive da CSV</DrawerTitle>
+          <DrawerTitle>
+            Estrazione Automatica Unità Produttive da CSV
+          </DrawerTitle>
           <DrawerDescription>
             Il sistema supporta il formato Excel del template AGEA della misura
             unica. Il formato varia in base alla regione. Seleziona l'azienda e
@@ -533,7 +541,7 @@ export const ProductionUnitCsvImporter: React.FC<
               className="gap-2"
             >
               <Download className="h-4 w-4" />
-              Scarica template Excel
+              Scarica template
             </Button>
           </div>
           <div className="space-y-2">
@@ -578,7 +586,8 @@ export const ProductionUnitCsvImporter: React.FC<
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <Spinner size={20} ariaLabel="Elaborazione file" />
               <span>
-                Estrazione unità produttive in corso... (potrebbe richiedere alcuni secondi)
+                Estrazione unità produttive in corso... (potrebbe richiedere
+                alcuni secondi)
               </span>
             </div>
           )}
@@ -619,7 +628,8 @@ export const ProductionUnitCsvImporter: React.FC<
                       Azienda: {previewResult.companyName}
                     </p>
                     <p className="text-xs mt-1">
-                      • {previewResult.productionUnits.length} unità produttive trovate
+                      • {previewResult.productionUnits.length} unità produttive
+                      trovate
                     </p>
                   </div>
                 </div>
