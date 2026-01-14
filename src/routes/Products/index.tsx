@@ -170,12 +170,6 @@ class ProductTableColumnsFactory {
         render: ProductTableColumnsFactory.renderName,
       },
       {
-        id: "sku",
-        title: "SKU",
-        width: "200px",
-        render: ProductTableColumnsFactory.renderSku,
-      },
-      {
         id: "stockTotal",
         title: "Stock",
         width: "200px",
@@ -217,14 +211,6 @@ class ProductTableColumnsFactory {
         ) : null}
       </div>
     );
-  }
-
-  private static renderSku(
-    _value: unknown,
-    row: Record<string, unknown>
-  ): ReactNode {
-    const data = ProductTableColumnsFactory.asRow(row);
-    return <span className="font-mono text-sm">{data.sku}</span>;
   }
 
   private static renderStock(
