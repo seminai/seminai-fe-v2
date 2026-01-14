@@ -146,38 +146,46 @@ export class EditableTableCreateDrawer extends React.PureComponent<EditableTable
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent 
           data-vaul-drawer-direction="right"
-          className="!w-1/2 !max-w-[50vw] overflow-x-hidden"
+          className="w-[95vw] max-w-[95vw] sm:w-[85vw] sm:max-w-[600px] overflow-x-hidden"
         >
-          <DrawerHeader>
-            <DrawerTitle>Nuovo elemento</DrawerTitle>
-            <DrawerDescription>
+          <DrawerHeader className="px-4 sm:px-6">
+            <DrawerTitle className="text-lg sm:text-xl">Nuovo elemento</DrawerTitle>
+            <DrawerDescription className="text-sm">
               Compila i campi per aggiungere un nuovo elemento alla tabella
             </DrawerDescription>
           </DrawerHeader>
-          <div className="p-6 space-y-5 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-180px)]">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-180px)]">
             {drawerChildren.length > 0 && (
               <div className="space-y-4">{drawerChildren}</div>
             )}
             {pendingRow ? (
-              <div className="space-y-5">
-                {groupedColumns.map(({ group, columns: rowColumns }, groupIndex) => (
-                  <div key={groupIndex} className={`grid ${group.gridCols} gap-4`}>
-                    {rowColumns.map((column) => (
-                      <div key={column.id} className="space-y-2">
-                        <div className="text-sm font-semibold text-muted-foreground flex items-center gap-1">
-                          <span>{column.title}</span>
-                          {column.required ? (
-                            <span className="text-red-500">*</span>
-                          ) : null}
+              <div className="space-y-4 sm:space-y-5">
+                {groupedColumns.map(({ group, columns: rowColumns }, groupIndex) => {
+                  // Su mobile, le griglie con più colonne diventano a colonna singola
+                  const mobileGridClass = group.gridCols === "grid-cols-1" 
+                    ? "grid-cols-1" 
+                    : "grid-cols-1 sm:" + group.gridCols;
+                  return (
+                    <div key={groupIndex} className={`grid ${mobileGridClass} gap-3 sm:gap-4`}>
+                      {rowColumns.map((column) => (
+                        <div key={column.id} className="space-y-1.5 sm:space-y-2">
+                          <div className="text-sm font-semibold text-muted-foreground flex items-center gap-1">
+                            <span>{column.title}</span>
+                            {column.required ? (
+                              <span className="text-red-500">*</span>
+                            ) : null}
+                          </div>
+                          <div className="[&_input]:h-11 [&_input]:text-base sm:[&_input]:h-10 sm:[&_input]:text-sm [&_select]:h-11 [&_select]:text-base sm:[&_select]:h-10 sm:[&_select]:text-sm [&_textarea]:text-base sm:[&_textarea]:text-sm">
+                            {renderInput(pendingRow, column, {
+                              onChange: onCellChange,
+                              touchedOverride: createTouched,
+                            })}
+                          </div>
                         </div>
-                        {renderInput(pendingRow, column, {
-                          onChange: onCellChange,
-                          touchedOverride: createTouched,
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                ))}
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
@@ -185,11 +193,11 @@ export class EditableTableCreateDrawer extends React.PureComponent<EditableTable
               </p>
             )}
           </div>
-          <div className="flex items-center justify-end gap-2 border-t border-border/50 px-6 py-4">
-            <Button variant="ghost" onClick={onCancel}>
+          <div className="flex items-center justify-end gap-2 border-t border-border/50 px-4 sm:px-6 py-4">
+            <Button variant="ghost" onClick={onCancel} className="h-11 sm:h-10 px-4 sm:px-3">
               Annulla
             </Button>
-            <Button onClick={onSave} disabled={disableSave}>
+            <Button onClick={onSave} disabled={disableSave} className="h-11 sm:h-10 px-5 sm:px-4">
               Salva
             </Button>
           </div>

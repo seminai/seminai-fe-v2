@@ -129,12 +129,13 @@ export default function CompanyDetailPage(): React.ReactElement {
     >
       {/* Sticky Header with Breadcrumb and Tabs */}
       <div className="sticky top-4 z-50 bg-transparent">
-        <div className="px-3 md:px-6 w-full">
+        <div className="px-4 md:px-6 w-full">
           <div className="mx-auto w-full">
-            <div className="flex items-center justify-between gap-4 py-2 md:py-3">
-              {/* Breadcrumb on the left */}
-              <Breadcrumb className="flex-1 min-w-0 text-xs md:text-sm text-muted-foreground">
-                <BreadcrumbList>
+            {/* Mobile: vertical layout, Desktop: horizontal layout */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 py-3 md:py-3">
+              {/* Breadcrumb */}
+              <Breadcrumb className="w-full md:flex-1 md:min-w-0 text-xs md:text-sm text-muted-foreground">
+                <BreadcrumbList className="flex-wrap">
                   {breadcrumbNodes.map((node, index) => (
                     <React.Fragment key={`${node.label}-${index}`}>
                       <BreadcrumbItem>
@@ -159,8 +160,8 @@ export default function CompanyDetailPage(): React.ReactElement {
                 </BreadcrumbList>
               </Breadcrumb>
 
-              {/* Tabs on the right */}
-              <div className="flex-shrink-0">
+              {/* Tabs */}
+              <div className="w-full md:flex-shrink-0 md:w-auto">
                 <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 w-full md:w-auto">
                   <TabsList className="inline-flex w-auto">
                     <TabsTrigger
