@@ -204,7 +204,7 @@ export function ImportFieldByCsv({
               className="gap-2"
             >
               <Download className="h-4 w-4" />
-              Scarica template Excel
+              Scarica template
             </Button>
           </div>
           <div className="space-y-2">
