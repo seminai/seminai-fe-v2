@@ -3393,15 +3393,17 @@ export class EditableTable extends React.Component<
               data-vaul-drawer-direction="right"
               className="w-[95vw] max-w-[95vw] sm:w-[85vw] sm:max-w-[600px]"
             >
-              <DrawerHeader className="px-4 sm:px-6">
-                <DrawerTitle className="text-lg sm:text-xl">
-                  {this.props.detailsTitle || "Details"}
-                </DrawerTitle>
-                <DrawerDescription className="text-sm">
-                  Visualizza e modifica i dettagli dell'elemento selezionato
-                </DrawerDescription>
-              </DrawerHeader>
-              <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(100vh-120px)]">
+              {this.props.detailsTitle && (
+                <DrawerHeader className="px-4 sm:px-6">
+                  <DrawerTitle className="text-lg sm:text-xl">
+                    {this.props.detailsTitle}
+                  </DrawerTitle>
+                  <DrawerDescription className="text-sm">
+                    Visualizza e modifica i dettagli dell'elemento selezionato
+                  </DrawerDescription>
+                </DrawerHeader>
+              )}
+              <div className={`p-4 sm:p-6 overflow-y-auto max-h-[calc(100vh-${this.props.detailsTitle ? '120px' : '20px'})]`}>
                 {this.state.drawerRow
                   ? this.props.detailsRenderer?.(this.state.drawerRow.data)
                   : null}
