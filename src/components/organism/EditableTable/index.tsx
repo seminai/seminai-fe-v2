@@ -2321,17 +2321,17 @@ export class EditableTable extends React.Component<
       >
         <DrawerContent
           data-vaul-drawer-direction="right"
-          className="shadow-2xl rounded-r-none rounded-l-2xl border-l border-neutral-200"
+          className="w-[95vw] max-w-[95vw] sm:w-[85vw] sm:max-w-[500px] shadow-2xl rounded-r-none rounded-l-2xl border-l border-neutral-200"
         >
-          <DrawerHeader>
-            <DrawerTitle>Modifica {selectionCount} elementi</DrawerTitle>
-            <DrawerDescription>
+          <DrawerHeader className="px-4 sm:px-6">
+            <DrawerTitle className="text-lg sm:text-xl">Modifica {selectionCount} elementi</DrawerTitle>
+            <DrawerDescription className="text-sm">
               Compila i campi che vuoi modificare. Solo i campi compilati
               verranno applicati a tutti gli elementi selezionati.
             </DrawerDescription>
           </DrawerHeader>
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="space-y-5">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="space-y-4 sm:space-y-5">
               {editableColumns.map((col) => {
                 // Create a fake row for each column input
                 const fakeRow: InternalRow = {
@@ -2349,11 +2349,13 @@ export class EditableTable extends React.Component<
                         <span className="text-red-500 ml-1">*</span>
                       )}
                     </label>
-                    {this.renderInput(fakeRow, col, {
-                      onChange: (_row, _col, value) =>
-                        this.handleBulkEditValueChange(col.id, value),
-                      touchedOverride: {},
-                    })}
+                    <div className="[&_input]:h-11 [&_input]:text-base sm:[&_input]:h-10 sm:[&_input]:text-sm [&_select]:h-11 [&_select]:text-base sm:[&_select]:h-10 sm:[&_select]:text-sm [&_textarea]:text-base sm:[&_textarea]:text-sm">
+                      {this.renderInput(fakeRow, col, {
+                        onChange: (_row, _col, value) =>
+                          this.handleBulkEditValueChange(col.id, value),
+                        touchedOverride: {},
+                      })}
+                    </div>
                   </div>
                 );
               })}
@@ -2361,10 +2363,10 @@ export class EditableTable extends React.Component<
           </div>
           {/* Action buttons - sticky footer */}
           <div className="flex justify-end gap-3 p-4 border-t bg-white">
-            <Button variant="outline" onClick={this.closeBulkEditDrawer}>
+            <Button variant="outline" onClick={this.closeBulkEditDrawer} className="h-11 sm:h-10 px-4 sm:px-3">
               Annulla
             </Button>
-            <Button onClick={this.applyBulkEdit} disabled={!hasAnyValue}>
+            <Button onClick={this.applyBulkEdit} disabled={!hasAnyValue} className="h-11 sm:h-10 px-5 sm:px-4">
               Applica a {selectionCount} element
               {selectionCount === 1 ? "o" : "i"}
             </Button>
@@ -3387,16 +3389,19 @@ export class EditableTable extends React.Component<
         )} */}
         {hasDetails ? (
           <Drawer open={this.state.drawerOpen} onOpenChange={this.closeDetails}>
-            <DrawerContent data-vaul-drawer-direction="right">
-              <DrawerHeader>
-                <DrawerTitle>
+            <DrawerContent 
+              data-vaul-drawer-direction="right"
+              className="w-[95vw] max-w-[95vw] sm:w-[85vw] sm:max-w-[600px]"
+            >
+              <DrawerHeader className="px-4 sm:px-6">
+                <DrawerTitle className="text-lg sm:text-xl">
                   {this.props.detailsTitle || "Details"}
                 </DrawerTitle>
-                <DrawerDescription>
+                <DrawerDescription className="text-sm">
                   Visualizza e modifica i dettagli dell'elemento selezionato
                 </DrawerDescription>
               </DrawerHeader>
-              <div className="p-6 overflow-y-auto max-h-[calc(100vh-120px)]">
+              <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(100vh-120px)]">
                 {this.state.drawerRow
                   ? this.props.detailsRenderer?.(this.state.drawerRow.data)
                   : null}

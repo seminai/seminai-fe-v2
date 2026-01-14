@@ -98,11 +98,11 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
     const { columns, filterDraft } = this.props;
     return (
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground">
+        <label className="text-sm sm:text-xs font-semibold text-muted-foreground">
           Colonna
         </label>
         <select
-          className="w-full h-10 rounded-xl bg-white/70 dark:bg-input/30 backdrop-blur border border-black/5 dark:border-white/10 px-3 text-sm focus-visible:ring-2 focus-visible:ring-[#0A84FF]/80 outline-none transition"
+          className="w-full h-12 sm:h-10 rounded-xl bg-white/70 dark:bg-input/30 backdrop-blur border border-black/5 dark:border-white/10 px-3 text-base sm:text-sm focus-visible:ring-2 focus-visible:ring-[#0A84FF]/80 outline-none transition"
           value={filterDraft.columnId ?? ""}
           onChange={(event) =>
             this.handleFieldChange("columnId", event.target.value || undefined)
@@ -123,12 +123,12 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
     const { filterDraft, operatorOptions } = this.props;
     return (
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground">
+        <label className="text-sm sm:text-xs font-semibold text-muted-foreground">
           Operatore
         </label>
         <select
           className={cn(
-            "w-full h-10 rounded-xl bg-white/70 dark:bg-input/30 backdrop-blur border border-black/5 dark:border-white/10 px-3 text-sm focus-visible:ring-2 focus-visible:ring-[#0A84FF]/80 outline-none transition",
+            "w-full h-12 sm:h-10 rounded-xl bg-white/70 dark:bg-input/30 backdrop-blur border border-black/5 dark:border-white/10 px-3 text-base sm:text-sm focus-visible:ring-2 focus-visible:ring-[#0A84FF]/80 outline-none transition",
             !filterDraft.columnId && "opacity-50 cursor-not-allowed"
           )}
           value={this.props.selectedOperatorValue}
@@ -167,7 +167,7 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
     } = searchableValueConfig;
     return (
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground">
+        <label className="text-sm sm:text-xs font-semibold text-muted-foreground">
           {label}
         </label>
         <SearchableSelect
@@ -180,7 +180,7 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
           onChange={(newValue) =>
             this.handleFieldChange("value", newValue ?? "")
           }
-          wrapperClassName="w-full"
+          wrapperClassName="w-full h-12 sm:h-10 text-base sm:text-sm"
         />
       </div>
     );
@@ -190,12 +190,12 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
     const { useValueSelect, valueOptions, filterDraft, inputType } = this.props;
     return (
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground">
+        <label className="text-sm sm:text-xs font-semibold text-muted-foreground">
           Valore
         </label>
         {useValueSelect ? (
           <select
-            className="w-full h-10 rounded-xl bg-white/70 dark:bg-input/30 backdrop-blur border border-black/5 dark:border-white/10 px-3 text-sm focus-visible:ring-2 focus-visible:ring-[#0A84FF]/80 outline-none transition"
+            className="w-full h-12 sm:h-10 rounded-xl bg-white/70 dark:bg-input/30 backdrop-blur border border-black/5 dark:border-white/10 px-3 text-base sm:text-sm focus-visible:ring-2 focus-visible:ring-[#0A84FF]/80 outline-none transition"
             value={filterDraft.value ?? ""}
             onChange={(event) =>
               this.handleFieldChange("value", event.target.value)
@@ -215,6 +215,7 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
             onChange={(event) =>
               this.handleFieldChange("value", event.target.value)
             }
+            className="h-12 sm:h-10 text-base sm:text-sm"
           />
         )}
       </div>
@@ -228,7 +229,7 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
     }
     return (
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground">
+        <label className="text-sm sm:text-xs font-semibold text-muted-foreground">
           Valore finale
         </label>
         <Input
@@ -237,6 +238,7 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
           onChange={(event) =>
             this.handleFieldChange("secondaryValue", event.target.value)
           }
+          className="h-12 sm:h-10 text-base sm:text-sm"
         />
       </div>
     );
@@ -264,14 +266,17 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
 
     return (
       <Drawer open={open} onOpenChange={onDrawerOpenChange}>
-        <DrawerContent data-vaul-drawer-direction="right">
-          <DrawerHeader>
-            <DrawerTitle>Filtri tabella</DrawerTitle>
-            <DrawerDescription>
+        <DrawerContent 
+          data-vaul-drawer-direction="right"
+          className="w-[95vw] max-w-[95vw] sm:w-[85vw] sm:max-w-[500px]"
+        >
+          <DrawerHeader className="px-4 sm:px-6">
+            <DrawerTitle className="text-lg sm:text-xl">Filtri tabella</DrawerTitle>
+            <DrawerDescription className="text-sm">
               Applica condizioni mirate per restringere i risultati
             </DrawerDescription>
           </DrawerHeader>
-          <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-180px)]">
+          <div className="p-4 sm:p-6 space-y-5 sm:space-y-6 overflow-y-auto max-h-[calc(100vh-180px)]">
             <div>
               <h4 className="text-sm font-semibold text-muted-foreground mb-2">
                 Filtri attivi
@@ -288,8 +293,8 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
                 {this.renderOperatorSelector()}
                 {filterDraft.operator ? this.renderValueSection() : null}
               </div>
-              <div className="flex justify-end">
-                <Button onClick={onAddFilter} disabled={disableAdd}>
+              <div className="flex justify-end pt-2">
+                <Button onClick={onAddFilter} disabled={disableAdd} className="h-11 sm:h-10 px-5 sm:px-4">
                   Aggiungi filtro
                 </Button>
               </div>
