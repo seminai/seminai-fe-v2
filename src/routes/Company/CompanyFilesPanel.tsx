@@ -28,7 +28,6 @@ import {
 import {
   Upload,
   FileText,
-  RefreshCcw,
   Eye,
   Download,
   File,
@@ -358,7 +357,7 @@ class UploadDrawer extends React.Component<
     return (
       <Drawer open={isOpen} onOpenChange={onClose}>
         <DrawerContent
-          className="max-h-[90vh]"
+          className="!w-1/2 !max-w-[50vw] h-full"
           data-vaul-drawer-direction="right"
         >
           <DrawerHeader>
@@ -378,7 +377,7 @@ class UploadDrawer extends React.Component<
                 type="file"
                 ref={this.fileInputRef}
                 onChange={this.handleFileSelect}
-                className="mt-1 bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
+                className="mt-1 bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
               />
               {selectedFile && (
                 <p className="text-xs text-muted-foreground mt-1">
@@ -397,7 +396,7 @@ class UploadDrawer extends React.Component<
                       value={newPathInput}
                       onChange={this.handleNewPathInputChange}
                       placeholder="es: contratti/2024, documenti/fatture, etc."
-                      className="flex-1 bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
+                      className="flex-1 bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && newPathInput.trim()) {
                           this.handleConfirmNewPath();
@@ -412,7 +411,7 @@ class UploadDrawer extends React.Component<
                       size="sm"
                       onClick={this.handleConfirmNewPath}
                       disabled={!newPathInput.trim()}
-                      className="h-10 px-4 rounded-xl bg-agri-green-600 hover:bg-agri-green-700 text-white"
+                      className="h-10 px-4 rounded-xl bg-agri-green-500 hover:bg-agri-green-600 text-white"
                     >
                       <Check className="h-4 w-4 mr-1" />
                       Conferma
@@ -437,7 +436,7 @@ class UploadDrawer extends React.Component<
                     value={filePath || ""}
                     onValueChange={this.handlePathSelect}
                   >
-                    <SelectTrigger className="w-full h-10 bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl">
+                    <SelectTrigger className="w-full h-10 bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg">
                       <SelectValue
                         placeholder={
                           hasExistingPaths
@@ -457,7 +456,7 @@ class UploadDrawer extends React.Component<
                               </div>
                             </SelectItem>
                           ))}
-                          <div className="border-t border-agri-green-100 my-1" />
+                          <div className="border-t border-gray-100 my-1" />
                         </>
                       )}
                       <SelectItem value="__create_new__">
@@ -469,7 +468,7 @@ class UploadDrawer extends React.Component<
                     </SelectContent>
                   </Select>
                   {filePath && (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-agri-green-50/50 rounded-lg border border-agri-green-100">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100">
                       <Folder className="h-3 w-3 text-agri-green-600" />
                       <span className="text-xs font-medium text-agri-green-700">
                         {filePath}
@@ -487,7 +486,7 @@ class UploadDrawer extends React.Component<
                 value={fileType}
                 onChange={this.handleTypeChange}
                 placeholder="contract, document, image, etc."
-                className="mt-1 bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
+                className="mt-1 bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
               />
             </div>
           </div>
@@ -504,7 +503,7 @@ class UploadDrawer extends React.Component<
               <Button
                 onClick={this.handleUpload}
                 disabled={isUploading || !selectedFile || !filePath.trim()}
-                className="rounded-xl bg-agri-green-600 hover:bg-agri-green-700 text-white"
+                className="rounded-xl bg-agri-green-500 hover:bg-agri-green-600 text-white"
               >
                 {isUploading ? (
                   <Spinner size={18} ariaLabel="Caricamento file" />
@@ -712,7 +711,7 @@ class CompanyFilesPanel extends React.Component<
                 variant="ghost"
                 size="sm"
                 onClick={() => this.handleEditFile(file)}
-                className="rounded-full bg-field-50 hover:bg-field-100 text-field-700"
+                className="rounded-lg bg-agri-green-50 hover:bg-agri-green-100 text-agri-green-700"
                 title="Modifica file"
               >
                 <Pencil className="h-4 w-4" />
@@ -721,7 +720,7 @@ class CompanyFilesPanel extends React.Component<
                 variant="ghost"
                 size="sm"
                 onClick={() => this.handleViewFile(file)}
-                className="rounded-full bg-field-50 hover:bg-field-100 text-field-700"
+                className="rounded-lg bg-agri-green-50 hover:bg-agri-green-100 text-agri-green-700"
                 title="Apri file"
               >
                 <Eye className="h-4 w-4" />
@@ -730,7 +729,7 @@ class CompanyFilesPanel extends React.Component<
                 variant="ghost"
                 size="sm"
                 onClick={() => this.handleDownloadFile(file)}
-                className="rounded-full text-agri-green-700 hover:bg-agri-green-50"
+                className="rounded-full text-agri-green-700 hover:bg-gray-50"
                 title="Scarica file"
               >
                 <Download className="h-4 w-4" />
@@ -749,10 +748,10 @@ class CompanyFilesPanel extends React.Component<
     const groupedFiles = this.groupFilesByPath();
 
     return (
-      <div className="bg-gradient-to-br from-field-50/40 to-agri-green-50/20 rounded-2xl p-5 border border-field-200/60 shadow-sm">
+      <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
-            <h3 className="text-sm font-semibold text-field-600 flex items-center gap-2">
+            <h3 className="text-sm font-medium text-agri-green-700 flex items-center gap-2">
               <FileText className="h-4 w-4" />
               File caricati
             </h3>
@@ -762,25 +761,10 @@ class CompanyFilesPanel extends React.Component<
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                void onRetry();
-              }}
-              disabled={isLoading}
-              className="rounded-full border-field-200 text-field-700 hover:bg-field-50/80"
-            >
-              {isLoading ? (
-                <Spinner size={18} ariaLabel="Aggiornamento file" />
-              ) : (
-                <RefreshCcw className="h-4 w-4 mr-2" />
-              )}
-              Aggiorna
-            </Button>
-            <Button
+              variant="ghost"
               size="sm"
               onClick={() => this.setState({ isUploadDrawerOpen: true })}
-              className="rounded-full bg-agri-green-600 hover:bg-agri-green-700 text-white"
+              className="rounded-lg bg-agri-green-200 text-agri-green-700 hover:bg-agri-green-300"
             >
               <Plus className="h-4 w-4 mr-2" />
               Aggiungi
@@ -808,7 +792,7 @@ class CompanyFilesPanel extends React.Component<
             </Button>
           </div>
         ) : isLoading ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-10 text-field-600">
+          <div className="flex flex-col items-center justify-center gap-3 py-10 text-agri-green-600">
             <Spinner size={28} ariaLabel="Caricamento file" />
             <p className="text-sm">Caricamento file in corso…</p>
           </div>
@@ -832,7 +816,7 @@ class CompanyFilesPanel extends React.Component<
             ))}
           </Accordion>
         ) : (
-          <div className="flex flex-col items-start gap-2 rounded-xl border border-dashed border-field-200 bg-white/50 p-6 text-field-600">
+          <div className="flex flex-col items-start gap-2 rounded-lg border border-dashed border-gray-200 bg-white p-6 text-agri-green-600">
             <p className="text-sm font-semibold">
               Nessun file caricato per questa azienda.
             </p>
@@ -1027,7 +1011,7 @@ class EditFileDrawer extends React.Component<
     return (
       <Drawer open={isOpen} onOpenChange={onClose}>
         <DrawerContent
-          className="max-h-[90vh]"
+          className="!w-1/2 !max-w-[50vw] h-full"
           data-vaul-drawer-direction="right"
         >
           <DrawerHeader>
@@ -1047,7 +1031,7 @@ class EditFileDrawer extends React.Component<
                 type="text"
                 value={fileName}
                 onChange={(e) => this.setState({ fileName: e.target.value })}
-                className="mt-1 bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
+                className="mt-1 bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
               />
             </div>
             <div>
@@ -1061,7 +1045,7 @@ class EditFileDrawer extends React.Component<
                       value={newPathInput}
                       onChange={this.handleNewPathInputChange}
                       placeholder="es: contratti/2024, documenti/fatture, etc."
-                      className="flex-1 bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
+                      className="flex-1 bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && newPathInput.trim()) {
                           this.handleConfirmNewPath();
@@ -1076,7 +1060,7 @@ class EditFileDrawer extends React.Component<
                       size="sm"
                       onClick={this.handleConfirmNewPath}
                       disabled={!newPathInput.trim()}
-                      className="h-10 px-4 rounded-xl bg-agri-green-600 hover:bg-agri-green-700 text-white"
+                      className="h-10 px-4 rounded-xl bg-agri-green-500 hover:bg-agri-green-600 text-white"
                     >
                       <Check className="h-4 w-4 mr-1" />
                       Conferma
@@ -1101,7 +1085,7 @@ class EditFileDrawer extends React.Component<
                     value={filePath || ""}
                     onValueChange={this.handlePathSelect}
                   >
-                    <SelectTrigger className="w-full h-10 bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl">
+                    <SelectTrigger className="w-full h-10 bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg">
                       <SelectValue placeholder="Seleziona un percorso..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -1116,7 +1100,7 @@ class EditFileDrawer extends React.Component<
                       {hasExistingPaths && (
                         <>
                           {filePath && (
-                            <div className="border-t border-agri-green-100 my-1" />
+                            <div className="border-t border-gray-100 my-1" />
                           )}
                           {existingPaths.map((path) => (
                             <SelectItem key={path} value={path}>
@@ -1126,7 +1110,7 @@ class EditFileDrawer extends React.Component<
                               </div>
                             </SelectItem>
                           ))}
-                          <div className="border-t border-agri-green-100 my-1" />
+                          <div className="border-t border-gray-100 my-1" />
                         </>
                       )}
                       <SelectItem value="__create_new__">
@@ -1138,7 +1122,7 @@ class EditFileDrawer extends React.Component<
                     </SelectContent>
                   </Select>
                   {filePath && (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-agri-green-50/50 rounded-lg border border-agri-green-100">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100">
                       <Folder className="h-3 w-3 text-agri-green-600" />
                       <span className="text-xs font-medium text-agri-green-700">
                         {filePath}
@@ -1156,7 +1140,7 @@ class EditFileDrawer extends React.Component<
                 value={fileType}
                 onChange={(e) => this.setState({ fileType: e.target.value })}
                 placeholder="contract, document, image, etc."
-                className="mt-1 bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
+                className="mt-1 bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
               />
             </div>
             <div>
@@ -1165,7 +1149,7 @@ class EditFileDrawer extends React.Component<
                 {Object.entries(metadata).map(([key, value]) => (
                   <div
                     key={key}
-                    className="flex items-center gap-2 p-2 bg-agri-green-50/50 rounded-lg border border-agri-green-100"
+                    className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-100"
                   >
                     <span className="text-xs font-medium text-agri-green-700 flex-1">
                       <strong>{key}:</strong> {String(value)}
@@ -1189,7 +1173,7 @@ class EditFileDrawer extends React.Component<
                       this.setState({ metadataKey: e.target.value })
                     }
                     placeholder="Chiave"
-                    className="flex-1 bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
+                    className="flex-1 bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                   />
                   <Input
                     type="text"
@@ -1198,14 +1182,14 @@ class EditFileDrawer extends React.Component<
                       this.setState({ metadataValue: e.target.value })
                     }
                     placeholder="Valore"
-                    className="flex-1 bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
+                    className="flex-1 bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                   />
                   <Button
                     type="button"
                     size="sm"
                     onClick={this.handleAddMetadata}
                     disabled={!metadataKey.trim() || !metadataValue.trim()}
-                    className="h-10 px-4 rounded-xl bg-agri-green-600 hover:bg-agri-green-700 text-white"
+                    className="h-10 px-4 rounded-xl bg-agri-green-500 hover:bg-agri-green-600 text-white"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -1224,7 +1208,7 @@ class EditFileDrawer extends React.Component<
               </Button>
               <Button
                 onClick={this.handleSave}
-                className="rounded-xl bg-agri-green-600 hover:bg-agri-green-700 text-white"
+                className="rounded-xl bg-agri-green-500 hover:bg-agri-green-600 text-white"
               >
                 <Check className="h-4 w-4 mr-2" />
                 Salva modifiche

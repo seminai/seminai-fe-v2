@@ -1,37 +1,36 @@
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Search,
+  Package,
+  Calendar,
+  Sprout,
+  Building2,
+  Droplet,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Shield,
+  FileX,
+  FileText,
+  Bot,
+  Info,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Search,
-  Package,
-  Calendar,
-  Sprout,
-  AlertTriangle,
-  Shield,
-  Droplet,
-  Clock,
-  Sparkles,
-  Building2,
-  CheckCircle,
-  FileX,
-  ChevronDown,
-  ChevronUp,
-  FileText,
-  Bot,
-  Info,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
 
 export interface AlertNotes {
   dose_um?: string;
@@ -121,6 +120,25 @@ class AlertNotesFormatter {
     return `${this.alertNotes.acqua_max} ${this.alertNotes.acqua_max_um ?? ""}`;
   }
 
+  public getEpocaImpiego(): string | null {
+    return this.alertNotes?.epoca_impiego ?? null;
+  }
+
+  public getEpocaImpiegoLLM(): string | null {
+    return this.alertNotes?.epoca_impiego_llm ?? null;
+  }
+
+  public getMaxApplications(): string | null {
+    if (!this.alertNotes?.n_max_applicazioni) return null;
+    return `${this.alertNotes.n_max_applicazioni} ${
+      this.alertNotes.n_max_applicazioni_um ?? ""
+    }`;
+  }
+
+  public getModalitaApplicazione(): string | null {
+    return this.alertNotes?.modalita_applicazione ?? null;
+  }
+
   public getStockOut(): string | null {
     if (!this.alertNotes?.stock_out) return null;
     return `${this.alertNotes.stock_out} ${this.alertNotes.stock_out_um ?? ""}`;
@@ -130,13 +148,6 @@ class AlertNotesFormatter {
     if (!this.alertNotes?.total_stock_required_for_jobs) return null;
     return `${this.alertNotes.total_stock_required_for_jobs} ${
       this.alertNotes.total_stock_required_for_jobs_um ?? ""
-    }`;
-  }
-
-  public getMaxApplications(): string | null {
-    if (!this.alertNotes?.n_max_applicazioni) return null;
-    return `${this.alertNotes.n_max_applicazioni} ${
-      this.alertNotes.n_max_applicazioni_um ?? ""
     }`;
   }
 
@@ -155,20 +166,8 @@ class AlertNotesFormatter {
     return this.alertNotes?.resistenze ?? [];
   }
 
-  public getEpocaImpiego(): string | null {
-    return this.alertNotes?.epoca_impiego ?? null;
-  }
-
-  public getEpocaImpiegoLLM(): string | null {
-    return this.alertNotes?.epoca_impiego_llm ?? null;
-  }
-
   public getNoteTecniche(): string | null {
     return this.alertNotes?.note_tecniche ?? null;
-  }
-
-  public getModalitaApplicazione(): string | null {
-    return this.alertNotes?.modalita_applicazione ?? null;
   }
 
   public isDdtDateOk(): boolean {
@@ -261,15 +260,6 @@ export function JobSelectedDetails({
           !isMobile && "border-b border-slate-200"
         )}
       >
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="h-4 w-4 text-slate-500" />
-          <span className="text-sm font-medium text-slate-700">
-            Dettagli Operazioni
-          </span>
-          <Badge variant="outline" className="ml-auto">
-            {selectedRows.length}
-          </Badge>
-        </div>
         {selectedRows.length > 0 && (
           <div className="relative">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -284,10 +274,9 @@ export function JobSelectedDetails({
         )}
       </div>
       <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="p-3 space-y-3">
+        <div className="p-4 space-y-6">
           {filteredRows.length === 0 && selectedRows.length === 0 && (
             <div className="text-center py-8 text-slate-400 text-sm">
-              <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>Seleziona delle operazioni</p>
               <p className="text-xs mt-1">per visualizzare i dettagli</p>
             </div>
@@ -303,13 +292,7 @@ export function JobSelectedDetails({
             const hasAlertNotes = formatter.hasAnyData();
 
             return (
-              <div
-                key={row.id}
-                className={cn(
-                  "bg-white rounded-xl p-4 shadow-sm space-y-3",
-                  !isMobile && "border border-slate-200"
-                )}
-              >
+              <div key={row.id} className="space-y-4">
                 {/* Header */}
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
@@ -352,15 +335,12 @@ export function JobSelectedDetails({
                   {row.alertNotes?.principio_attivo &&
                     matchesSearch(row.alertNotes.principio_attivo) && (
                       <div className="flex items-start gap-1.5">
-                        <Sparkles className="h-3.5 w-3.5 text-slate-500 mt-0.5 shrink-0" />
-                        <div className="flex-1">
-                          <span className="text-xs font-medium text-slate-500 uppercase tracking-wide block mb-0.5">
-                            Principio Attivo
-                          </span>
-                          <span className="text-sm text-slate-700 font-medium">
-                            {row.alertNotes.principio_attivo}
-                          </span>
-                        </div>
+                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                          Principio Attivo:{" "}
+                        </span>
+                        <span className="text-sm text-slate-700 font-medium">
+                          {row.alertNotes.principio_attivo}
+                        </span>
                       </div>
                     )}
                   <div className="text-xs text-slate-600 font-mono">
@@ -369,9 +349,9 @@ export function JobSelectedDetails({
                 </div>
 
                 {hasAlertNotes && (
-                  <div className="border-t border-slate-100 pt-3 space-y-3">
-                    {/* Dose e Acqua Max affiancati */}
-                    <div className="grid grid-cols-2 gap-3 items-start">
+                  <div className="border-t border-slate-200 pt-4 space-y-3">
+                    {/* Dose e Acqua Max */}
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
                           <Droplet className="h-3 w-3" />
@@ -411,7 +391,7 @@ export function JobSelectedDetails({
                       row.alertNotes?.waterHlJob !== undefined) ||
                     (row.alertNotes?.acquaMaxJob !== null &&
                       row.alertNotes?.acquaMaxJob !== undefined) ? (
-                      <div className="grid grid-cols-2 gap-3 items-start">
+                      <div className="grid grid-cols-2 gap-4">
                         {row.alertNotes?.waterHlJob !== null &&
                         row.alertNotes?.waterHlJob !== undefined ? (
                           <div className="space-y-1">
@@ -441,58 +421,42 @@ export function JobSelectedDetails({
                     ) : null}
 
                     {/* Epoca Impiego */}
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         Epoca Impiego
                       </span>
-                      <div className="grid grid-cols-1 gap-2">
-                        {formatter.getEpocaImpiego() &&
-                        matchesSearch(formatter.getEpocaImpiego()) ? (
-                          <div className="bg-green-50 rounded-lg p-2 border border-green-200">
-                            <span className="text-[10px] font-medium text-green-600 uppercase tracking-wide flex items-center gap-0.5 mb-0.5">
-                              <CheckCircle className="h-3 w-3" />
-                              Verificata da Etichetta
-                            </span>
-                            <p className="text-sm text-slate-700">
-                              {formatter.getEpocaImpiego()}
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="bg-slate-50 rounded-lg p-2 border border-slate-200">
-                            <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide flex items-center gap-0.5 mb-0.5">
-                              Verificata da Etichetta
-                            </span>
-                            <p className="text-xs text-slate-400 italic">
-                              non presente
-                            </p>
-                          </div>
-                        )}
-                        {formatter.getEpocaImpiegoLLM() &&
-                        matchesSearch(formatter.getEpocaImpiegoLLM()) ? (
-                          <div className="bg-blue-50 rounded-lg p-2">
-                            <span className="text-[10px] font-medium text-blue-600 uppercase tracking-wide block mb-0.5">
-                              AI Suggerita
-                            </span>
-                            <p className="text-sm text-slate-700">
-                              {formatter.getEpocaImpiegoLLM()}
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="bg-slate-50 rounded-lg p-2">
-                            <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide block mb-0.5">
-                              AI Suggerita
-                            </span>
-                            <p className="text-xs text-slate-400 italic">
-                              non presente
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                      {formatter.getEpocaImpiego() &&
+                      matchesSearch(formatter.getEpocaImpiego()) ? (
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-3 w-3 text-green-600" />
+                          <span className="text-xs font-medium text-green-600 uppercase tracking-wide">
+                            Verificata da Etichetta:
+                          </span>
+                          <p className="text-sm text-slate-700">
+                            {formatter.getEpocaImpiego()}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">
+                          non presente
+                        </p>
+                      )}
+                      {formatter.getEpocaImpiegoLLM() &&
+                      matchesSearch(formatter.getEpocaImpiegoLLM()) ? (
+                        <div>
+                          <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">
+                            AI Suggerita:{" "}
+                          </span>
+                          <p className="text-sm text-slate-700">
+                            {formatter.getEpocaImpiegoLLM()}
+                          </p>
+                        </div>
+                      ) : null}
                     </div>
 
-                    {/* Max Applicazioni e Modalità affiancati */}
-                    <div className="grid grid-cols-2 gap-3">
+                    {/* Max Applicazioni e Modalità */}
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
                           Max Applicazioni
@@ -525,9 +489,8 @@ export function JobSelectedDetails({
                       </div>
                     </div>
 
-                    {/* Fasce di rispetto e derivati */}
-                    {/* Stock - Utilizzato e Necessario affiancati */}
-                    <div className="grid grid-cols-2 gap-3">
+                    {/* Stock - Utilizzato e Necessario */}
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <span className="text-xs font-medium text-red-700 uppercase tracking-wide flex items-center gap-1">
                           Stock mancante
@@ -580,35 +543,31 @@ export function JobSelectedDetails({
 
                     {/* Data DDT */}
                     {!formatter.isDdtDateOk() && (
-                      <div className="bg-red-50 rounded-lg p-2 border border-red-200">
-                        <div className="flex items-start gap-1.5">
-                          <FileX className="h-3.5 w-3.5 text-red-600 mt-0.5 shrink-0" />
-                          <div className="flex-1">
-                            <span className="text-xs font-medium text-red-700 block mb-0.5">
-                              Data DDT Mancante
-                            </span>
-                            <p className="text-xs text-red-600 leading-relaxed">
-                              Manca la data del DDT caricata per questo stock
-                            </p>
-                          </div>
+                      <div className="flex items-start gap-1.5 p-2 border border-red-200 rounded">
+                        <FileX className="h-3.5 w-3.5 text-red-600 mt-0.5 shrink-0" />
+                        <div className="flex-1">
+                          <span className="text-xs font-medium text-red-700 block mb-0.5">
+                            Data DDT Mancante
+                          </span>
+                          <p className="text-xs text-red-600 leading-relaxed">
+                            Manca la data del DDT caricata per questo stock
+                          </p>
                         </div>
                       </div>
                     )}
 
                     {/* Data DDT After Treatment */}
                     {row.alertNotes?.ddt_date_after_treatment === true && (
-                      <div className="bg-red-50 rounded-lg p-2 border border-red-200">
-                        <div className="flex items-start gap-1.5">
-                          <FileX className="h-3.5 w-3.5 text-red-600 mt-0.5 shrink-0" />
-                          <div className="flex-1">
-                            <span className="text-xs font-medium text-red-700 block mb-0.5">
-                              Data DDT Dopo Trattamento
-                            </span>
-                            <p className="text-xs text-red-600 leading-relaxed">
-                              La data del DDT è successiva alla data del
-                              trattamento
-                            </p>
-                          </div>
+                      <div className="flex items-start gap-1.5 p-2 border border-red-200 rounded">
+                        <FileX className="h-3.5 w-3.5 text-red-600 mt-0.5 shrink-0" />
+                        <div className="flex-1">
+                          <span className="text-xs font-medium text-red-700 block mb-0.5">
+                            Data DDT Dopo Trattamento
+                          </span>
+                          <p className="text-xs text-red-600 leading-relaxed">
+                            La data del DDT è successiva alla data del
+                            trattamento
+                          </p>
                         </div>
                       </div>
                     )}
@@ -626,11 +585,9 @@ export function JobSelectedDetails({
                             </div>
                           </AccordionTrigger>
                           <AccordionContent className="pt-2 pb-0">
-                            <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                              <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
-                                {row.note}
-                              </p>
-                            </div>
+                            <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
+                              {row.note}
+                            </p>
                           </AccordionContent>
                         </AccordionItem>
                       </Accordion>
@@ -663,6 +620,7 @@ export function JobSelectedDetails({
                       )}
                     </div>
 
+                    {/* Fasce di rispetto e deriva */}
                     {formatter.getFasceDeriva().length > 0 && (
                       <div className="space-y-2">
                         <button
@@ -690,14 +648,14 @@ export function JobSelectedDetails({
                           )}
                         </button>
                         {expandedFasceDeriva.has(row.id) && (
-                          <div className="space-y-1">
+                          <div className="space-y-1 pl-4">
                             {formatter
                               .getFasceDeriva()
                               .filter((f) => matchesSearch(f))
                               .map((fascia, idx) => (
                                 <div
                                   key={idx}
-                                  className="flex items-start gap-1.5 text-xs text-slate-700 bg-slate-50 rounded p-2 border border-slate-100"
+                                  className="flex items-start gap-1.5 text-xs text-slate-700"
                                 >
                                   <span className="text-slate-400 font-bold shrink-0">
                                     •
@@ -710,6 +668,7 @@ export function JobSelectedDetails({
                       </div>
                     )}
 
+                    {/* Fasce di rispetto e deriva LLM */}
                     {formatter.getFasceDerivaLLM().length > 0 && (
                       <div className="space-y-2">
                         <button
@@ -726,7 +685,7 @@ export function JobSelectedDetails({
                           }}
                           className="w-full text-left flex items-center gap-1 hover:opacity-80 transition-opacity"
                         >
-                          <Sparkles className="h-3 w-3 text-blue-600 shrink-0" />
+                          <Shield className="h-3 w-3 text-blue-600 shrink-0" />
                           <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">
                             Fasce rispetto e deriva (AI)
                           </span>
@@ -737,14 +696,14 @@ export function JobSelectedDetails({
                           )}
                         </button>
                         {expandedFasceDerivaLLM.has(row.id) && (
-                          <div className="space-y-1">
+                          <div className="space-y-1 pl-4">
                             {formatter
                               .getFasceDerivaLLM()
                               .filter((f) => matchesSearch(f))
                               .map((fascia, idx) => (
                                 <div
                                   key={idx}
-                                  className="flex items-start gap-1.5 text-xs text-blue-700 bg-blue-50 rounded p-2 border border-blue-100"
+                                  className="flex items-start gap-1.5 text-xs text-blue-700"
                                 >
                                   <span className="text-blue-300 font-bold shrink-0">
                                     •
@@ -757,6 +716,7 @@ export function JobSelectedDetails({
                       </div>
                     )}
 
+                    {/* Fasce rispetto acqua */}
                     {formatter.getFasceAcqua().length > 0 && (
                       <div className="space-y-2">
                         <button
@@ -784,14 +744,14 @@ export function JobSelectedDetails({
                           )}
                         </button>
                         {expandedFasceAcqua.has(row.id) && (
-                          <div className="space-y-1">
+                          <div className="space-y-1 pl-4">
                             {formatter
                               .getFasceAcqua()
                               .filter((f) => matchesSearch(f))
                               .map((fascia, idx) => (
                                 <div
                                   key={idx}
-                                  className="flex items-start gap-1.5 text-xs text-sky-700 bg-sky-50 rounded p-2 border border-sky-100"
+                                  className="flex items-start gap-1.5 text-xs text-sky-700"
                                 >
                                   <span className="text-sky-300 font-bold shrink-0">
                                     •
@@ -804,6 +764,7 @@ export function JobSelectedDetails({
                       </div>
                     )}
 
+                    {/* Fasce rispetto colture */}
                     {formatter.getFasceColture().length > 0 && (
                       <div className="space-y-2">
                         <button
@@ -831,14 +792,14 @@ export function JobSelectedDetails({
                           )}
                         </button>
                         {expandedFasceColture.has(row.id) && (
-                          <div className="space-y-1">
+                          <div className="space-y-1 pl-4">
                             {formatter
                               .getFasceColture()
                               .filter((f) => matchesSearch(f))
                               .map((fascia, idx) => (
                                 <div
                                   key={idx}
-                                  className="flex items-start gap-1.5 text-xs text-emerald-700 bg-emerald-50 rounded p-2 border border-emerald-100"
+                                  className="flex items-start gap-1.5 text-xs text-emerald-700"
                                 >
                                   <span className="text-emerald-300 font-bold shrink-0">
                                     •
@@ -887,7 +848,7 @@ export function JobSelectedDetails({
                                 matchesSearch(r.testo_completo) ||
                                 matchesSearch(r.raccomandazioni)
                             ) ? (
-                            <div className="space-y-2">
+                            <div className="space-y-2 pl-4">
                               {formatter
                                 .getResistenze()
                                 .filter(
@@ -896,10 +857,7 @@ export function JobSelectedDetails({
                                     matchesSearch(r.raccomandazioni)
                                 )
                                 .map((resistenza, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="bg-amber-50 rounded-lg p-2 space-y-1"
-                                  >
+                                  <div key={idx} className="space-y-1">
                                     {resistenza.raccomandazioni && (
                                       <p className="text-xs text-amber-700 font-medium">
                                         {resistenza.raccomandazioni}
@@ -914,7 +872,7 @@ export function JobSelectedDetails({
                                 ))}
                             </div>
                           ) : (
-                            <p className="text-xs text-slate-400 italic">
+                            <p className="text-xs text-slate-400 italic pl-4">
                               non presente
                             </p>
                           )}
@@ -952,11 +910,11 @@ export function JobSelectedDetails({
                         <>
                           {formatter.getNoteTecniche() &&
                           matchesSearch(formatter.getNoteTecniche()) ? (
-                            <p className="text-xs text-slate-600 leading-relaxed">
+                            <p className="text-xs text-slate-600 leading-relaxed pl-4">
                               {formatter.getNoteTecniche()}
                             </p>
                           ) : (
-                            <p className="text-xs text-slate-400 italic">
+                            <p className="text-xs text-slate-400 italic pl-4">
                               non presente
                             </p>
                           )}
@@ -996,14 +954,14 @@ export function JobSelectedDetails({
                           formatter
                             .getFrasiPericolo()
                             .some((f) => matchesSearch(f)) ? (
-                            <div className="space-y-1">
+                            <div className="space-y-1 pl-4">
                               {formatter
                                 .getFrasiPericolo()
                                 .filter((f) => matchesSearch(f))
                                 .map((frase, idx) => (
                                   <div
                                     key={idx}
-                                    className="flex items-start gap-1.5 text-xs text-red-700 bg-red-50 rounded p-2"
+                                    className="flex items-start gap-1.5 text-xs text-red-700"
                                   >
                                     <span className="text-red-400 font-bold shrink-0">
                                       •
@@ -1013,7 +971,7 @@ export function JobSelectedDetails({
                                 ))}
                             </div>
                           ) : (
-                            <p className="text-xs text-slate-400 italic">
+                            <p className="text-xs text-slate-400 italic pl-4">
                               non presente
                             </p>
                           )}
@@ -1024,7 +982,7 @@ export function JobSelectedDetails({
                 )}
 
                 {!hasAlertNotes && (
-                  <div className="border-t border-slate-100 pt-3">
+                  <div className="border-t border-slate-200 pt-4">
                     {row.note && matchesSearch(row.note) ? (
                       <div className="space-y-1">
                         <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">

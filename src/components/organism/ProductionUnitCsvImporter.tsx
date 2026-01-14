@@ -8,23 +8,29 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-  DrawerClose,
 } from "@/components/ui/drawer";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Upload,
-  FileSpreadsheet,
   AlertCircle,
   CheckCircle,
-  Building2,
-  X,
+  Download,
 } from "lucide-react";
 import {
   extractProductionUnits,
   type ExtractedProductionUnit,
 } from "@/api/production-unit";
 import { toast } from "sonner";
+import { CsvFieldImporter } from "@/components/organism/CsvFieldImporter";
+import { SupportRequestForm } from "@/components/organism/SupportRequestForm";
 
 type AvailableField = {
   id: string;
@@ -279,6 +285,7 @@ export const ProductionUnitCsvImporter: React.FC<
     ExtractedProductionUnit[] | null
   >(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
+  const [showSupportForm, setShowSupportForm] = useState(false);
 
   useEffect(() => {
     if (openSignal) {
@@ -290,22 +297,41 @@ export const ProductionUnitCsvImporter: React.FC<
     (c) => c.companyId === selectedCompanyId
   );
 
-  const handleFileSelect = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  /**
+   * Gestisce il download del template Excel
+   */
+  const handleDownloadTemplate = (): void => {
+    const link = document.createElement("a");
+    link.href = "/templates/campi_esempio.csv";
+    link.download = "campi_esempio.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
+  /**
+   * Gestisce la chiusura del form di supporto
+   */
+  const handleSupportRequestSuccess = (): void => {
+    setShowSupportForm(false);
+    toast.success("Richiesta inviata. Ti risponderemo al più presto.");
+  };
+
+  const handleFileSelect = async (file: File): Promise<void> => {
     if (!selectedCompanyId) {
-      setValidationErrors(["Seleziona un'azienda prima di caricare il file"]);
-      event.target.value = "";
+      toast.error("Seleziona un'azienda prima di importare il file");
       return;
     }
 
     setIsLoading(true);
     setValidationErrors([]);
     setExtractedUnits(null);
+
     try {
+      toast.info("Estrazione unità produttive in corso...", {
+        description: "L'operazione potrebbe richiedere alcuni secondi",
+      });
+
       const extracted = await extractProductionUnits(selectedCompanyId, file);
 
       if (!extracted || extracted.length === 0) {
@@ -321,7 +347,6 @@ export const ProductionUnitCsvImporter: React.FC<
       setValidationErrors([errorMessage]);
     } finally {
       setIsLoading(false);
-      event.target.value = "";
     }
   };
 
@@ -458,133 +483,120 @@ export const ProductionUnitCsvImporter: React.FC<
     setExtractedUnits(null);
     setValidationErrors([]);
     setSelectedCompanyId("");
+    setShowSupportForm(false);
+  };
+
+  /**
+   * Resetta lo stato quando la drawer viene chiusa
+   */
+  const handleDrawerOpenChange = (open: boolean): void => {
+    setIsOpen(open);
+    if (!open) {
+      setValidationErrors([]);
+      setSelectedCompanyId("");
+      setExtractedUnits(null);
+      setShowSupportForm(false);
+    }
   };
 
   const previewResult = extractedUnits ? buildImportResult() : null;
 
   return (
-    <Drawer open={isOpen} onOpenChange={setIsOpen}>
+    <Drawer open={isOpen} onOpenChange={handleDrawerOpenChange}>
       <DrawerTrigger asChild>
         <Button variant="outline" className="gap-2">
           <Upload className="h-4 w-4" />
           Importa file
         </Button>
       </DrawerTrigger>
-      <DrawerContent data-vaul-drawer-direction="right" className="max-h-[100vh] overflow-y-auto">
+      <DrawerContent
+        data-vaul-drawer-direction="right"
+        className="!w-1/2 !max-w-[50vw] h-full overflow-y-auto overflow-x-hidden bg-white p-2"
+      >
         <DrawerHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <DrawerTitle>Importa Unità Produttive da CSV/Excel</DrawerTitle>
-              <DrawerDescription>
-                Seleziona l'azienda di destinazione e carica un file CSV o Excel per
-                importare le unità produttive.
-              </DrawerDescription>
-            </div>
-            <DrawerClose asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <X className="h-4 w-4" />
-              </Button>
-            </DrawerClose>
-          </div>
+          <DrawerTitle>Estrazione Automatica Unità Produttive da CSV</DrawerTitle>
+          <DrawerDescription>
+            Il sistema supporta il formato Excel del template AGEA della misura
+            unica. Il formato varia in base alla regione. Seleziona l'azienda e
+            carica un file CSV. Il sistema estrarrà automaticamente i dati delle
+            unità produttive.
+          </DrawerDescription>
         </DrawerHeader>
 
-        <div className="space-y-4 px-6 pb-6">
-          {/* Company select */}
+        <div className="space-y-4 p-4">
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadTemplate}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Scarica template Excel
+            </Button>
+          </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
+            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Azienda di destinazione
             </label>
-            <SearchableSelect
+            <Select
               value={selectedCompanyId}
-              onChange={setSelectedCompanyId}
-              options={companies.map((company) => ({
-                label: company.companyName,
-                value: company.companyId,
-              }))}
-              placeholder="Seleziona un'azienda..."
-              searchPlaceholder="Cerca azienda..."
-              emptyMessage="Nessuna azienda trovata"
-              wrapperClassName="w-full"
-            />
-            {selectedCompany && (
-              <p className="text-xs text-muted-foreground">
-                I campi verranno abbinati tramite Foglio e Particella (e Sezione
-                se presente).
-              </p>
-            )}
+              onValueChange={setSelectedCompanyId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleziona un'azienda" />
+              </SelectTrigger>
+              <SelectContent>
+                {companies.map((company) => (
+                  <SelectItem key={company.companyId} value={company.companyId}>
+                    {company.companyName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* File upload */}
           <div
-            className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-              selectedCompanyId
-                ? "border-gray-300 hover:border-blue-400"
-                : "border-gray-200 bg-gray-50 opacity-60"
+            className={`transition-opacity duration-200 ${
+              !selectedCompanyId ? "opacity-50 pointer-events-none" : ""
             }`}
           >
-            <FileSpreadsheet className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-            <label
-              htmlFor="csv-upload"
-              className={`inline-flex items-center gap-2 ${
-                selectedCompanyId ? "cursor-pointer" : "cursor-not-allowed"
-              }`}
-            >
-              <Button
-                asChild
-                variant="default"
-                disabled={isLoading || !selectedCompanyId}
-              >
-                <span>
-                  <Upload className="h-4 w-4 mr-2" />
-                  {isLoading ? "Caricamento..." : "Scegli file"}
-                </span>
-              </Button>
-            </label>
-            <input
-              id="csv-upload"
-              type="file"
-              accept=".csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
-              onChange={handleFileSelect}
-              className="hidden"
-              disabled={!selectedCompanyId}
+            <CsvFieldImporter
+              onFileSelect={handleFileSelect}
+              isProcessing={isLoading}
             />
-            <p className="text-xs text-gray-500 mt-2">
-              Formati supportati: CSV, XLSX, XLS
-            </p>
-            {!selectedCompanyId && (
-              <p className="text-xs text-amber-600 mt-1 font-medium">
-                Seleziona prima un'azienda per abilitare l'upload
-              </p>
-            )}
           </div>
+
+          {!selectedCompanyId && (
+            <p className="text-xs text-muted-foreground text-center">
+              Seleziona un'azienda per abilitare l'upload del file
+            </p>
+          )}
+
+          {isLoading && (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Spinner size={20} ariaLabel="Elaborazione file" />
+              <span>
+                Estrazione unità produttive in corso... (potrebbe richiedere alcuni secondi)
+              </span>
+            </div>
+          )}
 
           {/* Validation errors */}
           {validationErrors.length > 0 && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                <p className="font-semibold mb-2">
-                  Errori di validazione ({validationErrors.length}):
-                </p>
-                <div className="mb-3 p-2 bg-red-100 rounded text-xs">
-                  <p className="font-medium">💡 Suggerimento:</p>
-                  <p>
-                    Assicurati che il CSV rispetti il template AGEA
-                    (campi_esempio.csv) con colonne come
-                    <span className="font-mono ml-1">
-                      "Occupazione Suolo Uso Suolo Primario", "Superficie Uso
-                      Suolo Primario", "Data inizio Semina Primario"
-                    </span>
-                    e che i valori siano compilati.
-                  </p>
+                <div className="font-medium mb-2">
+                  Errori trovati ({validationErrors.length}):
                 </div>
-                <ul className="list-disc list-inside space-y-1 text-sm">
+                <ul className="list-disc list-inside space-y-1 text-xs">
                   {validationErrors.slice(0, 10).map((error, index) => (
                     <li key={index}>{error}</li>
                   ))}
                   {validationErrors.length > 10 && (
-                    <li className="text-gray-600">
+                    <li className="text-muted-foreground">
                       ... e altri {validationErrors.length - 10} errori
                     </li>
                   )}
@@ -615,74 +627,45 @@ export const ProductionUnitCsvImporter: React.FC<
             </Alert>
           )}
 
-          {/* Info panel */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-semibold text-blue-900 mb-2">
-              Formato file richiesto:
-            </h4>
-            <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-              <li>
-                Usa il template AGEA/SIAN <em>campi_esempio.csv</em> fornito qui
-                sotto.
-              </li>
-              <li>
-                Le unità produttive vengono raggruppate per "Occupazione Suolo
-                Uso Suolo Primario" e per il relativo periodo di semina.
-              </li>
-              <li>
-                I campi vengono abbinati tramite <strong>Foglio</strong> e{" "}
-                <strong>Particella</strong> (e <strong>Sezione</strong> se
-                presente).
-              </li>
-              <li>
-                I campi <strong>devono già esistere</strong> nel sistema per
-                l'azienda selezionata.
-              </li>
-            </ul>
-          </div>
-
-          {/* Template download links */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h4 className="font-semibold text-gray-900 mb-2">File template:</h4>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" asChild className="text-xs">
-                <a
-                  href="/templates/campi_esempio.csv"
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  📄 Template AGEA
-                </a>
-              </Button>
-              <Button variant="outline" size="sm" asChild className="text-xs">
-                <a
-                  href="/datasets/test/test_production_unit_roberto.csv"
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  🧪 Dataset di test
-                </a>
-              </Button>
-            </div>
-          </div>
-
-          {/* Actions */}
+          {/* Actions - Show import button when preview is ready */}
           {previewResult && validationErrors.length === 0 && (
-            <div className="flex justify-end gap-3 pt-4 border-t mt-6">
-              <Button variant="outline" onClick={handleCancel} asChild>
-                <DrawerClose>Annulla</DrawerClose>
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button variant="outline" onClick={handleCancel}>
+                Annulla
               </Button>
               <Button
                 onClick={handleImport}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-agri-green-500 hover:bg-agri-green-600 text-white"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Importa nella schermata
               </Button>
             </div>
           )}
+
+          {showSupportForm && (
+            <div className="bg-white p-6 rounded-3xl border border-agri-green-100 text-left shadow-lg shadow-agri-green-50">
+              <h4 className="font-medium text-lg mb-4">Richiedi supporto</h4>
+              <p className="text-sm text-gray-600 mb-4">
+                In caso di problemi con l'importazione del file, compila il form
+                qui sotto per contattare il servizio di supporto.
+              </p>
+              <SupportRequestForm
+                onSuccess={handleSupportRequestSuccess}
+                className="shadow-none border-none bg-transparent p-0"
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end pt-4 border-t">
+            <button
+              type="button"
+              onClick={() => setShowSupportForm(!showSupportForm)}
+              className="text-sm text-agri-green-600 hover:text-agri-green-700 underline transition-colors"
+            >
+              Richiedi supporto
+            </button>
+          </div>
         </div>
       </DrawerContent>
     </Drawer>

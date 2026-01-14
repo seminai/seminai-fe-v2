@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -95,7 +94,6 @@ class EmptyRowDetector {
   }
 }
 
-
 class BulkProductTemplateBuilder {
   private static getColumns(): BulkProductColumnDefinition[] {
     return [...BULK_PRODUCT_COLUMN_DEFINITIONS];
@@ -124,17 +122,14 @@ class BulkProductTemplateBuilder {
   }
 
   public static downloadTemplate(): void {
-    const csv = this.buildCsv();
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = url;
-    link.download = "products-bulk-template.csv";
+    link.href = "/templates/2026.01_Template_MAGAZZINO.xlsx";
+    link.download = "2026.01_Template_MAGAZZINO.xlsx";
+    document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(url);
+    document.body.removeChild(link);
   }
 }
-
 
 interface DrawerProductBulkImportProps {
   open: boolean;
@@ -269,7 +264,9 @@ function DrawerProductBulkImport({
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Errore durante il caricamento del file";
+        error instanceof Error
+          ? error.message
+          : "Errore durante il caricamento del file";
       setParserErrors([message]);
       toast.error(message);
       setSelectedFile(null);
@@ -396,89 +393,76 @@ function DrawerProductBulkImport({
 
         <div className="flex-1 overflow-y-auto px-4">
           <div className="space-y-5 pb-16">
-            <Card>
-              <CardHeader className="space-y-2">
-                <CardTitle>1. Seleziona azienda e magazzino</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  L&apos;import massivo richiede un&apos;azienda e un magazzino
-                  di destinazione per applicare correttamente ogni riga del
-                  file.
+            <div className="space-y-2">
+              <Label>Seleziona azienda</Label>
+              <SearchableSelect
+                value={companyId}
+                options={companyOptions}
+                placeholder="Seleziona azienda"
+                searchPlaceholder="Cerca azienda..."
+                emptyMessage="Nessuna azienda trovata"
+                loading={isLoadingCompanies}
+                loadingMessage="Caricamento aziende..."
+                noneOptionLabel="Nessuna selezione"
+                onChange={handleCompanyChange}
+              />
+              {!isLoadingCompanies && companyOptions.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Nessuna azienda disponibile. Creane una prima di procedere.
                 </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Seleziona azienda</Label>
-                  <SearchableSelect
-                    value={companyId}
-                    options={companyOptions}
-                    placeholder="Seleziona azienda"
-                    searchPlaceholder="Cerca azienda..."
-                    emptyMessage="Nessuna azienda trovata"
-                    loading={isLoadingCompanies}
-                    loadingMessage="Caricamento aziende..."
-                    noneOptionLabel="Nessuna selezione"
-                    onChange={handleCompanyChange}
-                  />
-                  {!isLoadingCompanies && companyOptions.length === 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Nessuna azienda disponibile. Creane una prima di
-                      procedere.
-                    </p>
-                  )}
-                  {isCompaniesError && (
-                    <p className="text-xs text-red-600">
-                      {companiesError?.message ??
-                        "Impossibile caricare le aziende"}
-                    </p>
-                  )}
-                </div>
+              )}
+              {isCompaniesError && (
+                <p className="text-xs text-red-600">
+                  {companiesError?.message ?? "Impossibile caricare le aziende"}
+                </p>
+              )}
+            </div>
 
-                <div className="space-y-2">
-                  <Label>Seleziona magazzino (opzionale)</Label>
-                  {companyId ? (
-                    <>
-                      <SearchableSelect
-                        value={warehouseId}
-                        options={warehouseOptions}
-                        placeholder="Seleziona magazzino (opzionale)"
-                        searchPlaceholder="Cerca magazzino..."
-                        emptyMessage="Nessun magazzino trovato"
-                        noneOptionLabel="Nessuna selezione (verrà usato il primo magazzino disponibile)"
-                        loading={isLoadingWarehouses}
-                        loadingMessage="Caricamento magazzini..."
-                        disabled={!companyId}
-                        onChange={setWarehouseId}
-                      />
-                      {!isLoadingWarehouses &&
-                        warehouseOptions.length === 0 && (
-                          <p className="text-xs text-muted-foreground">
-                            Nessun magazzino disponibile per l&apos;azienda
-                            selezionata. Verrà selezionato automaticamente il primo magazzino disponibile.
-                          </p>
-                        )}
-                      {!isLoadingWarehouses &&
-                        warehouseOptions.length > 0 &&
-                        !warehouseId && (
-                          <p className="text-xs text-muted-foreground">
-                            Se non selezioni un magazzino, verrà utilizzato il primo magazzino disponibile dell&apos;azienda.
-                          </p>
-                        )}
-                    </>
-                  ) : (
-                    <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-3 text-sm text-muted-foreground">
-                      Seleziona prima un&apos;azienda per visualizzare i suoi
-                      magazzini.
-                    </div>
-                  )}
-                  {isWarehousesError && (
-                    <p className="text-xs text-red-600">
-                      {warehousesError?.message ??
-                        "Impossibile caricare i magazzini"}
+            <div className="space-y-2">
+              <Label>Seleziona magazzino (opzionale)</Label>
+              {companyId ? (
+                <>
+                  <SearchableSelect
+                    value={warehouseId}
+                    options={warehouseOptions}
+                    placeholder="Seleziona magazzino (opzionale)"
+                    searchPlaceholder="Cerca magazzino..."
+                    emptyMessage="Nessun magazzino trovato"
+                    noneOptionLabel="Nessuna selezione (verrà usato il primo magazzino disponibile)"
+                    loading={isLoadingWarehouses}
+                    loadingMessage="Caricamento magazzini..."
+                    disabled={!companyId}
+                    onChange={setWarehouseId}
+                  />
+                  {!isLoadingWarehouses && warehouseOptions.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Nessun magazzino disponibile per l&apos;azienda
+                      selezionata. Verrà selezionato automaticamente il primo
+                      magazzino disponibile.
                     </p>
                   )}
+                  {!isLoadingWarehouses &&
+                    warehouseOptions.length > 0 &&
+                    !warehouseId && (
+                      <p className="text-xs text-muted-foreground">
+                        Se non selezioni un magazzino, verrà utilizzato il primo
+                        magazzino disponibile dell&apos;azienda.
+                      </p>
+                    )}
+                </>
+              ) : (
+                <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-3 text-sm text-muted-foreground">
+                  Seleziona prima un&apos;azienda per visualizzare i suoi
+                  magazzini.
                 </div>
-              </CardContent>
-            </Card>
+              )}
+              {isWarehousesError && (
+                <p className="text-xs text-red-600">
+                  {warehousesError?.message ??
+                    "Impossibile caricare i magazzini"}
+                </p>
+              )}
+            </div>
 
             {!canShowImportSections ? (
               <Alert>
@@ -486,32 +470,12 @@ function DrawerProductBulkImport({
                 <AlertTitle>Seleziona i dati principali</AlertTitle>
                 <AlertDescription>
                   Per poter importare il file devi prima scegliere
-                  un&apos;azienda. Una volta completata la
-                  selezione appariranno i controlli di caricamento.
+                  un&apos;azienda. Una volta completata la selezione appariranno
+                  i controlli di caricamento.
                 </AlertDescription>
               </Alert>
             ) : (
               <>
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertTitle>Formato richiesto</AlertTitle>
-                  <AlertDescription>
-                    Il file deve contenere le seguenti colonne ( * = obbligatorio):
-                    <div className="flex flex-wrap gap-2">
-                      {BULK_PRODUCT_COLUMN_DEFINITIONS.map((column) => (
-                        <Badge
-                          key={column.key}
-                          variant="secondary"
-                          className="font-mono"
-                        >
-                          {column.label}
-                          {column.required ? "*" : ""}
-                        </Badge>
-                      ))}
-                    </div>
-                  </AlertDescription>
-                </Alert>
-
                 <div className="space-y-2">
                   <Label>File CSV o Excel</Label>
                   <div
@@ -545,19 +509,33 @@ function DrawerProductBulkImport({
 
                       {!isParsing && (
                         <>
-                          <p className="text-sm font-medium text-gray-700">
-                            {selectedFileName
-                              ? `File selezionato: ${selectedFileName}`
-                              : "Trascina qui il file CSV o Excel"}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {selectedFileName
-                              ? "Clicca per selezionare un altro file"
-                              : "oppure clicca per selezionare il file"}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-2">
-                            Formati supportati: CSV, XLS, XLSX
-                          </p>
+                          {!companyId ? (
+                            <>
+                              <p className="text-sm font-medium text-gray-500">
+                                Seleziona un&apos;azienda per abilitare il
+                                caricamento
+                              </p>
+                              <p className="text-xs text-gray-400 mt-2">
+                                Formati supportati: CSV, XLS, XLSX
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-sm font-medium text-gray-700">
+                                {selectedFileName
+                                  ? `File selezionato: ${selectedFileName}`
+                                  : "Trascina qui il file CSV o Excel"}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {selectedFileName
+                                  ? "Clicca per selezionare un altro file"
+                                  : "oppure clicca per selezionare il file"}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-2">
+                                Formati supportati: CSV, XLS, XLSX
+                              </p>
+                            </>
+                          )}
                         </>
                       )}
 
@@ -589,8 +567,9 @@ function DrawerProductBulkImport({
                     <CardHeader className="space-y-2">
                       <CardTitle>Anteprima file</CardTitle>
                       <p className="text-sm text-muted-foreground">
-                        Mostrate le prime {filePreviewRows.length} righe del file.
-                        Verifica che i dati siano corretti prima di procedere con l&apos;importazione.
+                        Mostrate le prime {filePreviewRows.length} righe del
+                        file. Verifica che i dati siano corretti prima di
+                        procedere con l&apos;importazione.
                       </p>
                     </CardHeader>
                     <CardContent className="overflow-auto max-h-96">
@@ -668,14 +647,6 @@ function DrawerProductBulkImport({
             >
               <FileDown className="mr-2 h-4 w-4" />
               Scarica template
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={resetForm}
-              disabled={isParsing || isImporting}
-            >
-              Reset campi
             </Button>
           </div>
 

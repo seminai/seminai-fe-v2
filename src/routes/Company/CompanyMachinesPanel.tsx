@@ -8,7 +8,6 @@ import {
 } from "@/components/organism/EditableTable";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
-import { RefreshCcw, Wrench } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -55,7 +54,6 @@ const buildMachinesColumns = (): EditableColumn[] => {
 
 export function CompanyMachinesPanel({
   companyId,
-  companyName,
 }: CompanyMachinesPanelProps): React.ReactElement {
   const tableRef = useRef<EditableTableType>(null);
 
@@ -232,39 +230,7 @@ export function CompanyMachinesPanel({
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-br from-agri-green-50/40 to-field-50/30 rounded-2xl p-5 border border-agri-green-100/60 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div className="flex items-center gap-2">
-            <Wrench className="h-4 w-4 text-agri-green-700" />
-            <div>
-              <h3 className="text-sm font-semibold text-agri-green-700">
-                Parco Macchine
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Gestisci le macchine dell&apos;azienda {companyName}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                void refetch();
-              }}
-              disabled={isLoading}
-              className="rounded-full border-agri-green-200 text-agri-green-700 hover:bg-agri-green-50/80"
-            >
-              {isLoading ? (
-                <Spinner size={18} ariaLabel="Aggiornamento macchine" />
-              ) : (
-                <RefreshCcw className="h-4 w-4 mr-2" />
-              )}
-              Aggiorna
-            </Button>
-          </div>
-        </div>
-
+      <div>
         <EditableTable
           ref={tableRef}
           columns={columns}
@@ -282,7 +248,7 @@ export function CompanyMachinesPanel({
             identifier: "",
             lastPositiveRevisionDate: "",
           }}
-          className="bg-background"
+          className="bg-white"
         />
       </div>
     </div>

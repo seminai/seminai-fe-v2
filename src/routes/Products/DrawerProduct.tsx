@@ -4,6 +4,7 @@ import {
   Sheet,
   SheetContent,
   SheetDescription,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -21,14 +22,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   ChartContainer,
@@ -514,7 +507,7 @@ function DrawerProduct({
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto bg-white p-2">
+        <SheetContent className="w-full sm:max-w-[50vw] overflow-y-auto bg-white p-2">
           {isDetailLoading && (
             <div className="flex items-center gap-3 border border-blue-100 bg-blue-50 rounded-lg px-4 py-2 mb-4">
               <Spinner size={24} />
@@ -963,15 +956,18 @@ function DrawerProduct({
         </SheetContent>
       </Sheet>
 
-      {/* Dialog per modifica prodotto */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Modifica Prodotto</DialogTitle>
-            <DialogDescription>
+      {/* Drawer per modifica prodotto */}
+      <Sheet open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <SheetContent
+          side="left"
+          className="w-full sm:max-w-lg overflow-y-auto bg-white"
+        >
+          <SheetHeader>
+            <SheetTitle>Modifica Prodotto</SheetTitle>
+            <SheetDescription>
               Aggiorna le informazioni del prodotto
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="product-name">
@@ -1004,7 +1000,7 @@ function DrawerProduct({
               />
             </div>
           </div>
-          <DialogFooter>
+          <SheetFooter>
             <Button
               variant="outline"
               onClick={() => setEditDialogOpen(false)}
@@ -1015,9 +1011,9 @@ function DrawerProduct({
             <Button onClick={handleUpdateProduct} disabled={isUpdating}>
               {isUpdating ? "Salvataggio..." : "Salva"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

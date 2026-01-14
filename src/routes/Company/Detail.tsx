@@ -2,7 +2,6 @@ import * as React from "react";
 import { Link, useParams } from "react-router-dom";
 import { type Company, type BulkCompanyUpdateInput } from "@/api/companies";
 import { useCompanies } from "@/hooks/useCompanies";
-import { PageHeader } from "@/components/organism/Header";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -11,6 +10,7 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
 import { DrawerCompanyContent } from "./DrawerCompany";
 
@@ -44,9 +44,7 @@ class CompanyDetailPageController {
     company?: Company,
     activeTab?: ActiveTab
   ): BreadcrumbNode[] {
-    const nodes: BreadcrumbNode[] = [
-      { label: "Aziende", href: "/company" },
-    ];
+    const nodes: BreadcrumbNode[] = [{ label: "Aziende", href: "/company" }];
 
     if (activeTab && activeTab !== "details") {
       // Se siamo su un tab diverso da "details", il nome azienda è cliccabile
@@ -106,7 +104,6 @@ export default function CompanyDetailPage(): React.ReactElement {
     () => controller.buildBreadcrumbNodes(company, activeTab),
     [controller, company, activeTab]
   );
-  const pageTitle = controller.getPageTitle(company);
 
   const handleUpdate = React.useCallback(
     (update: BulkCompanyUpdateInput): void => {
@@ -119,44 +116,92 @@ export default function CompanyDetailPage(): React.ReactElement {
     setActiveTab(tab);
   }, []);
 
-  const glassPanelClass =
-    "rounded-[32px] border border-white/60 bg-white/80 shadow-[0_30px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl p-4 md:p-8";
+  const glassPanelClass = "bg-white p-4 md:p-8";
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <PageHeader title={pageTitle} />
+    <Tabs
+      value={activeTab}
+      onValueChange={(value) => {
+        const tab = value as ActiveTab;
+        handleTabChange(tab);
+      }}
+      className="flex flex-col min-h-screen"
+    >
+      {/* Sticky Header with Breadcrumb and Tabs */}
+      <div className="sticky top-4 z-50 bg-transparent">
+        <div className="px-3 md:px-6 w-full">
+          <div className="mx-auto w-full">
+            <div className="flex items-center justify-between gap-4 py-2 md:py-3">
+              {/* Breadcrumb on the left */}
+              <Breadcrumb className="flex-1 min-w-0 text-xs md:text-sm text-muted-foreground">
+                <BreadcrumbList>
+                  {breadcrumbNodes.map((node, index) => (
+                    <React.Fragment key={`${node.label}-${index}`}>
+                      <BreadcrumbItem>
+                        {node.href && !node.isCurrent ? (
+                          <BreadcrumbLink
+                            asChild
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <Link to={node.href}>{node.label}</Link>
+                          </BreadcrumbLink>
+                        ) : (
+                          <BreadcrumbPage className="text-foreground">
+                            {node.label}
+                          </BreadcrumbPage>
+                        )}
+                      </BreadcrumbItem>
+                      {index < breadcrumbNodes.length - 1 ? (
+                        <BreadcrumbSeparator />
+                      ) : null}
+                    </React.Fragment>
+                  ))}
+                </BreadcrumbList>
+              </Breadcrumb>
 
-      <div className="px-3 md:px-6 w-full">
-        <div className="mx-auto w-full">
-          <Breadcrumb className="mb-4 md:mb-6 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm text-muted-foreground">
-            <BreadcrumbList>
-              {breadcrumbNodes.map((node, index) => (
-                <React.Fragment key={`${node.label}-${index}`}>
-                  <BreadcrumbItem>
-                    {node.href && !node.isCurrent ? (
-                      <BreadcrumbLink
-                        asChild
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <Link to={node.href}>{node.label}</Link>
-                      </BreadcrumbLink>
-                    ) : (
-                      <BreadcrumbPage className="text-foreground">
-                        {node.label}
-                      </BreadcrumbPage>
-                    )}
-                  </BreadcrumbItem>
-                  {index < breadcrumbNodes.length - 1 ? (
-                    <BreadcrumbSeparator />
-                  ) : null}
-                </React.Fragment>
-              ))}
-            </BreadcrumbList>
-          </Breadcrumb>
+              {/* Tabs on the right */}
+              <div className="flex-shrink-0">
+                <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 w-full md:w-auto">
+                  <TabsList className="inline-flex w-auto">
+                    <TabsTrigger
+                      value="details"
+                      className="text-xs md:text-sm whitespace-nowrap"
+                    >
+                      Dettagli
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="users"
+                      className="text-xs md:text-sm whitespace-nowrap"
+                    >
+                      Utenti
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="warehouses"
+                      className="text-xs md:text-sm whitespace-nowrap"
+                    >
+                      Magazzini
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="files"
+                      className="text-xs md:text-sm whitespace-nowrap"
+                    >
+                      File
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="machines"
+                      className="text-xs md:text-sm whitespace-nowrap"
+                    >
+                      Macchine
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 md:px-6 pb-24 md:pb-10 w-full">
+      <div className="flex-1 px-3 md:px-6 pb-24 md:pb-10 w-full pt-16">
         <div className="mx-auto space-y-6">
           {isLoading ? (
             <div className={glassPanelClass}>
@@ -183,7 +228,7 @@ export default function CompanyDetailPage(): React.ReactElement {
                 L&apos;elemento richiesto non è più disponibile.{" "}
                 <Link
                   to="/company"
-                  className="font-semibold underline decoration-agri-green-400 text-agri-green-700"
+                  className="font-medium underline text-agri-green-600 hover:text-agri-green-700"
                 >
                   Torna alla lista delle aziende
                 </Link>
@@ -200,11 +245,12 @@ export default function CompanyDetailPage(): React.ReactElement {
                   void refetch();
                 }}
                 onTabChange={handleTabChange}
+                activeTab={activeTab}
               />
             </div>
           )}
         </div>
       </div>
-    </div>
+    </Tabs>
   );
 }

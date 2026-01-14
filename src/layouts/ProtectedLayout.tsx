@@ -79,8 +79,8 @@ function canViewMenuItem(menuItem: string, userRole?: UserRole): boolean {
   }
 
   if (userRole === UserRole.BASIC) {
-    // BASIC can see everything EXCEPT Labels
-    return menuItem !== "label";
+    // BASIC can see everything INCLUDING Labels (read-only)
+    return true;
   }
 
   return false;
