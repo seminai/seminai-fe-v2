@@ -91,6 +91,8 @@ export interface JobRow {
 interface JobSelectedDetailsProps {
   selectedRows: JobRow[];
   isMobile?: boolean;
+  hideSearch?: boolean;
+  externalSearchTerm?: string;
 }
 
 class AlertNotesFormatter {
@@ -200,8 +202,11 @@ class AlertNotesFormatter {
 export function JobSelectedDetails({
   selectedRows,
   isMobile = false,
+  hideSearch = false,
+  externalSearchTerm,
 }: JobSelectedDetailsProps) {
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [internalSearchTerm, setInternalSearchTerm] = useState<string>("");
+  const searchTerm = externalSearchTerm !== undefined ? externalSearchTerm : internalSearchTerm;
   const [expandedFrasiPericolo, setExpandedFrasiPericolo] = useState<
     Set<string>
   >(new Set());
@@ -260,14 +265,19 @@ export function JobSelectedDetails({
           !isMobile && "border-b border-slate-200"
         )}
       >
-        {selectedRows.length > 0 && (
+        {selectedRows.length > 0 && !hideSearch && (
           <div className="relative">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               type="text"
               placeholder="Cerca nei dettagli..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                if (externalSearchTerm === undefined) {
+                  setInternalSearchTerm(e.target.value);
+                }
+              }}
+              disabled={externalSearchTerm !== undefined}
               className="pl-8 text-sm h-9"
             />
           </div>
