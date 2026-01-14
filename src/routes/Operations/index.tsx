@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/organism/Header";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { type EditableColumn } from "@/components/organism/EditableTable";
 import { EditableTable } from "@/components/organism/EditableTable";
 import { type JobRow } from "@/components/organism/JobSelectedDetails";
@@ -15,6 +15,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { JobSelectedDetails } from "@/components/organism/JobSelectedDetails";
+import { toast } from "sonner";
 
 class JobIdFormatter {
   public static format(jobId: string | null | undefined): string {
@@ -200,14 +201,19 @@ function convertToJobRows(rows: Record<string, unknown>[]): JobRow[] {
 
 export default function OperationsPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState<number>(1);
   const [limit] = useState<number>(20);
+  const [selectedRows, setSelectedRows] = useState<
+    Array<Record<string, unknown>>
+  >([]);
 
   // Query per i job verificati
   const {
     data: jobsData,
     isLoading,
     error,
+    refetch,
   } = useQuery<GetVerifiedJobsResponse>({
     queryKey: ["verified-jobs", page, limit],
     queryFn: async () => {
@@ -504,37 +510,57 @@ export default function OperationsPage() {
     return <JobSelectedDetails selectedRows={jobRows} isMobile={false} />;
   };
 
+  // Gestisce l'eliminazione multipla
+  const handleDeleteSelected = async (
+    removed: Array<Record<string, unknown>>
+  ) => {
+    try {
+      const jobIds = removed.map((row) => row.id as string);
+
+      console.log("Deleting jobs:", jobIds);
+
+      await jobsApiService.bulkDelete({ jobIds });
+
+      toast.success("Operazioni eliminate", {
+        description: `${jobIds.length} operazione${
+          jobIds.length === 1 ? "" : "i"
+        } eliminata${jobIds.length === 1 ? "" : "e"} con successo`,
+      });
+
+      // Ricarica i dati
+      await queryClient.invalidateQueries({ queryKey: ["verified-jobs"] });
+      await refetch();
+      setSelectedRows([]);
+    } catch (error) {
+      toast.error("Errore durante l'eliminazione", {
+        description:
+          error instanceof Error ? error.message : "Riprova più tardi",
+      });
+      console.error("Error deleting jobs:", error);
+    }
+  };
+
+  // Gestisce il click sul bottone Elimina
+  const handleDeleteClick = () => {
+    if (selectedRows.length === 0) {
+      return;
+    }
+
+    const confirmMessage =
+      selectedRows.length === 1
+        ? "Sei sicuro di voler eliminare questa operazione?"
+        : `Sei sicuro di voler eliminare ${selectedRows.length} operazioni?`;
+
+    if (window.confirm(confirmMessage)) {
+      handleDeleteSelected(selectedRows);
+    }
+  };
+
   const pagination = jobsData?.data.pagination;
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader
-        title="Operazioni"
-        rightElement={
-          <Button
-            onClick={() => navigate("/dosage-manager")}
-            className="bg-agri-green-600 hover:bg-agri-green-700 text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Aggiungi
-          </Button>
-        }
-      >
-        {pagination && (
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <span>
-              Pagina {pagination.page} di {pagination.totalPages} • Totale:{" "}
-              {pagination.total}
-            </span>
-            {isLoading && (
-              <Spinner
-                className="h-3 w-3 text-slate-400"
-                ariaLabel="Caricamento"
-              />
-            )}
-          </div>
-        )}
-      </PageHeader>
+      <PageHeader title="Operazioni" />
 
       <div className="flex-1 overflow-auto px-6 pb-6">
         {isLoading ? (
@@ -583,11 +609,35 @@ export default function OperationsPage() {
                 (typeof row.id === "string" && row.id) || index
               }
               showDeleteAction={false}
+              onDeleteSelected={handleDeleteSelected}
+              onSelectionChange={setSelectedRows}
               exportFileName="operazioni"
               detailsRenderer={renderDetails}
               detailsTitle="Dettagli Operazione"
               className="bg-background"
-            />
+            >
+              {selectedRows.length > 0 ? (
+                <Button
+                  data-table-slot="right"
+                  variant="destructive"
+                  className="gap-2"
+                  onClick={handleDeleteClick}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Elimina ({selectedRows.length})
+                </Button>
+              ) : (
+                <Button
+                  data-table-slot="right"
+                  variant="ghost"
+                  className="gap-2 text-muted-foreground bg-agri-green-200 text-agri-green-700 cursor-pointer"
+                  onClick={() => navigate("/dosage-manager")}
+                >
+                  <Plus className="w-4 h-4" />
+                  Aggiungi
+                </Button>
+              )}
+            </EditableTable>
             {pagination && pagination.totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-4">
                 <button

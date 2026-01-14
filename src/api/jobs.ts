@@ -151,6 +151,9 @@ export type UpdateJobPayload = {
   quantity?: number;
   dateOfOpeation?: string;
   machineId?: string | null;
+  userId?: string;
+  isLocalizedTreatment?: boolean;
+  modeOfApplication?: string;
 };
 
 export type UpdateJobResponse = {

@@ -83,8 +83,8 @@ function canAccessRoute(pathname: string, userRole?: UserRole): boolean {
   }
 
   if (userRole === UserRole.BASIC) {
-    // BASIC can access everything EXCEPT label routes
-    return !pathname.startsWith("/label") && pathname !== "/new-label";
+    // BASIC can access everything INCLUDING label routes (read-only)
+    return true;
   }
 
   return false;

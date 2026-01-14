@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { buildColumns, formatConfidence } from "@/utils/tableHelpers";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/organism/Header";
+import { useMe, UserRole } from "@/hooks/useAuth";
 
 const buildLabelSummaryColumns = (): EditableColumn[] =>
   buildColumns<LabelSummary>([
@@ -143,6 +144,12 @@ const buildLabelSummaryColumns = (): EditableColumn[] =>
 export default function Label(): React.ReactElement {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { data: userData } = useMe();
+  const userRole = userData?.role;
+  
+  // Verifica se l'utente può modificare (solo ADMIN e LABEL_MANAGER)
+  const canModify = userRole === UserRole.ADMIN || userRole === UserRole.LABEL_MANAGER;
+  
   const { data, isLoading, error } = useQuery({
     queryKey: ["labels", "summary"],
     queryFn: async () => labelsApiService.getSummary(),
@@ -200,12 +207,14 @@ export default function Label(): React.ReactElement {
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Etichette">
-        <Button
-          onClick={() => navigate("/new-label")}
-          className="whitespace-nowrap"
-        >
-          Aggiungi Etichette
-        </Button>
+        {canModify && (
+          <Button
+            onClick={() => navigate("/new-label")}
+            className="whitespace-nowrap"
+          >
+            Aggiungi Etichette
+          </Button>
+        )}
       </PageHeader>
 
       {/* Area scrollabile - solo la tabella */}
@@ -231,7 +240,8 @@ export default function Label(): React.ReactElement {
             getRowId={(row, index) =>
               (typeof row.id === "string" && row.id) || index
             }
-            onDeleteSelected={handleDeleteSelected}
+            onDeleteSelected={canModify ? handleDeleteSelected : undefined}
+            showDeleteAction={canModify}
             onOpenDetails={(row) => navigate(`/label/${row.id}`)}
             className="bg-background"
             exportFileName="etichette"

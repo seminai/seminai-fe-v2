@@ -1,9 +1,6 @@
 import * as React from "react";
 import { useState } from "react";
-import {
-  type BulkFieldInput,
-  fieldsApiService,
-} from "@/api/fields";
+import { type BulkFieldInput, fieldsApiService } from "@/api/fields";
 import { type Company } from "@/api/companies";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,11 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload, AlertCircle } from "lucide-react";
+import { Upload, AlertCircle, Download } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { CsvFieldImporter } from "@/components/organism/CsvFieldImporter";
+import { SupportRequestForm } from "@/components/organism/SupportRequestForm";
 
 interface ImportFieldByCsvProps {
   companies: Company[];
@@ -48,6 +46,7 @@ export function ImportFieldByCsv({
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
+  const [showSupportForm, setShowSupportForm] = useState(false);
 
   /**
    * Gestisce l'estrazione automatica dei campi tramite API
@@ -128,6 +127,7 @@ export function ImportFieldByCsv({
       setImportErrors([]);
       setImportWarnings([]);
       setSelectedCompanyId("");
+      setShowSupportForm(false);
       onCloseParentDrawer?.();
     } catch (err) {
       const errorMessage =
@@ -139,7 +139,6 @@ export function ImportFieldByCsv({
     }
   };
 
-
   /**
    * Resetta lo stato quando il dialog viene chiuso
    */
@@ -149,7 +148,28 @@ export function ImportFieldByCsv({
       setImportErrors([]);
       setImportWarnings([]);
       setSelectedCompanyId("");
+      setShowSupportForm(false);
     }
+  };
+
+  /**
+   * Gestisce il download del template Excel
+   */
+  const handleDownloadTemplate = (): void => {
+    const link = document.createElement("a");
+    link.href = "/templates/2026.01_Template_field_piemonte.xlsx";
+    link.download = "2026.01_Template_field_piemonte.xlsx";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  /**
+   * Gestisce la chiusura del form di supporto
+   */
+  const handleSupportRequestSuccess = (): void => {
+    setShowSupportForm(false);
+    toast.success("Richiesta inviata. Ti risponderemo al più presto.");
   };
 
   return (
@@ -162,17 +182,31 @@ export function ImportFieldByCsv({
       </DrawerTrigger>
       <DrawerContent
         data-vaul-drawer-direction="right"
-        className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white p-2"
+        className="!w-1/2 !max-w-[50vw] h-full overflow-y-auto overflow-x-hidden bg-white p-2"
       >
         <DrawerHeader>
           <DrawerTitle>Estrazione Automatica Campi da CSV</DrawerTitle>
           <DrawerDescription>
-            Seleziona l'azienda e carica un file CSV. Il sistema estrarrà
-            automaticamente i dati dei campi.
+            Il sistema supporta il formato Excel del template AGEA della misura
+            unica. Il formato varia in base alla regione. Seleziona l'azienda e
+            carica un file CSV. Il sistema estrarrà automaticamente i dati dei
+            campi.
           </DrawerDescription>
         </DrawerHeader>
 
         <div className="space-y-4 p-4">
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadTemplate}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Scarica template Excel
+            </Button>
+          </div>
           <div className="space-y-2">
             <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Azienda di destinazione
@@ -257,26 +291,28 @@ export function ImportFieldByCsv({
             </Alert>
           )}
 
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium text-sm mb-2">Estrazione Automatica</h4>
-            <div className="text-xs text-gray-600 space-y-2">
-              <p>
-                L'estrazione automatica analizza il file CSV e estrae
-                automaticamente i dati dei campi, inclusi coordinate,
-                informazioni catastali e dati del suolo. L'operazione potrebbe
-                richiedere alcuni minuti.
+          {showSupportForm && (
+            <div className="bg-white p-6 rounded-3xl border border-agri-green-100 text-left shadow-lg shadow-agri-green-50">
+              <h4 className="font-medium text-lg mb-4">Richiedi supporto</h4>
+              <p className="text-sm text-gray-600 mb-4">
+                In caso di problemi con l'importazione del file, compila il form
+                qui sotto per contattare il servizio di supporto.
               </p>
-              <p className="font-medium text-gray-700">
-                Il sistema estrarrà automaticamente:
-              </p>
-              <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>Coordinate geografiche (latitudine, longitudine)</li>
-                <li>Dati catastali (sezione, foglio, particella)</li>
-                <li>Informazioni del suolo (tipo, pH, nutrienti)</li>
-                <li>Superfici (catastale, SAU, GIS)</li>
-                <li>Altri dati disponibili nel file</li>
-              </ul>
+              <SupportRequestForm
+                onSuccess={handleSupportRequestSuccess}
+                className="shadow-none border-none bg-transparent p-0"
+              />
             </div>
+          )}
+
+          <div className="flex justify-end pt-4 border-t">
+            <button
+              type="button"
+              onClick={() => setShowSupportForm(!showSupportForm)}
+              className="text-sm text-agri-green-600 hover:text-agri-green-700 underline transition-colors"
+            >
+              Richiedi supporto
+            </button>
           </div>
         </div>
       </DrawerContent>

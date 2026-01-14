@@ -48,6 +48,10 @@ import { TruncatedCellText } from "./EditableTableTruncatedCellText";
 import { AutoExpandTextarea } from "./EditableTableAutoExpandTextarea";
 import { EditableTableCreateDrawer } from "./EditableTableCreateDrawer";
 import { EditableTableColumnFilterDropdown } from "./EditableTableColumnFilterDropdown";
+import { EditableTableColumnVisibilityDropdown } from "./EditableTableColumnVisibilityDropdown";
+
+const MAX_VISIBLE_COLUMNS = 6;
+const COLUMN_VISIBILITY_STORAGE_PREFIX = "editable-table-columns-";
 
 // EditableTable - Notion-like editable table with bulk add/save
 // The component follows an OOP approach using a React Class.
@@ -101,6 +105,12 @@ export interface EditableTableProps {
   isModify?: boolean;
   isVertical?: boolean;
   addButton?: boolean;
+  /**
+   * Unique identifier for the table, used to persist column visibility settings in localStorage.
+   * If not provided, an identifier will be automatically generated based on the current route
+   * and table columns, ensuring persistence per page/table combination.
+   */
+  tableId?: string;
   /**
    * Controls how the "Add" action creates a new row.
    * - drawer: opens the right-side create drawer (default, legacy behavior)
@@ -337,6 +347,8 @@ interface EditableTableState {
   // Bulk edit state
   bulkEditDrawerOpen: boolean;
   bulkEditValues: Record<string, unknown>;
+  // Column visibility state
+  visibleColumnIds: string[];
 }
 
 export class EditableTable extends React.Component<
@@ -363,6 +375,10 @@ export class EditableTable extends React.Component<
       isNew: false,
       isDirty: false,
     }));
+    
+    // Initialize visible columns from localStorage or default to first MAX_VISIBLE_COLUMNS
+    const visibleColumnIds = this.loadVisibleColumnsFromStorage(props);
+    
     this.state = {
       rows: initialRows,
       touched: {},
@@ -387,10 +403,23 @@ export class EditableTable extends React.Component<
       columnFilterSelectedDates: {},
       bulkEditDrawerOpen: false,
       bulkEditValues: {},
+      visibleColumnIds,
     };
   }
 
   componentDidUpdate(prevProps: EditableTableProps): void {
+    // Reload column visibility if tableId or columns change
+    const prevStorageKey = this.getStorageKey(prevProps);
+    const currentStorageKey = this.getStorageKey(this.props);
+    const columnsChanged = 
+      prevProps.columns.length !== this.props.columns.length ||
+      prevProps.columns.some((col, idx) => col.id !== this.props.columns[idx]?.id);
+    
+    if (prevStorageKey !== currentStorageKey || columnsChanged) {
+      const visibleColumnIds = this.loadVisibleColumnsFromStorage(this.props);
+      this.setState({ visibleColumnIds });
+    }
+    
     // Update internal state when rows prop changes (e.g., filtering)
     if (prevProps.rows !== this.props.rows) {
       const newRows: InternalRow[] = (this.props.rows || []).map((r, idx) => ({
@@ -445,6 +474,112 @@ export class EditableTable extends React.Component<
       acc[column.id] = undefined;
       return acc;
     }, {} as Record<string, DateRange | undefined>);
+  }
+
+  private generateTableId(props: EditableTableProps): string {
+    // Se tableId è fornito, usalo
+    if (props.tableId) {
+      return props.tableId;
+    }
+    
+    // Altrimenti genera un ID basato sulla route e sulle colonne
+    const pathname = typeof window !== "undefined" ? window.location.pathname : "";
+    const columnIds = props.columns.map((c) => c.id).sort().join(",");
+    
+    // Crea un hash semplice basato su pathname e colonne
+    const hashInput = `${pathname}:${columnIds}`;
+    let hash = 0;
+    for (let i = 0; i < hashInput.length; i++) {
+      const char = hashInput.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    
+    // Usa il pathname pulito (senza parametri) + hash delle colonne
+    const pathKey = pathname.replace(/[^a-zA-Z0-9]/g, "-") || "default";
+    return `${pathKey}-${Math.abs(hash).toString(36)}`;
+  }
+
+  private getStorageKey(props: EditableTableProps): string {
+    const tableId = this.generateTableId(props);
+    return `${COLUMN_VISIBILITY_STORAGE_PREFIX}${tableId}`;
+  }
+
+  private loadVisibleColumnsFromStorage(props: EditableTableProps): string[] {
+    const storageKey = this.getStorageKey(props);
+    const columnIds = props.columns.map((c) => c.id);
+    
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored) as string[];
+        // Filter out any columns that no longer exist
+        const validIds = parsed.filter((id) => columnIds.includes(id));
+        if (validIds.length > 0) {
+          return validIds;
+        }
+      }
+    } catch {
+      // Ignore localStorage errors, fall back to default
+    }
+    
+    // Default: first MAX_VISIBLE_COLUMNS columns
+    return columnIds.slice(0, MAX_VISIBLE_COLUMNS);
+  }
+
+  private saveVisibleColumnsToStorage = (visibleIds: string[]): void => {
+    const storageKey = this.getStorageKey(this.props);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(visibleIds));
+    } catch {
+      // Ignore localStorage errors (e.g., quota exceeded)
+    }
+  };
+
+  private handleColumnVisibilityChange = (columnId: string, visible: boolean): void => {
+    this.setState((prev) => {
+      let newVisibleIds: string[];
+      
+      if (visible) {
+        // Add column if not already visible
+        if (!prev.visibleColumnIds.includes(columnId)) {
+          newVisibleIds = [...prev.visibleColumnIds, columnId];
+        } else {
+          return null; // No change needed
+        }
+      } else {
+        // Remove column (but ensure at least one column remains)
+        newVisibleIds = prev.visibleColumnIds.filter((id) => id !== columnId);
+        if (newVisibleIds.length === 0) {
+          return null; // Can't remove the last visible column
+        }
+      }
+      
+      this.saveVisibleColumnsToStorage(newVisibleIds);
+      return { visibleColumnIds: newVisibleIds };
+    });
+  };
+
+  private handleShowAllColumns = (): void => {
+    const allColumnIds = this.props.columns.map((c) => c.id);
+    this.saveVisibleColumnsToStorage(allColumnIds);
+    this.setState({ visibleColumnIds: allColumnIds });
+  };
+
+  private handleShowDefaultColumns = (): void => {
+    const defaultColumnIds = this.props.columns
+      .slice(0, MAX_VISIBLE_COLUMNS)
+      .map((c) => c.id);
+    this.saveVisibleColumnsToStorage(defaultColumnIds);
+    this.setState({ visibleColumnIds: defaultColumnIds });
+  };
+
+  private getVisibleColumns(): EditableColumn[] {
+    const { visibleColumnIds } = this.state;
+    // Maintain the order from visibleColumnIds
+    return visibleColumnIds
+      .map((id) => this.props.columns.find((c) => c.id === id))
+      .filter((c): c is EditableColumn => c !== undefined);
   }
 
   private normalizeSelectOptions(
@@ -2508,6 +2643,7 @@ export class EditableTable extends React.Component<
 
   private renderVertical(): React.ReactNode {
     const { columns, isModify, className } = this.props;
+    const visibleColumns = this.getVisibleColumns();
     const rows = this.getFilteredRows();
     const showEditActions = this.shouldShowEditActions;
     const showAddButton = Boolean(this.props.addButton) && !showEditActions;
@@ -2552,6 +2688,16 @@ export class EditableTable extends React.Component<
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+              )}
+              {!showEditActions && columns.length > MAX_VISIBLE_COLUMNS && (
+                <EditableTableColumnVisibilityDropdown
+                  columns={columns}
+                  visibleColumnIds={this.state.visibleColumnIds}
+                  maxVisibleColumns={MAX_VISIBLE_COLUMNS}
+                  onVisibilityChange={this.handleColumnVisibilityChange}
+                  onShowAll={this.handleShowAllColumns}
+                  onShowDefault={this.handleShowDefaultColumns}
+                />
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -2607,7 +2753,7 @@ export class EditableTable extends React.Component<
               data-slot="table-body"
               className={cn("divide-y divide-border/15 ")}
             >
-              {columns.map((c) => {
+              {visibleColumns.map((c) => {
                 const colHasRequiredMissing = rows.some((r) => {
                   if (!c.required) return false;
                   const v = r.data[c.id];
@@ -2752,6 +2898,7 @@ export class EditableTable extends React.Component<
       return this.renderVertical();
     }
     const { columns, isModify, className } = this.props;
+    const visibleColumns = this.getVisibleColumns();
     const rows = this.getFilteredRows();
     const showEditActions = this.shouldShowEditActions;
     const hasErrors = this.hasErrors;
@@ -2819,6 +2966,16 @@ export class EditableTable extends React.Component<
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+            )}
+            {!showEditActions && !anySelected && columns.length > MAX_VISIBLE_COLUMNS && (
+              <EditableTableColumnVisibilityDropdown
+                columns={columns}
+                visibleColumnIds={this.state.visibleColumnIds}
+                maxVisibleColumns={MAX_VISIBLE_COLUMNS}
+                onVisibilityChange={this.handleColumnVisibilityChange}
+                onShowAll={this.handleShowAllColumns}
+                onShowDefault={this.handleShowDefaultColumns}
+              />
             )}
             {anySelected && !showEditActions && (
               <Button
@@ -3008,7 +3165,7 @@ export class EditableTable extends React.Component<
                     aria-label="Select all rows"
                   />
                 </th>
-                {columns.map((c) => {
+                {visibleColumns.map((c) => {
                   const uniqueValues = this.buildUniqueValueOptions(c.id);
                   const selectedValues =
                     this.state.columnFilterSelectedValues[c.id] ||
@@ -3161,7 +3318,7 @@ export class EditableTable extends React.Component<
                         />
                       </div>
                     </td>
-                    {columns.map((c) => (
+                    {visibleColumns.map((c) => (
                       <td
                         key={c.id}
                         data-slot="table-cell"

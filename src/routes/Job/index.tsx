@@ -6,6 +6,7 @@ import { useLabelsSummary } from "@/hooks/useLabelsSummary";
 import { useLabel } from "@/hooks/useLabel";
 import { machinesApiService, type Machine } from "@/api/machines";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { userOnCompanyApiService, type UserOnCompany } from "@/api/userOnCompany";
 import { PageHeader } from "@/components/organism/Header";
 import { userSettingsIndexDBManager } from "@/utils/userSettingsIndexDBManager";
 import {
@@ -1248,11 +1249,17 @@ class JobTableRowBuilder {
       alertNotes: job.alertNotes ?? null,
       machineName: machine?.name ?? "-",
       machineId: machine?.id ?? null,
+      userId: job.userId ?? null,
+      userName: null, // Sarà popolato quando vengono caricati gli utenti
+      isLocalizedTreatment: job.isLocalizedTreatment ?? false,
       _isVerifiedBoolean: job.isVerified,
       _conformityChecked: job.conformityChecked,
       _originalQuantity: job.quantity,
       _originalDateOfOperation: new Date(job.dateOfOpeation),
       _originalMachineId: machine?.id ?? null,
+      _originalUserId: job.userId ?? null,
+      _originalModeOfApplication: job.modeOfApplication ?? "-",
+      _originalIsLocalizedTreatment: job.isLocalizedTreatment ?? false,
       _companyId: company.id,
       _productionUnitId: productionUnit.id,
       _history: job.history ?? [],
@@ -2129,6 +2136,47 @@ export default function JobPage() {
     return machinesQueries.data ?? new Map<string, Machine[]>();
   }, [machinesQueries.data]);
 
+  // Carica gli utenti per tutte le company uniche
+  const usersQueries = useQuery({
+    queryKey: ["users-by-companies", uniqueCompanyIds],
+    queryFn: async () => {
+      const usersByCompany = new Map<string, UserOnCompany[]>();
+      await Promise.all(
+        uniqueCompanyIds.map(async (companyId) => {
+          try {
+            const response = await userOnCompanyApiService.listByCompany(
+              companyId
+            );
+            const users = response.data?.users ?? [];
+            usersByCompany.set(companyId, users);
+          } catch (error) {
+            console.error(
+              `Error loading users for company ${companyId}:`,
+              error
+            );
+            usersByCompany.set(companyId, []);
+          }
+        })
+      );
+      return usersByCompany;
+    },
+    enabled: uniqueCompanyIds.length > 0,
+    staleTime: 1000 * 60 * 5, // 5 minuti
+  });
+
+  const usersByCompanyMap = useMemo(() => {
+    return usersQueries.data ?? new Map<string, UserOnCompany[]>();
+  }, [usersQueries.data]);
+
+  // Funzione helper per ottenere il nome completo di un utente
+  const getUserFullName = (user: UserOnCompany): string => {
+    if (user.user) {
+      const fullName = `${user.user.name} ${user.user.surname}`.trim();
+      return fullName || user.user.email || "-";
+    }
+    return "-";
+  };
+
   // Indice del gruppo selezionato e navigazione tra gruppi
   const currentGroupIndex = useMemo(() => {
     if (!selectedGroupSummary) return -1;
@@ -2626,6 +2674,108 @@ export default function JobPage() {
         );
       },
     },
+    {
+      id: "userId",
+      title: "Operatore",
+      type: "select",
+      width: "200px",
+      readOnly: false,
+      getOptions: (rowData) => {
+        const companyId = rowData._companyId as string | undefined;
+        if (!companyId) {
+          return [];
+        }
+        const users = usersByCompanyMap.get(companyId) ?? [];
+        return users.map((user) => ({
+          label: getUserFullName(user),
+          value: user.userId,
+        }));
+      },
+      placeholder: "Seleziona operatore",
+      enableSearch: true,
+      searchPlaceholder: "Cerca operatore...",
+      emptyStateMessage: "Nessun operatore disponibile",
+      noneOptionLabel: "Nessun operatore",
+      onValueChange: ({ value, rowData }) => {
+        const companyId = rowData._companyId as string | undefined;
+        if (!companyId) {
+          return { userId: null, userName: null };
+        }
+        const users = usersByCompanyMap.get(companyId) ?? [];
+        const stringValue = String(value ?? "");
+        const selectedUser = users.find((u) => u.userId === stringValue);
+        return {
+          userId: stringValue && stringValue !== "" ? stringValue : null,
+          userName: selectedUser ? getUserFullName(selectedUser) : null,
+        };
+      },
+      render: (_value, row) => {
+        const userName = (row.userName as string | null | undefined) ?? null;
+        if (!userName) {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        return <span>{userName}</span>;
+      },
+    },
+    {
+      id: "modeOfApplication",
+      title: "Modalità Trattamento",
+      type: "select",
+      width: "180px",
+      readOnly: false,
+      options: [
+        { label: "Manuale", value: "manuale" },
+        { label: "Macchinari", value: "macchinari" },
+      ],
+      placeholder: "Seleziona modalità",
+      onValueChange: ({ value }) => {
+        return {
+          modeOfApplication: value ?? "-",
+        };
+      },
+      render: (value) => {
+        const stringValue = value as string;
+        if (!stringValue || stringValue === "-") {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        return <span>{stringValue}</span>;
+      },
+    },
+    {
+      id: "isLocalizedTreatment",
+      title: "Trattamento Localizzato",
+      type: "select",
+      width: "200px",
+      readOnly: false,
+      options: [
+        { label: "Sì", value: "true" },
+        { label: "No", value: "false" },
+      ],
+      placeholder: "Seleziona",
+      onValueChange: ({ value }) => {
+        return {
+          isLocalizedTreatment: value === "true" || value === true,
+        };
+      },
+      render: (value) => {
+        const boolValue =
+          typeof value === "boolean"
+            ? value
+            : value === "true" || value === true;
+        return (
+          <Badge
+            variant={boolValue ? "default" : "outline"}
+            className={
+              boolValue
+                ? "bg-green-500 hover:bg-green-600 text-white"
+                : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+            }
+          >
+            {boolValue ? "Sì" : "No"}
+          </Badge>
+        );
+      },
+    },
   ];
 
   // Colonne semplificate per la vista review
@@ -2796,7 +2946,146 @@ export default function JobPage() {
         );
       },
     },
+    {
+      id: "userId",
+      title: "Operatore",
+      type: "select",
+      width: "150px",
+      readOnly: false,
+      getOptions: (rowData) => {
+        const companyId = rowData._companyId as string | undefined;
+        if (!companyId) {
+          return [];
+        }
+        const users = usersByCompanyMap.get(companyId) ?? [];
+        return users.map((user) => ({
+          label: getUserFullName(user),
+          value: user.userId,
+        }));
+      },
+      placeholder: "Seleziona operatore",
+      enableSearch: true,
+      searchPlaceholder: "Cerca operatore...",
+      emptyStateMessage: "Nessun operatore disponibile",
+      noneOptionLabel: "Nessun operatore",
+      onValueChange: ({ value, rowData }) => {
+        const companyId = rowData._companyId as string | undefined;
+        if (!companyId) {
+          return { userId: null, userName: null };
+        }
+        const users = usersByCompanyMap.get(companyId) ?? [];
+        const stringValue = String(value ?? "");
+        const selectedUser = users.find((u) => u.userId === stringValue);
+        return {
+          userId: stringValue && stringValue !== "" ? stringValue : null,
+          userName: selectedUser ? getUserFullName(selectedUser) : null,
+        };
+      },
+      render: (_value, row) => {
+        const userName = (row.userName as string | null | undefined) ?? null;
+        if (!userName) {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        return <span>{userName}</span>;
+      },
+    },
+    {
+      id: "modeOfApplication",
+      title: "Modalità Trattamento",
+      type: "select",
+      width: "150px",
+      readOnly: false,
+      options: [
+        { label: "Manuale", value: "manuale" },
+        { label: "Macchinari", value: "macchinari" },
+      ],
+      placeholder: "Seleziona modalità",
+      onValueChange: ({ value }) => {
+        return {
+          modeOfApplication: value ?? "-",
+        };
+      },
+      render: (value) => {
+        const stringValue = value as string;
+        if (!stringValue || stringValue === "-") {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        return <span>{stringValue}</span>;
+      },
+    },
+    {
+      id: "isLocalizedTreatment",
+      title: "Trattamento Localizzato",
+      type: "select",
+      width: "180px",
+      readOnly: false,
+      options: [
+        { label: "Sì", value: "true" },
+        { label: "No", value: "false" },
+      ],
+      placeholder: "Seleziona",
+      onValueChange: ({ value }) => {
+        return {
+          isLocalizedTreatment: value === "true" || value === true,
+        };
+      },
+      render: (value) => {
+        const boolValue =
+          typeof value === "boolean"
+            ? value
+            : value === "true" || value === true;
+        return (
+          <Badge
+            variant={boolValue ? "default" : "outline"}
+            className={
+              boolValue
+                ? "bg-green-500 hover:bg-green-600 text-white"
+                : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+            }
+          >
+            {boolValue ? "Sì" : "No"}
+          </Badge>
+        );
+      },
+    },
   ];
+
+  // Aggiorna le righe per popolare userName quando vengono caricati gli utenti
+  const allGroupRowsWithUsers = useMemo(() => {
+    return allGroupRows.map((row) => {
+      const companyId = row._companyId as string | undefined;
+      const userId = row.userId as string | null | undefined;
+      if (companyId && userId) {
+        const users = usersByCompanyMap.get(companyId) ?? [];
+        const user = users.find((u) => u.userId === userId);
+        if (user) {
+          return {
+            ...row,
+            userName: getUserFullName(user),
+          };
+        }
+      }
+      return row;
+    });
+  }, [allGroupRows, usersByCompanyMap]);
+
+  const selectedGroupRowsWithUsers = useMemo(() => {
+    return selectedGroupRows.map((row) => {
+      const companyId = row._companyId as string | undefined;
+      const userId = row.userId as string | null | undefined;
+      if (companyId && userId) {
+        const users = usersByCompanyMap.get(companyId) ?? [];
+        const user = users.find((u) => u.userId === userId);
+        if (user) {
+          return {
+            ...row,
+            userName: getUserFullName(user),
+          };
+        }
+      }
+      return row;
+    });
+  }, [selectedGroupRows, usersByCompanyMap]);
 
   // Gestisce il salvataggio delle modifiche
   const handleSave = async (payload: {
@@ -2891,6 +3180,9 @@ export default function JobPage() {
           quantity?: number;
           dateOfOpeation?: string;
           machineId?: string | null;
+          userId?: string;
+          isLocalizedTreatment?: boolean;
+          modeOfApplication?: string;
         } = {};
 
         // 1. Aggiorna lo stato di verifica se modificato
@@ -2920,6 +3212,39 @@ export default function JobPage() {
           (row._originalMachineId as string | null | undefined) ?? null;
         if (newMachineId !== originalMachineId) {
           updatePayload.machineId = newMachineId;
+        }
+
+        // 5. Aggiorna l'operatore (userId) se modificato
+        const newUserId = (row.userId as string | null | undefined) ?? null;
+        const originalUserId =
+          (row._originalUserId as string | null | undefined) ?? null;
+        if (newUserId !== originalUserId) {
+          updatePayload.userId = newUserId ?? undefined;
+        }
+
+        // 6. Aggiorna la modalità di trattamento se modificata
+        const newModeOfApplication = (row.modeOfApplication as
+          | string
+          | undefined) ?? "-";
+        const originalModeOfApplication =
+          (row._originalModeOfApplication as string | undefined) ?? "-";
+        if (newModeOfApplication !== originalModeOfApplication) {
+          updatePayload.modeOfApplication =
+            newModeOfApplication !== "-" ? newModeOfApplication : undefined;
+        }
+
+        // 7. Aggiorna il trattamento localizzato se modificato
+        const newIsLocalizedTreatment =
+          typeof row.isLocalizedTreatment === "boolean"
+            ? row.isLocalizedTreatment
+            : row.isLocalizedTreatment === "true" || row.isLocalizedTreatment === true;
+        const originalIsLocalizedTreatment =
+          typeof row._originalIsLocalizedTreatment === "boolean"
+            ? row._originalIsLocalizedTreatment
+            : row._originalIsLocalizedTreatment === "true" ||
+              row._originalIsLocalizedTreatment === true;
+        if (newIsLocalizedTreatment !== originalIsLocalizedTreatment) {
+          updatePayload.isLocalizedTreatment = newIsLocalizedTreatment;
         }
 
         // Esegui l'aggiornamento se ci sono modifiche
@@ -3093,7 +3418,7 @@ export default function JobPage() {
       isLoading={isLoadingAllView}
       jobsLength={allGroupRows.length}
       columns={columns}
-      rows={allGroupRows}
+      rows={allGroupRowsWithUsers}
       jobIdOptions={jobIdOptions}
       selectedJobIds={selectedAllJobIds}
       onJobIdsChange={setSelectedAllJobIds}
@@ -3139,7 +3464,7 @@ export default function JobPage() {
       totalPendingOperations={totalPendingOperations}
       isLoadingGroupsSummary={isLoadingGroupsSummary}
       selectedGroupSummary={selectedGroupSummary}
-      selectedGroupRows={selectedGroupRows}
+      selectedGroupRows={selectedGroupRowsWithUsers}
       selectedGroupHistory={selectedGroupHistory}
       onSelectGroup={setSelectedGroupCode}
       selectedReviewRows={selectedReviewRows}

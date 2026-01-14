@@ -10,7 +10,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Upload, AlertCircle, FileText, CheckCircle2 } from "lucide-react";
+import { Upload, AlertCircle, FileText } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
@@ -209,7 +209,7 @@ export function ImportCompanyByPdf({
       </DrawerTrigger>
       <DrawerContent
         data-vaul-drawer-direction="right"
-        className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white p-2"
+        className="!w-1/2 !max-w-[50vw] h-full overflow-y-auto overflow-x-hidden bg-white p-2"
       >
         <DrawerHeader>
           <DrawerTitle>Importa Azienda da Visura Camerale</DrawerTitle>
@@ -219,12 +219,12 @@ export function ImportCompanyByPdf({
           </DrawerDescription>
         </DrawerHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 p-4 overflow-x-hidden">
           {/* Area Drag & Drop */}
           <div
-            className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+            className={`relative border-2 border-dashed rounded-lg p-8 transition-all duration-200 ${
               dragActive
-                ? "border-primary bg-primary/5"
+                ? "border-primary bg-primary/5 scale-[1.02]"
                 : "border-gray-300 hover:border-gray-400"
             } ${isProcessing ? "opacity-50 pointer-events-none" : ""}`}
             onDragEnter={handleDrag}
@@ -236,28 +236,45 @@ export function ImportCompanyByPdf({
               type="file"
               accept=".pdf,application/pdf"
               onChange={handleFileInputChange}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              className="hidden"
+              id="pdf-file-input"
               disabled={isProcessing}
             />
 
-            <div className="space-y-2">
-              <div className="flex justify-center">
-                {isProcessing ? (
-                  <Spinner size={40} ariaLabel="Elaborazione PDF" />
-                ) : (
-                  <Upload className="h-12 w-12 text-gray-400" />
-                )}
-              </div>
+            <div className="flex flex-col items-center justify-center text-center">
+              {isProcessing ? (
+                <Spinner
+                  size={40}
+                  ariaLabel="Elaborazione PDF"
+                  className="mb-4"
+                />
+              ) : (
+                <Upload
+                  className={`h-12 w-12 mb-4 transition-colors ${
+                    dragActive ? "text-primary" : "text-gray-400"
+                  }`}
+                />
+              )}
 
               {!isProcessing && (
                 <>
-                  <p className="text-sm font-medium text-gray-700">
+                  <h3 className="text-lg font-medium mb-2">
                     Trascina qui il PDF della visura camerale
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    oppure clicca per selezionare un file
                   </p>
-                  <p className="text-xs text-gray-500">
-                    oppure clicca per selezionare il file
-                  </p>
-                  <p className="text-xs text-gray-400 mt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() =>
+                      document.getElementById("pdf-file-input")?.click()
+                    }
+                    disabled={isProcessing}
+                  >
+                    Seleziona File
+                  </Button>
+                  <p className="text-xs text-gray-400 mt-4">
                     Formati supportati: PDF
                   </p>
                 </>
@@ -317,26 +334,6 @@ export function ImportCompanyByPdf({
               </pre>
             </details>
           )}
-
-          {/* Informazioni */}
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <div className="flex gap-2">
-              <CheckCircle2 className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-sm text-blue-900 mb-1">
-                  Dati estratti automaticamente:
-                </h4>
-                <ul className="text-xs text-blue-800 space-y-1">
-                  <li>• Nome azienda / Ragione sociale</li>
-                  <li>• Partita IVA</li>
-                  <li>• Codice fiscale</li>
-                  <li>• Indirizzo sede legale</li>
-                  <li>• Città e CAP</li>
-                  <li>• Email / PEC</li>
-                </ul>
-              </div>
-            </div>
-          </div>
         </div>
       </DrawerContent>
     </Drawer>

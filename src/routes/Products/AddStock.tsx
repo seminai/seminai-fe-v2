@@ -7,13 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 
 interface AddStockProps {
   product: Product;
@@ -21,7 +29,7 @@ interface AddStockProps {
 }
 
 interface AddStockState {
-  isFormVisible: boolean;
+  isDrawerOpen: boolean;
   isSubmitting: boolean;
   quantity: string;
   unit: string;
@@ -78,14 +86,14 @@ class AddStock extends Component<AddStockProps, AddStockState> {
   public componentDidUpdate(prevProps: Readonly<AddStockProps>): void {
     if (
       prevProps.product.id !== this.props.product.id &&
-      !this.state.isFormVisible
+      !this.state.isDrawerOpen
     ) {
       this.setState(this.buildInitialState());
     }
   }
 
   private buildInitialState = (): AddStockState => ({
-    isFormVisible: false,
+    isDrawerOpen: false,
     isSubmitting: false,
     quantity: "",
     unit: this.getDefaultUnit(),
@@ -108,24 +116,22 @@ class AddStock extends Component<AddStockProps, AddStockState> {
     return "L";
   };
 
-  private showFormWithDefaults = (): void => {
+  private openDrawer = (): void => {
     const initialState = this.buildInitialState();
     this.setState({
       ...initialState,
-      isFormVisible: true,
+      isDrawerOpen: true,
     });
   };
 
-  private toggleFormVisibility = (): void => {
-    if (this.state.isFormVisible) {
-      this.closeForm();
-      return;
-    }
-    this.showFormWithDefaults();
+  private closeDrawer = (): void => {
+    this.setState({ isDrawerOpen: false, isSubmitting: false });
   };
 
-  private closeForm = (): void => {
-    this.setState({ isFormVisible: false, isSubmitting: false });
+  private handleDrawerOpenChange = (open: boolean): void => {
+    if (!open) {
+      this.closeDrawer();
+    }
   };
 
   private handleQuantityChange = (
@@ -237,7 +243,7 @@ class AddStock extends Component<AddStockProps, AddStockState> {
       await stocksApiService.create(payload);
 
       toast.success("Movimento di stock registrato con successo");
-      this.closeForm();
+      this.closeDrawer();
       this.props.onStockCreated();
     } catch (error) {
       toast.error(
@@ -252,180 +258,188 @@ class AddStock extends Component<AddStockProps, AddStockState> {
 
   public render(): ReactNode {
     return (
-      <div className="space-y-3">
-        <Button
-          variant={this.state.isFormVisible ? "destructive" : "outline"}
-          size="sm"
-          onClick={this.toggleFormVisibility}
-        >
-          {this.state.isFormVisible ? (
-            <>
-              <X className="h-4 w-4 mr-2" />
-              Chiudi Form
-            </>
-          ) : (
-            <>
-              <Plus className="h-4 w-4 mr-2" />
-              Aggiungi Movimento
-            </>
-          )}
+      <>
+        <Button variant="outline" size="sm" onClick={this.openDrawer}>
+          <Plus className="h-4 w-4 mr-2" />
+          Aggiungi Movimento
         </Button>
 
-        {this.state.isFormVisible && (
-          <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <div>
-              <h3 className="text-base font-semibold text-gray-900">
-                Nuovo Movimento
-              </h3>
-              <p className="text-sm text-gray-500">
-                Registra un nuovo movimento di carico o scarico
-              </p>
-            </div>
+        <Sheet
+          open={this.state.isDrawerOpen}
+          onOpenChange={this.handleDrawerOpenChange}
+        >
+          <SheetContent
+            side="right"
+            className="w-full sm:max-w-[50vw] overflow-y-auto bg-white p-6"
+          >
+            <SheetHeader>
+              <SheetTitle>Nuovo Movimento</SheetTitle>
+              <SheetDescription>
+                Registra un nuovo movimento di carico o scarico per{" "}
+                <strong>{this.props.product.name}</strong>
+              </SheetDescription>
+            </SheetHeader>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="stock-type">
-                  Tipo <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={this.state.type}
-                  onValueChange={this.handleTypeChange}
-                >
-                  <SelectTrigger id="stock-type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="IN">Carico (IN)</SelectItem>
-                    <SelectItem value="OUT">Scarico (OUT)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="stock-quantity">
-                  Quantità <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="stock-quantity"
-                  type="number"
-                  step="0.01"
-                  value={this.state.quantity}
-                  onChange={this.handleQuantityChange}
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
+            <div className="space-y-6 py-6">
+              {/* Campi principali */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="stock-type">
+                      Tipo <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={this.state.type}
+                      onValueChange={this.handleTypeChange}
+                    >
+                      <SelectTrigger id="stock-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="IN">Carico (IN)</SelectItem>
+                        <SelectItem value="OUT">Scarico (OUT)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="stock-quantity">
+                      Quantità <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="stock-quantity"
+                      type="number"
+                      step="0.01"
+                      value={this.state.quantity}
+                      onChange={this.handleQuantityChange}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="stock-unit">
-                Unità di Misura <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="stock-unit"
-                value={this.state.unit}
-                onChange={this.handleUnitChange}
-                placeholder="L, kg, pz..."
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="stock-price">Prezzo Unitario</Label>
-                <Input
-                  id="stock-price"
-                  type="number"
-                  step="0.01"
-                  value={this.state.price}
-                  onChange={this.handlePriceChange}
-                  placeholder="0.00"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="stock-price-unit">Valuta</Label>
-                <Input
-                  id="stock-price-unit"
-                  value={this.state.priceUnit}
-                  onChange={this.handlePriceUnitChange}
-                  placeholder="EUR"
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium text-gray-700">
-                Informazioni Aggiuntive
-              </h4>
-              <div className="space-y-2">
-                <Label htmlFor="stock-job-id">Job ID</Label>
-                <Input
-                  id="stock-job-id"
-                  value={this.state.jobId}
-                  onChange={this.handleJobIdChange}
-                  placeholder="ID del job associato"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="stock-ddt">Codice DDT</Label>
+                  <Label htmlFor="stock-unit">
+                    Unità di Misura <span className="text-red-500">*</span>
+                  </Label>
                   <Input
-                    id="stock-ddt"
-                    value={this.state.ddtCode}
-                    onChange={this.handleDdtCodeChange}
-                    placeholder="DDT-001"
+                    id="stock-unit"
+                    value={this.state.unit}
+                    onChange={this.handleUnitChange}
+                    placeholder="L, kg, pz..."
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="stock-invoice">Codice Fattura</Label>
-                  <Input
-                    id="stock-invoice"
-                    value={this.state.invoiceCode}
-                    onChange={this.handleInvoiceCodeChange}
-                    placeholder="INV-001"
-                  />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="stock-price">Prezzo Unitario</Label>
+                    <Input
+                      id="stock-price"
+                      type="number"
+                      step="0.01"
+                      value={this.state.price}
+                      onChange={this.handlePriceChange}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="stock-price-unit">Valuta</Label>
+                    <Input
+                      id="stock-price-unit"
+                      value={this.state.priceUnit}
+                      onChange={this.handlePriceUnitChange}
+                      placeholder="EUR"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="stock-supplier-name">Nome Fornitore</Label>
-                <Input
-                  id="stock-supplier-name"
-                  value={this.state.supplierName}
-                  onChange={this.handleSupplierNameChange}
-                  placeholder="Nome dell'azienda fornitrice"
-                />
+              <Separator />
+
+              {/* Informazioni aggiuntive */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-gray-700">
+                  Informazioni Aggiuntive
+                </h4>
+
+                <div className="space-y-2">
+                  <Label htmlFor="stock-job-id">Job ID</Label>
+                  <Input
+                    id="stock-job-id"
+                    value={this.state.jobId}
+                    onChange={this.handleJobIdChange}
+                    placeholder="ID del job associato"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="stock-ddt">Codice DDT</Label>
+                    <Input
+                      id="stock-ddt"
+                      value={this.state.ddtCode}
+                      onChange={this.handleDdtCodeChange}
+                      placeholder="DDT-001"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="stock-invoice">Codice Fattura</Label>
+                    <Input
+                      id="stock-invoice"
+                      value={this.state.invoiceCode}
+                      onChange={this.handleInvoiceCodeChange}
+                      placeholder="INV-001"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="stock-supplier-address">
-                  Indirizzo Fornitore
-                </Label>
-                <Input
-                  id="stock-supplier-address"
-                  value={this.state.supplierAddress}
-                  onChange={this.handleSupplierAddressChange}
-                  placeholder="Via, Città"
-                />
-              </div>
+              <Separator />
 
-              <div className="space-y-2">
-                <Label htmlFor="stock-supplier-vat">
-                  Partita IVA Fornitore
-                </Label>
-                <Input
-                  id="stock-supplier-vat"
-                  value={this.state.supplierVat}
-                  onChange={this.handleSupplierVatChange}
-                  placeholder="IT00000000000"
-                />
+              {/* Dati fornitore */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-gray-700">
+                  Dati Fornitore
+                </h4>
+
+                <div className="space-y-2">
+                  <Label htmlFor="stock-supplier-name">Nome Fornitore</Label>
+                  <Input
+                    id="stock-supplier-name"
+                    value={this.state.supplierName}
+                    onChange={this.handleSupplierNameChange}
+                    placeholder="Nome dell'azienda fornitrice"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="stock-supplier-address">
+                    Indirizzo Fornitore
+                  </Label>
+                  <Input
+                    id="stock-supplier-address"
+                    value={this.state.supplierAddress}
+                    onChange={this.handleSupplierAddressChange}
+                    placeholder="Via, Città"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="stock-supplier-vat">
+                    Partita IVA Fornitore
+                  </Label>
+                  <Input
+                    id="stock-supplier-vat"
+                    value={this.state.supplierVat}
+                    onChange={this.handleSupplierVatChange}
+                    placeholder="IT00000000000"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <SheetFooter>
               <Button
                 variant="outline"
-                onClick={this.closeForm}
+                onClick={this.closeDrawer}
                 disabled={this.state.isSubmitting}
               >
                 Annulla
@@ -438,10 +452,10 @@ class AddStock extends Component<AddStockProps, AddStockState> {
                   ? "Registrazione..."
                   : "Registra Movimento"}
               </Button>
-            </div>
-          </div>
-        )}
-      </div>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
+      </>
     );
   }
 }
