@@ -2321,7 +2321,7 @@ export class EditableTable extends React.Component<
       >
         <DrawerContent
           data-vaul-drawer-direction="right"
-          className="w-[95vw] max-w-[95vw] sm:w-[85vw] sm:max-w-[500px] shadow-2xl rounded-r-none rounded-l-2xl border-l border-neutral-200"
+          className="w-[95vw] max-w-[95vw] sm:w-1/2 sm:max-w-[50vw] shadow-2xl rounded-r-none rounded-l-2xl border-l border-neutral-200"
         >
           <DrawerHeader className="px-4 sm:px-6">
             <DrawerTitle className="text-lg sm:text-xl">Modifica {selectionCount} elementi</DrawerTitle>
@@ -3391,7 +3391,7 @@ export class EditableTable extends React.Component<
           <Drawer open={this.state.drawerOpen} onOpenChange={this.closeDetails}>
             <DrawerContent 
               data-vaul-drawer-direction="right"
-              className="w-[95vw] max-w-[95vw] sm:w-[85vw] sm:max-w-[600px]"
+              className="w-[95vw] max-w-[95vw] sm:w-1/2 sm:max-w-[50vw]"
             >
               {this.props.detailsTitle && (
                 <DrawerHeader className="px-4 sm:px-6">
