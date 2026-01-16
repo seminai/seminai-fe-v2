@@ -19,6 +19,10 @@ import Operations from "./routes/Operations";
 import QuickCreate from "./routes/QuickCreate";
 import TermsOfService from "./routes/TermsOfService";
 import PrivacyPolicy from "./routes/PrivacyPolicy";
+import NewWorkspace from "./routes/Workspace/NewWorkspace";
+import WorkspaceSettings from "./routes/Workspace/WorkspaceSettings";
+import NewRule from "./routes/Workspace/NewRule";
+import EditRule from "./routes/Workspace/EditRule";
 
 function App() {
   return (
@@ -43,6 +47,11 @@ function App() {
         <Route path="/operations" element={<Operations />} />
         <Route path="/products" element={<Products />} />
         <Route path="/create-company-field-production" element={<QuickCreate />} />
+        <Route path="/new-workspace" element={<NewWorkspace />} />
+        <Route path="/workspace/settings/rules/:ruleId" element={<EditRule />} />
+        <Route path="/workspace/settings/:section" element={<WorkspaceSettings />} />
+        <Route path="/workspace/settings" element={<WorkspaceSettings />} />
+        <Route path="/new-rule" element={<NewRule />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -45,8 +45,8 @@ export class EditableTableFilterActivator extends React.PureComponent<EditableTa
         className={cn(
           "cursor-pointer",
           hasFilters
-            ? "bg-agri-green-100 text-agri-green-700 border border-agri-green-200 hover:bg-agri-green-200"
-            : "bg-agri-green-50 text-agri-green-700 border border-agri-green-100 hover:bg-agri-green-100"
+            ? "bg-agri-green-100 text-black border border-agri-green-200 hover:bg-agri-green-200"
+            : "bg-agri-green-50 text-black border border-agri-green-100 hover:bg-agri-green-100"
         )}
       >
         <Filter className="h-4 w-4 sm:mr-2" />
@@ -191,4 +191,3 @@ export class EditableTableFiltersPanel extends React.PureComponent<EditableTable
     );
   }
 }
-

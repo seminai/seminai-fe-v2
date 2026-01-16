@@ -4,7 +4,7 @@ import { useCompanyUsers } from "@/hooks/useCompanyUsers";
 import {
   EditableTable,
   type EditableColumn,
-  type EditableTable as EditableTableType,
+  type EditableTableRef,
 } from "@/components/organism/EditableTable";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
@@ -89,7 +89,7 @@ const buildUsersColumns = (): EditableColumn[] => {
 export function CompanyUsersPanel({
   companyId,
 }: CompanyUsersPanelProps): React.ReactElement {
-  const tableRef = useRef<EditableTableType>(null);
+  const tableRef = useRef<EditableTableRef>(null);
 
   const {
     users,
@@ -197,7 +197,7 @@ export function CompanyUsersPanel({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 py-10 text-agri-green-700">
+      <div className="flex flex-col items-center justify-center gap-3 py-10 text-black">
         <Spinner size={28} ariaLabel="Caricamento utenti" />
         <p className="text-sm">Caricamento utenti in corso…</p>
       </div>

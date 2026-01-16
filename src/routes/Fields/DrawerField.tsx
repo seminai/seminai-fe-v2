@@ -296,22 +296,17 @@ export function DrawerFieldContent({
 
   const renderGeneralInfo = (): React.ReactNode => {
     return (
-      <div className="bg-gradient-to-br from-agri-green-50/50 to-harvest-100/30 rounded-2xl p-5 border border-agri-green-100/50 shadow-sm">
-        <h3 className="text-sm font-semibold text-agri-green-700 mb-4 flex items-center gap-2">
-          <div className="h-1 w-1 rounded-full bg-agri-green-500"></div>
+      <div className="border-b border-gray-100 pb-6">
+        <h3 className="text-sm font-medium text-black mb-4">
           Informazioni Generali
         </h3>
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="col-span-2">
-            <p className="text-xs font-medium text-agri-green-600 mb-1.5">
-              Azienda
-            </p>
-            <p className="text-sm font-semibold text-foreground">
-              {field.companyName}
-            </p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">Azienda</p>
+            <p className="text-sm text-gray-900">{field.companyName}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-agri-green-600 mb-1.5">
+            <p className="text-xs font-medium text-gray-500 mb-1.5">
               Nome Campo
             </p>
             {isEditing ? (
@@ -320,17 +315,15 @@ export function DrawerFieldContent({
                 onChange={(e) =>
                   setEditedData({ ...editedData, name: e.target.value })
                 }
-                className="bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Nome Campo"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.name}
-              </p>
+              <p className="text-sm text-gray-900">{field.name}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-agri-green-600 mb-1.5">
+            <p className="text-xs font-medium text-gray-500 mb-1.5">
               Indirizzo
             </p>
             {isEditing ? (
@@ -339,70 +332,56 @@ export function DrawerFieldContent({
                 onChange={(e) =>
                   setEditedData({ ...editedData, address: e.target.value })
                 }
-                className="bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Indirizzo"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.address}
-              </p>
+              <p className="text-sm text-gray-900">{field.address || "-"}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-agri-green-600 mb-1.5">
-              Città
-            </p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">Città</p>
             {isEditing ? (
               <Input
                 value={editedData.city || ""}
                 onChange={(e) =>
                   setEditedData({ ...editedData, city: e.target.value })
                 }
-                className="bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Città"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.city || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{field.city || "-"}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-agri-green-600 mb-1.5">
-              CAP
-            </p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">CAP</p>
             {isEditing ? (
               <Input
                 value={editedData.cap || ""}
                 onChange={(e) =>
                   setEditedData({ ...editedData, cap: e.target.value })
                 }
-                className="bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="CAP"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.cap || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{field.cap || "-"}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-agri-green-600 mb-1.5">
-              Regione
-            </p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">Regione</p>
             {isEditing ? (
               <Input
                 value={editedData.region || ""}
                 onChange={(e) =>
                   setEditedData({ ...editedData, region: e.target.value })
                 }
-                className="bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Regione"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.region || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{field.region || "-"}</p>
             )}
           </div>
         </div>
@@ -412,31 +391,26 @@ export function DrawerFieldContent({
 
   const renderCadastralData = (): React.ReactNode => {
     return (
-      <div className="bg-gradient-to-br from-field-50/50 to-nature-100/30 rounded-2xl p-5 border border-field-200/50 shadow-sm">
-        <h3 className="text-sm font-semibold text-field-600 mb-4 flex items-center gap-2">
-          <div className="h-1 w-1 rounded-full bg-field-500"></div>
-          Dati Catastali
-        </h3>
-        <div className="grid grid-cols-2 gap-5">
+      <div className="border-b border-gray-100 pb-6">
+        <h3 className="text-sm font-medium text-black mb-4">Dati Catastali</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <p className="text-xs font-medium text-field-600 mb-1.5">Foglio</p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">Foglio</p>
             {isEditing ? (
               <Input
                 value={editedData.foglio || ""}
                 onChange={(e) =>
                   setEditedData({ ...editedData, foglio: e.target.value })
                 }
-                className="bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Foglio"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.foglio}
-              </p>
+              <p className="text-sm text-gray-900">{field.foglio || "-"}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-field-600 mb-1.5">
+            <p className="text-xs font-medium text-gray-500 mb-1.5">
               Particella
             </p>
             {isEditing ? (
@@ -445,17 +419,15 @@ export function DrawerFieldContent({
                 onChange={(e) =>
                   setEditedData({ ...editedData, particella: e.target.value })
                 }
-                className="bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Particella"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.particella}
-              </p>
+              <p className="text-sm text-gray-900">{field.particella || "-"}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-field-600 mb-1.5">
+            <p className="text-xs font-medium text-gray-500 mb-1.5">
               Subalterno
             </p>
             {isEditing ? (
@@ -464,34 +436,30 @@ export function DrawerFieldContent({
                 onChange={(e) =>
                   setEditedData({ ...editedData, subalterno: e.target.value })
                 }
-                className="bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Subalterno"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.subalterno || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{field.subalterno || "-"}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-field-600 mb-1.5">Sezione</p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">Sezione</p>
             {isEditing ? (
               <Input
                 value={editedData.sezione || ""}
                 onChange={(e) =>
                   setEditedData({ ...editedData, sezione: e.target.value })
                 }
-                className="bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Sezione"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.sezione || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{field.sezione || "-"}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-field-600 mb-1.5">
+            <p className="text-xs font-medium text-gray-500 mb-1.5">
               Superficie Catastale (mq)
             </p>
             {isEditing ? (
@@ -504,12 +472,12 @@ export function DrawerFieldContent({
                     superficieCatastaleMq: Number(e.target.value),
                   })
                 }
-                className="bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Superficie Catastale"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.superficieCatastaleMq}
+              <p className="text-sm text-gray-900">
+                {field.superficieCatastaleMq || "-"}
               </p>
             )}
           </div>
@@ -520,16 +488,11 @@ export function DrawerFieldContent({
 
   const renderAgronomicData = (): React.ReactNode => {
     return (
-      <div className="bg-gradient-to-br from-harvest-50/50 to-nature-100/30 rounded-2xl p-5 border border-harvest-200/50 shadow-sm">
-        <h3 className="text-sm font-semibold text-harvest-600 mb-4 flex items-center gap-2">
-          <div className="h-1 w-1 rounded-full bg-harvest-500"></div>
-          Dati Agronomici
-        </h3>
-        <div className="grid grid-cols-2 gap-5">
+      <div className="border-b border-gray-100 pb-6">
+        <h3 className="text-sm font-medium text-black mb-4">Dati Agronomici</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <p className="text-xs font-medium text-harvest-600 mb-1.5">
-              SAU (Ha)
-            </p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">SAU (Ha)</p>
             {isEditing ? (
               <Input
                 type="number"
@@ -541,19 +504,17 @@ export function DrawerFieldContent({
                     sauHa: Number(e.target.value),
                   })
                 }
-                className="bg-white/80 border-harvest-200 focus:border-harvest-400 focus:ring-harvest-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="SAU"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
+              <p className="text-sm text-gray-900">
                 {field.sauHa ? field.sauHa.toFixed(2) : "-"}
               </p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-harvest-600 mb-1.5">
-              GIS (Ha)
-            </p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">GIS (Ha)</p>
             {isEditing ? (
               <Input
                 type="number"
@@ -565,17 +526,17 @@ export function DrawerFieldContent({
                     gisHa: Number(e.target.value),
                   })
                 }
-                className="bg-white/80 border-harvest-200 focus:border-harvest-400 focus:ring-harvest-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="GIS"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
+              <p className="text-sm text-gray-900">
                 {field.gisHa ? field.gisHa.toFixed(2) : "-"}
               </p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-harvest-600 mb-1.5">
+            <p className="text-xs font-medium text-gray-500 mb-1.5">
               Tipo di Suolo
             </p>
             {isEditing ? (
@@ -585,7 +546,7 @@ export function DrawerFieldContent({
                   setEditedData({ ...editedData, soilType: value })
                 }
               >
-                <SelectTrigger className="bg-white/80 border-harvest-200 focus:border-harvest-400 focus:ring-harvest-300/50 rounded-xl h-10">
+                <SelectTrigger className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10">
                   <SelectValue placeholder="Seleziona tipo suolo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -597,49 +558,41 @@ export function DrawerFieldContent({
                 </SelectContent>
               </Select>
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.soilType || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{field.soilType || "-"}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-harvest-600 mb-1.5">Uso</p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">Uso</p>
             {isEditing ? (
               <Input
                 value={editedData.uso || ""}
                 onChange={(e) =>
                   setEditedData({ ...editedData, uso: e.target.value })
                 }
-                className="bg-white/80 border-harvest-200 focus:border-harvest-400 focus:ring-harvest-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Uso"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.uso || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{field.uso || "-"}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-harvest-600 mb-1.5">
-              Qualità
-            </p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">Qualità</p>
             {isEditing ? (
               <Input
                 value={editedData.qualita || ""}
                 onChange={(e) =>
                   setEditedData({ ...editedData, qualita: e.target.value })
                 }
-                className="bg-white/80 border-harvest-200 focus:border-harvest-400 focus:ring-harvest-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Qualità"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.qualita || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{field.qualita || "-"}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-harvest-600 mb-1.5">pH</p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">pH</p>
             {isEditing ? (
               <Input
                 type="number"
@@ -651,13 +604,11 @@ export function DrawerFieldContent({
                     ph: e.target.value ? Number(e.target.value) : null,
                   })
                 }
-                className="bg-white/80 border-harvest-200 focus:border-harvest-400 focus:ring-harvest-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="pH"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.ph || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{field.ph || "-"}</p>
             )}
           </div>
         </div>
@@ -667,14 +618,13 @@ export function DrawerFieldContent({
 
   const renderNutrients = (): React.ReactNode => {
     return (
-      <div className="bg-gradient-to-br from-field-50/50 to-agri-green-50/30 rounded-2xl p-5 border border-field-200/50 shadow-sm">
-        <h3 className="text-sm font-semibold text-field-600 mb-4 flex items-center gap-2">
-          <div className="h-1 w-1 rounded-full bg-field-500"></div>
+      <div className="border-b border-gray-100 pb-6">
+        <h3 className="text-sm font-medium text-black mb-4">
           Elementi Nutritivi
         </h3>
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <p className="text-xs font-medium text-field-600 mb-1.5">
+            <p className="text-xs font-medium text-gray-500 mb-1.5">
               Azoto (N)
             </p>
             {isEditing ? (
@@ -688,17 +638,15 @@ export function DrawerFieldContent({
                     nitrogen: e.target.value ? Number(e.target.value) : null,
                   })
                 }
-                className="bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Azoto"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.nitrogen || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{field.nitrogen || "-"}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-field-600 mb-1.5">
+            <p className="text-xs font-medium text-gray-500 mb-1.5">
               Fosforo (P)
             </p>
             {isEditing ? (
@@ -712,17 +660,15 @@ export function DrawerFieldContent({
                     phosphorus: e.target.value ? Number(e.target.value) : null,
                   })
                 }
-                className="bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Fosforo"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.phosphorus || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{field.phosphorus || "-"}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-field-600 mb-1.5">
+            <p className="text-xs font-medium text-gray-500 mb-1.5">
               Potassio (K)
             </p>
             {isEditing ? (
@@ -736,17 +682,15 @@ export function DrawerFieldContent({
                     potassium: e.target.value ? Number(e.target.value) : null,
                   })
                 }
-                className="bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Potassio"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.potassium || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{field.potassium || "-"}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-field-600 mb-1.5">
+            <p className="text-xs font-medium text-gray-500 mb-1.5">
               Calcio (Ca)
             </p>
             {isEditing ? (
@@ -760,17 +704,15 @@ export function DrawerFieldContent({
                     calcium: e.target.value ? Number(e.target.value) : null,
                   })
                 }
-                className="bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Calcio"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.calcium || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{field.calcium || "-"}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-field-600 mb-1.5">
+            <p className="text-xs font-medium text-gray-500 mb-1.5">
               Magnesio (Mg)
             </p>
             {isEditing ? (
@@ -784,13 +726,11 @@ export function DrawerFieldContent({
                     magnesium: e.target.value ? Number(e.target.value) : null,
                   })
                 }
-                className="bg-white/80 border-field-200 focus:border-field-400 focus:ring-field-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
                 placeholder="Magnesio"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
-                {field.magnesium || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{field.magnesium || "-"}</p>
             )}
           </div>
         </div>
@@ -804,9 +744,8 @@ export function DrawerFieldContent({
     }
 
     return (
-      <div className="bg-gradient-to-br from-nature-100/50 to-agri-green-50/30 rounded-2xl p-5 border border-nature-200/50 shadow-sm">
-        <h3 className="text-sm font-semibold text-nature-600 mb-4 flex items-center gap-2">
-          <div className="h-1 w-1 rounded-full bg-nature-500"></div>
+      <div className="border-b border-gray-100 pb-6">
+        <h3 className="text-sm font-medium text-black mb-4">
           Unità Produttive ({field.productionUnits.length})
         </h3>
         <div className="space-y-3">
@@ -817,24 +756,26 @@ export function DrawerFieldContent({
             return (
               <div
                 key={unit.id}
-                className="p-4 bg-white/70 rounded-xl border border-nature-200/60 shadow-sm"
+                className="p-4 bg-gray-50 rounded-lg border border-gray-100"
               >
-                <p className="text-sm font-semibold text-foreground mb-3">
+                <p className="text-sm font-medium text-gray-900 mb-3">
                   {presenter.getTitle()}
                 </p>
                 <div className="space-y-3">
                   {sections.map((section) => (
                     <div key={`${unit.id}-${section.title}`}>
-                      <p className="text-[11px] uppercase tracking-wide text-nature-500 font-semibold mb-1.5">
+                      <p className="text-[11px] uppercase tracking-wide text-gray-500 font-medium mb-1.5">
                         {section.title}
                       </p>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         {section.items.map((item) => (
-                          <div key={`${unit.id}-${section.title}-${item.label}`}>
-                            <span className="text-nature-600 font-medium">
+                          <div
+                            key={`${unit.id}-${section.title}-${item.label}`}
+                          >
+                            <span className="text-gray-500 font-medium">
                               {item.label}:{" "}
                             </span>
-                            <span className="text-foreground">{item.value}</span>
+                            <span className="text-gray-900">{item.value}</span>
                           </div>
                         ))}
                       </div>
@@ -851,14 +792,13 @@ export function DrawerFieldContent({
 
   const renderConductionPeriod = (): React.ReactNode => {
     return (
-      <div className="bg-gradient-to-br from-agri-green-50/50 to-field-50/30 rounded-2xl p-5 border border-agri-green-200/50 shadow-sm">
-        <h3 className="text-sm font-semibold text-agri-green-700 mb-4 flex items-center gap-2">
-          <div className="h-1 w-1 rounded-full bg-agri-green-500"></div>
+      <div className="pb-6">
+        <h3 className="text-sm font-medium text-black mb-4">
           Periodo di Conduzione
         </h3>
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <p className="text-xs font-medium text-agri-green-600 mb-1.5">
+            <p className="text-xs font-medium text-gray-500 mb-1.5">
               Inizio Conduzione
             </p>
             {isEditing ? (
@@ -877,10 +817,10 @@ export function DrawerFieldContent({
                     inizioConduzione: e.target.value || null,
                   })
                 }
-                className="bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
+              <p className="text-sm text-gray-900">
                 {field.inizioConduzione
                   ? new Date(field.inizioConduzione).toLocaleDateString("it-IT")
                   : "-"}
@@ -888,7 +828,7 @@ export function DrawerFieldContent({
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-agri-green-600 mb-1.5">
+            <p className="text-xs font-medium text-gray-500 mb-1.5">
               Fine Conduzione
             </p>
             {isEditing ? (
@@ -907,10 +847,10 @@ export function DrawerFieldContent({
                     fineConduzione: e.target.value || null,
                   })
                 }
-                className="bg-white/80 border-agri-green-200 focus:border-agri-green-400 focus:ring-agri-green-300/50 rounded-xl h-10"
+                className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg h-10"
               />
             ) : (
-              <p className="text-sm font-semibold text-foreground">
+              <p className="text-sm text-gray-900">
                 {field.fineConduzione
                   ? new Date(field.fineConduzione).toLocaleDateString("it-IT")
                   : "-"}
@@ -925,13 +865,13 @@ export function DrawerFieldContent({
   return (
     <div className="space-y-6">
       {/* Header con pulsante modifica */}
-      <div className="flex items-center justify-between pb-4 border-b border-agri-green-100/50">
+      <div className="flex items-center justify-between pb-4 border-b border-gray-100">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-medium text-gray-900">
             {isEditing ? "Modifica Campo" : "Dettagli Campo"}
           </h2>
           {!isEditing && (
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               Tocca la matita per modificare
             </p>
           )}
@@ -941,31 +881,31 @@ export function DrawerFieldContent({
             variant="ghost"
             size="sm"
             onClick={() => setIsEditing(true)}
-            className="h-9 w-9 p-0 rounded-full bg-agri-green-50 hover:bg-agri-green-100 text-agri-green-700 border border-agri-green-200/50 shadow-sm transition-all hover:shadow-md"
+            className="h-8 w-8 p-0 rounded-lg bg-agri-green-50 hover:bg-agri-green-100 text-black transition-all flex-shrink-0"
             aria-label="Modifica"
           >
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-3.5 w-3.5" />
           </Button>
         )}
         {isEditing && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleCancel}
               disabled={isUpdating}
-              className="h-9 px-3 rounded-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 shadow-sm transition-all"
+              className="h-8 px-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 transition-all text-xs"
             >
-              <X className="h-4 w-4 mr-1" />
+              <X className="h-3.5 w-3.5 mr-1" />
               Annulla
             </Button>
             <Button
               size="sm"
               onClick={handleSave}
               disabled={isUpdating}
-              className="h-9 px-3 rounded-full bg-agri-green-600 hover:bg-agri-green-700 text-white shadow-sm transition-all hover:shadow-md"
+              className="h-8 px-3 rounded-lg bg-agri-green-500 hover:bg-agri-green-600 text-white transition-all text-xs"
             >
-              <Check className="h-4 w-4 mr-1" />
+              <Check className="h-3.5 w-3.5 mr-1" />
               {isUpdating ? "Salvataggio..." : "Salva"}
             </Button>
           </div>
@@ -973,7 +913,7 @@ export function DrawerFieldContent({
       </div>
 
       {/* Contenuto */}
-      <div className="space-y-5">
+      <div className="space-y-6">
         {renderGeneralInfo()}
         {renderCadastralData()}
         {renderAgronomicData()}

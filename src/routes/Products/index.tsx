@@ -386,11 +386,11 @@ function ProductsPage() {
           lastComponent={(row) => {
             const data = row as ProductTableRow;
             return (
-              <div className="bg-white flex justify-end px-2 py-1">
+              <div className="flex justify-end px-2 py-1">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="gap-2 hover:bg-blue-50 hover:border-blue-400 transition-colors"
+                  className="gap-2 text-foreground hover:bg-transparent hover:text-foreground"
                   onClick={() => handleProductClick(data.product)}
                 >
                   <Eye className="h-4 w-4" />

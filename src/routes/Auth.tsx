@@ -156,20 +156,16 @@ export default function Auth() {
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-agri-green-50 via-nature-100 to-agri-green-100 p-12 flex-col justify-between">
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="SeminAI Logo" className="h-10 w-auto" />
-          <span className="text-xl font-semibold text-agri-green-800">
-            SeminAI
-          </span>
+          <span className="text-xl font-semibold text-black">SeminAI</span>
         </div>
 
         <div className="max-w-md">
-          <p className="text-base text-agri-green-700 leading-relaxed">
+          <p className="text-base text-black leading-relaxed">
             "Questa piattaforma ha rivoluzionato il modo in cui gestisco la mia
             azienda agricola, aiutandomi a prendere decisioni più informate e a
             ottimizzare i miei raccolti."
           </p>
-          <p className="mt-4 text-sm text-agri-green-600">
-            - Marco Rossi, Agricoltore
-          </p>
+          <p className="mt-4 text-sm text-black">- Marco Rossi, Agricoltore</p>
         </div>
       </div>
 
@@ -179,9 +175,7 @@ export default function Auth() {
           {/* Logo mobile - visibile solo su schermi piccoli */}
           <div className="flex lg:hidden items-center justify-center gap-3 mb-8">
             <img src="/logo.png" alt="SeminAI Logo" className="h-8 w-auto" />
-            <span className="text-lg font-semibold text-agri-green-800">
-              SeminAI
-            </span>
+            <span className="text-lg font-semibold text-black">SeminAI</span>
           </div>
 
           <Tabs defaultValue="login" className="w-full">
@@ -238,7 +232,7 @@ export default function Auth() {
                   href="/terms-of-service"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer"
+                  className="underline underline-offset-4 hover:text-black cursor-pointer"
                 >
                   Termini di Servizio
                 </a>{" "}
@@ -247,7 +241,7 @@ export default function Auth() {
                   href="/privacy-policy"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer"
+                  className="underline underline-offset-4 hover:text-black cursor-pointer"
                 >
                   Privacy Policy
                 </a>
@@ -270,7 +264,7 @@ export default function Auth() {
                       <Button
                         type="button"
                         variant="outline"
-                        className="border-agri-green-400 text-agri-green-700 hover:bg-agri-green-100"
+                        className="border-agri-green-400 text-black hover:bg-agri-green-100"
                       >
                         Prenota una call con SeminAI
                       </Button>
@@ -313,14 +307,14 @@ export default function Auth() {
                     <Button
                       type="submit"
                       variant="outline"
-                      className="h-11 border-agri-green-400 text-agri-green-700 hover:bg-agri-green-100"
+                      className="h-11 border-agri-green-400 text-black hover:bg-agri-green-100"
                     >
                       Conferma
                     </Button>
                   </form>
                 </section>
               ) : (
-                <div className="pt-4 border-t border-slate-200 text-center text-sm text-agri-green-700 font-medium">
+                <div className="pt-4 border-t border-slate-200 text-center text-sm text-black font-medium">
                   Registrazione sbloccata! Compila ora il modulo sottostante.
                 </div>
               )}
@@ -423,7 +417,7 @@ export default function Auth() {
                   href="/terms-of-service"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer"
+                  className="underline underline-offset-4 hover:text-black cursor-pointer"
                 >
                   Termini di Servizio
                 </a>{" "}
@@ -432,7 +426,7 @@ export default function Auth() {
                   href="/privacy-policy"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline underline-offset-4 hover:text-agri-green-700 cursor-pointer"
+                  className="underline underline-offset-4 hover:text-black cursor-pointer"
                 >
                   Privacy Policy
                 </a>

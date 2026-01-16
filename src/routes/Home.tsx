@@ -109,14 +109,12 @@ export default class Home extends Component<
         <div className="max-w-7xl mx-auto py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="Seminai Logo" className="h-10 w-auto" />
-            <span className="text-xl font-semibold text-agri-green-600">
-              Seminai
-            </span>
+            <span className="text-xl font-semibold text-black">Seminai</span>
           </div>
           <div className="flex items-center gap-4">
             <a
               href="#advantages"
-              className="hidden md:inline-flex px-5 py-2.5 rounded-full border border-agri-green-600 text-agri-green-600 text-sm font-medium hover:bg-agri-green-50 transition-colors"
+              className="hidden md:inline-flex px-5 py-2.5 rounded-full border border-agri-green-600 text-black text-sm font-medium hover:bg-agri-green-50 transition-colors"
             >
               Scopri i vantaggi
             </a>
@@ -204,7 +202,7 @@ export default class Home extends Component<
                   {index === 0 && (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 text-agri-green-600"
+                      className="h-5 w-5 text-black"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -220,7 +218,7 @@ export default class Home extends Component<
                   {index === 1 && (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 text-agri-green-600"
+                      className="h-5 w-5 text-black"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -236,7 +234,7 @@ export default class Home extends Component<
                   {index === 2 && (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 text-agri-green-600"
+                      className="h-5 w-5 text-black"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -317,7 +315,7 @@ export default class Home extends Component<
                     >
                       <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center flex-shrink-0">
                         <svg
-                          className="w-3 h-3 text-agri-green-600"
+                          className="w-3 h-3 text-black"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -359,7 +357,7 @@ export default class Home extends Component<
                         >
                           <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center flex-shrink-0">
                             <svg
-                              className="w-3 h-3 text-agri-green-600"
+                              className="w-3 h-3 text-black"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -387,7 +385,7 @@ export default class Home extends Component<
             <button
               type="button"
               onClick={this.scrollToContactAndSelectTab}
-              className="py-4 px-10 rounded-full bg-white text-agri-green-600 font-semibold hover:bg-gray-50 transition-colors shadow-lg hover:shadow-xl"
+              className="py-4 px-10 rounded-full bg-white text-black font-semibold hover:bg-gray-50 transition-colors shadow-lg hover:shadow-xl"
             >
               Fissa un incontro gratuito
             </button>
@@ -427,7 +425,7 @@ export default class Home extends Component<
               <button
                 type="button"
                 onClick={this.scrollToContactAndSelectTab}
-                className="text-agri-green-600 font-semibold hover:text-agri-green-700 transition-colors underline decoration-2 underline-offset-4"
+                className="text-black font-semibold hover:text-black transition-colors underline decoration-2 underline-offset-4"
               >
                 Prenota gratis
               </button>
@@ -449,7 +447,7 @@ export default class Home extends Component<
               <button
                 type="button"
                 onClick={this.scrollToContactAndSelectTab}
-                className="text-agri-green-600 font-semibold hover:text-agri-green-700 transition-colors underline decoration-2 underline-offset-4"
+                className="text-black font-semibold hover:text-black transition-colors underline decoration-2 underline-offset-4"
               >
                 Prenota gratis
               </button>
@@ -491,7 +489,7 @@ export default class Home extends Component<
               <button
                 type="button"
                 onClick={this.scrollToContactAndSelectTab}
-                className="text-agri-green-600 font-semibold hover:text-agri-green-700 transition-colors underline decoration-2 underline-offset-4"
+                className="text-black font-semibold hover:text-black transition-colors underline decoration-2 underline-offset-4"
               >
                 Prenota gratis
               </button>
@@ -513,7 +511,7 @@ export default class Home extends Component<
               <button
                 type="button"
                 onClick={this.scrollToContactAndSelectTab}
-                className="text-agri-green-600 font-semibold hover:text-agri-green-700 transition-colors underline decoration-2 underline-offset-4"
+                className="text-black font-semibold hover:text-black transition-colors underline decoration-2 underline-offset-4"
               >
                 Prenota gratis
               </button>
@@ -560,38 +558,34 @@ export default class Home extends Component<
     return (
       <footer
         id="contact"
-        className="py-12 px-6 md:px-20 bg-harvest-100 text-agri-green-900 border-t border-harvest-200"
+        className="py-12 px-6 md:px-20 bg-harvest-100 text-black border-t border-harvest-200"
       >
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-12">
           <div className="md:w-1/3">
             <div className="flex items-center gap-2 mb-6">
               <img src="/logo.png" alt="Seminai Logo" className="h-8 w-auto" />
-              <span className="text-xl font-semibold text-agri-green-700">
-                Seminai
-              </span>
+              <span className="text-xl font-semibold text-black">Seminai</span>
             </div>
-            <p className="text-agri-green-800/80 leading-relaxed">
+            <p className="text-black/80 leading-relaxed">
               Rivoluziona la gestione dei tuoi campi con l&apos;intelligenza
               artificiale.
             </p>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-4 text-agri-green-800">
-              Contattaci
-            </h3>
-            <p className="text-agri-green-800/80 mb-4">
+            <h3 className="text-lg font-bold mb-4 text-black">Contattaci</h3>
+            <p className="text-black/80 mb-4">
               Hai domande? Siamo qui per aiutarti.
             </p>
             <a
               href="mailto:get.seminai@gmail.com"
-              className="text-agri-green-600 hover:text-agri-green-700 font-medium transition-colors"
+              className="text-black hover:text-black font-medium transition-colors"
             >
               get.seminai@gmail.com
             </a>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-harvest-200 text-center text-agri-green-800/60 text-sm">
+        <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-harvest-200 text-center text-black/60 text-sm">
           &copy; {new Date().getFullYear()} Seminai. Tutti i diritti riservati.
         </div>
       </footer>

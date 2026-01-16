@@ -132,7 +132,7 @@ const ImportedDataConfirmationStep: React.FC<
                 </h4>
                 <div className="space-y-3">
                   {company.productionUnits.map((pu, puIndex) => (
-                    <Card key={puIndex} className="bg-green-50 border-green-200">
+                    <Card key={puIndex} className="bg-white shadow-md">
                       <CardContent className="pt-4">
                         <div className="flex items-start justify-between mb-2">
                           <div>

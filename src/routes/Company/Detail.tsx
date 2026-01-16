@@ -13,6 +13,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
 import { DrawerCompanyContent } from "./DrawerCompany";
+import { ClipboardList, Users, Warehouse, FolderOpen, Cog } from "lucide-react";
 
 interface BreadcrumbNode {
   label: string;
@@ -163,35 +164,40 @@ export default function CompanyDetailPage(): React.ReactElement {
               {/* Tabs */}
               <div className="w-full md:flex-shrink-0 md:w-auto">
                 <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 w-full md:w-auto">
-                  <TabsList className="inline-flex w-auto">
+                  <TabsList className="bg-white border border-neutral-200 p-1 rounded-xl inline-flex w-auto">
                     <TabsTrigger
                       value="details"
-                      className="text-xs md:text-sm whitespace-nowrap"
+                      className="rounded-lg text-xs md:text-sm whitespace-nowrap"
                     >
+                      <ClipboardList className="w-4 h-4 mr-2" />
                       Dettagli
                     </TabsTrigger>
                     <TabsTrigger
                       value="users"
-                      className="text-xs md:text-sm whitespace-nowrap"
+                      className="rounded-lg text-xs md:text-sm whitespace-nowrap"
                     >
+                      <Users className="w-4 h-4 mr-2" />
                       Utenti
                     </TabsTrigger>
                     <TabsTrigger
                       value="warehouses"
-                      className="text-xs md:text-sm whitespace-nowrap"
+                      className="rounded-lg text-xs md:text-sm whitespace-nowrap"
                     >
+                      <Warehouse className="w-4 h-4 mr-2" />
                       Magazzini
                     </TabsTrigger>
                     <TabsTrigger
                       value="files"
-                      className="text-xs md:text-sm whitespace-nowrap"
+                      className="rounded-lg text-xs md:text-sm whitespace-nowrap"
                     >
+                      <FolderOpen className="w-4 h-4 mr-2" />
                       File
                     </TabsTrigger>
                     <TabsTrigger
                       value="machines"
-                      className="text-xs md:text-sm whitespace-nowrap"
+                      className="rounded-lg text-xs md:text-sm whitespace-nowrap"
                     >
+                      <Cog className="w-4 h-4 mr-2" />
                       Macchine
                     </TabsTrigger>
                   </TabsList>
@@ -229,7 +235,7 @@ export default function CompanyDetailPage(): React.ReactElement {
                 L&apos;elemento richiesto non è più disponibile.{" "}
                 <Link
                   to="/company"
-                  className="font-medium underline text-agri-green-600 hover:text-agri-green-700"
+                  className="font-medium underline text-black hover:text-black"
                 >
                   Torna alla lista delle aziende
                 </Link>

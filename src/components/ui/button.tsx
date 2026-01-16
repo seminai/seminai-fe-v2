@@ -14,12 +14,12 @@ const buttonVariants = cva(
         destructive:
           "bg-red-600 text-white shadow-sm hover:bg-red-700 focus-visible:ring-red-600/20 dark:focus-visible:ring-red-600/40",
         outline:
-          "border border-agri-green-600 bg-background text-agri-green-600 shadow-sm hover:bg-agri-green-600 hover:text-white hover:border-agri-green-600 dark:border-agri-green-600 dark:hover:bg-agri-green-600 dark:hover:text-white",
+          "border border-agri-green-600 bg-background text-black shadow-sm hover:bg-agri-green-600 hover:text-white hover:border-agri-green-600 dark:border-agri-green-600 dark:hover:bg-agri-green-600 dark:hover:text-white",
         secondary:
           "bg-blue-600 text-white shadow-sm hover:bg-blue-700 focus-visible:ring-blue-600/20 dark:focus-visible:ring-blue-600/40",
         ghost:
-          "text-agri-green-700 hover:bg-agri-green-100 hover:text-agri-green-800 dark:hover:bg-agri-green-100/10 dark:hover:text-agri-green-600",
-        link: "text-agri-green-600 underline-offset-4 hover:underline hover:text-agri-green-700",
+          "text-black hover:bg-agri-green-100 hover:text-black dark:hover:bg-agri-green-100/10 dark:hover:text-black",
+        link: "text-black underline-offset-4 hover:underline hover:text-black",
       },
       size: {
         default: "h-10 px-4 py-2 has-[>svg]:px-3",

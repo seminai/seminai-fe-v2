@@ -905,7 +905,7 @@ export default function OperationsPage() {
                       </Button>
                       <Button
                         size="sm"
-                        className="h-8 px-3 bg-green-600 hover:bg-green-700 text-white"
+                        className="h-8 px-3 bg-agri-green-500 text-white"
                         onClick={() => {
                           const updates = column.onValueChange?.({
                             value: editingField.tempValue,
@@ -1076,7 +1076,7 @@ export default function OperationsPage() {
                 <Button
                   data-table-slot="right"
                   variant="ghost"
-                  className="gap-2 text-muted-foreground bg-agri-green-200 text-agri-green-700 cursor-pointer"
+                  className="gap-2 text-gray-600 hover:text-gray-600 cursor-pointer"
                   onClick={() => navigate("/dosage-manager")}
                 >
                   <Plus className="w-4 h-4" />

@@ -510,7 +510,10 @@ export const ProductionUnitCsvImporter: React.FC<
   return (
     <Drawer open={isOpen} onOpenChange={handleDrawerOpenChange}>
       <DrawerTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button
+          variant="outline"
+          className="gap-2 bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600"
+        >
           <Upload className="h-4 w-4" />
           Importa file
         </Button>
@@ -671,7 +674,7 @@ export const ProductionUnitCsvImporter: React.FC<
             <button
               type="button"
               onClick={() => setShowSupportForm(!showSupportForm)}
-              className="text-sm text-agri-green-600 hover:text-agri-green-700 underline transition-colors"
+              className="text-sm text-black hover:text-black underline transition-colors"
             >
               Richiedi supporto
             </button>

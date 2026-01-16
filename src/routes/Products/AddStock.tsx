@@ -259,7 +259,12 @@ class AddStock extends Component<AddStockProps, AddStockState> {
   public render(): ReactNode {
     return (
       <>
-        <Button variant="outline" size="sm" onClick={this.openDrawer}>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={this.openDrawer}
+          className="bg-white hover:bg-white border-agri-green-600 text-black hover:text-black hover:border-agri-green-600"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Aggiungi Movimento
         </Button>

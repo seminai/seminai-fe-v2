@@ -11,20 +11,18 @@ export default function TermsOfService() {
             className="flex items-center gap-3 hover:opacity-80 transition"
           >
             <img src="/logo.png" alt="SeminAI Logo" className="h-8 w-auto" />
-            <span className="text-xl font-semibold text-agri-green-800">
-              SeminAI
-            </span>
+            <span className="text-xl font-semibold text-black">SeminAI</span>
           </Link>
           <nav className="flex items-center gap-4">
             <Link
               to="/dashboard"
-              className="text-sm text-gray-600 hover:text-agri-green-700 transition"
+              className="text-sm text-gray-600 hover:text-black transition"
             >
               Dashboard
             </Link>
             <Link
               to="/auth"
-              className="text-sm text-gray-600 hover:text-agri-green-700 transition"
+              className="text-sm text-gray-600 hover:text-black transition"
             >
               Accedi
             </Link>
@@ -234,13 +232,13 @@ export default function TermsOfService() {
             <div className="flex gap-6">
               <Link
                 to="/terms-of-service"
-                className="text-sm text-gray-600 hover:text-agri-green-700 transition"
+                className="text-sm text-gray-600 hover:text-black transition"
               >
                 Termini di Servizio
               </Link>
               <Link
                 to="/privacy-policy"
-                className="text-sm text-gray-600 hover:text-agri-green-700 transition"
+                className="text-sm text-gray-600 hover:text-black transition"
               >
                 Privacy Policy
               </Link>

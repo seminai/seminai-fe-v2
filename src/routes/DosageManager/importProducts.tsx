@@ -265,7 +265,7 @@ export function ImportProducts({
     <>
       <Button
         variant="outline"
-        className="gap-2"
+        className="gap-2 bg-agri-green-500 text-white border-agri-green-500 hover:bg-agri-green-600 hover:text-white hover:border-agri-green-600"
         onClick={handleOpenDrawer}
         disabled={disabled}
       >

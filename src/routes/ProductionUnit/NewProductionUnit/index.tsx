@@ -814,7 +814,7 @@ export default function NewProductionUnit(): React.ReactElement {
           <Button
             variant="outline"
             onClick={handleCancelNavigation}
-            className="border-red-200 text-red-600 hover:bg-red-50"
+            className="border-red-200 text-red-600 bg-transparent hover:bg-transparent hover:text-red-600 hover:border-red-200"
           >
             Annulla
           </Button>
@@ -844,23 +844,23 @@ export default function NewProductionUnit(): React.ReactElement {
               ) : (
                 <div className="space-y-6">
                   {/* Calendario per periodo di disponibilità */}
-                  <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+                  <Card className="bg-white shadow-md">
                     <CardContent className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
-                      <div className="flex flex-col gap-2 text-blue-900 w-full lg:max-w-lg">
+                      <div className="flex flex-col gap-2 w-full lg:max-w-lg">
                         <div className="flex items-center gap-3">
                           <CalendarIcon className="h-6 w-6" />
                           <div className="flex flex-col">
                             <span className="text-base font-semibold">
                               Periodo di disponibilità dei campi
                             </span>
-                            <span className="text-sm text-blue-700">
+                            <span className="text-sm text-muted-foreground">
                               Seleziona il periodo per visualizzare i campi
                               disponibili
                             </span>
                           </div>
                         </div>
                         {dateRange?.start && dateRange?.end && (
-                          <p className="text-xs font-medium text-blue-900">
+                          <p className="text-xs font-medium text-foreground">
                             Periodo selezionato:{" "}
                             <span className="font-semibold">
                               {format(dateRange.start, "dd MMMM yyyy", {
@@ -876,7 +876,7 @@ export default function NewProductionUnit(): React.ReactElement {
                       </div>
                       <div className="flex flex-col gap-4 w-full lg:w-auto lg:flex-row lg:items-end">
                         <div className="flex flex-col gap-2 w-full lg:w-[220px]">
-                          <label className="text-sm font-medium text-blue-900">
+                          <label className="text-sm font-medium text-foreground">
                             Data Inizio
                           </label>
                           <Popover>
@@ -884,7 +884,7 @@ export default function NewProductionUnit(): React.ReactElement {
                               <Button
                                 variant={"outline"}
                                 className={cn(
-                                  "w-full justify-start text-left font-normal",
+                                  "w-full justify-start text-left font-normal bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600",
                                   !tempDateRange.start &&
                                     "text-muted-foreground"
                                 )}
@@ -920,7 +920,7 @@ export default function NewProductionUnit(): React.ReactElement {
                         </div>
 
                         <div className="flex flex-col gap-2 w-full lg:w-[220px]">
-                          <label className="text-sm font-medium text-blue-900">
+                          <label className="text-sm font-medium text-foreground">
                             Data Fine
                           </label>
                           <Popover>
@@ -928,7 +928,7 @@ export default function NewProductionUnit(): React.ReactElement {
                               <Button
                                 variant={"outline"}
                                 className={cn(
-                                  "w-full justify-start text-left font-normal",
+                                  "w-full justify-start text-left font-normal bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600",
                                   !tempDateRange.end && "text-muted-foreground"
                                 )}
                               >
@@ -965,7 +965,8 @@ export default function NewProductionUnit(): React.ReactElement {
                         <div className="flex gap-2 w-full lg:w-auto lg:justify-end">
                           <Button
                             onClick={handleSearch}
-                            className="bg-blue-600 hover:bg-blue-700"
+                            className="bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600"
+                            variant="outline"
                           >
                             <Search className="mr-2 h-4 w-4" />
                             Cerca
@@ -973,7 +974,7 @@ export default function NewProductionUnit(): React.ReactElement {
                           <Button
                             variant="outline"
                             onClick={handleReset}
-                            className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                            className="bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600"
                           >
                             <RefreshCcw className="mr-2 h-4 w-4" />
                             Reset
@@ -984,11 +985,11 @@ export default function NewProductionUnit(): React.ReactElement {
                   </Card>
                   {/* Info banner quando ci sono unità produttive configurate */}
                   {productionUnits.length > 0 && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="bg-white shadow-md border border-border rounded-lg p-4">
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0">
                           <svg
-                            className="h-5 w-5 text-blue-600"
+                            className="h-5 w-5 text-foreground"
                             fill="currentColor"
                             viewBox="0 0 20 20"
                           >
@@ -1000,20 +1001,20 @@ export default function NewProductionUnit(): React.ReactElement {
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-blue-900">
+                          <p className="text-sm font-medium text-foreground">
                             Hai già creato {productionUnits.length} unità{" "}
                             {productionUnits.length === 1
                               ? "produttiva"
                               : "produttive"}
                           </p>
-                          <p className="text-xs text-blue-700 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             I campi già allocati nelle unità produttive create
                             sono evidenziati e non possono essere riselezionati.
                             Seleziona altri campi per creare una nuova unità
                             produttiva.
                           </p>
                           {editingUnitId && (
-                            <p className="text-sm font-bold text-blue-900 mt-2">
+                            <p className="text-sm font-bold text-foreground mt-2">
                               Stai modificando un'unità esistente. Le modifiche
                               verranno salvate solo alla conferma.
                             </p>
@@ -1024,7 +1025,7 @@ export default function NewProductionUnit(): React.ReactElement {
                   )}
 
                   {/* Header con azioni bulk - solo su desktop */}
-                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4 gap-4">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white shadow-md rounded-lg p-4 gap-4">
                     {/* Ricerca Toggle */}
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
                       <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -1056,7 +1057,7 @@ export default function NewProductionUnit(): React.ReactElement {
                             variant="outline"
                             size="sm"
                             onClick={() => setShowSearch(true)}
-                            className="bg-white hover:bg-green-50 text-green-700 border-green-200"
+                            className="bg-white"
                           >
                             <Filter className="mr-2 h-4 w-4" />
                             Filtra Campi
@@ -1238,10 +1239,10 @@ export default function NewProductionUnit(): React.ReactElement {
                                 "opacity-60 cursor-not-allowed bg-gray-100",
                               isCardAllocated &&
                                 !isDisabled &&
-                                "ring-2 ring-green-500 bg-green-50",
+                                "ring-2 ring-muted bg-muted/20",
                               isSelected &&
                                 !isDisabled &&
-                                "ring-2 ring-blue-500 bg-blue-50"
+                                "ring-2 ring-agri-green-500 bg-agri-green-50"
                             )}
                             onClick={() => {
                               if (isDisabled) return;
@@ -1296,7 +1297,7 @@ export default function NewProductionUnit(): React.ReactElement {
                                       {isCardAllocated && (
                                         <Badge
                                           variant="default"
-                                          className="bg-green-600 text-xs"
+                                          className="bg-muted text-muted-foreground text-xs"
                                         >
                                           Allocato
                                         </Badge>
@@ -1343,7 +1344,7 @@ export default function NewProductionUnit(): React.ReactElement {
                                         }
                                         className={
                                           remainingArea > 0
-                                            ? "bg-green-100 text-green-800"
+                                            ? "bg-muted text-muted-foreground"
                                             : ""
                                         }
                                       >
@@ -1456,7 +1457,7 @@ export default function NewProductionUnit(): React.ReactElement {
                                         handleAddIndependentArea(baseFieldId)
                                       }
                                       disabled={remainingArea <= 0}
-                                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 gap-1"
+                                      className="text-foreground hover:text-foreground hover:bg-muted gap-1"
                                       title="Aggiungi area indipendente"
                                     >
                                       <SplitSquareVertical className="h-4 w-4" />
@@ -1550,7 +1551,7 @@ export default function NewProductionUnit(): React.ReactElement {
               <p className="text-sm font-medium text-gray-500">
                 SAU Totale Allocata
               </p>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-2xl font-bold text-foreground">
                 {totalAllocatedSAU.toFixed(2)} Ha
               </p>
             </div>

@@ -96,7 +96,8 @@ export function TemplateRequestForm({
       setRegion(initialRegion || "");
       setIsSubmitting(false);
       setSuccessMessage(
-        response.message ?? "Richiesta inviata correttamente. Ti invieremo il template via email."
+        response.message ??
+          "Richiesta inviata correttamente. Ti invieremo il template via email."
       );
 
       if (onSuccess) {
@@ -112,10 +113,7 @@ export function TemplateRequestForm({
 
   return (
     <form
-      className={cn(
-        "bg-white p-8 border border-gray-100 space-y-6",
-        className
-      )}
+      className={cn("bg-white p-8 border border-gray-100 space-y-6", className)}
       onSubmit={handleSubmit}
     >
       <div className="space-y-2">
@@ -165,7 +163,7 @@ export function TemplateRequestForm({
 
       {errorMessage && <p className="text-sm text-red-500">{errorMessage}</p>}
       {successMessage && (
-        <p className="text-sm text-agri-green-600">{successMessage}</p>
+        <p className="text-sm text-black ">{successMessage}</p>
       )}
 
       <button

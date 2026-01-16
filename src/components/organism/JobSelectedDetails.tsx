@@ -9,7 +9,6 @@ import {
   Building2,
   Droplet,
   Clock,
-  CheckCircle,
   AlertTriangle,
   Shield,
   FileX,
@@ -97,6 +96,14 @@ interface JobSelectedDetailsProps {
 
 class AlertNotesFormatter {
   private readonly alertNotes: AlertNotes | null | undefined;
+  private readonly emptyValueTokens = new Set([
+    "non presente",
+    "n/a",
+    "na",
+    "-",
+    "null",
+    "undefined",
+  ]);
 
   constructor(alertNotes: AlertNotes | null | undefined) {
     this.alertNotes = alertNotes;
@@ -123,11 +130,11 @@ class AlertNotesFormatter {
   }
 
   public getEpocaImpiego(): string | null {
-    return this.alertNotes?.epoca_impiego ?? null;
+    return this.normalizeText(this.alertNotes?.epoca_impiego);
   }
 
   public getEpocaImpiegoLLM(): string | null {
-    return this.alertNotes?.epoca_impiego_llm ?? null;
+    return this.normalizeText(this.alertNotes?.epoca_impiego_llm);
   }
 
   public getMaxApplications(): string | null {
@@ -197,6 +204,16 @@ class AlertNotesFormatter {
     if (Array.isArray(value)) return value.filter(Boolean);
     return value.trim() ? [value] : [];
   }
+
+  private normalizeText(value?: string | null): string | null {
+    if (!value) return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (this.emptyValueTokens.has(trimmed.toLowerCase())) {
+      return null;
+    }
+    return trimmed;
+  }
 }
 
 export function JobSelectedDetails({
@@ -206,7 +223,8 @@ export function JobSelectedDetails({
   externalSearchTerm,
 }: JobSelectedDetailsProps) {
   const [internalSearchTerm, setInternalSearchTerm] = useState<string>("");
-  const searchTerm = externalSearchTerm !== undefined ? externalSearchTerm : internalSearchTerm;
+  const searchTerm =
+    externalSearchTerm !== undefined ? externalSearchTerm : internalSearchTerm;
   const [expandedFrasiPericolo, setExpandedFrasiPericolo] = useState<
     Set<string>
   >(new Set());
@@ -300,9 +318,18 @@ export function JobSelectedDetails({
           {filteredRows.map((row) => {
             const formatter = new AlertNotesFormatter(row.alertNotes);
             const hasAlertNotes = formatter.hasAnyData();
+            const epocaImpiego = formatter.getEpocaImpiego();
+            const epocaImpiegoLLM = formatter.getEpocaImpiegoLLM();
+            const showEpocaImpiego =
+              epocaImpiego !== null && matchesSearch(epocaImpiego);
+            const showEpocaImpiegoLLM =
+              epocaImpiegoLLM !== null && matchesSearch(epocaImpiegoLLM);
 
             return (
-              <div key={row.id} className="space-y-4">
+              <div
+                key={row.id}
+                className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 space-y-4"
+              >
                 {/* Header */}
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
@@ -431,42 +458,41 @@ export function JobSelectedDetails({
                     ) : null}
 
                     {/* Epoca Impiego */}
-                    <div className="space-y-2">
-                      <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        Epoca Impiego
-                      </span>
-                      {formatter.getEpocaImpiego() &&
-                      matchesSearch(formatter.getEpocaImpiego()) ? (
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="h-3 w-3 text-green-600" />
-                          <span className="text-xs font-medium text-green-600 uppercase tracking-wide">
-                            Verificata da Etichetta:
-                          </span>
-                          <p className="text-sm text-slate-700">
-                            {formatter.getEpocaImpiego()}
+                    <div className="space-y-3">
+                      {showEpocaImpiego ? (
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-3 w-3 text-green-600" />
+                            <span className="text-xs font-medium text-green-600 uppercase tracking-wide">
+                              Epoca impiego etichetta:
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-700 pl-5">
+                            {epocaImpiego}
                           </p>
                         </div>
-                      ) : (
+                      ) : !showEpocaImpiegoLLM ? (
                         <p className="text-xs text-slate-400 italic">
                           non presente
                         </p>
-                      )}
-                      {formatter.getEpocaImpiegoLLM() &&
-                      matchesSearch(formatter.getEpocaImpiegoLLM()) ? (
-                        <div>
-                          <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">
-                            AI Suggerita:{" "}
-                          </span>
-                          <p className="text-sm text-slate-700">
-                            {formatter.getEpocaImpiegoLLM()}
+                      ) : null}
+                      {showEpocaImpiegoLLM ? (
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-3 w-3 text-blue-600" />
+                            <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">
+                              Epoca di impiego suggerita da AI:
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-700 pl-5">
+                            {epocaImpiegoLLM}
                           </p>
                         </div>
                       ) : null}
                     </div>
 
                     {/* Max Applicazioni e Modalità */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-3">
                       <div className="space-y-1">
                         <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
                           Max Applicazioni

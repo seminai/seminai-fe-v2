@@ -1,9 +1,9 @@
-import * as React from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker } from "react-day-picker"
+import * as React from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { DayPicker } from "react-day-picker";
 
-import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
 function Calendar({
   className,
@@ -51,12 +51,12 @@ function Calendar({
           "day-range-end aria-selected:bg-agri-green-500 aria-selected:text-white",
         day_selected:
           "bg-agri-green-500 text-white hover:bg-agri-green-600 hover:text-white focus:bg-agri-green-500 focus:text-white",
-        day_today: "bg-agri-green-100 text-agri-green-900",
+        day_today: "bg-agri-green-100 text-black",
         day_outside:
           "day-outside text-muted-foreground aria-selected:text-muted-foreground",
         day_disabled: "text-muted-foreground opacity-50",
         day_range_middle:
-          "aria-selected:bg-agri-green-200 aria-selected:text-agri-green-900",
+          "aria-selected:bg-agri-green-200 aria-selected:text-black",
         day_hidden: "invisible",
         ...classNames,
       }}
@@ -70,7 +70,7 @@ function Calendar({
       }}
       {...props}
     />
-  )
+  );
 }
 
-export { Calendar }
+export { Calendar };

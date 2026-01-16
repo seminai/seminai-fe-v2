@@ -5,12 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  MapPin,
-  Pencil,
-  Check,
-  X,
-} from "lucide-react";
+import { MapPin, Pencil, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CompanyFilesPanel } from "./CompanyFilesPanel";
 import { CompanyMachinesPanel } from "./CompanyMachinesPanel";
@@ -25,7 +20,9 @@ interface DrawerCompanyContentProps {
   onUpdate?: (update: BulkCompanyUpdateInput) => void;
   isUpdating?: boolean;
   onUpdateSuccess?: () => void;
-  onTabChange?: (tab: "details" | "users" | "warehouses" | "files" | "machines") => void;
+  onTabChange?: (
+    tab: "details" | "users" | "warehouses" | "files" | "machines"
+  ) => void;
   activeTab?: "details" | "users" | "warehouses" | "files" | "machines";
 }
 
@@ -60,8 +57,6 @@ export function DrawerCompanyContent({
   });
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const logoFileInputRef = React.useRef<HTMLInputElement>(null);
-
-
 
   const {
     files: companyFiles,
@@ -195,7 +190,7 @@ export function DrawerCompanyContent({
       const uploadedFileUrl = response.data.file.url;
       setEditedData({ ...editedData, logoUrl: uploadedFileUrl });
       toast.success("Logo caricato con successo");
-      
+
       // Aggiorna anche la lista dei file
       await refetchCompanyFiles();
     } catch (error) {
@@ -215,9 +210,45 @@ export function DrawerCompanyContent({
   const renderGeneralInfo = (): React.ReactNode => {
     return (
       <div className="border-b border-gray-100 pb-6">
-        <h3 className="text-sm font-medium text-agri-green-700 mb-4">
-          Informazioni Generali
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium text-black">
+            Informazioni Generali
+          </h3>
+          {!isEditing && onUpdate && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              className="h-8 w-8 p-0 rounded-lg bg-agri-green-50 hover:bg-agri-green-100 text-black transition-all flex-shrink-0"
+              aria-label="Modifica"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          {isEditing && (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCancel}
+                disabled={isUpdating}
+                className="h-8 px-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 transition-all text-xs"
+              >
+                <X className="h-3.5 w-3.5 mr-1" />
+                Annulla
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={isUpdating}
+                className="h-8 px-3 rounded-lg bg-agri-green-500 hover:bg-agri-green-600 text-white transition-all text-xs"
+              >
+                <Check className="h-3.5 w-3.5 mr-1" />
+                {isUpdating ? "Salvataggio..." : "Salva"}
+              </Button>
+            </div>
+          )}
+        </div>
         <div className="grid grid-cols-1 gap-4">
           <div>
             <p className="text-xs font-medium text-gray-500 mb-1.5">
@@ -233,15 +264,11 @@ export function DrawerCompanyContent({
                 placeholder="Nome Azienda"
               />
             ) : (
-              <p className="text-sm text-gray-900">
-                {company.name}
-              </p>
+              <p className="text-sm text-gray-900">{company.name}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-1.5">
-              Logo
-            </p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">Logo</p>
             {isEditing ? (
               <div className="space-y-2">
                 {(editedData.logoUrl || company.logoUrl) && (
@@ -309,9 +336,20 @@ export function DrawerCompanyContent({
   const renderFiscalInfo = (): React.ReactNode => {
     return (
       <div className="border-b border-gray-100 pb-6">
-        <h3 className="text-sm font-medium text-agri-green-700 mb-4">
-          Dati Fiscali
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium text-black">Dati Fiscali</h3>
+          {!isEditing && onUpdate && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              className="h-8 w-8 p-0 rounded-lg bg-agri-green-50 hover:bg-agri-green-100 text-black transition-all flex-shrink-0"
+              aria-label="Modifica"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <p className="text-xs font-medium text-gray-500 mb-1.5">
@@ -327,9 +365,7 @@ export function DrawerCompanyContent({
                 placeholder="Partita IVA"
               />
             ) : (
-              <p className="text-sm text-gray-900">
-                {company.vatNumber}
-              </p>
+              <p className="text-sm text-gray-900">{company.vatNumber}</p>
             )}
           </div>
           <div>
@@ -346,17 +382,13 @@ export function DrawerCompanyContent({
                 placeholder="Codice Fiscale"
               />
             ) : (
-              <p className="text-sm text-gray-900">
-                {company.fiscalCode}
-              </p>
+              <p className="text-sm text-gray-900">{company.fiscalCode}</p>
             )}
           </div>
           {isEditing && (
             <>
               <div>
-                <p className="text-xs font-medium text-gray-500 mb-1.5">
-                  CUAA
-                </p>
+                <p className="text-xs font-medium text-gray-500 mb-1.5">CUAA</p>
                 <Input
                   value={editedData.cuaa || ""}
                   onChange={(e) =>
@@ -376,9 +408,20 @@ export function DrawerCompanyContent({
   const renderAddressInfo = (): React.ReactNode => {
     return (
       <div className="border-b border-gray-100 pb-6">
-        <h3 className="text-sm font-medium text-agri-green-700 mb-4">
-          Indirizzo
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium text-black">Indirizzo</h3>
+          {!isEditing && onUpdate && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              className="h-8 w-8 p-0 rounded-lg bg-agri-green-50 hover:bg-agri-green-100 text-black transition-all flex-shrink-0"
+              aria-label="Modifica"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="col-span-2">
             <p className="text-xs font-medium text-gray-500 mb-1.5">
@@ -394,9 +437,7 @@ export function DrawerCompanyContent({
                 placeholder="Indirizzo"
               />
             ) : (
-              <p className="text-sm text-gray-900">
-                {company.address || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{company.address || "-"}</p>
             )}
           </div>
           <div>
@@ -411,9 +452,7 @@ export function DrawerCompanyContent({
                 placeholder="Città"
               />
             ) : (
-              <p className="text-sm text-gray-900">
-                {company.city || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{company.city || "-"}</p>
             )}
           </div>
           <div>
@@ -428,15 +467,11 @@ export function DrawerCompanyContent({
                 placeholder="CAP"
               />
             ) : (
-              <p className="text-sm text-gray-900">
-                {company.cap || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{company.cap || "-"}</p>
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-1.5">
-              Nazione
-            </p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">Nazione</p>
             {isEditing ? (
               <Input
                 value={editedData.nation || ""}
@@ -447,9 +482,7 @@ export function DrawerCompanyContent({
                 placeholder="Nazione"
               />
             ) : (
-              <p className="text-sm text-gray-900">
-                {company.nation || "-"}
-              </p>
+              <p className="text-sm text-gray-900">{company.nation || "-"}</p>
             )}
           </div>
         </div>
@@ -460,9 +493,20 @@ export function DrawerCompanyContent({
   const renderContactInfo = (): React.ReactNode => {
     return (
       <div className="border-b border-gray-100 pb-6">
-        <h3 className="text-sm font-medium text-agri-green-700 mb-4">
-          Contatti
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium text-black">Contatti</h3>
+          {!isEditing && onUpdate && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              className="h-8 w-8 p-0 rounded-lg bg-agri-green-50 hover:bg-agri-green-100 text-black transition-all flex-shrink-0"
+              aria-label="Modifica"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
         <div className="grid grid-cols-1 gap-4">
           <div>
             <p className="text-xs font-medium text-gray-500 mb-1.5">Email</p>
@@ -492,9 +536,7 @@ export function DrawerCompanyContent({
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-1.5">
-              Telefono
-            </p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">Telefono</p>
             {isEditing ? (
               <Input
                 type="tel"
@@ -521,9 +563,7 @@ export function DrawerCompanyContent({
             )}
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-1.5">
-              Sito Web
-            </p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">Sito Web</p>
             {isEditing ? (
               <Input
                 type="url"
@@ -559,13 +599,11 @@ export function DrawerCompanyContent({
   const renderActions = (): React.ReactNode => {
     return (
       <div className="pt-4">
-        <h3 className="text-sm font-medium text-agri-green-700 mb-3">
-          Azioni
-        </h3>
+        <h3 className="text-sm font-medium text-black mb-3">Azioni</h3>
         <div className="flex flex-col gap-2">
           <Button
             variant="outline"
-            className="w-full justify-start gap-2 bg-white border-agri-green-200 hover:bg-agri-green-50 text-agri-green-700 rounded-lg transition-all"
+            className="w-full justify-start gap-2 bg-white border-agri-green-200 hover:bg-agri-green-50 text-black rounded-lg transition-all"
             onClick={() => navigate("/fields")}
           >
             <MapPin className="h-4 w-4" />
@@ -576,52 +614,9 @@ export function DrawerCompanyContent({
     );
   };
 
-  const isDetailsTab = activeTab === "details";
-
   return (
     <div className="space-y-6">
-      {/* Action buttons for details tab */}
-      {isDetailsTab && (
-        <div className="flex justify-end gap-2 pb-4 border-b border-gray-100">
-          {isEditing ? (
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCancel}
-                disabled={isUpdating}
-                className="h-9 px-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 transition-all text-sm"
-              >
-                <X className="h-4 w-4 mr-1" />
-                Annulla
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSave}
-                disabled={isUpdating}
-                className="h-9 px-3 rounded-lg bg-agri-green-500 hover:bg-agri-green-600 text-white transition-all text-sm"
-              >
-                <Check className="h-4 w-4 mr-1" />
-                {isUpdating ? "Salvataggio..." : "Salva"}
-              </Button>
-            </div>
-          ) : (
-            onUpdate && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditing(true)}
-                className="h-9 w-9 p-0 rounded-lg bg-agri-green-50 hover:bg-agri-green-100 text-agri-green-700 transition-all flex-shrink-0"
-                aria-label="Modifica"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-            )
-          )}
-        </div>
-      )}
-
-      <TabsContent value="details" className="mt-4">
+      <TabsContent value="details" className="mt-0">
         <div className="space-y-6">
           {renderGeneralInfo()}
           {renderFiscalInfo()}
@@ -631,12 +626,8 @@ export function DrawerCompanyContent({
         </div>
       </TabsContent>
       <TabsContent value="users" className="mt-3 md:mt-4">
-        <CompanyUsersPanel
-          companyId={company.id}
-          companyName={company.name}
-        />
+        <CompanyUsersPanel companyId={company.id} companyName={company.name} />
       </TabsContent>
-
 
       <TabsContent value="warehouses" className="mt-3 md:mt-4">
         <CompanyWarehousesPanel

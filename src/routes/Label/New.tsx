@@ -17,9 +17,15 @@ import { toast } from "sonner";
 import { Trash2, Plus, Upload, FileText, X, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { indexDBManager, type LabelJob } from "@/utils/indexDBManager";
-import { LabelJobsTable } from "@/components/organism/LabelJobsTable";
 import { PageHeader } from "@/components/organism/Header";
 import Papa from "papaparse";
+import {
+  EditableTable,
+  type EditableColumn,
+} from "@/components/organism/EditableTable";
+import { buildColumns } from "@/utils/tableHelpers";
+import { Badge } from "@/components/ui/badge";
+import { ExternalLink, RefreshCw, Trash2 as Trash2Icon } from "lucide-react";
 
 interface LabelFormItem extends BulkExtractItem {
   id: string;
@@ -61,12 +67,16 @@ class LabelCsvImporter {
 
             if (!nameValue || !registrationValue) {
               rowErrors.push(
-                `Riga ${index + 2}: campi obbligatori mancanti (nome prodotto, numero registrazione)`
+                `Riga ${
+                  index + 2
+                }: campi obbligatori mancanti (nome prodotto, numero registrazione)`
               );
               return;
             }
 
-            parsedItems.push(this.createLabelItem(nameValue, registrationValue));
+            parsedItems.push(
+              this.createLabelItem(nameValue, registrationValue)
+            );
           });
 
           if (rowErrors.length > 0) {
@@ -113,6 +123,135 @@ class LabelCsvImporter {
   }
 }
 
+interface LabelJobRow extends Record<string, unknown> {
+  id: string;
+  jobId: string;
+  fileNames: string;
+  state: string;
+  progress: number;
+  createdAt: string;
+  updatedAt: string;
+  results: string;
+  labelJob: LabelJob;
+}
+
+const buildLabelJobColumns = (): EditableColumn[] =>
+  buildColumns<LabelJobRow>([
+    {
+      id: "jobId",
+      title: "Job ID",
+      type: "text",
+      width: "10%",
+      render: (value: unknown) => {
+        const jobId = value as string;
+        return (
+          <span className="font-mono text-xs">{jobId.slice(0, 8)}...</span>
+        );
+      },
+    },
+    {
+      id: "fileNames",
+      title: "File",
+      type: "text",
+      width: "20%",
+    },
+    {
+      id: "state",
+      title: "Stato",
+      type: "text",
+      width: "12%",
+      render: (value: unknown) => {
+        const state = value as string;
+        const getStateLabel = (
+          state: string
+        ): {
+          text: string;
+          variant: "default" | "secondary" | "destructive" | "outline";
+        } => {
+          switch (state) {
+            case "waiting":
+              return { text: "In attesa", variant: "secondary" };
+            case "active":
+              return { text: "In elaborazione", variant: "default" };
+            case "completed":
+              return { text: "Completato", variant: "outline" };
+            case "failed":
+              return { text: "Fallito", variant: "destructive" };
+            default:
+              return { text: state, variant: "outline" };
+          }
+        };
+        const stateLabel = getStateLabel(state);
+        return <Badge variant={stateLabel.variant}>{stateLabel.text}</Badge>;
+      },
+    },
+    {
+      id: "progress",
+      title: "Progresso",
+      type: "text",
+      width: "10%",
+      render: (value: unknown, row: LabelJobRow) => {
+        const progress = value as number;
+        const state = row.state as string;
+        if (state === "waiting" || state === "active") {
+          return <Spinner size={16} />;
+        }
+        return <span className="text-xs text-gray-500">{progress}%</span>;
+      },
+    },
+    {
+      id: "createdAt",
+      title: "Data Creazione",
+      type: "text",
+      width: "15%",
+    },
+    {
+      id: "results",
+      title: "Risultati",
+      type: "text",
+      width: "15%",
+      render: (_value: unknown, row: LabelJobRow) => {
+        const state = row.state as string;
+        const labelJob = row.labelJob;
+        if (state === "completed" && labelJob.result?.results) {
+          const successCount = labelJob.result.results.filter(
+            (r) => r.status === "extracted"
+          ).length;
+          const failCount = labelJob.result.results.filter(
+            (r) => r.status === "failed"
+          ).length;
+          return (
+            <div className="text-sm">
+              <span className="text-green-600 font-medium">
+                {successCount} successi
+              </span>
+              {failCount > 0 && (
+                <>
+                  {" / "}
+                  <span className="text-red-600">{failCount} falliti</span>
+                </>
+              )}
+            </div>
+          );
+        }
+        if (state === "failed") {
+          return (
+            <div className="text-sm text-red-600">
+              {labelJob.error || "Errore sconosciuto"}
+            </div>
+          );
+        }
+        return "-";
+      },
+    },
+    {
+      id: "updatedAt",
+      title: "Data Completamento",
+      type: "text",
+      width: "15%",
+    },
+  ]);
+
 export default function NewLabel(): React.ReactElement {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -128,10 +267,12 @@ export default function NewLabel(): React.ReactElement {
   const [pdfFiles, setPdfFiles] = useState<PdfFile[]>([]);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [concurrency, setConcurrency] = useState<number>(5);
-  const [jobsRefreshKey, setJobsRefreshKey] = useState(0);
   const [activeJobsCount, setActiveJobsCount] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
   const [isCsvImporting, setIsCsvImporting] = useState(false);
+  const [jobs, setJobs] = useState<LabelJob[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
+  const [pollingJobIds, setPollingJobIds] = useState<Set<string>>(new Set());
 
   const duplicateItemIds = useMemo(() => {
     const occurrences = new Map<string, number>();
@@ -152,18 +293,118 @@ export default function NewLabel(): React.ReactElement {
     return duplicates;
   }, [items]);
 
-  // Initialize IndexedDB
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
+
+  // Load jobs from IndexedDB
+  const loadJobs = useCallback(async (): Promise<void> => {
+    try {
+      const allJobs = await indexDBManager.getAllJobs();
+      setJobs(allJobs);
+    } catch (error) {
+      console.error("Error loading jobs:", error);
+      toast.error("Errore nel caricamento dei job");
+    } finally {
+      setJobsLoading(false);
+    }
+  }, []);
+
+  // Poll job status from backend
+  const pollJobStatus = useCallback(
+    async (jobId: string): Promise<void> => {
+      try {
+        const response = await authenticatedHttpClient.request(
+          `${BASE_URL}/labels/job-status/${jobId}`,
+          {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.status === "success" && data.data) {
+          const jobData = data.data;
+
+          await indexDBManager.updateJob(jobId, {
+            state: jobData.state,
+            progress: jobData.progress,
+            result: jobData.result,
+          });
+
+          if (jobData.state === "completed" || jobData.state === "failed") {
+            setPollingJobIds((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(jobId);
+              return newSet;
+            });
+
+            if (jobData.state === "completed") {
+              toast.success(
+                `Job ${jobId.slice(0, 8)}... completato con successo`
+              );
+            } else {
+              toast.error(`Job ${jobId.slice(0, 8)}... fallito`);
+            }
+          }
+
+          await loadJobs();
+        }
+      } catch (error) {
+        console.error(`Error polling job ${jobId}:`, error);
+      }
+    },
+    [BASE_URL, loadJobs]
+  );
+
+  // Initialize IndexedDB and load jobs
   useEffect(() => {
-    indexDBManager.init();
+    const initPolling = async (): Promise<void> => {
+      await indexDBManager.init();
+      await loadJobs();
+
+      const activeJobs = await indexDBManager.getActiveJobs();
+      const activeJobIds = new Set(activeJobs.map((job) => job.id));
+      setPollingJobIds(activeJobIds);
+    };
+
+    initPolling();
+  }, [loadJobs]);
+
+  // Polling interval
+  useEffect(() => {
+    if (pollingJobIds.size === 0) return;
+
+    const interval = setInterval(() => {
+      pollingJobIds.forEach((jobId) => {
+        pollJobStatus(jobId);
+      });
+    }, 3000); // Poll every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [pollingJobIds, pollJobStatus]);
+
+  const handleActiveJobsChange = useCallback((count: number) => {
+    setActiveJobsCount(count);
   }, []);
 
   const handleToggleHistory = useCallback(() => {
     setShowHistory((prev) => !prev);
   }, []);
 
-  const handleActiveJobsChange = useCallback((count: number) => {
-    setActiveJobsCount(count);
-  }, []);
+  // Update active jobs count
+  useEffect(() => {
+    const activeJobs = jobs.filter(
+      (job) => job.state === "waiting" || job.state === "active"
+    );
+    setActiveJobsCount(activeJobs.length);
+    handleActiveJobsChange(activeJobs.length);
+  }, [jobs, handleActiveJobsChange]);
 
   // Reset upload mode when label type changes
   useEffect(() => {
@@ -244,7 +485,7 @@ export default function NewLabel(): React.ReactElement {
         setPdfFiles([]);
 
         // Trigger jobs table refresh
-        setJobsRefreshKey((prev) => prev + 1);
+        await loadJobs();
 
         queryClient.invalidateQueries({ queryKey: ["labels", "summary"] });
       }
@@ -309,7 +550,7 @@ export default function NewLabel(): React.ReactElement {
         setPdfFiles([]);
 
         // Trigger jobs table refresh
-        setJobsRefreshKey((prev) => prev + 1);
+        await loadJobs();
 
         queryClient.invalidateQueries({ queryKey: ["labels", "summary"] });
       }
@@ -494,10 +735,12 @@ export default function NewLabel(): React.ReactElement {
           <Button
             variant="ghost"
             onClick={handleToggleHistory}
-            className="gap-2 text-neutral-500 hover:text-neutral-700"
+            className="gap-2 text-neutral-500 cursor-pointer"
           >
             <Clock className="h-4 w-4" />
-            <span>{showHistory ? "Nascondi storico" : "Storico operazioni"}</span>
+            <span>
+              {showHistory ? "Nascondi storico" : "Storico operazioni"}
+            </span>
           </Button>
           {activeJobsCount > 0 && (
             <div className="flex items-center gap-2 text-sm text-neutral-600 border border-neutral-200 rounded-lg px-3 py-1.5 bg-white">
@@ -509,17 +752,134 @@ export default function NewLabel(): React.ReactElement {
       </PageHeader>
 
       <div className="max-w-6xl mx-auto px-8 pb-12">
-        {/* Jobs Status Table - Hidden unless showHistory is true, but always rendered to track active jobs */}
-        <div className={showHistory ? "mb-12" : "hidden"}>
-          <LabelJobsTable
-            key={jobsRefreshKey}
-            onRefresh={() => setJobsRefreshKey((prev) => prev + 1)}
-            onActiveJobsChange={handleActiveJobsChange}
-          />
-        </div>
+        {/* Jobs Status Table - Shown when showHistory is true */}
+        {showHistory && (
+          <div className="mb-12">
+            {jobsLoading ? (
+              <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm">
+                <CardContent className="flex justify-center items-center py-12">
+                  <Spinner size={32} />
+                </CardContent>
+              </Card>
+            ) : jobs.length === 0 ? (
+              <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm">
+                <CardContent className="flex justify-center items-center py-12">
+                  <p className="text-gray-500">Nessun job trovato</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex justify-end mb-4">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={async () => {
+                      setJobsLoading(true);
+                      await loadJobs();
+                    }}
+                    title="Aggiorna"
+                    className="hover:bg-gray-100"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </div>
+                <EditableTable
+                  columns={buildLabelJobColumns()}
+                  rows={jobs.map((job) => {
+                    const successCount =
+                      job.result?.results.filter(
+                        (r) => r.status === "extracted"
+                      ).length || 0;
+                    const failCount =
+                      job.result?.results.filter((r) => r.status === "failed")
+                        .length || 0;
+                    const resultsText =
+                      job.state === "completed"
+                        ? `${successCount} successi${failCount > 0 ? ` / ${failCount} falliti` : ""}`
+                        : job.state === "failed"
+                        ? job.error || "Errore sconosciuto"
+                        : "-";
 
-        {/* Type Toggle */}
-        <div className="mb-6 flex justify-start">
+                    const row: LabelJobRow = {
+                      id: job.id,
+                      jobId: job.id,
+                      fileNames:
+                        job.fileNames.length === 1
+                          ? job.fileNames[0]
+                          : `${job.fileNames.length} file`,
+                      state: job.state,
+                      progress: job.progress,
+                      createdAt: job.createdAt.toLocaleString("it-IT"),
+                      updatedAt: job.updatedAt.toLocaleString("it-IT"),
+                      results: resultsText,
+                      labelJob: job,
+                    };
+                    return row as Record<string, unknown>;
+                  })}
+                  getRowId={(row) => row.id as string}
+                  isModify={false}
+                  addButton={false}
+                  showDeleteAction={false}
+                  lastComponent={(row) => {
+                    const labelJob = (row as unknown as LabelJobRow).labelJob;
+                    return (
+                      <div className="flex justify-end gap-2">
+                        {labelJob.state === "completed" &&
+                          labelJob.result && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (!labelJob.result?.results) return;
+                                const successfulExtraction =
+                                  labelJob.result.results.find(
+                                    (r) => r.status === "extracted" && r.labelId
+                                  );
+                                if (
+                                  successfulExtraction &&
+                                  successfulExtraction.labelId
+                                ) {
+                                  const url = `${window.location.origin}/label/${successfulExtraction.labelId}`;
+                                  window.open(url, "_blank");
+                                }
+                              }}
+                            >
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Vai all'etichetta
+                            </Button>
+                          )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={async () => {
+                            try {
+                              await indexDBManager.deleteJob(labelJob.id);
+                              await loadJobs();
+                              toast.success("Job eliminato");
+                            } catch (error) {
+                              console.error("Error deleting job:", error);
+                              toast.error("Errore nell'eliminazione del job");
+                            }
+                          }}
+                          title="Elimina job"
+                        >
+                          <Trash2Icon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  }}
+                  tableId="label-jobs-table"
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Form and other content - Hidden when showHistory is true */}
+        {!showHistory && (
+          <>
+            {/* Type Toggle */}
+            <div className="mb-6 flex justify-start">
           <div className="inline-flex p-1 bg-gray-100/80 rounded-xl gap-1 backdrop-blur-sm">
             <button
               type="button"
@@ -601,7 +961,7 @@ export default function NewLabel(): React.ReactElement {
                       variant="outline"
                       onClick={handleCsvImportClick}
                       disabled={isLoading || isCsvImporting}
-                      className="gap-2"
+                      className="gap-2 bg-transparent"
                     >
                       {isCsvImporting ? (
                         <>
@@ -701,7 +1061,7 @@ export default function NewLabel(): React.ReactElement {
                   type="button"
                   variant="outline"
                   onClick={handleAddItem}
-                  className="w-full h-11 border-dashed border-2 hover:border-gray-400 hover:bg-gray-50"
+                  className="w-full h-11 border-dashed border-2 bg-transparent hover:border-gray-400 hover:bg-gray-50"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Aggiungi Etichetta
@@ -820,7 +1180,7 @@ export default function NewLabel(): React.ReactElement {
               variant="outline"
               onClick={() => navigate("/label")}
               disabled={isLoading}
-              className="h-11 px-6"
+              className="h-11 px-6 bg-transparent"
             >
               Annulla
             </Button>
@@ -836,6 +1196,8 @@ export default function NewLabel(): React.ReactElement {
             </Button>
           </div>
         </form>
+          </>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
+@config "../tailwind.config.js";
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./styles/globals.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -34,19 +36,6 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-
-  /* Colori personalizzati agri-green */
-  --color-agri-green-50: #f0f9f0;
-  --color-agri-green-100: #dcf1dc;
-  --color-agri-green-200: #bce3bc;
-  --color-agri-green-300: #8ece8e;
-  --color-agri-green-400: #61b461;
-  --color-agri-green-500: #3c953c;
-  --color-agri-green-600: #2e782e;
-  --color-agri-green-700: #276127;
-  --color-agri-green-800: #224d22;
-  --color-agri-green-900: #1e401e;
-  --color-agri-green-950: #0c220c;
 
   /* Colori personalizzati harvest */
   --color-harvest-100: #fdf6e3;
