@@ -157,9 +157,7 @@ export function PageHeader({
       {/* Layout mobile - elementi su righe separate */}
       <div className="flex md:hidden flex-col gap-3 mb-4">
         <div className="flex justify-between items-start gap-3">
-          <h1 className="text-2xl text-black font-semibold break-words leading-tight">
-            {title}
-          </h1>
+          {/* Titolo nascosto su mobile perché mostrato nell'header mobile */}
           {children && (
             <div className="flex items-center gap-2">{children}</div>
           )}

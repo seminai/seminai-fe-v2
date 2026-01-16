@@ -22,6 +22,7 @@ import {
 import type {
   Workspace,
   WorkspaceMember,
+  WorkspaceInvitation,
   CreateWorkspaceRequest,
   UpdateWorkspaceRequest,
   InviteMemberRequest,
@@ -158,7 +159,17 @@ export function useUploadWorkspaceLogo() {
 // ============ MEMBERS QUERIES ============
 
 export function useWorkspaceMembers(workspaceId: string | undefined) {
-  return useQuery<WorkspaceMember[], Error>({
+  return useQuery<
+    {
+      members: WorkspaceMember[];
+      invitations: Array<
+        WorkspaceInvitation & {
+          user?: { id: string; name: string; email: string };
+        }
+      >;
+    },
+    Error
+  >({
     queryKey: workspaceKeys.members(workspaceId ?? ""),
     queryFn: () => getWorkspaceMembers(workspaceId!),
     enabled: !!workspaceId,
@@ -201,12 +212,11 @@ export function useUpdateMember() {
       memberId: string;
       payload: UpdateMemberRequest;
     }) => updateMember(workspaceId, memberId, payload),
-    onSuccess: (member, { workspaceId }) => {
-      // Update in members list
-      queryClient.setQueryData<WorkspaceMember[]>(
-        workspaceKeys.members(workspaceId),
-        (old) => old?.map((m) => (m.id === member.id ? member : m)) ?? []
-      );
+    onSuccess: (_, { workspaceId }) => {
+      // Invalidate members list to refetch with updated data
+      queryClient.invalidateQueries({
+        queryKey: workspaceKeys.members(workspaceId),
+      });
     },
   });
 }
@@ -222,12 +232,11 @@ export function useRemoveMember() {
       workspaceId: string;
       memberId: string;
     }) => removeMember(workspaceId, memberId),
-    onSuccess: (_, { workspaceId, memberId }) => {
-      // Remove from members list
-      queryClient.setQueryData<WorkspaceMember[]>(
-        workspaceKeys.members(workspaceId),
-        (old) => old?.filter((m) => m.id !== memberId) ?? []
-      );
+    onSuccess: (_, { workspaceId }) => {
+      // Invalidate members list to refetch with updated data
+      queryClient.invalidateQueries({
+        queryKey: workspaceKeys.members(workspaceId),
+      });
     },
   });
 }

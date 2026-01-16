@@ -1205,7 +1205,7 @@ class EditFileDrawer extends React.Component<
               </Button>
               <Button
                 onClick={this.handleSave}
-                className="rounded-xl bg-agri-green-500 text-white"
+                className="rounded-xl bg-agri-green-500 hover:bg-agri-green-600 text-white"
               >
                 <Check className="h-4 w-4 mr-2" />
                 Salva

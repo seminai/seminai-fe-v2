@@ -51,6 +51,7 @@ import { LuLogOut, LuSettings } from "react-icons/lu";
 import { useMe } from "@/hooks/useAuth";
 import { UserRole } from "@/api/auth";
 import { WorkspaceSwitcher } from "@/components/organism/WorkspaceSwitcher";
+import { MobileHeader } from "@/components/organism/MobileHeader";
 
 type ProtectedLayoutProps = {
   children: React.ReactNode;
@@ -1041,7 +1042,8 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="overflow-x-hidden">
-        <div className="min-h-svh w-full flex flex-col overflow-x-hidden pb-24 lg:pb-0">
+        <MobileHeader />
+        <div className="min-h-svh w-full flex flex-col overflow-x-hidden pb-24 lg:pb-0 md:pt-0 pt-14">
           <main className="flex-1 w-full">{children}</main>
           <MobileBottomBar
             items={items}
