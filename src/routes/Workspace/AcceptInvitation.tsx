@@ -5,7 +5,6 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
-  Building2,
   Mail,
   Clock,
   ArrowRight,
@@ -58,7 +57,9 @@ export default function AcceptInvitation() {
     try {
       await acceptInvitation(invitation.token);
       setAcceptedInvitation(invitation);
-      toast.success(`Sei entrato nel workspace "${invitation.workspace.name}"!`);
+      toast.success(
+        `Sei entrato nel workspace "${invitation.workspace.name}"!`
+      );
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Errore durante l'accettazione";
@@ -249,9 +250,7 @@ function InvitationCard({
     >
       {isHighlighted && (
         <div className="mb-4">
-          <Badge className="bg-primary text-white">
-            Invito dal link
-          </Badge>
+          <Badge className="bg-primary text-white">Invito dal link</Badge>
         </div>
       )}
 
@@ -277,9 +276,7 @@ function InvitationCard({
           )}
 
           <div className="flex flex-wrap items-center gap-3 mt-3">
-            <Badge variant="secondary">
-              {roleLabels[invitation.role]}
-            </Badge>
+            <Badge variant="secondary">{roleLabels[invitation.role]}</Badge>
 
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Clock className="w-3.5 h-3.5" />
