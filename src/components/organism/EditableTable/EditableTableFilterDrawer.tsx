@@ -69,13 +69,13 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
         {activeFilters.map((filter) => (
           <span
             key={filter.id}
-            className="inline-flex items-center gap-2 rounded-full bg-agri-green-100 text-agri-green-800 px-3 py-1 text-sm"
+            className="inline-flex items-center gap-2 rounded-full bg-agri-green-100 text-black px-3 py-1 text-sm"
           >
             {formatFilterLabel(filter)}
             <button
               type="button"
               onClick={() => onRemoveFilter(filter.id)}
-              className="text-agri-green-900 hover:text-red-500 transition"
+              className="text-black hover:text-red-500 transition"
               aria-label="Rimuovi filtro"
             >
               <X className="w-3 h-3" />
@@ -266,12 +266,14 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
 
     return (
       <Drawer open={open} onOpenChange={onDrawerOpenChange}>
-        <DrawerContent 
+        <DrawerContent
           data-vaul-drawer-direction="right"
           className="w-[95vw] max-w-[95vw] sm:w-1/2 sm:max-w-[50vw]"
         >
           <DrawerHeader className="px-4 sm:px-6">
-            <DrawerTitle className="text-lg sm:text-xl">Filtri tabella</DrawerTitle>
+            <DrawerTitle className="text-lg sm:text-xl">
+              Filtri tabella
+            </DrawerTitle>
             <DrawerDescription className="text-sm">
               Applica condizioni mirate per restringere i risultati
             </DrawerDescription>
@@ -294,7 +296,11 @@ export class EditableTableFilterDrawer extends React.PureComponent<EditableTable
                 {filterDraft.operator ? this.renderValueSection() : null}
               </div>
               <div className="flex justify-end pt-2">
-                <Button onClick={onAddFilter} disabled={disableAdd} className="h-11 sm:h-10 px-5 sm:px-4">
+                <Button
+                  onClick={onAddFilter}
+                  disabled={disableAdd}
+                  className="h-11 sm:h-10 px-5 sm:px-4"
+                >
                   Aggiungi filtro
                 </Button>
               </div>

@@ -50,6 +50,7 @@ import authService from "@/utils/auth";
 import { LuLogOut, LuSettings } from "react-icons/lu";
 import { useMe } from "@/hooks/useAuth";
 import { UserRole } from "@/api/auth";
+import { WorkspaceSwitcher } from "@/components/organism/WorkspaceSwitcher";
 
 type ProtectedLayoutProps = {
   children: React.ReactNode;
@@ -502,11 +503,7 @@ function SidebarToggleButton({
       title={controller.getAriaLabel()}
       onClick={onToggle}
       className={cn(
-        "flex cursor-pointer h-9 w-9 items-center justify-center transition",
-        // Quando aperto: posizionato a destra del logo
-        "absolute right-0 top-1/2 -translate-y-1/2 translate-x-0",
-        // Quando chiuso: posizionato sotto il logo
-        "group-data-[collapsible=icon]:relative group-data-[collapsible=icon]:right-auto group-data-[collapsible=icon]:top-auto group-data-[collapsible=icon]:translate-y-0 group-data-[collapsible=icon]:translate-x-0 group-data-[collapsible=icon]:mt-2",
+        "flex cursor-pointer h-9 w-9 items-center justify-center transition rounded-lg hover:bg-neutral-100/50",
         className
       )}
     >
@@ -656,13 +653,15 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         innerClassName="backdrop-blur-lg bg-agri-green-50 border border-neutral-200/50 shadow-sm"
       >
         <SidebarHeader className="px-4 pt-4 pb-2">
-          <div className="relative flex w-full flex-col items-center justify-center py-1 group-data-[collapsible=icon]:gap-0">
-            <img src="/logo.png" alt="logo" className="h-8 w-8" />
+          <div className="flex w-full flex-col gap-2">
+            <WorkspaceSwitcher collapsed={!sidebarOpen} />
             {!isMobile && (
-              <SidebarToggleButton
-                isOpen={sidebarOpen}
-                onToggle={handleSidebarToggle}
-              />
+              <div className="flex justify-center group-data-[collapsible=icon]:mt-2">
+                <SidebarToggleButton
+                  isOpen={sidebarOpen}
+                  onToggle={handleSidebarToggle}
+                />
+              </div>
             )}
           </div>
         </SidebarHeader>

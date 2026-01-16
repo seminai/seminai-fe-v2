@@ -118,7 +118,7 @@ export function PageHeader({
       <div className="hidden md:flex flex-col gap-4 mb-4">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-3 flex-1 min-w-[200px]">
-            <h1 className="text-3xl text-agri-green-700 font-semibold whitespace-nowrap">
+            <h1 className="text-3xl text-black font-semibold whitespace-nowrap">
               {title}
             </h1>
             {children && (
@@ -157,7 +157,7 @@ export function PageHeader({
       {/* Layout mobile - elementi su righe separate */}
       <div className="flex md:hidden flex-col gap-3 mb-4">
         <div className="flex justify-between items-start gap-3">
-          <h1 className="text-2xl text-agri-green-700 font-semibold break-words leading-tight">
+          <h1 className="text-2xl text-black font-semibold break-words leading-tight">
             {title}
           </h1>
           {children && (

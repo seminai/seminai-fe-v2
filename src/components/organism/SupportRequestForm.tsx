@@ -70,7 +70,8 @@ export function SupportRequestForm({
       setMessage("");
       setIsSubmitting(false);
       setSuccessMessage(
-        response.message ?? "Richiesta inviata correttamente. Ti risponderemo al più presto."
+        response.message ??
+          "Richiesta inviata correttamente. Ti risponderemo al più presto."
       );
 
       if (onSuccess) {
@@ -86,10 +87,7 @@ export function SupportRequestForm({
 
   return (
     <form
-      className={cn(
-        "bg-white p-8 border border-gray-100 space-y-6",
-        className
-      )}
+      className={cn("bg-white p-8 border border-gray-100 space-y-6", className)}
       onSubmit={handleSubmit}
     >
       <div className="space-y-2">
@@ -135,9 +133,7 @@ export function SupportRequestForm({
       </div>
 
       {errorMessage && <p className="text-sm text-red-500">{errorMessage}</p>}
-      {successMessage && (
-        <p className="text-sm text-agri-green-600">{successMessage}</p>
-      )}
+      {successMessage && <p className="text-sm text-black">{successMessage}</p>}
 
       <button
         type="submit"

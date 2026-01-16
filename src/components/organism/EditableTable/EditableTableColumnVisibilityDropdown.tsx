@@ -39,22 +39,22 @@ export class EditableTableColumnVisibilityDropdown extends React.PureComponent<
     this.props.onVisibilityChange(columnId, checked);
   };
 
-  private renderColumnItem(column: EditableColumn, index: number): React.ReactNode {
+  private renderColumnItem(
+    column: EditableColumn,
+    index: number
+  ): React.ReactNode {
     const isVisible = this.props.visibleColumnIds.includes(column.id);
     const visibleCount = this.props.visibleColumnIds.length;
     const isDefaultColumn = index < this.props.maxVisibleColumns;
-    
+
     // Non permettere di nascondere se è l'ultima colonna visibile
     const canHide = visibleCount > 1;
-    
+
     return (
       <div
         key={column.id}
         className={cn(
-          "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
-          isVisible 
-            ? "bg-agri-green-50/50 hover:bg-agri-green-50" 
-            : "hover:bg-muted/50",
+          "flex items-center gap-3 px-3 py-2.5 rounded-lg",
           isDefaultColumn && "border-l-2 border-agri-green-300"
         )}
       >
@@ -62,13 +62,10 @@ export class EditableTableColumnVisibilityDropdown extends React.PureComponent<
           id={`col-visibility-${column.id}`}
           checked={isVisible}
           disabled={isVisible && !canHide}
-          onCheckedChange={(checked) => 
+          onCheckedChange={(checked) =>
             this.handleColumnToggle(column.id, Boolean(checked))
           }
-          className={cn(
-            "border-gray-300",
-            isVisible && "border-agri-green-500 data-[state=checked]:bg-agri-green-500"
-          )}
+          className={cn("border-gray-300", isVisible && "border-agri-green-500")}
         />
         <label
           htmlFor={`col-visibility-${column.id}`}
@@ -81,7 +78,7 @@ export class EditableTableColumnVisibilityDropdown extends React.PureComponent<
           {column.required && <span className="text-red-500 ml-1">*</span>}
         </label>
         {isVisible ? (
-          <Eye className="h-4 w-4 text-agri-green-600" />
+          <Eye className="h-4 w-4 text-black" />
         ) : (
           <EyeOff className="h-4 w-4 text-muted-foreground/50" />
         )}
@@ -110,22 +107,24 @@ export class EditableTableColumnVisibilityDropdown extends React.PureComponent<
         </PopoverTrigger>
         <PopoverContent
           align="end"
-          className="w-80 p-0 border border-border/40 rounded-2xl shadow-xl bg-white"
+          className="w-80 p-0 border border-border/40 rounded-2xl shadow-xl"
         >
           <div className="p-4 border-b border-border/30">
             <h4 className="font-semibold text-sm text-foreground">
               Gestisci colonne visibili
             </h4>
             <p className="text-xs text-muted-foreground mt-1">
-              Massimo {maxVisibleColumns} colonne visibili di default. 
-              Seleziona quali colonne mostrare.
+              Massimo {maxVisibleColumns} colonne visibili di default. Seleziona
+              quali colonne mostrare.
             </p>
           </div>
-          
+
           <div className="max-h-[320px] overflow-y-auto p-2 space-y-1">
-            {columns.map((column, index) => this.renderColumnItem(column, index))}
+            {columns.map((column, index) =>
+              this.renderColumnItem(column, index)
+            )}
           </div>
-          
+
           <div className="p-3 border-t border-border/30 flex items-center justify-between gap-2">
             <Button
               variant="ghost"
@@ -139,7 +138,7 @@ export class EditableTableColumnVisibilityDropdown extends React.PureComponent<
               variant="ghost"
               size="sm"
               onClick={this.props.onShowAll}
-              className="text-xs text-agri-green-700 hover:text-agri-green-800 hover:bg-agri-green-50"
+              className="text-xs text-black hover:text-black"
             >
               Mostra tutte
             </Button>

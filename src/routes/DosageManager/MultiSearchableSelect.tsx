@@ -163,7 +163,7 @@ export function MultiSearchableSelect({
             type="button"
             variant="outline"
             disabled={disabled}
-            className="w-full h-12 justify-between rounded-xl border-neutral-200 bg-white"
+            className="w-full h-12 justify-between rounded-xl border-neutral-200 bg-white hover:bg-neutral-50 hover:text-black hover:border-neutral-200 dark:hover:bg-neutral-50 dark:hover:text-black"
           >
             <span className="text-sm text-neutral-700">
               {MultiSelectSummaryBuilder.buildLabel(value.length, placeholder)}

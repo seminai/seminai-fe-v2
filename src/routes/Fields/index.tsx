@@ -10,6 +10,7 @@ import { Spinner } from "@/components/ui/spinner";
 import {
   EditableTable,
   type EditableColumn,
+  type EditableTableRef,
 } from "@/components/organism/EditableTable";
 import { DrawerFieldContent } from "./DrawerField";
 import { ImportFieldByCsv } from "./importFieldByCsv";
@@ -177,7 +178,7 @@ const buildFieldsEditColumns = (companies: Company[]): EditableColumn[] => {
 };
 
 export default function Fields(): React.ReactElement {
-  const tableRef = useRef<EditableTable>(null);
+  const tableRef = useRef<EditableTableRef>(null);
 
   const {
     fields,

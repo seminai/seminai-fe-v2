@@ -10,7 +10,11 @@ interface JobGroupCardProps {
   onClick: () => void;
 }
 
-export function JobGroupCard({ group, isSelected, onClick }: JobGroupCardProps) {
+export function JobGroupCard({
+  group,
+  isSelected,
+  onClick,
+}: JobGroupCardProps) {
   const formattedDate = new Date(group.createdAt).toLocaleDateString("it-IT", {
     day: "2-digit",
     month: "short",
@@ -58,7 +62,7 @@ export function JobGroupCard({ group, isSelected, onClick }: JobGroupCardProps) 
         <ChevronRight
           className={cn(
             "h-4 w-4 shrink-0 transition-colors",
-            isSelected ? "text-agri-green-600" : "text-slate-300"
+            isSelected ? "text-black" : "text-slate-300"
           )}
         />
       </div>
@@ -67,4 +71,3 @@ export function JobGroupCard({ group, isSelected, onClick }: JobGroupCardProps) 
 }
 
 export default JobGroupCard;
-

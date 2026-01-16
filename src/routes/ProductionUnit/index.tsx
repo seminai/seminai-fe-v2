@@ -412,21 +412,23 @@ function FieldsAllocationSection({
   const formattedEndDate = endDate ? endDate.split("T")[0] : "";
 
   // Ottieni i campi disponibili nel range di date
-  const {
-    companies: availableCompanies,
-    isLoading: isLoadingAvailability,
-  } = useFieldsAvailability(formattedStartDate, formattedEndDate, {
-    enabled: isEditing && !!formattedStartDate && !!formattedEndDate,
-  });
+  const { companies: availableCompanies, isLoading: isLoadingAvailability } =
+    useFieldsAvailability(formattedStartDate, formattedEndDate, {
+      enabled: isEditing && !!formattedStartDate && !!formattedEndDate,
+    });
 
   // Trova i campi disponibili per la company dell'unità produttiva
   const availableFieldsForCompany = useMemo(() => {
-    const companyData = availableCompanies.find((c) => c.companyId === companyId);
+    const companyData = availableCompanies.find(
+      (c) => c.companyId === companyId
+    );
     if (!companyData) return [];
-    
+
     // Filtra i campi già allocati
     const allocatedFieldIds = new Set(allocations.map((a) => a.fieldId));
-    return companyData.fields.filter((f) => !allocatedFieldIds.has(f.id) && f.areaAvailable > 0);
+    return companyData.fields.filter(
+      (f) => !allocatedFieldIds.has(f.id) && f.areaAvailable > 0
+    );
   }, [availableCompanies, companyId, allocations]);
 
   // Opzioni per il dropdown dei campi disponibili
@@ -439,23 +441,27 @@ function FieldsAllocationSection({
 
   // Inizializza le allocazioni dai campi correnti
   useEffect(() => {
-    const initialAllocations: FieldAllocationRow[] = currentFields.map((field) => ({
-      id: field.id,
-      fieldId: field.id,
-      fieldName: field.name,
-      companyName: "",
-      sauHa: field.sauHa,
-      areaAvailable: field.sauHa,
-      areaHa: field.areaHaOnField,
-      isNew: false,
-    }));
+    const initialAllocations: FieldAllocationRow[] = currentFields.map(
+      (field) => ({
+        id: field.id,
+        fieldId: field.id,
+        fieldName: field.name,
+        companyName: "",
+        sauHa: field.sauHa,
+        areaAvailable: field.sauHa,
+        areaHa: field.areaHaOnField,
+        isNew: false,
+      })
+    );
     setAllocations(initialAllocations);
   }, [currentFields]);
 
   const handleAddField = () => {
     if (!selectedFieldToAdd) return;
 
-    const fieldData = availableFieldsForCompany.find((f) => f.id === selectedFieldToAdd);
+    const fieldData = availableFieldsForCompany.find(
+      (f) => f.id === selectedFieldToAdd
+    );
     if (!fieldData) return;
 
     const newAllocation: FieldAllocationRow = {
@@ -542,7 +548,7 @@ function FieldsAllocationSection({
             size="sm"
             onClick={handleSaveAllocations}
             disabled={isSaving}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-agri-green-500 hover:bg-agri-green-600"
           >
             {isSaving ? (
               <>
@@ -552,7 +558,7 @@ function FieldsAllocationSection({
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                Salva Allocazioni
+                Salva
               </>
             )}
           </Button>
@@ -605,7 +611,10 @@ function FieldsAllocationSection({
                     <div className="flex items-center gap-2">
                       <span>{allocation.fieldName}</span>
                       {allocation.isNew && (
-                        <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-green-100 text-green-700"
+                        >
                           Nuovo
                         </Badge>
                       )}
@@ -620,7 +629,11 @@ function FieldsAllocationSection({
                         type="number"
                         step="0.01"
                         min="0"
-                        max={allocation.isNew ? allocation.areaAvailable : allocation.sauHa}
+                        max={
+                          allocation.isNew
+                            ? allocation.areaAvailable
+                            : allocation.sauHa
+                        }
                         value={allocation.areaHa}
                         onChange={(e) =>
                           handleAreaChange(
@@ -855,7 +868,7 @@ function ProductionUnitCyclesSection({
                       size="sm"
                       onClick={handleSave}
                       disabled={isUpdating}
-                      className="bg-blue-600 hover:bg-blue-700"
+                      className="bg-agri-green-500 hover:bg-agri-green-600"
                     >
                       {isUpdating ? "Salvataggio..." : "Salva"}
                     </Button>
@@ -1609,7 +1622,6 @@ export default function ProductionUnit(): React.ReactElement {
             <p className="text-sm">{productionUnit.companyName}</p>
           </div>
 
-
           {/* Coltura */}
           <div>
             <Label className="text-sm font-medium text-gray-500">Coltura</Label>
@@ -1897,7 +1909,7 @@ export default function ProductionUnit(): React.ReactElement {
                 variant="default"
                 onClick={handleSaveEdit}
                 disabled={isSaving}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-agri-green-500 hover:bg-agri-green-600"
               >
                 <Save className="w-4 h-4 mr-2" />
                 {isSaving ? "Salvataggio..." : "Salva"}
@@ -1971,7 +1983,7 @@ export default function ProductionUnit(): React.ReactElement {
               <Button
                 data-table-slot="right"
                 variant="ghost"
-                className="order-last gap-2 text-muted-foreground bg-agri-green-200 text-agri-green-700 cursor-pointer"
+                className="order-last gap-2 cursor-pointer text-gray-600 hover:text-gray-600"
                 asChild
               >
                 <Link to="/new-production-unit">
@@ -2019,7 +2031,6 @@ export default function ProductionUnit(): React.ReactElement {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
     </div>
   );
 }

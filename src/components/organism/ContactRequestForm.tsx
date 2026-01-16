@@ -205,9 +205,7 @@ export function ContactRequestForm({
       </div>
 
       {errorMessage && <p className="text-sm text-red-500">{errorMessage}</p>}
-      {successMessage && (
-        <p className="text-sm text-agri-green-600">{successMessage}</p>
-      )}
+      {successMessage && <p className="text-sm text-black">{successMessage}</p>}
 
       <button
         type="submit"

@@ -5,6 +5,7 @@ import ProtectedLayout from "@/layouts/ProtectedLayout";
 import { UserRole } from "@/api/auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 
 class ProtectedLayoutSkeletonRenderer {
   private readonly navigationItemsCount = 6;
@@ -116,8 +117,10 @@ export default function ProtectedRoute() {
   }
 
   return (
-    <ProtectedLayout>
-      <Outlet />
-    </ProtectedLayout>
+    <WorkspaceProvider>
+      <ProtectedLayout>
+        <Outlet />
+      </ProtectedLayout>
+    </WorkspaceProvider>
   );
 }

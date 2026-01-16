@@ -388,7 +388,7 @@ function FileDropZone({
           <IoCloudUploadOutline
             className={cn(
               "w-12 h-12 transition-colors",
-              isDragging ? "text-agri-green-600" : "text-neutral-400"
+              isDragging ? "text-black" : "text-neutral-400"
             )}
           />
         </div>
@@ -494,7 +494,7 @@ function StepperIndicator({
                   isCompleted
                     ? "bg-agri-green-600 border-agri-green-600 text-white"
                     : isCurrent
-                    ? "bg-white border-agri-green-600 text-agri-green-600"
+                    ? "bg-white border-agri-green-600 text-black"
                     : "bg-white border-neutral-300 text-neutral-400"
                 )}
               >
@@ -507,7 +507,7 @@ function StepperIndicator({
               <span
                 className={cn(
                   "text-sm font-medium",
-                  isCurrent ? "text-agri-green-700" : "text-neutral-500"
+                  isCurrent ? "text-black" : "text-neutral-500"
                 )}
               >
                 {step.label}
@@ -1038,8 +1038,8 @@ export default function QuickCreatePage(): React.ReactElement {
             />
             {selectedFile && (
               <div className="mt-6 flex items-center gap-3 px-4 py-3 bg-agri-green-50 rounded-xl">
-                <IoCheckmarkCircle className="w-5 h-5 text-agri-green-600" />
-                <span className="text-agri-green-700 font-medium">
+                <IoCheckmarkCircle className="w-5 h-5 text-black" />
+                <span className="text-black font-medium">
                   {selectedFile.name}
                 </span>
               </div>

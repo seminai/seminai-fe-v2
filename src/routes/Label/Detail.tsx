@@ -722,7 +722,6 @@ export default function LabelDetailPage(): React.ReactElement {
                     rows={[rowData]}
                     isModify={true}
                     isVertical={true}
-                    alwaysEdit={true}
                     getRowId={() => "row-0"}
                     onSave={async ({ updated }) => {
                       try {
@@ -1306,7 +1305,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                   <span className="hidden sm:inline"> - </span>
                                   {d.fase_fenologica ||
                                     "Fase non specificata"}{" "}
-                                  <span className="text-agri-green-700 font-bold">
+                                  <span className="text-black font-bold">
                                     (
                                     {d.dose_kg_ha != null
                                       ? `${d.dose_kg_ha} kg/ha`
@@ -1547,7 +1546,7 @@ export default function LabelDetailPage(): React.ReactElement {
                               <span className="text-muted-foreground text-xs sm:text-sm">
                                 <span className="hidden sm:inline"> - </span>
                                 {d.malattia || "Malattia non specificata"}{" "}
-                                <span className="text-agri-green-700 font-bold">
+                                <span className="text-black font-bold">
                                   ({countFilledFields(d)})
                                 </span>
                               </span>

@@ -28,6 +28,7 @@ import {
 import {
   EditableTable,
   type EditableColumn,
+  type EditableTableRef,
 } from "@/components/organism/EditableTable";
 import {
   Calendar,
@@ -97,8 +98,7 @@ interface ManageSectionProps {
   isWarehouseProductsLoading: boolean;
   isImportingFromWarehouse: boolean;
   handleRegistryProductSelected: (record: FitosanitariDatasetRecord) => void;
-  renderProductLabelAction: (row: Record<string, unknown>) => ReactElement;
-  editableTableRef: RefObject<EditableTable | null>;
+  editableTableRef: RefObject<EditableTableRef | null>;
   strategy: DosageStrategy;
   setStrategy: Dispatch<SetStateAction<DosageStrategy>>;
   strategyOptions: Array<{
@@ -182,7 +182,6 @@ export function ManageSection({
   isWarehouseProductsLoading,
   isImportingFromWarehouse,
   handleRegistryProductSelected,
-  renderProductLabelAction,
   editableTableRef,
   strategy,
   setStrategy,
@@ -369,7 +368,7 @@ export function ManageSection({
               addButton={false}
               onSelectionChange={handleUnitSelectionChange}
               showDeleteAction={false}
-              getRowId={(row) => (row as { id: string }).id}
+              getRowId={(row: Record<string, unknown>) => (row as { id: string }).id}
               className="bg-white rounded-2xl border border-neutral-200"
               exportFileName="unitaproduttive_selezione"
             />
@@ -429,8 +428,8 @@ export function ManageSection({
                     "registry"
                   )) && (
                   <Button
-                    variant={showAutomaticCompilation ? "default" : "outline"}
-                    className="gap-2"
+                    variant="outline"
+                    className="gap-2 bg-agri-green-500 text-white border-agri-green-500 hover:bg-agri-green-600 hover:text-white hover:border-agri-green-600"
                     onClick={() => {
                       onSelectImportMethod("registry");
                       setShowAutomaticCompilation((prev) => !prev);
@@ -454,7 +453,7 @@ export function ManageSection({
                   )) && (
                   <Button
                     variant="outline"
-                    className="gap-2"
+                    className="gap-2 bg-agri-green-500 text-white border-agri-green-500 hover:bg-agri-green-600 hover:text-white hover:border-agri-green-600"
                     onClick={() => {
                       onSelectImportMethod("warehouse");
                       handleImportFromWarehouse();
@@ -572,10 +571,9 @@ export function ManageSection({
               onSave={handleSaveProducts}
               onSelectionChange={handleProductSelectionChange}
               showDeleteAction={false}
-              getRowId={(row, index) =>
+              getRowId={(row: Record<string, unknown>, index: number) =>
                 `${row.productName}-${row.registrationNumber}-${index}`
               }
-              lastComponent={renderProductLabelAction}
               exportFileName="prodotti_dosaggio"
             />
           </div>

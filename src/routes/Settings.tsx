@@ -263,7 +263,8 @@ export default function Settings() {
   }, [ifarmingApiKey, editingIfarming]);
 
   const isQdcModified = editingQdc && qdcValue !== qdcOriginalValue;
-  const isIfarmingModified = editingIfarming && ifarmingValue !== ifarmingOriginalValue;
+  const isIfarmingModified =
+    editingIfarming && ifarmingValue !== ifarmingOriginalValue;
 
   const usageRows = React.useMemo(() => {
     return usages.map((usage) => new TokenUsageViewModel(usage));
@@ -412,7 +413,9 @@ export default function Settings() {
       },
       onError: (e: unknown) => {
         const message =
-          e instanceof Error ? e.message : "Errore durante l'eliminazione della cache";
+          e instanceof Error
+            ? e.message
+            : "Errore durante l'eliminazione della cache";
         toast.error(message);
       },
     });
@@ -483,7 +486,7 @@ export default function Settings() {
           </div>
           <div className="text-gray-600 text-sm">{user.email}</div>
           <div className="text-gray-600 text-sm">{current?.companyName}</div>
-          <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-agri-green-50 text-agri-green-700 rounded-full text-sm font-medium">
+          <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-agri-green-50 text-black rounded-full text-sm font-medium">
             <span className="text-lg">💰</span>
             <span>{user.credits} crediti disponibili</span>
           </div>
@@ -687,9 +690,7 @@ export default function Settings() {
                   id="qdcApiKey"
                   type="password"
                   placeholder={
-                    qdcApiKey === null
-                      ? "Inserisci credenziali"
-                      : undefined
+                    qdcApiKey === null ? "Inserisci credenziali" : undefined
                   }
                   value={editingQdc ? qdcValue : "••••••••••••••••"}
                   readOnly={!editingQdc}
@@ -790,7 +791,10 @@ export default function Settings() {
                       size="sm"
                       onClick={() => {
                         setIfarmingValue(ifarmingOriginalValue);
-                        if (ifarmingApiKey === null && ifarmingOriginalValue === "") {
+                        if (
+                          ifarmingApiKey === null &&
+                          ifarmingOriginalValue === ""
+                        ) {
                           // Rimani in editing se era null e non c'era valore originale
                         } else {
                           setEditingIfarming(false);
@@ -845,7 +849,10 @@ export default function Settings() {
         </Card>
       </div>
 
-      <Dialog open={clearCacheDialogOpen} onOpenChange={setClearCacheDialogOpen}>
+      <Dialog
+        open={clearCacheDialogOpen}
+        onOpenChange={setClearCacheDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Conferma eliminazione cache</DialogTitle>
@@ -919,7 +926,7 @@ export default function Settings() {
                 className="rounded-lg border border-agri-green-100 bg-agri-green-50/60 p-3"
               >
                 <div className="text-xs text-gray-600">{item.label}</div>
-                <div className="text-base font-semibold text-agri-green-900">
+                <div className="text-base font-semibold text-black">
                   {item.value}
                 </div>
               </div>

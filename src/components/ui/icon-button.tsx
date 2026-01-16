@@ -18,10 +18,9 @@ const iconButtonVariants = cva(
         warning:
           "bg-yellow-600 text-white hover:bg-yellow-700 focus-visible:ring-yellow-600/20",
         info: "bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-600/20",
-        ghost:
-          "text-agri-green-700 hover:bg-agri-green-100 hover:text-agri-green-800",
+        ghost: "text-black hover:bg-agri-green-100 hover:text-black",
         outline:
-          "border border-agri-green-600 bg-background text-agri-green-600 hover:bg-agri-green-600 hover:text-white hover:border-agri-green-600",
+          "border border-agri-green-600 bg-background text-black hover:bg-agri-green-600 hover:text-white hover:border-agri-green-600",
       },
       size: {
         sm: "h-8 w-8 p-1",

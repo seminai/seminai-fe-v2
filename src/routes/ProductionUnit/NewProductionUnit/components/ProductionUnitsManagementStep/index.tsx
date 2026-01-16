@@ -716,7 +716,7 @@ const ProductionUnitForm: React.FC<ProductionUnitFormProps> = ({
         <Button variant="outline" onClick={onCancel}>
           Annulla
         </Button>
-        <Button onClick={handleSave}>Salva Unità Produttiva</Button>
+        <Button onClick={handleSave}>Salva</Button>
       </div>
     </div>
   );

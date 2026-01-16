@@ -463,7 +463,7 @@ export function ReviewJobsView({
                     className={cn(
                       "font-mono text-xs w-full justify-center bg-agri-green-50",
                       selectedGroupSummary?.jobId === group.jobId &&
-                        " text-agri-green-700 "
+                        " text-black "
                     )}
                   >
                     #{group.jobId}
@@ -552,7 +552,21 @@ export function ReviewJobsView({
                     className="flex-1 flex flex-col min-h-0"
                     customExportConfig={exportConfig}
                     exportFileName="operazioni_revisione"
-                  />
+                  >
+                    {selectedGroupSummary && !isRightSidebarOpen && (
+                      <Button
+                        data-table-slot="right"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onToggleRightSidebar(true)}
+                        className="text-muted-foreground hover:text-foreground cursor-pointer"
+                        title="Apri pannello dettagli"
+                      >
+                        <PanelRightOpen className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Dettagli</span>
+                      </Button>
+                    )}
+                  </EditableTable>
                 </div>
               )}
             </div>
@@ -682,17 +696,6 @@ export function ReviewJobsView({
             </div>
           </div>
         </>
-      )}
-      {selectedGroupSummary && !isRightSidebarOpen && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onToggleRightSidebar(true)}
-          className="h-8 w-8 p-0 border-l border-slate-200 rounded-none"
-          title="Apri pannello dettagli"
-        >
-          <PanelRightOpen className="h-4 w-4 text-slate-500" />
-        </Button>
       )}
     </div>
   );

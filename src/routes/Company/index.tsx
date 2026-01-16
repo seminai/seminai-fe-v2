@@ -10,6 +10,7 @@ import { Spinner } from "@/components/ui/spinner";
 import {
   EditableTable,
   type EditableColumn,
+  type EditableTableRef,
 } from "@/components/organism/EditableTable";
 import { DrawerCompanyContent } from "./DrawerCompany";
 import { ImportCompanyByPdf } from "./ImportCompanyByPdf";
@@ -125,7 +126,7 @@ const buildCompaniesEditColumns = (): EditableColumn[] => {
 };
 
 export default function Company(): React.ReactElement {
-  const tableRef = useRef<EditableTable>(null);
+  const tableRef = useRef<EditableTableRef>(null);
   const navigate = useNavigate();
   const detailsNavigator = React.useMemo(
     () => new CompanyDetailsNavigator(navigate),

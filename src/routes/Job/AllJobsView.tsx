@@ -334,7 +334,21 @@ export function AllJobsView({
                   onSelectionChange={onSelectionChange}
                   customExportConfig={exportConfig}
                   exportFileName="operazioni"
-                />
+                >
+                  {!isRightSidebarOpen && (
+                    <Button
+                      data-table-slot="right"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onToggleRightSidebar(true)}
+                      className="text-muted-foreground hover:text-foreground cursor-pointer"
+                      title="Apri pannello dettagli"
+                    >
+                      <PanelRightOpen className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Dettagli</span>
+                    </Button>
+                  )}
+                </EditableTable>
               </div>
             </div>
           )}
@@ -486,7 +500,7 @@ export function AllJobsView({
                     selectedRows={convertToJobRows(selectedRows)}
                   />
                 ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm">
+                  <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm p-4">
                     <Sparkles className="h-8 w-8 mb-2 opacity-50" />
                     <p>Seleziona una o più operazioni per vedere i dettagli</p>
                   </div>
@@ -526,17 +540,6 @@ export function AllJobsView({
             </div>
           </div>
         </>
-      )}
-      {!isRightSidebarOpen && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onToggleRightSidebar(true)}
-          className="h-8 w-8 p-2  border-slate-200 rounded-lg"
-          title="Apri pannello dettagli"
-        >
-          <PanelRightOpen className="h-4 w-4 text-slate-500" />
-        </Button>
       )}
     </div>
   );

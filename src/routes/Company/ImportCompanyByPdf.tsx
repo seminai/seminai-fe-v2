@@ -202,7 +202,10 @@ export function ImportCompanyByPdf({
   return (
     <Drawer open={isDrawerOpen} onOpenChange={handleDrawerOpenChange}>
       <DrawerTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button
+          variant="outline"
+          className="gap-2 bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600"
+        >
           <FileText className="h-4 w-4" />
           Importa file
         </Button>

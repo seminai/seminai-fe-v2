@@ -187,7 +187,7 @@ function GeneralDashboard(): React.ReactElement {
   if (isLoading) {
     return (
       <div className="flex flex-col h-full overflow-hidden">
-        <PageHeader title="Dashboard" rightElement={quickCreateButton} />
+        <PageHeader title="Dashboard">{quickCreateButton}</PageHeader>
 
         <div className="flex-1 overflow-auto p-6 ">
           <div className="max-w-7xl mx-auto">
@@ -200,7 +200,7 @@ function GeneralDashboard(): React.ReactElement {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <PageHeader title="Dashboard" rightElement={quickCreateButton} />
+      <PageHeader title="Dashboard">{quickCreateButton}</PageHeader>
 
       <div className="flex-1 overflow-auto p-6 ">
         <div className="max-w-7xl mx-auto">

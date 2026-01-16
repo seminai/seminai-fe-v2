@@ -4,7 +4,7 @@ import { useCompanyWarehouses } from "@/hooks/useCompanyWarehouses";
 import {
   EditableTable,
   type EditableColumn,
-  type EditableTable as EditableTableType,
+  type EditableTableRef,
 } from "@/components/organism/EditableTable";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
@@ -88,7 +88,7 @@ const buildWarehousesColumns = (): EditableColumn[] => {
 export function CompanyWarehousesPanel({
   companyId,
 }: CompanyWarehousesPanelProps): React.ReactElement {
-  const tableRef = useRef<EditableTableType>(null);
+  const tableRef = useRef<EditableTableRef>(null);
 
   const {
     warehouses,
@@ -192,7 +192,9 @@ export function CompanyWarehousesPanel({
           updateData.foglio = row.foglio ? String(row.foglio) : null;
         }
         if (row.particella !== undefined) {
-          updateData.particella = row.particella ? String(row.particella) : null;
+          updateData.particella = row.particella
+            ? String(row.particella)
+            : null;
         }
         if (row.subalterno !== undefined) {
           updateData.subalterno = row.subalterno
@@ -250,7 +252,7 @@ export function CompanyWarehousesPanel({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 py-10 text-agri-green-700">
+      <div className="flex flex-col items-center justify-center gap-3 py-10 text-black">
         <Spinner size={28} ariaLabel="Caricamento magazzini" />
         <p className="text-sm">Caricamento magazzini in corso…</p>
       </div>
