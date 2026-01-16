@@ -700,15 +700,17 @@ function AppearanceSettingsTab() {
  */
 function MembersSettingsTab() {
   const { currentWorkspace } = useWorkspaceContext();
-  const { data: members = [], isLoading } = useWorkspaceMembers(
-    currentWorkspace?.id ?? ""
-  );
+  const { data, isLoading } = useWorkspaceMembers(currentWorkspace?.id ?? "");
   const { mutateAsync: doInviteMember, isPending: isInviting } =
     useInviteMember();
   const { mutateAsync: doUpdateMember } = useUpdateMember();
   const { mutateAsync: doRemoveMember } = useRemoveMember();
 
   const [inviteDrawerOpen, setInviteDrawerOpen] = useState(false);
+
+  const members = data?.members ?? [];
+  const invitations = data?.invitations ?? [];
+  const totalCount = members.length + invitations.length;
 
   const inviteForm = useForm<InviteFormValues>({
     resolver: zodResolver(inviteFormSchema),
@@ -775,7 +777,13 @@ function MembersSettingsTab() {
           <div>
             <h3 className="text-lg font-semibold">Membri del Workspace</h3>
             <p className="text-sm text-muted-foreground">
+              {totalCount} {totalCount === 1 ? "persona" : "persone"} (
               {members.length} membri
+              {invitations.length > 0 &&
+                `, ${invitations.length} invitat${
+                  invitations.length === 1 ? "o" : "i"
+                }`}
+              )
             </p>
           </div>
           <Button onClick={() => setInviteDrawerOpen(true)}>
@@ -788,12 +796,13 @@ function MembersSettingsTab() {
           <div className="text-center py-8 text-muted-foreground">
             Caricamento...
           </div>
-        ) : members.length === 0 ? (
+        ) : totalCount === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             Nessun membro
           </div>
         ) : (
           <div className="space-y-2">
+            {/* Membri attivi */}
             {members.map((member) => (
               <div
                 key={member.id}
@@ -868,6 +877,39 @@ function MembersSettingsTab() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
+                </div>
+              </div>
+            ))}
+
+            {/* Inviti pendenti */}
+            {invitations.map((invitation) => (
+              <div
+                key={invitation.id}
+                className="flex items-center justify-between p-4 rounded-xl bg-amber-50/50 border border-amber-200 hover:bg-amber-50 transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback>
+                      {invitation.user?.name?.[0] ?? invitation.email[0] ?? "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">
+                      {invitation.user?.name ?? invitation.email}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {invitation.email}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge
+                    variant="secondary"
+                    className="bg-amber-100 text-amber-800 font-medium"
+                  >
+                    Invito in attesa
+                  </Badge>
+                  <MemberRoleBadge role={invitation.role} />
                 </div>
               </div>
             ))}

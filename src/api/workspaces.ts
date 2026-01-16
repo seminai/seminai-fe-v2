@@ -2,6 +2,7 @@ import { authenticatedHttpClient } from "./http";
 import type {
   Workspace,
   WorkspaceMember,
+  WorkspaceInvitation,
   Rule,
   CreateWorkspaceRequest,
   UpdateWorkspaceRequest,
@@ -161,7 +162,10 @@ export async function uploadWorkspaceLogo(
 export async function getWorkspaceMembers(
   workspaceId: string,
   baseUrl: string = BASE_URL
-): Promise<WorkspaceMember[]> {
+): Promise<{
+  members: WorkspaceMember[];
+  invitations: Array<WorkspaceInvitation & { user?: { id: string; name: string; email: string } }>;
+}> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/workspaces/${workspaceId}/members`,
     { method: "GET" }
@@ -173,7 +177,10 @@ export async function getWorkspaceMembers(
   }
 
   const result = (await response.json()) as WorkspaceMembersResponse;
-  return result.data.members;
+  return {
+    members: result.data.members,
+    invitations: result.data.invitations,
+  };
 }
 
 export async function inviteMember(

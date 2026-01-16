@@ -214,6 +214,7 @@ export type WorkspaceMembersResponse = {
   status: "success";
   data: {
     members: WorkspaceMember[];
+    invitations: Array<WorkspaceInvitation & { user?: { id: string; name: string; email: string } }>;
   };
 };
 
