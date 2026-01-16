@@ -80,6 +80,17 @@ export type WorkspaceInvitation = {
   createdAt: string;
 };
 
+export type PendingInvitation = WorkspaceInvitation & {
+  workspace: {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    logoUrl: string | null;
+    iconUrl: string | null;
+  };
+};
+
 export type Rule = {
   id: string;
   workspaceId: string;
@@ -229,6 +240,13 @@ export type InvitationResponse = {
   status: "success";
   data: {
     invitation: WorkspaceInvitation;
+  };
+};
+
+export type PendingInvitationsResponse = {
+  status: "success";
+  data: {
+    invitations: PendingInvitation[];
   };
 };
 

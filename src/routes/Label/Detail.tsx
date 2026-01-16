@@ -7,6 +7,7 @@ import {
   type LabelResistenza,
 } from "@/api/labels";
 import { useLabel } from "@/hooks/useLabel";
+import { useMe, UserRole } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -406,6 +407,11 @@ export default function LabelDetailPage(): React.ReactElement {
   const [view, setView] = React.useState<"dati" | "dosaggi">("dati");
   const [viewMode, setViewMode] = React.useState<"table" | "json">("table");
 
+  // Permessi utente
+  const { data: userData } = useMe();
+  const userRole = userData?.role;
+  const canModify = userRole === UserRole.ADMIN || userRole === UserRole.LABEL_MANAGER;
+
   const {
     detail,
     isLoading,
@@ -518,30 +524,32 @@ export default function LabelDetailPage(): React.ReactElement {
             </h1>
             {detail ? (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200 self-start">
-                <Checkbox
-                  id="is-verified"
-                  checked={detail.isVerified}
-                  disabled={isVerifying}
-                  onCheckedChange={async (checked) => {
-                    try {
-                      await verifyAsync(Boolean(checked));
-                    } catch {
-                      /* handled in mutation */
-                    }
-                  }}
-                />
+                {canModify ? (
+                  <Checkbox
+                    id="is-verified"
+                    checked={detail.isVerified}
+                    disabled={isVerifying}
+                    onCheckedChange={async (checked) => {
+                      try {
+                        await verifyAsync(Boolean(checked));
+                      } catch {
+                        /* handled in mutation */
+                      }
+                    }}
+                  />
+                ) : null}
                 <label
                   htmlFor="is-verified"
-                  className={`text-sm font-medium cursor-pointer whitespace-nowrap ${
-                    detail.isVerified ? "text-green-700" : "text-gray-600"
-                  }`}
+                  className={`text-sm font-medium whitespace-nowrap ${
+                    canModify ? "cursor-pointer" : ""
+                  } ${detail.isVerified ? "text-green-700" : "text-gray-600"}`}
                 >
                   {detail.isVerified ? "✓ Verificata" : "Non verificata"}
                 </label>
               </div>
             ) : null}
           </div>
-          {detail?.rawText ? (
+          {detail?.rawText && canModify ? (
             <Drawer direction="right">
               <DrawerTrigger asChild>
                 <button className="text-xs cursor-pointer text-gray-500 hover:text-gray-700 underline self-start sm:self-auto">
@@ -651,26 +659,28 @@ export default function LabelDetailPage(): React.ReactElement {
               Dosaggi
             </button>
           </div>
-          <Button
-            onClick={async () => {
-              try {
-                await confirmAsync();
-              } catch {
-                /* handled in mutation */
-              }
-            }}
-            disabled={isConfirming || !detail}
-            className="ml-auto"
-          >
-            {isConfirming ? (
-              <Spinner size={16} ariaLabel="Aggiornamento in corso" />
-            ) : (
-              <>
-                <RefreshCcw className="h-4 w-4 mr-2" />
-                Aggiorna
-              </>
-            )}
-          </Button>
+          {canModify && (
+            <Button
+              onClick={async () => {
+                try {
+                  await confirmAsync();
+                } catch {
+                  /* handled in mutation */
+                }
+              }}
+              disabled={isConfirming || !detail}
+              className="ml-auto"
+            >
+              {isConfirming ? (
+                <Spinner size={16} ariaLabel="Aggiornamento in corso" />
+              ) : (
+                <>
+                  <RefreshCcw className="h-4 w-4 mr-2" />
+                  Aggiorna
+                </>
+              )}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -720,10 +730,10 @@ export default function LabelDetailPage(): React.ReactElement {
                   <EditableTable
                     columns={columns}
                     rows={[rowData]}
-                    isModify={true}
+                    isModify={canModify}
                     isVertical={true}
                     getRowId={() => "row-0"}
-                    onSave={async ({ updated }) => {
+                    onSave={canModify ? async ({ updated }) => {
                       try {
                         const row = updated?.[0] ?? {};
 
@@ -956,7 +966,7 @@ export default function LabelDetailPage(): React.ReactElement {
                       } catch {
                         /* handled in mutation */
                       }
-                    }}
+                    } : undefined}
                     className="bg-background"
                     exportFileName="etichetta_dettaglio"
                   />
@@ -965,51 +975,53 @@ export default function LabelDetailPage(): React.ReactElement {
                     <div className="mt-6 space-y-4">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <h2 className="text-base font-semibold">Resistenze</h2>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            variant="outline"
-                            className="w-full sm:w-auto"
-                            onClick={() =>
-                              setEditedResistenze((prev) => [...prev, {}])
-                            }
-                            disabled={isSaving || !detail}
-                          >
-                            Aggiungi resistenza
-                          </Button>
-                          {hasEditedResistenzeChanges ? (
-                            <>
-                              <Button
-                                variant="outline"
-                                className="w-full sm:w-auto"
-                                onClick={() =>
-                                  setEditedResistenze(normalizedResistenze)
-                                }
-                                disabled={isSaving}
-                              >
-                                Annulla
-                              </Button>
-                              <Button
-                                className="w-full sm:w-auto"
-                                onClick={async () => {
-                                  if (!detail) return;
-                                  try {
-                                    await saveAsync({
-                                      label: {
-                                        ...detail.label,
-                                        resistenze: editedResistenze,
-                                      },
-                                    });
-                                  } catch {
-                                    /* handled in mutation */
+                        {canModify && (
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="outline"
+                              className="w-full sm:w-auto"
+                              onClick={() =>
+                                setEditedResistenze((prev) => [...prev, {}])
+                              }
+                              disabled={isSaving || !detail}
+                            >
+                              Aggiungi resistenza
+                            </Button>
+                            {hasEditedResistenzeChanges ? (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  className="w-full sm:w-auto"
+                                  onClick={() =>
+                                    setEditedResistenze(normalizedResistenze)
                                   }
-                                }}
-                                disabled={isSaving}
-                              >
-                                {isSaving ? "Salvataggio…" : "Salva"}
-                              </Button>
-                            </>
-                          ) : null}
-                        </div>
+                                  disabled={isSaving}
+                                >
+                                  Annulla
+                                </Button>
+                                <Button
+                                  className="w-full sm:w-auto"
+                                  onClick={async () => {
+                                    if (!detail) return;
+                                    try {
+                                      await saveAsync({
+                                        label: {
+                                          ...detail.label,
+                                          resistenze: editedResistenze,
+                                        },
+                                      });
+                                    } catch {
+                                      /* handled in mutation */
+                                    }
+                                  }}
+                                  disabled={isSaving}
+                                >
+                                  {isSaving ? "Salvataggio…" : "Salva"}
+                                </Button>
+                              </>
+                            ) : null}
+                          </div>
+                        )}
                       </div>
 
                       {editedResistenze.length > 0 ? (
@@ -1052,6 +1064,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                           setEditedResistenze(next);
                                         }}
                                         className="min-h-[120px]"
+                                        readOnly={!canModify}
                                       />
                                     </div>
                                     <div className="space-y-2">
@@ -1072,6 +1085,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                           setEditedResistenze(next);
                                         }}
                                         className="min-h-[100px]"
+                                        readOnly={!canModify}
                                       />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1098,6 +1112,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                             };
                                             setEditedResistenze(next);
                                           }}
+                                          readOnly={!canModify}
                                         />
                                       </div>
                                       <div className="space-y-2">
@@ -1123,6 +1138,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                             };
                                             setEditedResistenze(next);
                                           }}
+                                          readOnly={!canModify}
                                         />
                                       </div>
                                       <div className="space-y-2">
@@ -1146,6 +1162,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                             };
                                             setEditedResistenze(next);
                                           }}
+                                          readOnly={!canModify}
                                         />
                                       </div>
                                       <div className="space-y-2">
@@ -1169,23 +1186,26 @@ export default function LabelDetailPage(): React.ReactElement {
                                             };
                                             setEditedResistenze(next);
                                           }}
+                                          readOnly={!canModify}
                                         />
                                       </div>
                                     </div>
-                                    <div className="flex justify-end">
-                                      <Button
-                                        variant="ghost"
-                                        className="text-red-600 hover:text-red-700"
-                                        onClick={() => {
-                                          setEditedResistenze((prev) =>
-                                            prev.filter((_, i) => i !== idx)
-                                          );
-                                        }}
-                                        disabled={isSaving}
-                                      >
-                                        Rimuovi
-                                      </Button>
-                                    </div>
+                                    {canModify && (
+                                      <div className="flex justify-end">
+                                        <Button
+                                          variant="ghost"
+                                          className="text-red-600 hover:text-red-700"
+                                          onClick={() => {
+                                            setEditedResistenze((prev) =>
+                                              prev.filter((_, i) => i !== idx)
+                                            );
+                                          }}
+                                          disabled={isSaving}
+                                        >
+                                          Rimuovi
+                                        </Button>
+                                      </div>
+                                    )}
                                   </CardContent>
                                 </Card>
                               </AccordionContent>
@@ -1206,22 +1226,25 @@ export default function LabelDetailPage(): React.ReactElement {
                     value={labelJson}
                     onChange={(e) => setLabelJson(e.target.value)}
                     className="font-mono min-h-[400px]"
+                    readOnly={!canModify}
                   />
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={async () => {
-                        try {
-                          const obj = JSON.parse(labelJson);
-                          await saveAsync({ label: obj });
-                        } catch {
-                          toast.error("JSON non valido");
-                        }
-                      }}
-                      disabled={isSaving}
-                    >
-                      {isSaving ? "Salvataggio…" : "Salva"}
-                    </Button>
-                  </div>
+                  {canModify && (
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={async () => {
+                          try {
+                            const obj = JSON.parse(labelJson);
+                            await saveAsync({ label: obj });
+                          } catch {
+                            toast.error("JSON non valido");
+                          }
+                        }}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? "Salvataggio…" : "Salva"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )
             ) : null}
@@ -1231,7 +1254,7 @@ export default function LabelDetailPage(): React.ReactElement {
                 // Fertilizer Dosages View
                 viewMode === "table" ? (
                   <div className="space-y-4 pr-1">
-                    {JSON.stringify(editedFertilizerDosages) !==
+                    {canModify && JSON.stringify(editedFertilizerDosages) !==
                       JSON.stringify(fertilizerDosages) && (
                       <div className="sticky top-0 z-10 flex flex-col sm:flex-row sm:justify-end gap-2 mb-4 pb-2 bg-background border-b sm:border-b-0">
                         <Button
@@ -1343,6 +1366,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                             newDosaggi
                                           );
                                         }}
+                                        readOnly={!canModify}
                                       />
                                     </div>
                                     {/* Show dose_kg_ha if available, otherwise show min/max */}
@@ -1369,6 +1393,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                               newDosaggi
                                             );
                                           }}
+                                          readOnly={!canModify}
                                         />
                                       </div>
                                     ) : (
@@ -1397,6 +1422,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                                 newDosaggi
                                               );
                                             }}
+                                            readOnly={!canModify}
                                           />
                                         </div>
                                         <div className="space-y-2">
@@ -1423,6 +1449,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                                 newDosaggi
                                               );
                                             }}
+                                            readOnly={!canModify}
                                           />
                                         </div>
                                       </>
@@ -1446,6 +1473,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                             newDosaggi
                                           );
                                         }}
+                                        readOnly={!canModify}
                                       />
                                     </div>
                                   </div>
@@ -1468,27 +1496,30 @@ export default function LabelDetailPage(): React.ReactElement {
                       value={labelJson}
                       onChange={(e) => setLabelJson(e.target.value)}
                       className="font-mono min-h-[400px]"
+                      readOnly={!canModify}
                     />
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={async () => {
-                          try {
-                            const obj = JSON.parse(labelJson);
-                            await saveAsync({ label: obj });
-                          } catch {
-                            toast.error("JSON non valido");
-                          }
-                        }}
-                        disabled={isSaving}
-                      >
-                        {isSaving ? "Salvataggio…" : "Salva"}
-                      </Button>
-                    </div>
+                    {canModify && (
+                      <div className="flex justify-end">
+                        <Button
+                          onClick={async () => {
+                            try {
+                              const obj = JSON.parse(labelJson);
+                              await saveAsync({ label: obj });
+                            } catch {
+                              toast.error("JSON non valido");
+                            }
+                          }}
+                          disabled={isSaving}
+                        >
+                          {isSaving ? "Salvataggio…" : "Salva"}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )
               ) : viewMode === "table" ? (
                 <div className="space-y-4 pr-1">
-                  {JSON.stringify(editedDosaggi) !==
+                  {canModify && JSON.stringify(editedDosaggi) !==
                     JSON.stringify(detail.label?.dosaggi_dettagliati ?? []) && (
                     <div className="sticky top-0 z-10 flex flex-col sm:flex-row sm:justify-end gap-2 mb-4 pb-2 bg-background border-b sm:border-b-0">
                       <Button
@@ -1571,6 +1602,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                         };
                                         setEditedDosaggi(newDosaggi);
                                       }}
+                                      readOnly={!canModify}
                                     />
                                   </div>
                                   <div className="space-y-2">
@@ -1588,6 +1620,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                         };
                                         setEditedDosaggi(newDosaggi);
                                       }}
+                                      readOnly={!canModify}
                                     />
                                   </div>
                                   <div className="space-y-2">
@@ -1606,6 +1639,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                         };
                                         setEditedDosaggi(newDosaggi);
                                       }}
+                                      readOnly={!canModify}
                                     />
                                   </div>
                                   <div className="space-y-2">
@@ -1624,6 +1658,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                         };
                                         setEditedDosaggi(newDosaggi);
                                       }}
+                                      readOnly={!canModify}
                                     />
                                   </div>
                                   <div className="space-y-2">
@@ -1641,6 +1676,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                         };
                                         setEditedDosaggi(newDosaggi);
                                       }}
+                                      readOnly={!canModify}
                                     />
                                   </div>
                                   <div className="space-y-2">
@@ -1659,6 +1695,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                         };
                                         setEditedDosaggi(newDosaggi);
                                       }}
+                                      readOnly={!canModify}
                                     />
                                   </div>
                                   <div className="space-y-2">
@@ -1676,6 +1713,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                         };
                                         setEditedDosaggi(newDosaggi);
                                       }}
+                                      readOnly={!canModify}
                                     />
                                   </div>
                                   <div className="space-y-2">
@@ -1698,6 +1736,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                         };
                                         setEditedDosaggi(newDosaggi);
                                       }}
+                                      readOnly={!canModify}
                                     />
                                   </div>
                                   <div className="space-y-2">
@@ -1717,6 +1756,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                         };
                                         setEditedDosaggi(newDosaggi);
                                       }}
+                                      readOnly={!canModify}
                                     />
                                   </div>
                                   <div className="space-y-2">
@@ -1739,6 +1779,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                         };
                                         setEditedDosaggi(newDosaggi);
                                       }}
+                                      readOnly={!canModify}
                                     />
                                   </div>
                                   <div className="space-y-2">
@@ -1763,6 +1804,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                         };
                                         setEditedDosaggi(newDosaggi);
                                       }}
+                                      readOnly={!canModify}
                                     />
                                   </div>
                                   <div className="space-y-2 md:col-span-2">
@@ -1780,6 +1822,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                         };
                                         setEditedDosaggi(newDosaggi);
                                       }}
+                                      readOnly={!canModify}
                                     />
                                   </div>
                                   <div className="space-y-2 md:col-span-2">
@@ -1799,6 +1842,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                         };
                                         setEditedDosaggi(newDosaggi);
                                       }}
+                                      readOnly={!canModify}
                                     />
                                   </div>
                                   <div className="space-y-2 md:col-span-2">
@@ -1817,6 +1861,7 @@ export default function LabelDetailPage(): React.ReactElement {
                                         setEditedDosaggi(newDosaggi);
                                       }}
                                       className="min-h-[100px]"
+                                      readOnly={!canModify}
                                     />
                                   </div>
                                 </div>
@@ -1846,33 +1891,36 @@ export default function LabelDetailPage(): React.ReactElement {
                           });
                         }}
                         className="font-mono min-h-[240px]"
+                        readOnly={!canModify}
                       />
-                      <div className="flex justify-end">
-                        <Button
-                          onClick={async () => {
-                            try {
-                              const obj = JSON.parse(
-                                dosaggiJson[idx] ?? JSON.stringify(d)
-                              );
-                              const base = [
-                                ...(detail.label?.dosaggi_dettagliati ?? []),
-                              ];
-                              base[idx] = obj as LabelDosaggioDettagliato;
-                              await saveAsync({
-                                label: {
-                                  ...detail.label,
-                                  dosaggi_dettagliati: base,
-                                },
-                              });
-                            } catch {
-                              toast.error("JSON non valido");
-                            }
-                          }}
-                          disabled={isSaving}
-                        >
-                          {isSaving ? "Salvataggio…" : "Salva"}
-                        </Button>
-                      </div>
+                      {canModify && (
+                        <div className="flex justify-end">
+                          <Button
+                            onClick={async () => {
+                              try {
+                                const obj = JSON.parse(
+                                  dosaggiJson[idx] ?? JSON.stringify(d)
+                                );
+                                const base = [
+                                  ...(detail.label?.dosaggi_dettagliati ?? []),
+                                ];
+                                base[idx] = obj as LabelDosaggioDettagliato;
+                                await saveAsync({
+                                  label: {
+                                    ...detail.label,
+                                    dosaggi_dettagliati: base,
+                                  },
+                                });
+                              } catch {
+                                toast.error("JSON non valido");
+                              }
+                            }}
+                            disabled={isSaving}
+                          >
+                            {isSaving ? "Salvataggio…" : "Salva"}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                   {detail.label?.dosaggi_dettagliati?.length ? null : (
