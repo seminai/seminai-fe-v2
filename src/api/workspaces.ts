@@ -3,6 +3,7 @@ import type {
   Workspace,
   WorkspaceMember,
   WorkspaceInvitation,
+  PendingInvitation,
   Rule,
   CreateWorkspaceRequest,
   UpdateWorkspaceRequest,
@@ -18,6 +19,7 @@ import type {
   WorkspaceMembersResponse,
   WorkspaceMemberResponse,
   InvitationResponse,
+  PendingInvitationsResponse,
   RulesListResponse,
   RuleResponse,
   RuleAssignmentResponse,
@@ -222,6 +224,23 @@ export async function acceptInvitation(
 
   const result = (await response.json()) as WorkspaceMemberResponse;
   return result.data.member;
+}
+
+export async function getPendingInvitations(
+  baseUrl: string = BASE_URL
+): Promise<PendingInvitation[]> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/workspaces/invitations/pending`,
+    { method: "GET" }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to fetch pending invitations");
+  }
+
+  const result = (await response.json()) as PendingInvitationsResponse;
+  return result.data.invitations;
 }
 
 export async function updateMember(

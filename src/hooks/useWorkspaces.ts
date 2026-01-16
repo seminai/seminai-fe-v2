@@ -8,6 +8,8 @@ import {
   uploadWorkspaceLogo,
   getWorkspaceMembers,
   inviteMember,
+  acceptInvitation,
+  getPendingInvitations,
   updateMember,
   removeMember,
   getWorkspaceRules,
@@ -23,6 +25,7 @@ import type {
   Workspace,
   WorkspaceMember,
   WorkspaceInvitation,
+  PendingInvitation,
   CreateWorkspaceRequest,
   UpdateWorkspaceRequest,
   InviteMemberRequest,
@@ -44,6 +47,8 @@ export const workspaceKeys = {
   detail: (id: string) => [...workspaceKeys.details(), id] as const,
   members: (workspaceId: string) =>
     [...workspaceKeys.all, "members", workspaceId] as const,
+  pendingInvitations: () =>
+    [...workspaceKeys.all, "pending-invitations"] as const,
   rules: (workspaceId: string) =>
     [...workspaceKeys.all, "rules", workspaceId] as const,
   rule: (ruleId: string) => [...workspaceKeys.all, "rule", ruleId] as const,
@@ -174,6 +179,34 @@ export function useWorkspaceMembers(workspaceId: string | undefined) {
     queryFn: () => getWorkspaceMembers(workspaceId!),
     enabled: !!workspaceId,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+// ============ PENDING INVITATIONS ============
+
+export function usePendingInvitations() {
+  return useQuery<PendingInvitation[], Error>({
+    queryKey: workspaceKeys.pendingInvitations(),
+    queryFn: () => getPendingInvitations(),
+    staleTime: 60 * 1000, // 1 minute - invitations should be checked frequently
+  });
+}
+
+export function useAcceptInvitation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (token: string) => acceptInvitation(token),
+    onSuccess: () => {
+      // Invalidate workspaces list - user is now member of new workspace
+      queryClient.invalidateQueries({
+        queryKey: workspaceKeys.list(),
+      });
+      // Invalidate pending invitations - this invitation is no longer pending
+      queryClient.invalidateQueries({
+        queryKey: workspaceKeys.pendingInvitations(),
+      });
+    },
   });
 }
 

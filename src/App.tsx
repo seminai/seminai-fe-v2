@@ -23,6 +23,7 @@ import NewWorkspace from "./routes/Workspace/NewWorkspace";
 import WorkspaceSettings from "./routes/Workspace/WorkspaceSettings";
 import NewRule from "./routes/Workspace/NewRule";
 import EditRule from "./routes/Workspace/EditRule";
+import AcceptInvitation from "./routes/Workspace/AcceptInvitation";
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
         <Route path="/products" element={<Products />} />
         <Route path="/create-company-field-production" element={<QuickCreate />} />
         <Route path="/new-workspace" element={<NewWorkspace />} />
+        <Route path="/workspace/accept-invitation" element={<AcceptInvitation />} />
         <Route path="/workspace/settings/rules/:ruleId" element={<EditRule />} />
         <Route path="/workspace/settings/:section" element={<WorkspaceSettings />} />
         <Route path="/workspace/settings" element={<WorkspaceSettings />} />

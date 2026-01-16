@@ -4,16 +4,26 @@ import { useJobs } from "@/hooks/useJobs";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useProducts } from "@/hooks/useProducts";
 import { useLabelsSummary } from "@/hooks/useLabelsSummary";
+import { usePendingInvitations, useAcceptInvitation } from "@/hooks/useWorkspaces";
 import { useMe, UserRole } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/organism/Header";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import TasksAgriIcon from "@/components/icons/TasksAgriIcon";
 import BarnAgriIcon from "@/components/icons/BarnAgriIcon";
 import BottleAgriIcon from "@/components/icons/BottleAgriIcon";
 import TagAgriIcon from "@/components/icons/TagAgriIcon";
 import { IoChevronForwardOutline, IoAddCircleOutline } from "react-icons/io5";
+import { Mail, ArrowRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import type { LabelSummary } from "@/api/labels";
+import type { PendingInvitation } from "@/types/workspace";
+import { WorkspaceMemberRole } from "@/types/workspace";
+import { useWorkspaceContext } from "@/contexts/WorkspaceContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { workspaceKeys } from "@/hooks/useWorkspaces";
 
 type DashboardCardProps = {
   title: string;
@@ -149,6 +159,120 @@ class LabelDashboardMetrics {
   }
 }
 
+/**
+ * PendingInvitationsBanner - Shows pending workspace invitations
+ */
+function PendingInvitationsBanner(): React.ReactElement | null {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { selectWorkspace } = useWorkspaceContext();
+  const { data: pendingInvitations = [], isLoading } = usePendingInvitations();
+  const { mutateAsync: acceptInvitation, isPending: isAccepting } =
+    useAcceptInvitation();
+
+  const roleLabels: Record<WorkspaceMemberRole, string> = {
+    [WorkspaceMemberRole.OWNER]: "Proprietario",
+    [WorkspaceMemberRole.ADMIN]: "Amministratore",
+    [WorkspaceMemberRole.MEMBER]: "Membro",
+    [WorkspaceMemberRole.VIEWER]: "Visualizzatore",
+  };
+
+  const handleAcceptInvitation = async (invitation: PendingInvitation) => {
+    try {
+      await acceptInvitation(invitation.token);
+      toast.success(`Sei entrato nel workspace "${invitation.workspace.name}"!`);
+      // Refetch workspaces to include the new one, then select it
+      await queryClient.invalidateQueries({ queryKey: workspaceKeys.list() });
+      selectWorkspace(invitation.workspace.id);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Errore durante l'accettazione";
+      toast.error(errorMessage);
+    }
+  };
+
+  if (isLoading || pendingInvitations.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mb-6">
+      <div className="rounded-2xl p-5 bg-primary/5 border border-primary/20">
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Mail className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-semibold text-neutral-900">
+                Hai {pendingInvitations.length} invit
+                {pendingInvitations.length === 1 ? "o" : "i"} in sospeso
+              </h4>
+              {pendingInvitations.length > 1 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/workspace/accept-invitation")}
+                  className="text-primary"
+                >
+                  Vedi tutti
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              )}
+            </div>
+
+            {/* Show first invitation inline */}
+            <div className="flex items-center justify-between gap-4 bg-white rounded-xl p-3 border border-neutral-100">
+              <div className="flex items-center gap-3 min-w-0">
+                <Avatar className="h-10 w-10 flex-shrink-0">
+                  {pendingInvitations[0].workspace.logoUrl ? (
+                    <AvatarImage
+                      src={pendingInvitations[0].workspace.logoUrl}
+                      alt={pendingInvitations[0].workspace.name}
+                    />
+                  ) : null}
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                    {pendingInvitations[0].workspace.name
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="font-medium text-sm truncate">
+                    {pendingInvitations[0].workspace.name}
+                  </p>
+                  <Badge variant="secondary" className="text-xs">
+                    {roleLabels[pendingInvitations[0].role]}
+                  </Badge>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => handleAcceptInvitation(pendingInvitations[0])}
+                disabled={isAccepting}
+              >
+                {isAccepting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Accetta"
+                )}
+              </Button>
+            </div>
+
+            {/* Show count of remaining invitations */}
+            {pendingInvitations.length > 1 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                + altri {pendingInvitations.length - 1} invit
+                {pendingInvitations.length - 1 === 1 ? "o" : "i"}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function GeneralDashboard(): React.ReactElement {
   const navigate = useNavigate();
   const { jobs, isLoading: isLoadingJobs } = useJobs();
@@ -204,6 +328,9 @@ function GeneralDashboard(): React.ReactElement {
 
       <div className="flex-1 overflow-auto p-6 ">
         <div className="max-w-7xl mx-auto">
+          {/* Pending Invitations Banner */}
+          <PendingInvitationsBanner />
+
           {/* Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Operazioni da verificare */}
