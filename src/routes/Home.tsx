@@ -27,7 +27,7 @@ export default class Home extends Component<
     {
       title: "Per Agricoltori",
       description:
-        "Ottimizza il tuo lavoro quotidiano con strumenti semplici e intuitivi. La nostra piattaforma ti permette di redigere i quaderni di campagna in modo rapido, preciso e sempre conforme alle normative. Riduci il tempo dedicato alla burocrazia e concentrati su ciò che conta davvero: la tua produzione.",
+        "Ottimizza il tuo lavoro quotidiano con strumenti semplici e intuitivi. La nostra piattaforma ti permette di redigere i quaderni di campagna in modo rapido, preciso e conforme alle normative. Riduci il tempo dedicato alla burocrazia e concentrati su ciò che conta davvero: la tua produzione.",
     },
     {
       title: "Per Tecnici Agronomi",
