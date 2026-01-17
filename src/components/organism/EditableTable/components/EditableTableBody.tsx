@@ -2,6 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { TableRow, TableHead } from "@/components/ui/table";
 import { IoOpenOutline } from "react-icons/io5";
 import { DateRange } from "react-day-picker";
 import { EditableColumn, InternalRow } from "../types";
@@ -34,13 +35,20 @@ export interface EditableTableBodyProps {
   columnFilterSelectedDates: Record<string, Date | undefined>;
   onToggleSelectAll: (value: boolean) => void;
   onToggleRowSelection: (rowId: string, value: boolean) => void;
-  onCellChange: (row: InternalRow, column: EditableColumn, value: unknown) => void;
+  onCellChange: (
+    row: InternalRow,
+    column: EditableColumn,
+    value: unknown
+  ) => void;
   onOpenDetails: (row: InternalRow) => void;
   onSort: (columnId: string, direction?: "asc" | "desc") => void;
   onColumnFilterOpenChange: (columnId: string, open: boolean) => void;
   onColumnFilterSearchChange: (columnId: string, query: string) => void;
   onColumnFilterValueToggle: (columnId: string, value: string) => void;
-  onColumnFilterDateRangeChange: (columnId: string, range: DateRange | undefined) => void;
+  onColumnFilterDateRangeChange: (
+    columnId: string,
+    range: DateRange | undefined
+  ) => void;
   onColumnFilterDateChange: (columnId: string, date: Date | undefined) => void;
   onColumnFilterClear: (columnId: string) => void;
 }
@@ -91,13 +99,12 @@ export function EditableTableBody({
 }: EditableTableBodyProps): React.ReactElement {
   return (
     <>
-      <thead data-slot="table-header" className={cn("border-b-2 border-agri-green-100")}>
-        <tr data-slot="table-row" className={cn("transition-colors")}>
-          <th
-            data-slot="table-head"
+      <thead data-slot="table-header">
+        <TableRow className={cn("transition-colors shadow-lg   ")}>
+          <TableHead
             className={cn(
               "h-9 px-2 text-left align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap",
-              "sticky top-0 left-0 bg-white dark:bg-background z-30 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]",
+              "sticky top-0 left-0 z-30 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)] bg-agri-green-50 rounded-tl-lg",
               "w-8"
             )}
           >
@@ -107,10 +114,11 @@ export function EditableTableBody({
               className="border-gray-200"
               aria-label="Select all rows"
             />
-          </th>
+          </TableHead>
           {visibleColumns.map((c) => {
             const uniqueValues = buildUniqueValueOptions(c.id, allRows);
-            const selectedValues = columnFilterSelectedValues[c.id] || new Set<string>();
+            const selectedValues =
+              columnFilterSelectedValues[c.id] || new Set<string>();
             const searchQuery = columnFilterSearchQueries[c.id] || "";
             const isFilterOpen = columnFilterOpen === c.id;
             const isDateColumn = c.type === "date";
@@ -121,13 +129,12 @@ export function EditableTableBody({
               : selectedValues.size > 0;
 
             return (
-              <th
+              <TableHead
                 key={c.id}
-                data-slot="table-head"
                 style={{ width: c.width, minWidth: c.width || "250px" }}
                 className={cn(
                   "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap text-left",
-                  "sticky top-0 bg-white dark:bg-background z-10",
+                  "sticky top-0 bg-agri-green-50 z-10",
                   hasActiveFilter && "bg-blue-50"
                 )}
               >
@@ -136,8 +143,12 @@ export function EditableTableBody({
                   uniqueValues={uniqueValues}
                   selectedValues={selectedValues}
                   searchQuery={searchQuery}
-                  onSearchChange={(query) => onColumnFilterSearchChange(c.id, query)}
-                  onValueToggle={(value) => onColumnFilterValueToggle(c.id, value)}
+                  onSearchChange={(query) =>
+                    onColumnFilterSearchChange(c.id, query)
+                  }
+                  onValueToggle={(value) =>
+                    onColumnFilterValueToggle(c.id, value)
+                  }
                   onSort={(direction) => onSort(c.id, direction)}
                   onApply={() => {}}
                   onClearFilter={() => onColumnFilterClear(c.id)}
@@ -146,14 +157,18 @@ export function EditableTableBody({
                   isOpen={isFilterOpen}
                   onOpenChange={(open) => onColumnFilterOpenChange(c.id, open)}
                   dateRange={dateRange}
-                  onDateRangeChange={(range) => onColumnFilterDateRangeChange(c.id, range)}
+                  onDateRangeChange={(range) =>
+                    onColumnFilterDateRangeChange(c.id, range)
+                  }
                   selectedDate={selectedDate}
                   onDateChange={(date) => onColumnFilterDateChange(c.id, date)}
                 >
                   <div className="flex items-center gap-1.5 cursor-pointer hover:bg-muted/10 transition-colors rounded px-1 py-0.5 -mx-1">
                     <span>
                       {c.title}
-                      {c.required ? <span className="text-red-500 ml-1">*</span> : null}
+                      {c.required ? (
+                        <span className="text-red-500 ml-1">*</span>
+                      ) : null}
                     </span>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -166,7 +181,9 @@ export function EditableTableBody({
                         sortColumn === c.id
                           ? "opacity-100 text-blue-600"
                           : "opacity-60 hover:opacity-80",
-                        sortColumn === c.id && sortDirection === "desc" ? "rotate-180" : "",
+                        sortColumn === c.id && sortDirection === "desc"
+                          ? "rotate-180"
+                          : "",
                         hasActiveFilter && "text-blue-600 opacity-100"
                       )}
                     >
@@ -174,29 +191,27 @@ export function EditableTableBody({
                     </svg>
                   </div>
                 </EditableTableColumnFilterDropdown>
-              </th>
+              </TableHead>
             );
           })}
           {hasLast && (
-            <th
-              data-slot="table-head"
+            <TableHead
               className={cn(
                 "h-9 p-3 text-left align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap w-24",
-                "sticky top-0 bg-white dark:bg-background z-10",
-                !hasDetails && "right-0 z-20"
+                "sticky top-0 bg-agri-green-50 z-10",
+                !hasDetails && "right-0 z-20 rounded-tr-lg"
               )}
             />
           )}
           {hasDetails && (
-            <th
-              data-slot="table-head"
+            <TableHead
               className={cn(
                 "h-9 p-3 text-left align-middle font-semibold text-muted-foreground text-[14px] whitespace-nowrap w-24",
-                "sticky top-0 right-0 bg-white dark:bg-background z-20 shadow-[-2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                "sticky top-0 right-0 bg-agri-green-50 z-20 shadow-[-2px_0_4px_-2px_rgba(0,0,0,0.1)] rounded-tr-lg"
               )}
             />
           )}
-        </tr>
+        </TableRow>
       </thead>
       <tbody data-slot="table-body" className={cn("divide-y divide-border/15")}>
         {rows.map((row) => {
@@ -207,25 +222,26 @@ export function EditableTableBody({
           });
 
           return (
-            <tr
+            <TableRow
               key={row.id}
-              data-slot="table-row"
               className={cn(
-                "bg-white transition-colors hover:bg-agri-green-50 border-agri-green-100",
+                "group bg-white transition-colors hover:bg-agri-green-50 border-agri-green-100",
                 rowHasRequiredMissing && "bg-red-50/30"
               )}
             >
               <td
                 data-slot="table-cell"
                 className={cn(
-                  "p-2 align-middle sticky left-0 bg-white dark:bg-background z-20 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]",
+                  "p-2 align-middle sticky left-0 bg-white group-hover:bg-agri-green-50 transition-colors z-20 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]",
                   "w-8"
                 )}
               >
                 <div className="flex items-center gap-2">
                   <Checkbox
                     checked={Boolean(selected[row.id])}
-                    onCheckedChange={(v) => onToggleRowSelection(row.id, Boolean(v))}
+                    onCheckedChange={(v) =>
+                      onToggleRowSelection(row.id, Boolean(v))
+                    }
                     className="border-gray-200"
                     aria-label="Select row"
                   />
@@ -263,7 +279,11 @@ export function EditableTableBody({
                   )}
                 >
                   {typeof lastComponent === "function"
-                    ? (lastComponent as (r: Record<string, unknown>) => React.ReactNode)(row.data)
+                    ? (
+                        lastComponent as (
+                          r: Record<string, unknown>
+                        ) => React.ReactNode
+                      )(row.data)
                     : lastComponent}
                 </td>
               )}
@@ -272,7 +292,7 @@ export function EditableTableBody({
                   data-slot="table-cell"
                   className={cn(
                     "p-3 align-middle text-center whitespace-nowrap w-24",
-                    "sticky right-0 bg-white dark:bg-background shadow-[-2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                    "sticky right-0 bg-white group-hover:bg-agri-green-50 transition-colors shadow-[-2px_0_4px_-2px_rgba(0,0,0,0.1)] rounded-tr-lg"
                   )}
                 >
                   <Button
@@ -287,7 +307,7 @@ export function EditableTableBody({
                   </Button>
                 </td>
               )}
-            </tr>
+            </TableRow>
           );
         })}
       </tbody>

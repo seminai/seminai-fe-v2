@@ -52,6 +52,14 @@ class FieldProductionUnitInspector {
     return names.length === 0 ? "-" : names.join(", ");
   }
 
+  public getActiveUnitsCount(referenceDate: Date = new Date()): number {
+    return this.getActiveUnits(referenceDate).length;
+  }
+
+  public getTotalUnitsCount(): number {
+    return this.units.length;
+  }
+
   private isActive(unit: ProductionUnit, referenceDate: Date): boolean {
     if (!unit) return false;
 
@@ -145,14 +153,14 @@ const buildFieldsEditColumns = (companies: Company[]): EditableColumn[] => {
     },
     {
       id: "currentProductionUnitLabel",
-      title: "Unità attiva",
+      title: "Unità attive",
       type: "text",
       readOnly: true,
       render: (value) => {
-        const label =
-          typeof value === "string" && value.trim().length > 0 ? value : "-";
+        const count = typeof value === "number" ? value : 0;
+        const label = count > 0 ? String(count) : "-";
         const textClass =
-          label === "-"
+          count === 0
             ? "text-sm text-muted-foreground"
             : "text-sm font-medium text-foreground";
 
@@ -195,7 +203,7 @@ export default function Fields(): React.ReactElement {
     return fields.map((field) => ({
       ...field,
       currentProductionUnitLabel:
-        FieldProductionUnitInspector.fromField(field).getActiveUnitsLabel(),
+        FieldProductionUnitInspector.fromField(field).getTotalUnitsCount(),
     }));
   }, [fields]);
 
@@ -249,7 +257,7 @@ export default function Fields(): React.ReactElement {
           : "",
       uso: field.uso || "",
       soilType: field.soilType || "",
-      currentProductionUnitLabel: "-",
+      currentProductionUnitLabel: 0,
     }));
 
     // Aggiungi le righe alla tabella
@@ -446,7 +454,7 @@ export default function Fields(): React.ReactElement {
               sauHa: "",
               uso: "",
               soilType: "",
-              currentProductionUnitLabel: "-",
+              currentProductionUnitLabel: 0,
             }}
             detailsRenderer={renderDetails}
             detailsTitle="Dettagli Campo"

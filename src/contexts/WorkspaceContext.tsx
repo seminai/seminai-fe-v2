@@ -73,7 +73,7 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
   const themeController = useMemo(
     () => new WorkspaceThemeController(currentWorkspace),
     [
-      currentWorkspace,
+      currentWorkspace?.id,
       currentWorkspace?.primaryColor,
       currentWorkspace?.secondaryColor,
       currentWorkspace?.accentColor,
@@ -88,6 +88,32 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
   useEffect(() => {
     const root = document.documentElement;
 
+    // Get all CSS variables currently set on root
+    const currentStyles = root.style;
+    const existingWorkspaceVars: string[] = [];
+    const existingPaletteVars: string[] = [];
+    
+    // Collect all existing workspace and palette variables
+    for (let i = 0; i < currentStyles.length; i++) {
+      const propertyName = currentStyles[i];
+      if (propertyName.startsWith("--workspace-") || 
+          propertyName.startsWith("--palette-") ||
+          propertyName === "--accent" ||
+          propertyName === "--accent-foreground") {
+        if (propertyName.startsWith("--workspace-")) {
+          existingWorkspaceVars.push(propertyName);
+        } else {
+          existingPaletteVars.push(propertyName);
+        }
+      }
+    }
+
+    // Remove all existing workspace and palette variables
+    [...existingWorkspaceVars, ...existingPaletteVars].forEach((varName) => {
+      root.style.removeProperty(varName);
+    });
+
+    // Apply new theme variables
     Object.entries(themeVariables).forEach(([key, value]) => {
       root.style.setProperty(key, value);
     });
@@ -98,6 +124,12 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
     } else {
       root.removeAttribute("data-workspace-active");
     }
+
+    // Force a repaint to ensure styles are applied
+    root.style.display = "none";
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    root.offsetHeight; // Trigger reflow
+    root.style.display = "";
   }, [themeVariables, currentWorkspace]);
 
   const selectWorkspace = useCallback((workspaceId: string | null) => {

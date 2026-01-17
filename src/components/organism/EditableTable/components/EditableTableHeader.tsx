@@ -82,7 +82,7 @@ export function EditableTableHeader({
   const bulkVerifyLabel = bulkVerifyButtonLabel ?? "Verify selected";
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-agri-green-50 bg-agri-green-50 rounded-t-lg z-10 sticky top-0 left-0 right-0">
+    <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3  bg-white rounded-t-lg z-10 sticky top-0 left-0 right-0">
       <div className="flex flex-wrap items-center gap-2">
         {!showEditActions && !anySelected && leftActions}
         {!showEditActions && !anySelected && (
@@ -91,7 +91,7 @@ export function EditableTableHeader({
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-muted-foreground cursor-pointer"
+                className="text-black cursor-pointer"
                 disabled={columns.length === 0}
                 aria-label="Esporta"
               >
@@ -130,9 +130,7 @@ export function EditableTableHeader({
         {anySelected && !showEditActions && (
           <Button
             onClick={onDeselectAll}
-            className={cn(
-              "border border-gray-200 text-gray-500 hover:bg-gray-50"
-            )}
+            className={cn("border border-gray-200 text-black hover:bg-gray-50")}
             variant="ghost"
             size="sm"
             aria-label="De-seleziona"
@@ -160,7 +158,7 @@ export function EditableTableHeader({
         {isModify && !anySelected && !alwaysEdit && !isEditMode && (
           <Button
             onClick={onToggleEditMode}
-            className="text-muted-foreground hover:text-foreground cursor-pointer"
+            className="text-black hover:text-gray-700 cursor-pointer"
             variant="ghost"
             size="sm"
             aria-label="Modifica"
@@ -181,7 +179,7 @@ export function EditableTableHeader({
         {showAddButton && !anySelected && (
           <Button
             variant="ghost"
-            className="text-muted-foreground hover:text-foreground cursor-pointer"
+            className="text-black hover:text-gray-700 cursor-pointer"
             size="sm"
             onClick={onAddClick}
             aria-label="Aggiungi"
@@ -193,9 +191,7 @@ export function EditableTableHeader({
         {shouldRenderBulkVerifyButton && (
           <Button
             onClick={() => onBulkVerifySelected?.(selectionPayload)}
-            className={cn(
-              "border border-emerald-200 text-emerald-600 hover:bg-emerald-50"
-            )}
+            className={cn("border border-gray-200 text-black hover:bg-gray-50")}
             variant="ghost"
             size="sm"
             aria-label="Verify selected rows"
@@ -212,9 +208,7 @@ export function EditableTableHeader({
         {anySelected && !showEditActions && isModify && (
           <Button
             onClick={onOpenBulkEdit}
-            className={cn(
-              "border border-blue-200 text-blue-600 hover:bg-blue-50"
-            )}
+            className={cn("border border-gray-200 text-black hover:bg-gray-50")}
             variant="ghost"
             size="sm"
             aria-label="Modifica tutti gli elementi selezionati"
@@ -235,7 +229,7 @@ export function EditableTableHeader({
         {anySelected && !showEditActions && showDeleteAction !== false && (
           <Button
             onClick={onRequestDelete}
-            className={cn("border border-red-200 text-red-400 hover:bg-red-50")}
+            className={cn("border border-gray-200 text-black hover:bg-gray-50")}
             variant="ghost"
             size="sm"
             aria-label="Elimina"
@@ -261,7 +255,7 @@ export function EditableTableHeader({
             <Button
               variant="ghost"
               onClick={onCancel}
-              className="text-gray-600 hover:text-gray-900"
+              className="text-black hover:text-gray-700"
             >
               Annulla
             </Button>
