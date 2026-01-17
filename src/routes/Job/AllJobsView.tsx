@@ -85,6 +85,7 @@ interface AllJobsViewProps {
   isRightSidebarOpen: boolean;
   onToggleRightSidebar: (open: boolean) => void;
   showAddButton?: boolean;
+  onAddClick?: () => void;
   newRowDefaults?: Partial<Record<string, unknown>>;
   jobGroupId?: string;
   onConformityConfirmSuccess?: () => void;
@@ -263,6 +264,7 @@ export function AllJobsView({
   isRightSidebarOpen,
   onToggleRightSidebar,
   showAddButton = true,
+  onAddClick,
   newRowDefaults,
   jobGroupId,
   onConformityConfirmSuccess,
@@ -320,7 +322,8 @@ export function AllJobsView({
               <div className="flex-1 min-h-0">
                 <EditableTable
                   addButton={showAddButton}
-                  createMode="inline"
+                  createMode="drawer"
+                  onAddClick={onAddClick}
                   newRowDefaults={newRowDefaults}
                   columns={columns}
                   rows={rows}
@@ -341,7 +344,7 @@ export function AllJobsView({
                       variant="ghost"
                       size="sm"
                       onClick={() => onToggleRightSidebar(true)}
-                      className="text-muted-foreground hover:text-foreground cursor-pointer"
+                      className="text-black hover:text-gray-700 cursor-pointer focus-visible:ring-0 focus-visible:outline-none"
                       title="Apri pannello dettagli"
                     >
                       <PanelRightOpen className="h-4 w-4 sm:mr-2" />

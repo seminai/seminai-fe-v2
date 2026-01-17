@@ -226,7 +226,7 @@ export function EditableTableHeader({
             <span className="hidden sm:inline">Modifica tutti</span>
           </Button>
         )}
-        {anySelected && !showEditActions && showDeleteAction !== false && (
+        {anySelected && showDeleteAction !== false && (
           <Button
             onClick={onRequestDelete}
             className={cn("border border-gray-200 text-black hover:bg-gray-50")}
@@ -259,7 +259,11 @@ export function EditableTableHeader({
             >
               Annulla
             </Button>
-            <Button onClick={onSave} disabled={hasErrors}>
+            <Button 
+              onClick={onSave} 
+              disabled={hasErrors}
+              className="bg-green-500 hover:bg-green-600 text-white"
+            >
               Salva
             </Button>
           </>
