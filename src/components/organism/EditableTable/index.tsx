@@ -559,7 +559,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
     return (
       <div
         data-slot="table-wrapper"
-        className={cn("relative w-full rounded-lg bg-background", className)}
+        className={cn("relative w-full rounded-lg bg-white", className)}
       >
         <DeleteConfirmationDialog
           open={confirmDialogOpen}

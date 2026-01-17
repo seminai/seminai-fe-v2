@@ -151,13 +151,14 @@ export type BulkProductStockPayload = {
   unitOfMeasurePrice?: string;
   type?: "IN" | "OUT";
   ddtCode?: string;
+  ddtDate?: string;
   companySupplierName?: string;
   invoiceDate?: string;
 };
 
 export type BulkProductPayload = {
   name: string;
-  sku: string;
+  sku?: string;
   category?: string;
   type?: string;
   description?: string;
@@ -327,7 +328,7 @@ export async function bulkImportProducts(
   }
 
   const response = await authenticatedHttpClient.request(
-    `${baseUrl}/products/bulk`,
+    `${baseUrl}/products/create-or-update-bulk`,
     {
       method: "POST",
       headers: {

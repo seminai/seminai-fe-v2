@@ -1216,6 +1216,38 @@ export default function DosageManager() {
     });
   };
 
+  // Gestisce l'eliminazione dei prodotti dalla tabella editabile
+  const handleDeleteProducts = useCallback(
+    (deletedRows: Array<Record<string, unknown>>): void => {
+      const deletedProducts = convertTableRowsToProducts(deletedRows);
+      const deletedKeys = new Set(
+        deletedProducts.map(
+          (p) => `${p.productName}-${p.registrationNumber}`
+        )
+      );
+
+      // Rimuove i prodotti eliminati dallo stato
+      setProducts((prev) =>
+        prev.filter((p) => {
+          const key = `${p.productName}-${p.registrationNumber}`;
+          return !deletedKeys.has(key);
+        })
+      );
+
+      // Rimuove anche le sorgenti dei prodotti eliminati
+      setProductSources((prevSources) => {
+        const updated = new Map(prevSources);
+        deletedKeys.forEach((key) => updated.delete(key));
+        return updated;
+      });
+
+      toast.success("Prodotti eliminati", {
+        description: `${deletedRows.length} prodotti eliminati con successo`,
+      });
+    },
+    [convertTableRowsToProducts]
+  );
+
   // Converte i prodotti in formato per la tabella
   const productsAsRows = useMemo(() => {
     return products.map((product) => ({
@@ -2153,6 +2185,7 @@ export default function DosageManager() {
             productColumns={productColumns}
             productsAsRows={productsAsRows}
             handleSaveProducts={handleSaveProducts}
+            handleDeleteProducts={handleDeleteProducts}
             handleProductSelectionChange={handleProductSelectionChange}
             handleAddRowsFromCsv={handleAddRowsFromCsv}
             handleAddRowsFromDdt={handleAddRowsFromDdt}

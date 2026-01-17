@@ -97,7 +97,7 @@ export class EditableTableColumnVisibilityDropdown extends React.PureComponent<
           <Button
             variant="ghost"
             size="sm"
-            className="text-muted-foreground cursor-pointer"
+            className="text-black cursor-pointer"
           >
             <Columns3 className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">
@@ -130,7 +130,7 @@ export class EditableTableColumnVisibilityDropdown extends React.PureComponent<
               variant="ghost"
               size="sm"
               onClick={this.props.onShowDefault}
-              className="text-xs text-muted-foreground hover:text-foreground"
+              className="text-xs text-black hover:text-gray-700"
             >
               Mostra default ({maxVisibleColumns})
             </Button>

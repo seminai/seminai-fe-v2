@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { TableRow, TableHead } from "@/components/ui/table";
 import { IoDownloadOutline } from "react-icons/io5";
 import { Plus } from "lucide-react";
 import { EditableColumn, InternalRow } from "../types";
@@ -199,28 +200,26 @@ export function EditableTableVertical({
           data-slot="table-header"
           className={cn("border-b border-agri-green-50")}
         >
-          <tr data-slot="table-row" className={cn("transition-colors")}>
-            <th
-              data-slot="table-head"
+          <TableRow className={cn("transition-colors")}>
+            <TableHead
               className={cn(
                 "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px] text-left w-[250px] min-w-[200px]"
               )}
             >
               Field
-            </th>
+            </TableHead>
             {rows.map((row, idx) => (
-              <th
+              <TableHead
                 key={row.id}
-                data-slot="table-head"
                 className={cn(
                   "h-9 p-3 align-middle font-semibold text-muted-foreground text-[14px]",
                   "text-left min-w-[250px]"
                 )}
               >
                 {getRowHeaderLabel(row, idx, getRowId)}
-              </th>
+              </TableHead>
             ))}
-          </tr>
+          </TableRow>
         </thead>
         <tbody
           data-slot="table-body"
@@ -228,9 +227,8 @@ export function EditableTableVertical({
         >
           {visibleColumns.map((c) => {
             return (
-              <tr
+              <TableRow
                 key={c.id}
-                data-slot="table-row"
                 className={cn(
                   "transition-colors hover:bg-muted/30 border-agri-green-50 bg-white"
                 )}
@@ -271,12 +269,11 @@ export function EditableTableVertical({
                     )}
                   </td>
                 ))}
-              </tr>
+              </TableRow>
             );
           })}
           {hasLast && (
-            <tr
-              data-slot="table-row"
+            <TableRow
               className={cn(
                 "transition-colors hover:bg-muted/30 border-agri-green-50 bg-white"
               )}
@@ -306,7 +303,7 @@ export function EditableTableVertical({
                     : lastComponent}
                 </td>
               ))}
-            </tr>
+            </TableRow>
           )}
         </tbody>
       </table>

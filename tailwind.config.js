@@ -3,6 +3,10 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["Inter", "system-ui", "sans-serif"],
+        inter: ["Inter", "system-ui", "sans-serif"],
+      },
       fontSize: {
         // Sistema di font unificato per la piattaforma
         caption: ["0.75rem", { lineHeight: "1rem" }], // 12px - Per caption e note

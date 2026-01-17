@@ -91,6 +91,7 @@ interface ManageSectionProps {
     created: Array<Record<string, unknown>>;
     updated: Array<Record<string, unknown>>;
   }) => void;
+  handleDeleteProducts: (rows: Array<Record<string, unknown>>) => void;
   handleProductSelectionChange: (rows: Array<Record<string, unknown>>) => void;
   handleAddRowsFromCsv: (rows: Array<Record<string, unknown>>) => void;
   handleAddRowsFromDdt: (rows: Array<Record<string, unknown>>) => void;
@@ -175,6 +176,7 @@ export function ManageSection({
   productColumns,
   productsAsRows,
   handleSaveProducts,
+  handleDeleteProducts,
   handleProductSelectionChange,
   handleAddRowsFromCsv,
   handleAddRowsFromDdt,
@@ -569,8 +571,9 @@ export function ManageSection({
               addButton={true}
               createMode="inline"
               onSave={handleSaveProducts}
+              onDeleteSelected={handleDeleteProducts}
               onSelectionChange={handleProductSelectionChange}
-              showDeleteAction={false}
+              showDeleteAction={true}
               getRowId={(row: Record<string, unknown>, index: number) =>
                 `${row.productName}-${row.registrationNumber}-${index}`
               }
