@@ -271,8 +271,24 @@ export function MultiSearchableSelect({
       {selectedOptions.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {visibleBadges.map((opt) => (
-            <Badge key={`selected-${opt.value}`} variant="secondary">
-              {opt.label}
+            <Badge
+              key={`selected-${opt.value}`}
+              variant="secondary"
+              className="gap-1 pr-1"
+            >
+              <span className="text-xs">{opt.label}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onChange(MultiSelectValueController.toggle(value, opt.value));
+                }}
+                className="ml-1 hover:bg-muted-foreground/20 rounded-sm p-0.5"
+                title={`Rimuovi ${opt.label}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
             </Badge>
           ))}
           {overflowCount > 0 && (

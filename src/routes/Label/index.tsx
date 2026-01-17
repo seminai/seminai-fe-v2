@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { labelsApiService, type LabelSummary } from "@/api/labels";
 import { Spinner } from "@/components/ui/spinner";
@@ -13,6 +13,7 @@ import { buildColumns, formatConfidence } from "@/utils/tableHelpers";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/organism/Header";
 import { useMe, UserRole } from "@/hooks/useAuth";
+import { Trash2 } from "lucide-react";
 
 const buildLabelSummaryColumns = (): EditableColumn[] =>
   buildColumns<LabelSummary>([
@@ -150,6 +151,10 @@ export default function Label(): React.ReactElement {
   // Verifica se l'utente può modificare (solo ADMIN e LABEL_MANAGER)
   const canModify = userRole === UserRole.ADMIN || userRole === UserRole.LABEL_MANAGER;
   
+  const [selectedRows, setSelectedRows] = useState<
+    Array<Record<string, unknown>>
+  >([]);
+  
   const { data, isLoading, error } = useQuery({
     queryKey: ["labels", "summary"],
     queryFn: async () => labelsApiService.getSummary(),
@@ -201,7 +206,17 @@ export default function Label(): React.ReactElement {
 
     if (window.confirm(confirmMessage)) {
       deleteMutation.mutate(ids);
+      setSelectedRows([]);
     }
+  };
+
+  // Gestisce il click sul bottone Elimina
+  const handleDeleteClick = () => {
+    if (selectedRows.length === 0) {
+      return;
+    }
+
+    handleDeleteSelected(selectedRows);
   };
 
   return (
@@ -241,11 +256,24 @@ export default function Label(): React.ReactElement {
               (typeof row.id === "string" && row.id) || index
             }
             onDeleteSelected={canModify ? handleDeleteSelected : undefined}
-            showDeleteAction={canModify}
+            showDeleteAction={canModify && selectedRows.length > 0}
+            onSelectionChange={setSelectedRows}
             onOpenDetails={(row) => navigate(`/label/${row.id}`)}
             className="bg-background"
             exportFileName="etichette"
-          />
+          >
+            {canModify && selectedRows.length > 0 && (
+              <Button
+                data-table-slot="right"
+                variant="destructive"
+                className="gap-2"
+                onClick={handleDeleteClick}
+              >
+                <Trash2 className="w-4 h-4" />
+                Elimina ({selectedRows.length})
+              </Button>
+            )}
+          </EditableTable>
         )}
       </div>
     </div>

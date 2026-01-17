@@ -57,6 +57,7 @@ import AllJobsView, {
   type RightSidebarMode,
 } from "./AllJobsView";
 import ReviewJobsView from "./ReviewJobsView";
+import { CreateMultipleJobsDrawer } from "./CreateMultipleJobsDrawer";
 import {
   getAuthorizedFitosanitariRecords,
   type FitosanitariDatasetRecord,
@@ -1545,7 +1546,9 @@ export default function JobPage() {
   const [groupsSidebarWidth, setGroupsSidebarWidth] = useState<number>(288); // Default: 288px (w-72)
   const [rightSidebarMode, setRightSidebarMode] =
     useState<RightSidebarMode>("details");
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState<boolean>(true);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState<boolean>(false);
+  const [isMultipleJobsDrawerOpen, setIsMultipleJobsDrawerOpen] =
+    useState<boolean>(false);
 
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
@@ -2223,6 +2226,7 @@ export default function JobPage() {
       title: "Stato Verifica",
       type: "select",
       width: "220px",
+      readOnly: true, // Lo stato non può essere modificato manualmente
       options: ["Verificato", "Non Verificato", "Conformità non verificata"],
       onValueChange: ({ value }) => {
         // Gestisce i 3 stati possibili
@@ -2283,22 +2287,108 @@ export default function JobPage() {
     },
 
     {
+      id: "companyName",
+      title: "Azienda",
+      type: "select",
+      width: "200px",
+      readOnly: false,
+      required: true,
+      getOptions: () => companySelectOptions,
+      placeholder: "Seleziona azienda...",
+      enableSearch: true,
+      searchPlaceholder: "Cerca azienda...",
+      emptyStateMessage: "Nessuna azienda trovata",
+      onValueChange: ({ value }) => {
+        const stringValue = String(value);
+        
+        // Se il valore è vuoto, resetta anche l'unità produttiva
+        if (!stringValue || stringValue.trim() === "") {
+          return {
+            companyName: "",
+            _companyId: "",
+            _selectedCompanyForPU: "",
+            _productionUnitId: "",
+            productionUnitName: "",
+            cropName: "",
+            cropType: "",
+          };
+        }
+
+        // Cerca l'azienda selezionata
+        const company = companySelectOptions.find(
+          (c) => c.value === stringValue
+        );
+        
+        if (company) {
+          return {
+            companyName: company.companyName,
+            _companyId: company.companyId,
+            _selectedCompanyForPU: company.companyId,
+            // Reset unità produttiva quando cambia azienda
+            _productionUnitId: "",
+            productionUnitName: "",
+            cropName: "",
+            cropType: "",
+          };
+        }
+
+        return {
+          companyName: stringValue,
+          _companyId: "",
+          _selectedCompanyForPU: "",
+        };
+      },
+      render: (value) => {
+        const name = value as string | undefined;
+        return name ? (
+          <span>{name}</span>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        );
+      },
+    },
+
+    {
       id: "productionUnitName",
       title: "Unità Produttiva",
       type: "select",
       width: "280px",
       readOnly: false,
       required: true,
-      getOptions: getProductionUnitOptions,
-      placeholder: "Seleziona azienda...",
-      enableSearch: true,
-      searchPlaceholder: "Cerca azienda o unità produttiva...",
-      emptyStateMessage: "Nessuna opzione trovata",
-      keepOpenOnSelect: (value: string) => {
-        // Mantieni aperta la select quando si seleziona un'azienda (value inizia con "company:")
-        // Chiudila quando si seleziona un'unità produttiva o si clicca su "clear_filter"
-        return value.startsWith("company:");
+      getOptions: (rowData) => {
+        // Filtra le unità produttive in base all'azienda selezionata
+        const selectedCompanyId = 
+          (rowData._companyId as string | undefined) ||
+          (rowData._selectedCompanyForPU as string | undefined);
+
+        if (!selectedCompanyId) {
+          // Se non c'è un'azienda selezionata, mostra un messaggio
+          return [{
+            label: "Seleziona prima un'azienda",
+            value: "__no_company__",
+            disabled: true,
+          }];
+        }
+
+        // Filtra le unità produttive per l'azienda selezionata
+        const filtered = productionUnitSelectOptions.filter(
+          (pu) => pu.companyId === selectedCompanyId
+        );
+
+        if (filtered.length === 0) {
+          return [{
+            label: "Nessuna unità produttiva disponibile",
+            value: "__no_units__",
+            disabled: true,
+          }];
+        }
+
+        return filtered;
       },
+      placeholder: "Seleziona unità produttiva...",
+      enableSearch: true,
+      searchPlaceholder: "Cerca unità produttiva...",
+      emptyStateMessage: "Nessuna unità produttiva trovata",
       onValueChange: ({ value, rowData }) => {
         const stringValue = String(value);
 
@@ -2311,84 +2401,58 @@ export default function JobPage() {
             (rowData.principioAttivo as string | undefined) ?? "",
         };
 
-        // Se clicca su "pulisci filtro", torna alla selezione aziende
-        if (stringValue === "clear_filter") {
+        // Se il valore è vuoto o un placeholder speciale, resetta l'unità produttiva
+        if (!stringValue || stringValue.trim() === "" || stringValue.startsWith("__")) {
           return {
-            _selectedCompanyForPU: "",
             _productionUnitId: "",
             productionUnitName: "",
             cropName: "",
             cropType: "",
-            _companyId: "",
-            companyName: "",
-            ...preservedProductData, // Preserva il prodotto
+            ...preservedProductData,
           };
         }
 
-        // Se seleziona un'azienda (value inizia con "company:")
-        if (stringValue.startsWith("company:")) {
-          const companyId = stringValue.replace("company:", "");
-          const company = companySelectOptions.find(
-            (c) => c.companyId === companyId
-          );
-          return {
-            _selectedCompanyForPU: companyId,
-            _productionUnitId: "", // Reset unità produttiva
-            productionUnitName: "",
-            cropName: "",
-            cropType: "",
-            _companyId: companyId,
-            companyName: company?.companyName ?? "",
-            ...preservedProductData, // Preserva il prodotto
-          };
-        }
-
-        // Se seleziona un'unità produttiva (value è il nome)
+        // Se seleziona un'unità produttiva
         const selectedPu = productionUnitMap.get(stringValue);
         if (selectedPu) {
           return {
-            _selectedCompanyForPU: selectedPu.companyId, // Aggiorna anche questo
-            _productionUnitId: selectedPu.id, // Usa l'ID per la logica interna
+            _productionUnitId: selectedPu.id,
             productionUnitName: selectedPu.name,
             cropName: selectedPu.cropName,
             cropType: selectedPu.cropType,
             _companyId: selectedPu.companyId,
             companyName: selectedPu.companyName,
-            ...preservedProductData, // Preserva il prodotto
+            _selectedCompanyForPU: selectedPu.companyId,
+            ...preservedProductData,
           };
         }
 
-        // Fallback: aggiorna anche _companyId e companyName per pulizia
+        // Fallback
         return {
-          _selectedCompanyForPU: "",
           _productionUnitId: "",
           productionUnitName: stringValue,
           cropName: "",
           cropType: "",
-          _companyId: "",
-          companyName: "",
-          ...preservedProductData, // Preserva il prodotto
+          ...preservedProductData,
         };
       },
       render: (value, row) => {
-        // Il valore della colonna ora è productionUnitName
         const name =
           (value as string) || (row.productionUnitName as string | undefined);
-        const companyName = row.companyName as string | undefined;
-        const selectedCompanyForPU = row._selectedCompanyForPU as
-          | string
-          | undefined;
+        const hasCompany = Boolean(
+          row._companyId || row._selectedCompanyForPU
+        );
 
         // Se ha un'unità produttiva selezionata, mostrala
         if (name) {
           return <span>{name}</span>;
         }
 
-        // Se ha solo l'azienda selezionata, mostra placeholder per UP
-        if (selectedCompanyForPU && companyName) {
+        // Se ha l'azienda ma non l'UP, mostra placeholder
+        if (hasCompany) {
           return (
             <span className="text-muted-foreground italic">
-              {companyName} → scegli UP...
+              Seleziona unità produttiva...
             </span>
           );
         }
@@ -2505,14 +2569,6 @@ export default function JobPage() {
         const quantityPerHa = quantity / treatedSurface;
         return quantityPerHa.toFixed(4);
       },
-    },
-
-    {
-      id: "companyName",
-      title: "Azienda",
-      type: "text",
-      width: "200px",
-      readOnly: true,
     },
     {
       id: "stockInWarehouse",
@@ -2785,6 +2841,7 @@ export default function JobPage() {
       title: "Stato",
       type: "select",
       width: "180px",
+      readOnly: true, // Lo stato non può essere modificato manualmente
       options: ["Verificato", "Non Verificato", "Conformità non verificata"],
       onValueChange: ({ value }) => {
         if (value === "Conformità non verificata") {
@@ -3297,6 +3354,14 @@ export default function JobPage() {
   };
 
   // Gestisce l'eliminazione multipla
+  // Handler per salvare job multipli dalla drawer custom
+  const handleSaveMultipleJobs = async (jobs: Array<Record<string, unknown>>) => {
+    await handleSave({
+      created: jobs,
+      updated: [],
+    });
+  };
+
   const handleDeleteSelected = async (
     removed: Array<Record<string, unknown>>
   ) => {
@@ -3370,9 +3435,9 @@ export default function JobPage() {
   // Default values for new rows
   const newRowDefaults = useMemo(
     () => ({
-      isVerified: "Non Verificato",
+      isVerified: "Conformità non verificata",
       _isVerifiedBoolean: false,
-      _conformityChecked: true, // Le nuove righe hanno conformità verificata di default
+      _conformityChecked: false, // Le nuove operazioni devono sempre essere verificate
       dateOfOpeation: new Date(),
       category: "TREATMENT",
       unitOfMeasureQuantity: "L",
@@ -3443,6 +3508,7 @@ export default function JobPage() {
       isRightSidebarOpen={isRightSidebarOpen}
       onToggleRightSidebar={setIsRightSidebarOpen}
       showAddButton={true}
+      onAddClick={() => setIsMultipleJobsDrawerOpen(true)}
       newRowDefaults={newRowDefaults}
       jobGroupId={
         selectedAllJobIds.length > 0 ? selectedAllJobIds[0] : undefined
@@ -3548,6 +3614,26 @@ export default function JobPage() {
         open={labelSheetOpen}
         onOpenChange={setLabelSheetOpen}
         labelId={selectedLabelId}
+      />
+
+      {/* Create Multiple Jobs Drawer */}
+      <CreateMultipleJobsDrawer
+        open={isMultipleJobsDrawerOpen}
+        onOpenChange={setIsMultipleJobsDrawerOpen}
+        companies={companySelectOptions}
+        productionUnits={productionUnitSelectOptions}
+        products={fitosanitariOptions.map((opt) => {
+          const product = fitosanitariMap.get(opt.value);
+          return {
+            value: opt.value,
+            label: opt.label,
+            registrationNumber: product?.registrationNumber || opt.value,
+            productName: product?.productName || opt.label,
+            activeIngredients: product?.activeIngredients || "",
+          };
+        })}
+        isLoadingProducts={isLoadingFitosanitari}
+        onSave={handleSaveMultipleJobs}
       />
     </div>
   );

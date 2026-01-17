@@ -370,7 +370,9 @@ export function ManageSection({
               addButton={false}
               onSelectionChange={handleUnitSelectionChange}
               showDeleteAction={false}
-              getRowId={(row: Record<string, unknown>) => (row as { id: string }).id}
+              getRowId={(row: Record<string, unknown>) =>
+                (row as { id: string }).id
+              }
               className="bg-white rounded-2xl border border-neutral-200"
               exportFileName="unitaproduttive_selezione"
             />
@@ -569,7 +571,7 @@ export function ManageSection({
               rows={productsAsRows}
               isModify={true}
               addButton={true}
-              createMode="inline"
+              createMode="drawer"
               onSave={handleSaveProducts}
               onDeleteSelected={handleDeleteProducts}
               onSelectionChange={handleProductSelectionChange}

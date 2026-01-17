@@ -2245,7 +2245,7 @@ export default function DosageManager() {
         }}
       >
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
+          <div className="hidden md:block">
             <p className="text-sm text-neutral-500">
               {selectedCompanyNames.length > 0
                 ? `Aziend${

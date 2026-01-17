@@ -395,6 +395,26 @@ export default function OperationsPage() {
         },
       },
       {
+        id: "companyName",
+        title: "Azienda",
+        type: "text",
+        width: "200px",
+        readOnly: true,
+        render: (value) => {
+          return (
+            <MissingDataCell value={value}>
+              <span
+                className={
+                  !value || value === "-" ? "text-muted-foreground" : ""
+                }
+              >
+                {(value as string) || "-"}
+              </span>
+            </MissingDataCell>
+          );
+        },
+      },
+      {
         id: "dateOfOpeation",
         title: "Data Operazione",
         type: "date",
@@ -502,13 +522,6 @@ export default function OperationsPage() {
         title: "Superficie Trattata (ha)",
         type: "number",
         width: "180px",
-        readOnly: true,
-      },
-      {
-        id: "companyName",
-        title: "Azienda",
-        type: "text",
-        width: "200px",
         readOnly: true,
       },
     ],
@@ -719,13 +732,8 @@ export default function OperationsPage() {
     [machinesByCompanyMap, usersByCompanyMap, getUserFullName]
   );
 
-  // Stato per tracciare quale campo è in modifica e il suo valore temporaneo
-  const [editingField, setEditingField] = useState<{
-    rowId: string;
-    field: string;
-    originalValue: unknown;
-    tempValue: unknown;
-  } | null>(null);
+  // Stato per tracciare tutte le modifiche nel form del drawer
+  const [drawerFormChanges, setDrawerFormChanges] = useState<Record<string, Record<string, unknown>>>({});
 
   // Stato per il filtro di ricerca nei dettagli
   const [detailsSearchTerm, setDetailsSearchTerm] = useState<string>("");
@@ -736,60 +744,78 @@ export default function OperationsPage() {
       const jobRows = convertToJobRows([row]);
       const rowId = row.id as string;
 
-      // Handler per iniziare la modifica di un campo
-      const handleStartEdit = (field: string, currentValue: unknown) => {
-        setEditingField({
-          rowId,
-          field,
-          originalValue: currentValue,
-          tempValue: currentValue,
+      // Ottieni le modifiche correnti per questa riga
+      const currentChanges = drawerFormChanges[rowId] || {};
+      const hasChanges = Object.keys(currentChanges).length > 0;
+
+      // Handler per modificare un campo
+      const handleFieldChange = (field: string, value: unknown, columnConfig: EditableColumn) => {
+        const updates = columnConfig.onValueChange?.({
+          value,
+          rowData: { ...row, ...currentChanges, [field]: value },
+          columnId: field,
+        });
+
+        setDrawerFormChanges((prev) => ({
+          ...prev,
+          [rowId]: {
+            ...(prev[rowId] || {}),
+            [field]: value,
+            ...(updates || {}),
+          },
+        }));
+      };
+
+      // Handler per annullare tutte le modifiche
+      const handleCancelAll = () => {
+        setDrawerFormChanges((prev) => {
+          const next = { ...prev };
+          delete next[rowId];
+          return next;
         });
       };
 
-      // Handler per annullare la modifica
-      const handleCancelEdit = () => {
-        setEditingField(null);
-      };
-
-      // Handler per salvare la singola modifica
-      const handleSaveSingleField = async (
-        _field: string,
-        _value: unknown,
-        updates?: Record<string, unknown>
-      ) => {
+      // Handler per salvare tutte le modifiche
+      const handleSaveAll = async () => {
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const updatePayload: any = {};
 
-          // Applica le modifiche in base al campo
-          if (updates) {
-            if ("_isVerifiedBoolean" in updates) {
-              updatePayload.isVerified = updates._isVerifiedBoolean;
-            }
-            if ("machineId" in updates) {
-              updatePayload.machineId = updates.machineId;
-            }
-            if ("userId" in updates) {
-              updatePayload.userId = updates.userId;
-            }
-            if ("modeOfApplication" in updates) {
-              updatePayload.modeOfApplication = updates.modeOfApplication;
-            }
-            if ("isLocalizedTreatment" in updates) {
-              updatePayload.isLocalizedTreatment = updates.isLocalizedTreatment;
-            }
+          // Applica le modifiche in base ai campi modificati
+          if ("_isVerifiedBoolean" in currentChanges) {
+            updatePayload.isVerified = currentChanges._isVerifiedBoolean;
+          }
+          if ("_conformityChecked" in currentChanges) {
+            updatePayload.conformityChecked = currentChanges._conformityChecked;
+          }
+          if ("machineId" in currentChanges) {
+            updatePayload.machineId = currentChanges.machineId;
+          }
+          if ("userId" in currentChanges) {
+            updatePayload.userId = currentChanges.userId;
+          }
+          if ("modeOfApplication" in currentChanges) {
+            updatePayload.modeOfApplication = currentChanges.modeOfApplication;
+          }
+          if ("isLocalizedTreatment" in currentChanges) {
+            updatePayload.isLocalizedTreatment = currentChanges.isLocalizedTreatment;
           }
 
           if (Object.keys(updatePayload).length > 0) {
             await jobsApiService.updateJob(rowId, updatePayload);
-            toast.success("Modifica salvata");
+            toast.success("Modifiche salvate con successo");
             await queryClient.invalidateQueries({
               queryKey: ["verified-jobs"],
             });
             await refetch();
+            
+            // Resetta le modifiche dopo il salvataggio
+            setDrawerFormChanges((prev) => {
+              const next = { ...prev };
+              delete next[rowId];
+              return next;
+            });
           }
-
-          setEditingField(null);
         } catch (error) {
           toast.error("Errore durante il salvataggio", {
             description:
@@ -831,16 +857,10 @@ export default function OperationsPage() {
           {/* Campi modificabili */}
           <div className="space-y-2">
             {detailColumns.map((column) => {
-              const currentValue = row[column.id];
+              const currentValue = currentChanges[column.id] !== undefined 
+                ? currentChanges[column.id] 
+                : row[column.id];
               const options = column.getOptions?.(row) ?? column.options ?? [];
-              const isEditing =
-                editingField?.rowId === rowId &&
-                editingField?.field === column.id;
-
-              // Calcola il valore da visualizzare/modificare
-              const displayValue = isEditing
-                ? editingField.tempValue
-                : currentValue;
 
               return (
                 <div key={column.id} className="flex items-center gap-3 py-1.5">
@@ -850,24 +870,10 @@ export default function OperationsPage() {
                   <div className="flex-1">
                     <select
                       className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      value={String(displayValue ?? "")}
+                      value={String(currentValue ?? "")}
                       onChange={(e) => {
-                        const newValue = e.target.value;
-                        if (!isEditing) {
-                          handleStartEdit(column.id, currentValue);
-                        }
-                        setEditingField((prev) =>
-                          prev
-                            ? { ...prev, tempValue: newValue }
-                            : {
-                                rowId,
-                                field: column.id,
-                                originalValue: currentValue,
-                                tempValue: newValue,
-                              }
-                        );
+                        handleFieldChange(column.id, e.target.value, column);
                       }}
-                      disabled={isEditing && editingField?.field !== column.id}
                     >
                       <option value="">
                         {column.placeholder ?? "Seleziona..."}
@@ -892,41 +898,31 @@ export default function OperationsPage() {
                       })}
                     </select>
                   </div>
-                  {/* Pulsanti Annulla/Salva */}
-                  {isEditing && (
-                    <div className="flex gap-1 shrink-0">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 px-2 text-slate-500 hover:text-slate-700"
-                        onClick={handleCancelEdit}
-                      >
-                        Annulla
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="h-8 px-3 bg-agri-green-500 text-white"
-                        onClick={() => {
-                          const updates = column.onValueChange?.({
-                            value: editingField.tempValue,
-                            rowData: row,
-                            columnId: column.id,
-                          });
-                          handleSaveSingleField(
-                            column.id,
-                            editingField.tempValue,
-                            updates ?? {}
-                          );
-                        }}
-                      >
-                        Salva
-                      </Button>
-                    </div>
-                  )}
                 </div>
               );
             })}
           </div>
+
+          {/* Bottoni Annulla/Salva in basso */}
+          {hasChanges && (
+            <div className="flex justify-end gap-2 pt-3 pb-2 border-t border-slate-200 sticky bottom-0 bg-white">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancelAll}
+                className="text-slate-600"
+              >
+                Annulla
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveAll}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                Salva
+              </Button>
+            </div>
+          )}
 
           {/* Separatore e filtro di ricerca */}
           <div className="border-t border-slate-200 pt-4 space-y-4">
@@ -953,7 +949,7 @@ export default function OperationsPage() {
         </div>
       );
     },
-    [detailColumns, editingField, queryClient, refetch, detailsSearchTerm]
+    [detailColumns, drawerFormChanges, queryClient, refetch, detailsSearchTerm]
   );
 
   // Gestisce l'eliminazione multipla
@@ -1054,7 +1050,7 @@ export default function OperationsPage() {
               getRowId={(row, index) =>
                 (typeof row.id === "string" && row.id) || index
               }
-              showDeleteAction={false}
+              showDeleteAction={selectedRows.length > 0}
               onDeleteSelected={handleDeleteSelected}
               onSelectionChange={setSelectedRows}
               exportFileName="operazioni"

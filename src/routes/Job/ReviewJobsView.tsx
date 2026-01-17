@@ -559,7 +559,7 @@ export function ReviewJobsView({
                         variant="ghost"
                         size="sm"
                         onClick={() => onToggleRightSidebar(true)}
-                        className="text-muted-foreground hover:text-foreground cursor-pointer"
+                        className="text-black hover:text-gray-700 cursor-pointer focus-visible:ring-0 focus-visible:outline-none"
                         title="Apri pannello dettagli"
                       >
                         <PanelRightOpen className="h-4 w-4 sm:mr-2" />
