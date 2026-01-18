@@ -1002,7 +1002,7 @@ export default function OperationsPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title="Operazioni" />
+      <PageHeader title="Operazioni" className="hidden md:block" />
 
       <div className="flex-1 overflow-auto px-6 pb-6">
         {isLoading ? (

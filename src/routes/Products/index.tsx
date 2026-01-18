@@ -330,7 +330,7 @@ function ProductsPage() {
   if (isLoading) {
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
-        <PageHeader title="Prodotti" />
+        <PageHeader title="Prodotti" className="hidden md:block" />
         <div className="flex-1 overflow-auto px-6 pb-24">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
@@ -353,7 +353,7 @@ function ProductsPage() {
   if (isError) {
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
-        <PageHeader title="Prodotti" />
+        <PageHeader title="Prodotti" className="hidden md:block" />
         <div className="flex-1 overflow-auto px-6 pb-24">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -371,7 +371,7 @@ function ProductsPage() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <PageHeader title="Prodotti" />
+      <PageHeader title="Prodotti" className="hidden md:block" />
 
       <div className="flex-1 overflow-auto px-6 pb-24">
         <EditableTable

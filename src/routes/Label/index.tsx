@@ -147,14 +147,15 @@ export default function Label(): React.ReactElement {
   const queryClient = useQueryClient();
   const { data: userData } = useMe();
   const userRole = userData?.role;
-  
+
   // Verifica se l'utente può modificare (solo ADMIN e LABEL_MANAGER)
-  const canModify = userRole === UserRole.ADMIN || userRole === UserRole.LABEL_MANAGER;
-  
+  const canModify =
+    userRole === UserRole.ADMIN || userRole === UserRole.LABEL_MANAGER;
+
   const [selectedRows, setSelectedRows] = useState<
     Array<Record<string, unknown>>
   >([]);
-  
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["labels", "summary"],
     queryFn: async () => labelsApiService.getSummary(),
@@ -221,16 +222,7 @@ export default function Label(): React.ReactElement {
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title="Etichette">
-        {canModify && (
-          <Button
-            onClick={() => navigate("/new-label")}
-            className="whitespace-nowrap"
-          >
-            Aggiungi Etichette
-          </Button>
-        )}
-      </PageHeader>
+      <PageHeader title="Etichette" className="hidden md:block" />
 
       {/* Area scrollabile - solo la tabella */}
       <div className="flex-1 overflow-auto px-6 pb-6">
@@ -262,6 +254,16 @@ export default function Label(): React.ReactElement {
             className="bg-background"
             exportFileName="etichette"
           >
+            {canModify && (
+              <Button
+                data-table-slot="right"
+                variant="ghost"
+                className="order-last gap-2"
+                onClick={() => navigate("/new-label")}
+              >
+                Aggiungi
+              </Button>
+            )}
             {canModify && selectedRows.length > 0 && (
               <Button
                 data-table-slot="right"

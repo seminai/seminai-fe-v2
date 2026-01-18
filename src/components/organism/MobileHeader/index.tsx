@@ -11,7 +11,10 @@ function getPageTitle(pathname: string): string {
   if (pathname === "/label" || pathname.startsWith("/label/")) {
     return "Etichette";
   }
-  if (pathname === "/dosage-manager" || pathname.startsWith("/dosage-manager/")) {
+  if (
+    pathname === "/dosage-manager" ||
+    pathname.startsWith("/dosage-manager/")
+  ) {
     return "Genera Dosaggi";
   }
   if (pathname === "/job" || pathname.startsWith("/job/")) {
@@ -26,7 +29,10 @@ function getPageTitle(pathname: string): string {
   if (pathname === "/fields" || pathname.startsWith("/fields/")) {
     return "Campi";
   }
-  if (pathname === "/production-unit" || pathname.startsWith("/production-unit/")) {
+  if (
+    pathname === "/production-unit" ||
+    pathname.startsWith("/production-unit/")
+  ) {
     return "Unità Produttive";
   }
   if (pathname === "/products" || pathname.startsWith("/products/")) {
@@ -56,7 +62,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith("/workspace/settings/rules/")) {
     return "Modifica Regola";
   }
-  
+
   return "Seminai";
 }
 
@@ -66,7 +72,7 @@ function getPageTitle(pathname: string): string {
  */
 export function MobileHeader(): React.ReactElement {
   const location = useLocation();
-  
+
   const pageTitle = getPageTitle(location.pathname);
 
   return (
@@ -78,7 +84,7 @@ export function MobileHeader(): React.ReactElement {
             <WorkspaceSwitcher collapsed={true} />
           </div>
         </div>
-        
+
         {/* Page title on the right */}
         <div className="flex-1 flex justify-end items-center min-w-0">
           <h1 className="text-lg font-semibold text-black truncate text-right">

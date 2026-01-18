@@ -17,8 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { X, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { MultiSearchableSelect } from "../DosageManager/MultiSearchableSelect";
 
 interface ProductionUnitOption {

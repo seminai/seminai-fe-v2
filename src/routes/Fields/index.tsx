@@ -407,7 +407,7 @@ export default function Fields(): React.ReactElement {
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title="Campi" />
+      <PageHeader title="Campi" className="hidden md:block" />
 
       {/* Area scrollabile - solo la tabella */}
       <div className="flex-1 overflow-auto px-6 pb-6">

@@ -48,6 +48,7 @@ import { useFields } from "@/hooks/useFields";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import authService from "@/utils/auth";
 import { LuLogOut, LuSettings } from "react-icons/lu";
+import { ClipboardList } from "lucide-react";
 import { useMe } from "@/hooks/useAuth";
 import { UserRole } from "@/api/auth";
 import { WorkspaceSwitcher } from "@/components/organism/WorkspaceSwitcher";
@@ -62,6 +63,7 @@ type MobileBottomBarProps = {
   isMobile: boolean;
   menuAvailability: MenuAvailabilityState;
   manageVisibility: ManageMenuVisibility;
+  fieldNotesVisible: boolean;
   isActive: (item: NavigationItem) => boolean;
   hrefFor: (item: NavigationItem) => string;
   userRole?: UserRole;
@@ -253,6 +255,7 @@ function MobileBottomBar({
   userRole,
   menuAvailability,
   manageVisibility,
+  fieldNotesVisible,
 }: MobileBottomBarProps) {
   if (!isMobile) return null;
 
@@ -264,18 +267,21 @@ function MobileBottomBar({
   const dosageManagerActive = location.pathname.startsWith("/dosage-manager");
   const jobActive = location.pathname.startsWith("/job");
   const productsActive = location.pathname.startsWith("/products");
+  const fieldNotesActive = location.pathname.startsWith("/field-notes");
 
   const dosageManagerVisible =
     menuAvailability.allowDosageManagerMenu &&
     canViewMenuItem("dosage-manager", userRole);
-  const hasManageItems = Object.values(manageVisibility).some(Boolean);
+  const hasManageItems =
+    Object.values(manageVisibility).some(Boolean) || fieldNotesVisible;
 
   const isManageActive =
     companyActive ||
     fieldsActive ||
     productionUnitActive ||
     productsActive ||
-    jobActive;
+    jobActive ||
+    fieldNotesActive;
 
   return (
     <nav
@@ -348,6 +354,7 @@ function MobileBottomBar({
             <MobileManageMenu
               isActive={isManageActive}
               manageVisibility={manageVisibility}
+              fieldNotesVisible={fieldNotesVisible}
             />
           )}
           <MobileAccountMenu />
@@ -360,9 +367,11 @@ function MobileBottomBar({
 function MobileManageMenu({
   manageVisibility,
   isActive,
+  fieldNotesVisible,
 }: {
   manageVisibility: ManageMenuVisibility;
   isActive: boolean;
+  fieldNotesVisible: boolean;
 }) {
   const navigate = useNavigate();
 
@@ -422,6 +431,12 @@ function MobileManageMenu({
             <DropdownMenuItem onClick={() => navigate("/products")}>
               <BottleAgriIcon className="size-4 mr-2" size={16} />
               Magazzino
+            </DropdownMenuItem>
+          )}
+          {fieldNotesVisible && (
+            <DropdownMenuItem onClick={() => navigate("/field-notes")}>
+              <ClipboardList className="size-4 mr-2" />
+              Note di Campo
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -613,6 +628,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     menuAvailability.allowDosageManagerMenu &&
     canViewMenuItem("dosage-manager", userRole);
   const jobVisible = manageVisibility.jobs;
+  const fieldNotesVisible = canViewMenuItem("field-notes", userRole);
   const manageMenuController = useMemo(
     () => new ManageMenuController(manageVisibility),
     [manageVisibility]
@@ -638,6 +654,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     location.pathname.startsWith("/dosage-manager/");
   const jobActive =
     location.pathname === "/job" || location.pathname.startsWith("/job/");
+  const fieldNotesActive =
+    location.pathname === "/field-notes" ||
+    location.pathname.startsWith("/field-notes/");
   const productsActive =
     location.pathname === "/products" ||
     location.pathname.startsWith("/products/");
@@ -744,6 +763,24 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       <Link to="/job" className="flex items-center gap-3">
                         <TasksAgriIcon className="size-5" size={20} />
                         <span>Verifica Operazioni</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                {/* Note di Campo - solo in modalità espansa */}
+                {fieldNotesVisible && sidebarOpen && (
+                  <SidebarMenuItem key="field-notes-expanded">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={fieldNotesActive}
+                      tooltip="Note di Campo"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
+                    >
+                      <Link to="/field-notes" className="flex items-center gap-3">
+                        <ClipboardList className="size-5" />
+                        <span>Note di Campo</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -935,6 +972,23 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   </SidebarMenuItem>
                 )}
 
+                {/* Note di Campo - icona collassata */}
+                {fieldNotesVisible && !sidebarOpen && (
+                  <SidebarMenuItem key="field-notes-collapsed">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={fieldNotesActive}
+                      tooltip="Note di Campo"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link to="/field-notes" className="flex items-center gap-3">
+                        <ClipboardList className="size-5" />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
                 {/* Gestisci - icona collassata */}
                 {!sidebarOpen && hasManageItems && (
                   <SidebarMenuItem key="manage-collapsed">
@@ -1050,6 +1104,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
             isMobile={isMobile}
             menuAvailability={menuAvailability}
             manageVisibility={manageVisibility}
+            fieldNotesVisible={fieldNotesVisible}
             isActive={(i) =>
               model.isActive(location.pathname, location.search, i)
             }
