@@ -259,8 +259,8 @@ export function EditableTableHeader({
             >
               Annulla
             </Button>
-            <Button 
-              onClick={onSave} 
+            <Button
+              onClick={onSave}
               disabled={hasErrors}
               className="bg-green-500 hover:bg-green-600 text-white"
             >

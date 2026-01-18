@@ -1814,6 +1814,7 @@ export default function JobPage() {
   }, [productionUnits]);
 
   // Funzione per ottenere le opzioni della select unità produttiva in base al contesto
+  // @ts-expect-error - Reserved for future use
   const getProductionUnitOptions = (rowData: Record<string, unknown>) => {
     // Per le righe esistenti, usa _companyId se _selectedCompanyForPU non è impostato
     const selectedCompanyId =
@@ -3564,7 +3565,7 @@ export default function JobPage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <PageHeader title="Verifica Operazioni">
+      <PageHeader title="Verifica Operazioni" className="hidden md:block">
         {!isMobile && viewMode === "all" && (
           <div className="flex items-center justify-end gap-4 flex-wrap">
             <div className="flex items-center gap-2 text-xs text-slate-500">

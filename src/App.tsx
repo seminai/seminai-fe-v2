@@ -16,6 +16,7 @@ import DosageManager from "./routes/DosageManager";
 import Products from "./routes/Products";
 import Job from "./routes/Job";
 import Operations from "./routes/Operations";
+import FieldNotes from "./routes/FieldNotes";
 import QuickCreate from "./routes/QuickCreate";
 import TermsOfService from "./routes/TermsOfService";
 import PrivacyPolicy from "./routes/PrivacyPolicy";
@@ -46,6 +47,7 @@ function App() {
         <Route path="/dosage-manager" element={<DosageManager />} />
         <Route path="/job" element={<Job />} />
         <Route path="/operations" element={<Operations />} />
+        <Route path="/field-notes" element={<FieldNotes />} />
         <Route path="/products" element={<Products />} />
         <Route path="/create-company-field-production" element={<QuickCreate />} />
         <Route path="/new-workspace" element={<NewWorkspace />} />

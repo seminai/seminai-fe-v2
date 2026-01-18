@@ -1944,7 +1944,7 @@ export default function ProductionUnit(): React.ReactElement {
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title="Unità Produttive" />
+      <PageHeader title="Unità Produttive" className="hidden md:block" />
 
       {/* Area scrollabile - solo la tabella */}
       <div className="flex-1 overflow-auto px-6 pb-6">
