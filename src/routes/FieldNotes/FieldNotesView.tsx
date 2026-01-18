@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   EditableTable,
   type EditableColumn,
@@ -123,31 +124,30 @@ export function FieldNotesView({
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Mobile Toggle Tabs - Visibile solo su mobile */}
       <div className="md:hidden flex-shrink-0 border-b border-slate-200 bg-white">
-        <div className="flex">
-          <button
-            onClick={() => setMobileView("chat")}
-            className={cn(
-              "flex-1 py-3 px-4 text-sm font-medium transition-colors flex items-center justify-center gap-2",
-              mobileView === "chat"
-                ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-            )}
+        <div className="px-4 py-3">
+          <Tabs
+            value={mobileView}
+            onValueChange={(value) =>
+              setMobileView(value as "chat" | "table")
+            }
           >
-            <MessageSquare className="h-4 w-4" />
-            Chat AI
-          </button>
-          <button
-            onClick={() => setMobileView("table")}
-            className={cn(
-              "flex-1 py-3 px-4 text-sm font-medium transition-colors flex items-center justify-center gap-2",
-              mobileView === "table"
-                ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-            )}
-          >
-            <Table className="h-4 w-4" />
-            Note ({fieldNotesLength})
-          </button>
+            <TabsList className="bg-white border border-neutral-200 p-1 rounded-xl inline-flex w-auto">
+              <TabsTrigger
+                value="chat"
+                className="rounded-lg text-xs whitespace-nowrap"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Chat AI
+              </TabsTrigger>
+              <TabsTrigger
+                value="table"
+                className="rounded-lg text-xs whitespace-nowrap"
+              >
+                <Table className="w-4 h-4 mr-2" />
+                Note ({fieldNotesLength})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </div>
 
