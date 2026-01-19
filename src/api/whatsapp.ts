@@ -35,7 +35,11 @@ export type WhatsAppStatusResponse = {
     phoneNumber?: string;
     instanceName?: string;
     lastSync?: string;
-    connectionStatus: "disconnected" | "connecting" | "connected" | "qr_code_ready";
+    connectionStatus:
+      | "disconnected"
+      | "connecting"
+      | "connected"
+      | "qr_code_ready";
   };
 };
 
@@ -140,6 +144,9 @@ class WhatsAppApiService {
   public async disconnectWhatsApp(
     payload?: WhatsAppDisconnectRequest
   ): Promise<WhatsAppDisconnectResponse> {
+    // Default to deleteInstance: false if not specified
+    const requestPayload = payload ?? { deleteInstance: false };
+
     const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/settings/whatsapp/disconnect`,
       {
@@ -148,7 +155,7 @@ class WhatsAppApiService {
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: payload ? JSON.stringify(payload) : undefined,
+        body: JSON.stringify(requestPayload),
       }
     );
 
@@ -191,9 +198,7 @@ export async function setupWhatsAppWithBearer(
   baseUrl: string = BASE_URL
 ): Promise<WhatsAppSetupResponse> {
   const service =
-    baseUrl === BASE_URL
-      ? whatsappApiService
-      : new WhatsAppApiService(baseUrl);
+    baseUrl === BASE_URL ? whatsappApiService : new WhatsAppApiService(baseUrl);
   return await service.setupWhatsApp(payload);
 }
 
@@ -201,9 +206,7 @@ export async function getWhatsAppQrCodeWithBearer(
   baseUrl: string = BASE_URL
 ): Promise<WhatsAppQrCodeResponse> {
   const service =
-    baseUrl === BASE_URL
-      ? whatsappApiService
-      : new WhatsAppApiService(baseUrl);
+    baseUrl === BASE_URL ? whatsappApiService : new WhatsAppApiService(baseUrl);
   return await service.getQrCode();
 }
 
@@ -211,9 +214,7 @@ export async function getWhatsAppStatusWithBearer(
   baseUrl: string = BASE_URL
 ): Promise<WhatsAppStatusResponse> {
   const service =
-    baseUrl === BASE_URL
-      ? whatsappApiService
-      : new WhatsAppApiService(baseUrl);
+    baseUrl === BASE_URL ? whatsappApiService : new WhatsAppApiService(baseUrl);
   return await service.getStatus();
 }
 
@@ -222,9 +223,7 @@ export async function disconnectWhatsAppWithBearer(
   baseUrl: string = BASE_URL
 ): Promise<WhatsAppDisconnectResponse> {
   const service =
-    baseUrl === BASE_URL
-      ? whatsappApiService
-      : new WhatsAppApiService(baseUrl);
+    baseUrl === BASE_URL ? whatsappApiService : new WhatsAppApiService(baseUrl);
   return await service.disconnectWhatsApp(payload);
 }
 
@@ -233,8 +232,6 @@ export async function sendWhatsAppMessageWithBearer(
   baseUrl: string = BASE_URL
 ): Promise<WhatsAppSendMessageResponse> {
   const service =
-    baseUrl === BASE_URL
-      ? whatsappApiService
-      : new WhatsAppApiService(baseUrl);
+    baseUrl === BASE_URL ? whatsappApiService : new WhatsAppApiService(baseUrl);
   return await service.sendMessage(payload);
 }
