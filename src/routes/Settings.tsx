@@ -429,6 +429,8 @@ export default function Settings() {
   const [isSettingUpWhatsapp, setIsSettingUpWhatsapp] = React.useState(false);
   const [isDisconnectingWhatsapp, setIsDisconnectingWhatsapp] =
     React.useState(false);
+  const [isWhatsappConnecting, setIsWhatsappConnecting] =
+    React.useState(false);
   const whatsappStatusPollingIntervalRef = React.useRef<NodeJS.Timeout | null>(
     null
   );
@@ -473,9 +475,32 @@ export default function Settings() {
         
         setWhatsappStatus(newStatus);
         
-        // Stop polling if connected
+        // Update QR code if still in connecting phase (not connected yet)
         if (newStatus.connectionStatus === "connected") {
+          // Clear QR code when connected
+          setWhatsappQrCode(null);
+          setIsWhatsappConnecting(false);
           stopWhatsappStatusPolling();
+        } else if (newStatus.connectionStatus === "disconnected") {
+          // Clear QR code when disconnected
+          setWhatsappQrCode(null);
+          setIsWhatsappConnecting(false);
+        } else {
+          // Keep QR code visible and try to refresh it if still connecting
+          // Only refresh if we don't have one or if status explicitly says qr_code_ready
+          if (
+            !whatsappQrCode ||
+            newStatus.connectionStatus === "qr_code_ready" ||
+            newStatus.connectionStatus === "connecting"
+          ) {
+            try {
+              const qrResponse = await getWhatsAppQrCodeWithBearer();
+              setWhatsappQrCode(qrResponse.data.qrCodeBase64);
+            } catch (error) {
+              // If QR code fetch fails but we have one, keep it visible
+              console.error("Failed to load QR code in polling:", error);
+            }
+          }
         }
       } catch (error) {
         console.error("Failed to poll WhatsApp status:", error);
@@ -495,8 +520,10 @@ export default function Settings() {
         response.data.connectionStatus === "connecting" ||
         response.data.connectionStatus === "qr_code_ready"
       ) {
+        setIsWhatsappConnecting(true);
         startWhatsappStatusPolling();
       } else {
+        setIsWhatsappConnecting(false);
         stopWhatsappStatusPolling();
       }
 
@@ -511,9 +538,16 @@ export default function Settings() {
         } catch (error) {
           console.error("Failed to load QR code:", error);
         }
-      } else {
+      } else if (response.data.connectionStatus === "connected") {
+        // Clear QR code when connected
         setWhatsappQrCode(null);
+        setIsWhatsappConnecting(false);
+      } else if (response.data.connectionStatus === "disconnected") {
+        // Clear QR code when disconnected
+        setWhatsappQrCode(null);
+        setIsWhatsappConnecting(false);
       }
+      // Keep QR code if status is still in connecting phase
     } catch (error) {
       console.error("Failed to load WhatsApp status:", error);
       // If error, assume disconnected
@@ -521,6 +555,7 @@ export default function Settings() {
         connected: false,
         connectionStatus: "disconnected",
       });
+      setIsWhatsappConnecting(false);
       stopWhatsappStatusPolling();
     } finally {
       setIsLoadingWhatsappStatus(false);
@@ -544,7 +579,14 @@ export default function Settings() {
           response.data.connectionStatus === "connecting" ||
           response.data.connectionStatus === "qr_code_ready"
         ) {
+          if (mounted) {
+            setIsWhatsappConnecting(true);
+          }
           startWhatsappStatusPolling();
+        } else {
+          if (mounted) {
+            setIsWhatsappConnecting(false);
+          }
         }
 
         // If QR code is available, fetch it
@@ -559,6 +601,14 @@ export default function Settings() {
             }
           } catch (error) {
             console.error("Failed to load QR code:", error);
+          }
+        } else if (mounted) {
+          if (response.data.connectionStatus === "connected") {
+            setWhatsappQrCode(null);
+            setIsWhatsappConnecting(false);
+          } else if (response.data.connectionStatus === "disconnected") {
+            setWhatsappQrCode(null);
+            setIsWhatsappConnecting(false);
           }
         }
       } catch (error) {
@@ -589,6 +639,7 @@ export default function Settings() {
       return await setupWhatsAppWithBearer();
     },
     onSuccess: async (response) => {
+      setIsWhatsappConnecting(true);
       setWhatsappStatus({
         connected: false,
         connectionStatus: "qr_code_ready",
@@ -600,6 +651,7 @@ export default function Settings() {
       toast.success("Setup WhatsApp completato. Scansiona il QR code.");
     },
     onError: (e: unknown) => {
+      setIsWhatsappConnecting(false);
       const message =
         e instanceof Error ? e.message : "Errore durante il setup WhatsApp";
       toast.error(message);
@@ -616,6 +668,7 @@ export default function Settings() {
         connectionStatus: "disconnected",
       });
       setWhatsappQrCode(null);
+      setIsWhatsappConnecting(false);
       stopWhatsappStatusPolling();
       await queryClient.invalidateQueries({ queryKey: ["users", "me"] });
       toast.success("WhatsApp disconnesso con successo");
@@ -1174,20 +1227,21 @@ export default function Settings() {
                   </div>
                 </div>
 
-                {whatsappQrCode &&
-                  (whatsappStatus?.connectionStatus === "qr_code_ready" ||
-                    whatsappStatus?.connectionStatus === "connecting") && (
+                {(whatsappQrCode || isWhatsappConnecting) &&
+                  whatsappStatus?.connectionStatus !== "connected" && (
                     <div className="p-4 rounded-lg border border-agri-green-100 bg-white">
                       <p className="text-sm font-medium text-gray-900 mb-3">
                         Scansiona questo QR code con WhatsApp:
                       </p>
-                      <div className="flex justify-center">
-                        <img
-                          src={whatsappQrCode}
-                          alt="WhatsApp QR Code"
-                          className="w-64 h-64 border border-gray-200 rounded-lg"
-                        />
-                      </div>
+                      {whatsappQrCode && (
+                        <div className="flex justify-center">
+                          <img
+                            src={whatsappQrCode}
+                            alt="WhatsApp QR Code"
+                            className="w-64 h-64 border border-gray-200 rounded-lg"
+                          />
+                        </div>
+                      )}
                       <p className="text-xs text-gray-600 mt-3 text-center">
                         1. Apri WhatsApp sul telefono
                         <br />
