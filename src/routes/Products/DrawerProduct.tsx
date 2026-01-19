@@ -959,8 +959,8 @@ function DrawerProduct({
       {/* Drawer per modifica prodotto */}
       <Sheet open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <SheetContent
-          side="left"
-          className="w-full sm:max-w-lg overflow-y-auto bg-white"
+          side="right"
+          className="w-screen max-w-full sm:w-full sm:max-w-[50vw] overflow-y-auto bg-white p-2"
         >
           <SheetHeader>
             <SheetTitle>Modifica Prodotto</SheetTitle>
