@@ -386,7 +386,7 @@ function ProductsPage() {
           lastComponent={(row) => {
             const data = row as ProductTableRow;
             return (
-              <div className="flex justify-end px-2 py-1">
+              <div className="flex justify-end px-2 py-1 bg-white">
                 <Button
                   variant="ghost"
                   size="sm"
