@@ -507,7 +507,7 @@ function DrawerProduct({
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="w-full sm:max-w-[50vw] overflow-y-auto bg-white p-2">
+        <SheetContent className="w-screen max-w-full sm:w-full sm:max-w-[50vw] overflow-y-auto bg-white p-2">
           {isDetailLoading && (
             <div className="flex items-center gap-3 border border-blue-100 bg-blue-50 rounded-lg px-4 py-2 mb-4">
               <Spinner size={24} />

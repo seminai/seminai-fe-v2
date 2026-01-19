@@ -841,7 +841,7 @@ function DrawerProductBulkImport({
   return (
     <>
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-4xl bg-white">
+      <SheetContent side="right" className="w-screen max-w-full sm:w-full sm:max-w-4xl bg-white">
         <SheetHeader>
           <SheetTitle>Importazione massiva prodotti</SheetTitle>
           <SheetDescription>

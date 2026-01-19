@@ -276,7 +276,7 @@ function DrawerProductImportPreview({
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-6xl bg-white flex flex-col"
+        className="w-screen max-w-full sm:w-full sm:max-w-6xl bg-white flex flex-col"
       >
         <SheetHeader>
           <SheetTitle>Preview Importazione da {sourceLabel}</SheetTitle>
