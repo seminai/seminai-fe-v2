@@ -170,7 +170,7 @@ export type BulkProductPayload = {
 
 export type BulkImportProductsPayload = {
   companyId: string;
-  warehouseId: string;
+  warehouseId?: string;
   products: BulkProductPayload[];
 };
 
@@ -319,8 +319,8 @@ export async function bulkImportProducts(
   payload: BulkImportProductsPayload,
   baseUrl: string = BASE_URL
 ): Promise<BulkImportProductsResponse> {
-  if (!payload?.companyId || !payload?.warehouseId) {
-    throw new Error("Company and warehouse identifiers are required");
+  if (!payload?.companyId) {
+    throw new Error("Company identifier is required");
   }
 
   if (!Array.isArray(payload.products) || payload.products.length === 0) {
