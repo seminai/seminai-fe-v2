@@ -45,7 +45,7 @@ interface DrawerProductImportPreviewProps {
     orderNumber?: string;
   }>;
   companyId: string;
-  warehouseId: string;
+  warehouseId?: string;
   warehouseName?: string;
   importSource: "ddt" | "csv" | "excel";
   onImportCompleted?: () => void;
@@ -201,9 +201,9 @@ function DrawerProductImportPreview({
       return;
     }
 
-    if (!companyId || !warehouseId) {
+    if (!companyId) {
       toast.error("Dati mancanti", {
-        description: "Azienda o magazzino non specificati",
+        description: "Azienda non specificata",
       });
       return;
     }
@@ -216,7 +216,7 @@ function DrawerProductImportPreview({
 
       const response = await productsApiService.bulkImport({
         companyId,
-        warehouseId,
+        ...(warehouseId && { warehouseId }),
         products: productsPayload,
       });
 

@@ -225,9 +225,9 @@ export function FieldNotesView({
       </div>
 
       {/* Desktop View - Layout originale con tabella e sidebar */}
-      <div className="hidden md:flex flex-1 overflow-hidden px-6 pb-6">
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full space-y-4">
+      <div className="hidden md:flex flex-1 min-h-0 overflow-hidden px-6 pb-6">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="h-full space-y-4">
           {hasError && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
               <p className="font-semibold">Errore nel caricamento dei dati</p>
@@ -295,8 +295,8 @@ export function FieldNotesView({
               </div>
             </div>
           )}
+          </div>
         </div>
-      </div>
 
       {isRightSidebarOpen && (
         <>
@@ -316,7 +316,7 @@ export function FieldNotesView({
 
           {/* Right Sidebar - Chat Panel */}
           <div
-            className="flex-shrink-0 overflow-hidden flex flex-col bg-white border-l border-slate-200"
+            className="flex-shrink-0 h-full overflow-hidden flex flex-col bg-white border-l border-slate-200"
             style={{ width: `${rightSidebarWidth}px` }}
           >
             {/* Header unificato */}
@@ -339,7 +339,7 @@ export function FieldNotesView({
             </div>
 
             {/* Chat Content */}
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-hidden">
               <FieldNoteChatPanel 
                 onFieldNoteSaved={onFieldNoteSaved}
                 onSocketStateChange={setSocketState}

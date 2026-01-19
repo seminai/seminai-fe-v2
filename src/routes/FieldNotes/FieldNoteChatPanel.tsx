@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
-import { Mic, Send, Upload } from "lucide-react";
+import { Mic, Send, Upload, Square } from "lucide-react";
 import { useFieldNoteChat } from "@/hooks/useFieldNoteChat";
 import {
   ApprovalDialog,
@@ -13,6 +13,7 @@ import {
 } from "./FieldNoteChatPanel.parts";
 import { audioToTextApiService } from "@/api/audio-to-text";
 import { toast } from "sonner";
+import { AudioRecorderService } from "./FieldNoteAudioRecorder";
 
 interface FieldNoteChatPanelProps {
   onFieldNoteSaved?: () => void;
@@ -42,8 +43,9 @@ export function FieldNoteChatPanel({
   const [input, setInput] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const audioInputRef = useRef<HTMLInputElement | null>(null);
+  const audioRecorderRef = useRef<AudioRecorderService | null>(null);
 
   useEffect(() => {
     if (onSocketStateChange) {
@@ -94,18 +96,7 @@ export function FieldNoteChatPanel({
     fileInputRef.current?.click();
   };
 
-  const handleAudioPick = () => {
-    audioInputRef.current?.click();
-  };
-
-  const handleAudioChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file || isTranscribing) {
-      return;
-    }
-
+  const transcribeAudioFile = async (file: File) => {
     setIsTranscribing(true);
     try {
       const response = await audioToTextApiService.transcribeAudio({ file });
@@ -125,15 +116,63 @@ export function FieldNoteChatPanel({
       });
     } finally {
       setIsTranscribing(false);
-      if (audioInputRef.current) {
-        audioInputRef.current.value = "";
-      }
     }
   };
 
+  const getRecorder = () => {
+    if (!audioRecorderRef.current) {
+      audioRecorderRef.current = new AudioRecorderService(
+        AudioRecorderService.getSupportedMimeType()
+      );
+    }
+    return audioRecorderRef.current;
+  };
+
+  const handleRecordToggle = async () => {
+    if (isTranscribing || isProcessing) {
+      return;
+    }
+
+    if (isRecording) {
+      try {
+        const recorder = getRecorder();
+        const audioBlob = await recorder.stop();
+        setIsRecording(false);
+        const audioFile = AudioRecorderService.buildAudioFile(audioBlob);
+        await transcribeAudioFile(audioFile);
+      } catch (error) {
+        setIsRecording(false);
+        const errorMessage =
+          error instanceof Error ? error.message : "Errore sconosciuto";
+        toast.error("Errore durante la registrazione", {
+          description: errorMessage,
+        });
+      }
+      return;
+    }
+
+    try {
+      const recorder = getRecorder();
+      await recorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Errore sconosciuto";
+      toast.error("Microfono non disponibile", {
+        description: errorMessage,
+      });
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      audioRecorderRef.current?.cancel();
+    };
+  }, []);
+
   return (
-    <div className="h-full flex flex-col bg-white">
-      <ScrollArea className="flex-1 p-4">
+    <div className="h-full min-h-0 flex flex-col bg-white">
+      <ScrollArea className="flex-1 min-h-0 p-4">
         <div className="space-y-4">
           {messages.length === 0 && <EmptyState />}
 
@@ -182,19 +221,12 @@ export function FieldNoteChatPanel({
                 className="hidden"
                 onChange={handleFileChange}
               />
-              <input
-                ref={audioInputRef}
-                type="file"
-                className="hidden"
-                accept="audio/*"
-                onChange={handleAudioChange}
-              />
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleFilePick}
-                disabled={isProcessing || isTranscribing}
+                disabled={isProcessing || isTranscribing || isRecording}
               >
                 <Upload className="h-4 w-4 mr-2" />
                 Allega
@@ -203,7 +235,7 @@ export function FieldNoteChatPanel({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={handleAudioPick}
+                onClick={handleRecordToggle}
                 disabled={isProcessing || isTranscribing}
               >
                 {isTranscribing ? (
@@ -213,6 +245,11 @@ export function FieldNoteChatPanel({
                       ariaLabel="Trascrizione in corso"
                     />
                     Trascrivo...
+                  </>
+                ) : isRecording ? (
+                  <>
+                    <Square className="h-4 w-4 mr-2" />
+                    Ferma
                   </>
                 ) : (
                   <>

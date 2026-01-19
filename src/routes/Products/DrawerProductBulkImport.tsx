@@ -549,13 +549,6 @@ function DrawerProductBulkImport({
       return;
     }
 
-    if (!warehouseId && warehouses.length === 0) {
-      toast.error("Magazzino richiesto", {
-        description: "Devi creare almeno un magazzino per l'azienda selezionata prima di importare i prodotti",
-      });
-      return;
-    }
-
     setIsImporting(true);
     setParserErrors([]);
 
@@ -774,14 +767,6 @@ function DrawerProductBulkImport({
 
   const handleImportFromDdt = useCallback(async (): Promise<void> => {
     if (selectedDdtFiles.length === 0 || isProcessingDdt || !companyId) {
-      return;
-    }
-
-    // Verifica che ci sia un magazzino (obbligatorio per l'API)
-    if (!warehouseId && warehouses.length === 0) {
-      toast.error("Magazzino richiesto", {
-        description: "Devi creare almeno un magazzino per l'azienda selezionata prima di importare i prodotti",
-      });
       return;
     }
 
@@ -1329,15 +1314,9 @@ function DrawerProductBulkImport({
                 disabled={
                   !companyId ||
                   selectedDdtFiles.length === 0 ||
-                  isProcessingDdt ||
-                  (warehouses.length === 0 && !isLoadingWarehouses)
+                  isProcessingDdt
                 }
                 className="gap-2"
-                title={
-                  warehouses.length === 0 && !isLoadingWarehouses && companyId
-                    ? "Crea almeno un magazzino per l'azienda prima di importare"
-                    : undefined
-                }
               >
                 {isProcessingDdt ? (
                   <>
@@ -1363,7 +1342,7 @@ function DrawerProductBulkImport({
         onOpenChange={setPreviewDrawerOpen}
         products={previewProducts}
         companyId={companyId}
-        warehouseId={warehouseId || warehouses[0]?.id || ""}
+        warehouseId={warehouseId || warehouses[0]?.id || undefined}
         warehouseName={selectedWarehouse?.name}
         importSource={previewImportSource}
         onImportCompleted={handlePreviewImportCompleted}
