@@ -38,6 +38,13 @@ import {
   clearCacheWithBearer,
 } from "@/api/users";
 import { uploadProfilePictureWithBearer } from "@/api/users";
+import {
+  setupWhatsAppWithBearer,
+  getWhatsAppQrCodeWithBearer,
+  getWhatsAppStatusWithBearer,
+  disconnectWhatsAppWithBearer,
+  type WhatsAppStatusResponse,
+} from "@/api/whatsapp";
 import { type TokenUsage } from "@/api/token-costs";
 import { InputFile } from "@/components/ui/input-file";
 import {
@@ -51,7 +58,17 @@ import {
   diffEditable,
   type EditableUserState,
 } from "@/utils/user-edit";
-import { Pencil, Trash2, HardDrive } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  HardDrive,
+  MessageCircle,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
 
 const currencyFormatter = new Intl.NumberFormat("it-IT", {
   style: "currency",
@@ -401,6 +418,21 @@ export default function Settings() {
   const [clearCacheDialogOpen, setClearCacheDialogOpen] = React.useState(false);
   const [clearCacheConfirmText, setClearCacheConfirmText] = React.useState("");
 
+  // WhatsApp state
+  const [whatsappStatus, setWhatsappStatus] =
+    React.useState<WhatsAppStatusResponse["data"] | null>(null);
+  const [whatsappQrCode, setWhatsappQrCode] = React.useState<string | null>(
+    null
+  );
+  const [isLoadingWhatsappStatus, setIsLoadingWhatsappStatus] =
+    React.useState(false);
+  const [isSettingUpWhatsapp, setIsSettingUpWhatsapp] = React.useState(false);
+  const [isDisconnectingWhatsapp, setIsDisconnectingWhatsapp] =
+    React.useState(false);
+  const whatsappStatusPollingIntervalRef = React.useRef<NodeJS.Timeout | null>(
+    null
+  );
+
   const { mutateAsync: clearCacheAsync, isPending: isClearingCache } =
     useMutation({
       mutationFn: async () => {
@@ -422,6 +454,180 @@ export default function Settings() {
 
   const isClearCacheConfirmValid =
     clearCacheConfirmText.trim().toLowerCase() === "elimina";
+
+  const stopWhatsappStatusPolling = React.useCallback(() => {
+    if (whatsappStatusPollingIntervalRef.current) {
+      clearInterval(whatsappStatusPollingIntervalRef.current);
+      whatsappStatusPollingIntervalRef.current = null;
+    }
+  }, []);
+
+  const startWhatsappStatusPolling = React.useCallback(() => {
+    if (whatsappStatusPollingIntervalRef.current) {
+      return; // Already polling
+    }
+    const interval = setInterval(async () => {
+      try {
+        const response = await getWhatsAppStatusWithBearer();
+        const newStatus = response.data;
+        
+        setWhatsappStatus(newStatus);
+        
+        // Stop polling if connected
+        if (newStatus.connectionStatus === "connected") {
+          stopWhatsappStatusPolling();
+        }
+      } catch (error) {
+        console.error("Failed to poll WhatsApp status:", error);
+      }
+    }, 3000); // Poll every 3 seconds
+    whatsappStatusPollingIntervalRef.current = interval;
+  }, [stopWhatsappStatusPolling]);
+
+  const loadWhatsappStatus = React.useCallback(async () => {
+    setIsLoadingWhatsappStatus(true);
+    try {
+      const response = await getWhatsAppStatusWithBearer();
+      setWhatsappStatus(response.data);
+      
+      // If connecting or QR code ready, start polling
+      if (
+        response.data.connectionStatus === "connecting" ||
+        response.data.connectionStatus === "qr_code_ready"
+      ) {
+        startWhatsappStatusPolling();
+      } else {
+        stopWhatsappStatusPolling();
+      }
+
+      // If QR code is available, fetch it
+      if (
+        response.data.connectionStatus === "qr_code_ready" ||
+        response.data.connectionStatus === "connecting"
+      ) {
+        try {
+          const qrResponse = await getWhatsAppQrCodeWithBearer();
+          setWhatsappQrCode(qrResponse.data.qrCodeBase64);
+        } catch (error) {
+          console.error("Failed to load QR code:", error);
+        }
+      } else {
+        setWhatsappQrCode(null);
+      }
+    } catch (error) {
+      console.error("Failed to load WhatsApp status:", error);
+      // If error, assume disconnected
+      setWhatsappStatus({
+        connected: false,
+        connectionStatus: "disconnected",
+      });
+      stopWhatsappStatusPolling();
+    } finally {
+      setIsLoadingWhatsappStatus(false);
+    }
+  }, [startWhatsappStatusPolling, stopWhatsappStatusPolling]);
+
+  // Load WhatsApp status on mount
+  React.useEffect(() => {
+    let mounted = true;
+    
+    const loadStatus = async () => {
+      setIsLoadingWhatsappStatus(true);
+      try {
+        const response = await getWhatsAppStatusWithBearer();
+        if (!mounted) return;
+        
+        setWhatsappStatus(response.data);
+        
+        // If connecting or QR code ready, start polling
+        if (
+          response.data.connectionStatus === "connecting" ||
+          response.data.connectionStatus === "qr_code_ready"
+        ) {
+          startWhatsappStatusPolling();
+        }
+
+        // If QR code is available, fetch it
+        if (
+          response.data.connectionStatus === "qr_code_ready" ||
+          response.data.connectionStatus === "connecting"
+        ) {
+          try {
+            const qrResponse = await getWhatsAppQrCodeWithBearer();
+            if (mounted) {
+              setWhatsappQrCode(qrResponse.data.qrCodeBase64);
+            }
+          } catch (error) {
+            console.error("Failed to load QR code:", error);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load WhatsApp status:", error);
+        if (mounted) {
+          setWhatsappStatus({
+            connected: false,
+            connectionStatus: "disconnected",
+          });
+        }
+      } finally {
+        if (mounted) {
+          setIsLoadingWhatsappStatus(false);
+        }
+      }
+    };
+    
+    loadStatus();
+    
+    return () => {
+      mounted = false;
+      stopWhatsappStatusPolling();
+    };
+  }, [startWhatsappStatusPolling, stopWhatsappStatusPolling]);
+
+  const { mutateAsync: setupWhatsappAsync } = useMutation({
+    mutationFn: async () => {
+      return await setupWhatsAppWithBearer();
+    },
+    onSuccess: async (response) => {
+      setWhatsappStatus({
+        connected: false,
+        connectionStatus: "qr_code_ready",
+      });
+      if (response.data.qrCodeBase64) {
+        setWhatsappQrCode(response.data.qrCodeBase64);
+      }
+      startWhatsappStatusPolling();
+      toast.success("Setup WhatsApp completato. Scansiona il QR code.");
+    },
+    onError: (e: unknown) => {
+      const message =
+        e instanceof Error ? e.message : "Errore durante il setup WhatsApp";
+      toast.error(message);
+    },
+  });
+
+  const { mutateAsync: disconnectWhatsappAsync } = useMutation({
+    mutationFn: async () => {
+      return await disconnectWhatsAppWithBearer({ deleteInstance: false });
+    },
+    onSuccess: async () => {
+      setWhatsappStatus({
+        connected: false,
+        connectionStatus: "disconnected",
+      });
+      setWhatsappQrCode(null);
+      stopWhatsappStatusPolling();
+      await queryClient.invalidateQueries({ queryKey: ["users", "me"] });
+      toast.success("WhatsApp disconnesso con successo");
+    },
+    onError: (e: unknown) => {
+      const message =
+        e instanceof Error
+          ? e.message
+          : "Errore durante la disconnessione WhatsApp";
+      toast.error(message);
+    },
+  });
 
   if (isLoading) {
     return (
@@ -819,6 +1025,202 @@ export default function Settings() {
                 )}
               </div>
             </div>
+          </div>
+        </Card>
+        <Card className="p-4 md:col-span-2 shadow-none">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageCircle className="h-5 w-5 text-gray-600" />
+            <h2 className="font-medium">Integrazione WhatsApp</h2>
+          </div>
+          <div className="space-y-4">
+            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-yellow-900 mb-1">
+                    Importante: Numero WhatsApp dedicato richiesto
+                  </p>
+                  <p className="text-sm text-yellow-800">
+                    Il numero WhatsApp utilizzato per questa integrazione{" "}
+                    <strong>DEVE essere diverso</strong> dal tuo numero personale.
+                    Se colleghi il tuo numero personale, l'integrazione smetterà
+                    di funzionare correttamente. Ti consigliamo di utilizzare un
+                    numero WhatsApp Business dedicato per la tua azienda agricola.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {isLoadingWhatsappStatus ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500 py-4">
+                <Spinner size={16} ariaLabel="Caricamento stato WhatsApp" />
+                <span>Caricamento stato connessione…</span>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between p-4 rounded-lg border border-agri-green-100 bg-agri-green-50/60">
+                  <div className="flex items-center gap-3">
+                    {whatsappStatus?.connected ? (
+                      <>
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            WhatsApp connesso
+                          </p>
+                          {whatsappStatus.phoneNumber && (
+                            <p className="text-xs text-gray-600">
+                              Numero: {whatsappStatus.phoneNumber}
+                            </p>
+                          )}
+                          {whatsappStatus.lastSync && (
+                            <p className="text-xs text-gray-600">
+                              Ultima sincronizzazione:{" "}
+                              {formatDateTime(whatsappStatus.lastSync)}
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    ) : whatsappStatus?.connectionStatus === "connecting" ||
+                      whatsappStatus?.connectionStatus === "qr_code_ready" ? (
+                      <>
+                        <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            In attesa di connessione...
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            Scansiona il QR code con WhatsApp per completare la
+                            connessione
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            WhatsApp non connesso
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            Collega WhatsApp per inviare note di campo tramite
+                            messaggi
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={isLoadingWhatsappStatus}
+                      onClick={() => {
+                        loadWhatsappStatus();
+                      }}
+                      title="Ricarica stato"
+                    >
+                      <RefreshCw
+                        className={`h-4 w-4 ${
+                          isLoadingWhatsappStatus ? "animate-spin" : ""
+                        }`}
+                      />
+                    </Button>
+                    {whatsappStatus?.connected ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={isDisconnectingWhatsapp}
+                        onClick={async () => {
+                          setIsDisconnectingWhatsapp(true);
+                          try {
+                            await disconnectWhatsappAsync();
+                          } finally {
+                            setIsDisconnectingWhatsapp(false);
+                          }
+                        }}
+                      >
+                        {isDisconnectingWhatsapp ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Disconnessione...
+                          </>
+                        ) : (
+                          "Disconnetti"
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        disabled={isSettingUpWhatsapp}
+                        onClick={async () => {
+                          setIsSettingUpWhatsapp(true);
+                          try {
+                            await setupWhatsappAsync();
+                          } finally {
+                            setIsSettingUpWhatsapp(false);
+                          }
+                        }}
+                      >
+                        {isSettingUpWhatsapp ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Setup...
+                          </>
+                        ) : (
+                          "Collega WhatsApp"
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {whatsappQrCode &&
+                  (whatsappStatus?.connectionStatus === "qr_code_ready" ||
+                    whatsappStatus?.connectionStatus === "connecting") && (
+                    <div className="p-4 rounded-lg border border-agri-green-100 bg-white">
+                      <p className="text-sm font-medium text-gray-900 mb-3">
+                        Scansiona questo QR code con WhatsApp:
+                      </p>
+                      <div className="flex justify-center">
+                        <img
+                          src={whatsappQrCode}
+                          alt="WhatsApp QR Code"
+                          className="w-64 h-64 border border-gray-200 rounded-lg"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-600 mt-3 text-center">
+                        1. Apri WhatsApp sul telefono
+                        <br />
+                        2. Vai in Impostazioni → Dispositivi collegati → Collega
+                        un dispositivo
+                        <br />
+                        3. Scansiona questo QR code
+                      </p>
+                      <div className="mt-3 flex justify-center">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={isLoadingWhatsappStatus}
+                          onClick={async () => {
+                            try {
+                              const qrResponse = await getWhatsAppQrCodeWithBearer();
+                              setWhatsappQrCode(qrResponse.data.qrCodeBase64);
+                              toast.success("QR code aggiornato");
+                            } catch (error) {
+                              toast.error(
+                                "Errore durante il caricamento del QR code"
+                              );
+                            }
+                          }}
+                        >
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Aggiorna QR code
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+              </>
+            )}
           </div>
         </Card>
         <Card className="p-4 md:col-span-2 shadow-none">
