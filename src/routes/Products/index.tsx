@@ -11,7 +11,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Eye } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import { IoOpenOutline } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import DrawerProduct from "./DrawerProduct";
@@ -386,18 +387,18 @@ function ProductsPage() {
           lastComponent={(row) => {
             const data = row as ProductTableRow;
             return (
-              <div className="flex justify-end px-2 py-1 bg-white">
+              <div className="flex justify-end px-2 py-1 bg-white group-hover:bg-agri-green-50 transition-colors">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="gap-2 text-foreground hover:bg-transparent hover:text-foreground"
+                  className="h-7 px-2 text-xs whitespace-nowrap cursor-pointer hover:rounded-full"
                   onClick={() => handleProductClick(data.product)}
                 >
-                  <Eye className="h-4 w-4" />
-                  <span>
+                  <span className="hidden sm:inline sm:mr-1">
                     {data.movementsCount} moviment
                     {data.movementsCount === 1 ? "o" : "i"}
                   </span>
+                  <IoOpenOutline className="h-3 w-3" />
                 </Button>
               </div>
             );
