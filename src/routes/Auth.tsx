@@ -42,7 +42,7 @@ export default function Auth() {
   const loginMutation = useLogin();
   const registerMutation = useRegister();
 
-  const { data: meData, refetch: refetchMe } = useMe();
+  const { data: meData, refetch: refetchMe, error: meError } = useMe();
   const { isSuccess: isWakeUpSuccess } = useWakeUp();
 
   // Istanza del servizio di polling per l'autenticazione
@@ -79,12 +79,27 @@ export default function Auth() {
     }
   }, [meData]);
 
-  // Avvia il polling se necessario (token presente ma dati utente non disponibili)
+  // Avvia il polling solo se abbiamo dati utente o se non c'è errore 401
+  // Non avviamo il polling se useMe() fallisce con 401 (utente non autenticato)
   useEffect(() => {
     if (authPollingServiceRef.current) {
-      authPollingServiceRef.current.startPolling(!!meData);
+      // Se c'è un errore 401, significa che l'utente non è autenticato
+      // e non dovremmo fare polling sulla pagina di login
+      const isUnauthorized = meError?.message?.includes("Unauthorized") || 
+                            (meError && !meData);
+      
+      // Avviamo il polling solo se:
+      // 1. Abbiamo dati utente (per coprire il caso di refresh con sessione valida)
+      // 2. OPPURE non c'è errore (prima chiamata ancora in corso)
+      // NON avviamo il polling se c'è un errore 401 chiaro
+      if (!isUnauthorized) {
+        authPollingServiceRef.current.startPolling(!!meData);
+      } else {
+        // Ferma il polling se c'è un errore 401
+        authPollingServiceRef.current.stopPolling();
+      }
     }
-  }, [meData]);
+  }, [meData, meError]);
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
