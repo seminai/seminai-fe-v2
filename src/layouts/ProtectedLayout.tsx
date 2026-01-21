@@ -25,15 +25,6 @@ import { NavigationModel, NavigationItem } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { IoPersonCircleOutline, IoChevronDownOutline } from "react-icons/io5";
-import HomeAgriIcon from "@/components/icons/HomeAgriIcon";
-import TagAgriIcon from "@/components/icons/TagAgriIcon";
-import SprayAgriIcon from "@/components/icons/SprayAgriIcon";
-import TasksAgriIcon from "@/components/icons/TasksAgriIcon";
-import ChartAgriIcon from "@/components/icons/ChartAgriIcon";
-import BarnAgriIcon from "@/components/icons/BarnAgriIcon";
-import FieldAgriIcon from "@/components/icons/FieldAgriIcon";
-import PlantGrowAgriIcon from "@/components/icons/PlantGrowAgriIcon";
-import BottleAgriIcon from "@/components/icons/BottleAgriIcon";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,7 +39,19 @@ import { useFields } from "@/hooks/useFields";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import authService from "@/utils/auth";
 import { LuLogOut, LuSettings } from "react-icons/lu";
-import { ClipboardList } from "lucide-react";
+import {
+  Building2,
+  CheckCircle2,
+  ClipboardCheck,
+  Droplet,
+  LayoutDashboard,
+  Map,
+  NotebookPen,
+  Settings2,
+  Sprout,
+  Tags,
+  Warehouse,
+} from "lucide-react";
 import { useMe } from "@/hooks/useAuth";
 import { UserRole } from "@/api/auth";
 import { WorkspaceSwitcher } from "@/components/organism/WorkspaceSwitcher";
@@ -194,43 +197,90 @@ type ManageMenuItemConfig = {
   icon: ManageMenuIcon;
 };
 
+class SidebarIconRegistry {
+  public getDashboardIcon(): ManageMenuIcon {
+    return LayoutDashboard;
+  }
+
+  public getLabelsIcon(): ManageMenuIcon {
+    return Tags;
+  }
+
+  public getDosageIcon(): ManageMenuIcon {
+    return Droplet;
+  }
+
+  public getCheckOperationsIcon(): ManageMenuIcon {
+    return CheckCircle2;
+  }
+
+  public getFieldNotesIcon(): ManageMenuIcon {
+    return NotebookPen;
+  }
+
+  public getManageIcon(): ManageMenuIcon {
+    return Settings2;
+  }
+
+  public getCompanyIcon(): ManageMenuIcon {
+    return Building2;
+  }
+
+  public getFieldsIcon(): ManageMenuIcon {
+    return Map;
+  }
+
+  public getProductionUnitIcon(): ManageMenuIcon {
+    return Sprout;
+  }
+
+  public getProductsIcon(): ManageMenuIcon {
+    return Warehouse;
+  }
+
+  public getOperationsIcon(): ManageMenuIcon {
+    return ClipboardCheck;
+  }
+}
+
 class ManageMenuController {
   private readonly visibility: ManageMenuVisibility;
-  private readonly items: ManageMenuItemConfig[] = [
-    {
-      key: "company",
-      label: "Aziende",
-      path: "/company",
-      icon: BarnAgriIcon,
-    },
-    {
-      key: "fields",
-      label: "Campi",
-      path: "/fields",
-      icon: FieldAgriIcon,
-    },
-    {
-      key: "productionUnit",
-      label: "Unità Produttive",
-      path: "/production-unit",
-      icon: PlantGrowAgriIcon,
-    },
-    {
-      key: "products",
-      label: "Magazzino",
-      path: "/products",
-      icon: BottleAgriIcon,
-    },
-    {
-      key: "operations",
-      label: "Operazioni",
-      path: "/operations",
-      icon: TasksAgriIcon,
-    },
-  ];
+  private readonly items: ManageMenuItemConfig[];
 
-  constructor(visibility: ManageMenuVisibility) {
+  constructor(visibility: ManageMenuVisibility, icons: SidebarIconRegistry) {
     this.visibility = visibility;
+    this.items = [
+      {
+        key: "company",
+        label: "Aziende",
+        path: "/company",
+        icon: icons.getCompanyIcon(),
+      },
+      {
+        key: "fields",
+        label: "Campi",
+        path: "/fields",
+        icon: icons.getFieldsIcon(),
+      },
+      {
+        key: "productionUnit",
+        label: "Unità Produttive",
+        path: "/production-unit",
+        icon: icons.getProductionUnitIcon(),
+      },
+      {
+        key: "products",
+        label: "Magazzino",
+        path: "/products",
+        icon: icons.getProductsIcon(),
+      },
+      {
+        key: "operations",
+        label: "Operazioni",
+        path: "/operations",
+        icon: icons.getOperationsIcon(),
+      },
+    ];
   }
 
   public getVisibleItems(): ManageMenuItemConfig[] {
@@ -249,6 +299,8 @@ class SidebarToggleController {
     return this.isOpen ? "Collapse sidebar" : "Expand sidebar";
   }
 }
+
+const sidebarIcons = new SidebarIconRegistry();
 
 function MobileBottomBar({
   isMobile,
@@ -299,7 +351,7 @@ function MobileBottomBar({
                   labelDashboard && "text-gray-900 font-medium"
                 )}
               >
-                <HomeAgriIcon
+                <LayoutDashboard
                   className={cn(
                     "size-5",
                     labelDashboard ? "text-gray-900" : "text-gray-700/90"
@@ -319,7 +371,7 @@ function MobileBottomBar({
                   labelActive && "text-gray-900 font-medium"
                 )}
               >
-                <TagAgriIcon
+                <Tags
                   className={cn(
                     "size-5",
                     labelActive ? "text-gray-900" : "text-gray-700/90"
@@ -339,7 +391,7 @@ function MobileBottomBar({
                   dosageManagerActive && "text-gray-900 font-medium"
                 )}
               >
-                <SprayAgriIcon
+                <Droplet
                   className={cn(
                     "size-5",
                     dosageManagerActive ? "text-gray-900" : "text-gray-700/90"
@@ -386,7 +438,7 @@ function MobileManageMenu({
               isActive && "text-gray-900 font-medium"
             )}
           >
-            <ChartAgriIcon
+            <Settings2
               className={cn(
                 "size-5",
                 isActive ? "text-gray-900" : "text-gray-700/90"
@@ -405,37 +457,37 @@ function MobileManageMenu({
           <DropdownMenuSeparator />
           {manageVisibility.jobs && (
             <DropdownMenuItem onClick={() => navigate("/job")}>
-              <TasksAgriIcon className="size-4 mr-2" size={16} />
+              <ClipboardCheck className="size-4 mr-2" size={16} />
               Operazioni
             </DropdownMenuItem>
           )}
           {manageVisibility.company && (
             <DropdownMenuItem onClick={() => navigate("/company")}>
-              <BarnAgriIcon className="size-4 mr-2" size={16} />
+              <Building2 className="size-4 mr-2" size={16} />
               Aziende
             </DropdownMenuItem>
           )}
           {manageVisibility.fields && (
             <DropdownMenuItem onClick={() => navigate("/fields")}>
-              <FieldAgriIcon className="size-4 mr-2" size={16} />
+              <Map className="size-4 mr-2" size={16} />
               Campi
             </DropdownMenuItem>
           )}
           {manageVisibility.productionUnit && (
             <DropdownMenuItem onClick={() => navigate("/production-unit")}>
-              <PlantGrowAgriIcon className="size-4 mr-2" size={16} />
+              <Sprout className="size-4 mr-2" size={16} />
               Unità Produttive
             </DropdownMenuItem>
           )}
           {manageVisibility.products && (
             <DropdownMenuItem onClick={() => navigate("/products")}>
-              <BottleAgriIcon className="size-4 mr-2" size={16} />
+              <Warehouse className="size-4 mr-2" size={16} />
               Magazzino
             </DropdownMenuItem>
           )}
           {fieldNotesVisible && (
             <DropdownMenuItem onClick={() => navigate("/field-notes")}>
-              <ClipboardList className="size-4 mr-2" />
+              <NotebookPen className="size-4 mr-2" />
               Note di Campo
             </DropdownMenuItem>
           )}
@@ -630,7 +682,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const jobVisible = manageVisibility.jobs;
   const fieldNotesVisible = canViewMenuItem("field-notes", userRole);
   const manageMenuController = useMemo(
-    () => new ManageMenuController(manageVisibility),
+    () => new ManageMenuController(manageVisibility, sidebarIcons),
     [manageVisibility]
   );
   const manageMenuItems = manageMenuController.getVisibleItems();
@@ -700,7 +752,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                     >
                       <Link to="/dashboard" className="flex items-center gap-3">
-                        <HomeAgriIcon className="size-5" size={20} />
+                        <LayoutDashboard className="size-5" size={20} />
                         <span className="group-data-[collapsible=icon]:hidden">
                           Dashboard
                         </span>
@@ -720,7 +772,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                     >
                       <Link to="/label" className="flex items-center gap-3">
-                        <TagAgriIcon className="size-5" size={20} />
+                        <Tags className="size-5" size={20} />
                         <span className="group-data-[collapsible=icon]:hidden">
                           Etichette
                         </span>
@@ -743,7 +795,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                         to="/dosage-manager"
                         className="flex items-center gap-3"
                       >
-                        <SprayAgriIcon className="size-5" size={20} />
+                        <Droplet className="size-5" size={20} />
                         <span>Genera Dosaggi</span>
                       </Link>
                     </SidebarMenuButton>
@@ -761,7 +813,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                     >
                       <Link to="/job" className="flex items-center gap-3">
-                        <TasksAgriIcon className="size-5" size={20} />
+                        <CheckCircle2 className="size-5" size={20} />
                         <span>Verifica Operazioni</span>
                       </Link>
                     </SidebarMenuButton>
@@ -779,7 +831,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                     >
                       <Link to="/field-notes" className="flex items-center gap-3">
-                        <ClipboardList className="size-5" />
+                        <NotebookPen className="size-5" />
                         <span>Note di Campo</span>
                       </Link>
                     </SidebarMenuButton>
@@ -805,7 +857,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                             size="lg"
                             className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                           >
-                            <ChartAgriIcon className="size-5" size={20} />
+                            <Settings2 className="size-5" size={20} />
                             <span>Gestisci</span>
                             <IoChevronDownOutline
                               className={cn(
@@ -830,7 +882,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                     to="/company"
                                     className="flex items-center gap-3"
                                   >
-                                    <BarnAgriIcon
+                                    <Building2
                                       className="size-5"
                                       size={20}
                                     />
@@ -852,7 +904,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                     to="/fields"
                                     className="flex items-center gap-3"
                                   >
-                                    <FieldAgriIcon
+                                    <Map
                                       className="size-5"
                                       size={20}
                                     />
@@ -874,7 +926,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                     to="/production-unit"
                                     className="flex items-center gap-3"
                                   >
-                                    <PlantGrowAgriIcon
+                                    <Sprout
                                       className="size-5"
                                       size={20}
                                     />
@@ -896,7 +948,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                     to="/products"
                                     className="flex items-center gap-3"
                                   >
-                                    <BottleAgriIcon
+                                    <Warehouse
                                       className="size-5"
                                       size={20}
                                     />
@@ -918,7 +970,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                     to="/operations"
                                     className="flex items-center gap-3"
                                   >
-                                    <TasksAgriIcon
+                                    <ClipboardCheck
                                       className="size-5"
                                       size={20}
                                     />
@@ -949,7 +1001,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                         to="/dosage-manager"
                         className="flex items-center gap-3"
                       >
-                        <SprayAgriIcon className="size-5" size={20} />
+                        <Droplet className="size-5" size={20} />
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -966,7 +1018,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       className="data-[active=true]:bg-neutral-900/5"
                     >
                       <Link to="/job" className="flex items-center gap-3">
-                        <TasksAgriIcon className="size-5" size={20} />
+                        <CheckCircle2 className="size-5" size={20} />
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -983,7 +1035,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       className="data-[active=true]:bg-neutral-900/5"
                     >
                       <Link to="/field-notes" className="flex items-center gap-3">
-                        <ClipboardList className="size-5" />
+                        <NotebookPen className="size-5" />
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -1000,7 +1052,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                           size="lg"
                           className="data-[state=open]:bg-neutral-900/5"
                         >
-                          <ChartAgriIcon className="size-5" size={20} />
+                          <Settings2 className="size-5" size={20} />
                         </SidebarMenuButton>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
