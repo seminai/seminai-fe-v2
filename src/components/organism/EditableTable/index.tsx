@@ -168,6 +168,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       onBulkVerifySelected,
       bulkVerifyButtonLabel,
       isBulkVerifyLoading,
+      onDetailsButtonClick,
       className,
       children,
       onSelectionChange,
@@ -584,6 +585,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
           isBulkVerifyLoading={isBulkVerifyLoading}
           bulkVerifyButtonLabel={bulkVerifyButtonLabel}
           onBulkVerifySelected={onBulkVerifySelected}
+          onDetailsButtonClick={onDetailsButtonClick}
           selectionPayload={selectionPayload}
           leftActions={leftActions}
           rightActions={rightActions}

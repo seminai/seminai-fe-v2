@@ -95,6 +95,7 @@ export interface EditableTableProps {
   onBulkVerifySelected?: (selectedRows: Array<Record<string, unknown>>) => void;
   bulkVerifyButtonLabel?: string;
   isBulkVerifyLoading?: boolean;
+  onDetailsButtonClick?: () => void;
   className?: string;
   children?: React.ReactNode;
   onSelectionChange?: (selectedRows: Array<Record<string, unknown>>) => void;

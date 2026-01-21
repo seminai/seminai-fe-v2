@@ -20,7 +20,11 @@ export function useLogin() {
   return useMutation<LoginResponse, Error, LoginRequest>({
     mutationFn: async (payload: LoginRequest) => {
       const result = await loginRequest(payload);
+      // Il cookie httpOnly viene impostato automaticamente dal backend.
+      // Salviamo il token in memoria SOLO per Socket.IO.
       authService.setAuthToken(result.data.token);
+      // Salviamo i dati utente per caching locale
+      authService.setUserData(result.data.user);
       return result;
     },
   });

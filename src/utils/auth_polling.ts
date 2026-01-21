@@ -1,5 +1,3 @@
-import authService from "./auth";
-
 /**
  * Configurazione per il polling dell'autenticazione
  */
@@ -142,8 +140,12 @@ export function createAuthPollingService(
   };
 
   /**
-   * Avvia il polling periodico per verificare l'autenticazione
-   * Solo se c'è un token nel cookie ma i dati utente non sono ancora disponibili
+   * Avvia il polling periodico per verificare l'autenticazione.
+   * 
+   * NOTA: Con cookie httpOnly, non possiamo verificare direttamente se c'è un token.
+   * Il polling viene avviato se non abbiamo dati utente, per coprire il caso
+   * in cui l'utente ha un cookie valido ma la pagina è stata refreshata.
+   * Se l'utente non è autenticato, il polling fallirà e si fermerà dopo maxAttempts.
    */
   const startPolling = (hasUserData: boolean): void => {
     // Se i dati utente sono già disponibili, non serve fare polling
@@ -151,11 +153,10 @@ export function createAuthPollingService(
       return;
     }
 
-    // Verifica se c'è un token nel cookie
-    const hasToken = authService.isAuthenticated();
-    if (!hasToken) {
-      return;
-    }
+    // Con cookie httpOnly, non possiamo verificare se c'è un token.
+    // Avviamo il polling comunque - se non c'è sessione valida,
+    // il backend restituirà 401 e il polling si fermerà.
+    // Questo copre il caso di page refresh con sessione valida.
 
     // Se il polling è già attivo, non avviarlo di nuovo
     if (pollingIntervalId !== null) {

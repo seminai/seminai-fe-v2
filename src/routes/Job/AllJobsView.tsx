@@ -333,6 +333,7 @@ export function AllJobsView({
                   onBulkVerifySelected={onBulkVerifySelected}
                   bulkVerifyButtonLabel="Verifica"
                   isBulkVerifyLoading={isBulkVerifying}
+                  onDetailsButtonClick={() => onToggleRightSidebar(true)}
                   getRowId={(row) => row.id as string}
                   onSelectionChange={onSelectionChange}
                   customExportConfig={exportConfig}

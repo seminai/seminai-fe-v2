@@ -576,9 +576,14 @@ export function ManageSection({
               onDeleteSelected={handleDeleteProducts}
               onSelectionChange={handleProductSelectionChange}
               showDeleteAction={true}
-              getRowId={(row: Record<string, unknown>, index: number) =>
-                `${row.productName}-${row.registrationNumber}-${index}`
-              }
+              getRowId={(row: Record<string, unknown>, index: number) => {
+                // Use _internalId if available, otherwise fallback to old method
+                const internalId = row._internalId as string | undefined;
+                if (internalId) {
+                  return internalId;
+                }
+                return `${row.productName}-${row.registrationNumber}-${index}`;
+              }}
               exportFileName="prodotti_dosaggio"
             />
           </div>

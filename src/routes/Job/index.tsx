@@ -6,7 +6,10 @@ import { useLabelsSummary } from "@/hooks/useLabelsSummary";
 import { useLabel } from "@/hooks/useLabel";
 import { machinesApiService, type Machine } from "@/api/machines";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { userOnCompanyApiService, type UserOnCompany } from "@/api/userOnCompany";
+import {
+  userOnCompanyApiService,
+  type UserOnCompany,
+} from "@/api/userOnCompany";
 import { PageHeader } from "@/components/organism/Header";
 import { userSettingsIndexDBManager } from "@/utils/userSettingsIndexDBManager";
 import {
@@ -2301,7 +2304,7 @@ export default function JobPage() {
       emptyStateMessage: "Nessuna azienda trovata",
       onValueChange: ({ value }) => {
         const stringValue = String(value);
-        
+
         // Se il valore è vuoto, resetta anche l'unità produttiva
         if (!stringValue || stringValue.trim() === "") {
           return {
@@ -2319,7 +2322,7 @@ export default function JobPage() {
         const company = companySelectOptions.find(
           (c) => c.value === stringValue
         );
-        
+
         if (company) {
           return {
             companyName: company.companyName,
@@ -2358,17 +2361,19 @@ export default function JobPage() {
       required: true,
       getOptions: (rowData) => {
         // Filtra le unità produttive in base all'azienda selezionata
-        const selectedCompanyId = 
+        const selectedCompanyId =
           (rowData._companyId as string | undefined) ||
           (rowData._selectedCompanyForPU as string | undefined);
 
         if (!selectedCompanyId) {
           // Se non c'è un'azienda selezionata, mostra un messaggio
-          return [{
-            label: "Seleziona prima un'azienda",
-            value: "__no_company__",
-            disabled: true,
-          }];
+          return [
+            {
+              label: "Seleziona prima un'azienda",
+              value: "__no_company__",
+              disabled: true,
+            },
+          ];
         }
 
         // Filtra le unità produttive per l'azienda selezionata
@@ -2377,11 +2382,13 @@ export default function JobPage() {
         );
 
         if (filtered.length === 0) {
-          return [{
-            label: "Nessuna unità produttiva disponibile",
-            value: "__no_units__",
-            disabled: true,
-          }];
+          return [
+            {
+              label: "Nessuna unità produttiva disponibile",
+              value: "__no_units__",
+              disabled: true,
+            },
+          ];
         }
 
         return filtered;
@@ -2403,7 +2410,11 @@ export default function JobPage() {
         };
 
         // Se il valore è vuoto o un placeholder speciale, resetta l'unità produttiva
-        if (!stringValue || stringValue.trim() === "" || stringValue.startsWith("__")) {
+        if (
+          !stringValue ||
+          stringValue.trim() === "" ||
+          stringValue.startsWith("__")
+        ) {
           return {
             _productionUnitId: "",
             productionUnitName: "",
@@ -2440,9 +2451,7 @@ export default function JobPage() {
       render: (value, row) => {
         const name =
           (value as string) || (row.productionUnitName as string | undefined);
-        const hasCompany = Boolean(
-          row._companyId || row._selectedCompanyForPU
-        );
+        const hasCompany = Boolean(row._companyId || row._selectedCompanyForPU);
 
         // Se ha un'unità produttiva selezionata, mostrala
         if (name) {
@@ -3281,9 +3290,8 @@ export default function JobPage() {
         }
 
         // 6. Aggiorna la modalità di trattamento se modificata
-        const newModeOfApplication = (row.modeOfApplication as
-          | string
-          | undefined) ?? "-";
+        const newModeOfApplication =
+          (row.modeOfApplication as string | undefined) ?? "-";
         const originalModeOfApplication =
           (row._originalModeOfApplication as string | undefined) ?? "-";
         if (newModeOfApplication !== originalModeOfApplication) {
@@ -3295,7 +3303,8 @@ export default function JobPage() {
         const newIsLocalizedTreatment =
           typeof row.isLocalizedTreatment === "boolean"
             ? row.isLocalizedTreatment
-            : row.isLocalizedTreatment === "true" || row.isLocalizedTreatment === true;
+            : row.isLocalizedTreatment === "true" ||
+              row.isLocalizedTreatment === true;
         const originalIsLocalizedTreatment =
           typeof row._originalIsLocalizedTreatment === "boolean"
             ? row._originalIsLocalizedTreatment
@@ -3356,7 +3365,9 @@ export default function JobPage() {
 
   // Gestisce l'eliminazione multipla
   // Handler per salvare job multipli dalla drawer custom
-  const handleSaveMultipleJobs = async (jobs: Array<Record<string, unknown>>) => {
+  const handleSaveMultipleJobs = async (
+    jobs: Array<Record<string, unknown>>
+  ) => {
     await handleSave({
       created: jobs,
       updated: [],
