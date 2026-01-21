@@ -209,7 +209,7 @@ export function ManageSection({
 }: ManageSectionProps): ReactElement {
   // Counter for generating unique IDs for products imported from external sources
   const productIdCounterRef = useRef<number>(0);
-  
+
   // Wrapper function to convert DosageProduct[] to ProductWithInternalId[]
   const handleProductsChange = (newProducts: DosageProduct[]): void => {
     const productsWithIds: ProductWithInternalId[] = newProducts.map(
