@@ -1,6 +1,7 @@
 import {
   useMemo,
   useState,
+  useRef,
   type ChangeEvent,
   type Dispatch,
   type ReactElement,
@@ -66,6 +67,9 @@ import {
 } from "./MultiSearchableSelect";
 import { ImportMethodPolicy, type ImportMethod } from "./importMethod";
 
+// Extended product type with internal ID for unique row identification
+type ProductWithInternalId = DosageProduct & { _internalId: string };
+
 interface ManageSectionProps {
   companies: { id: string; name: string }[];
   selectedCompanyIds: string[];
@@ -79,8 +83,8 @@ interface ManageSectionProps {
   productionUnitTableColumns: EditableColumn[];
   productionUnitTableRows: Array<Record<string, unknown>>;
   handleUnitSelectionChange: (rows: Array<Record<string, unknown>>) => void;
-  products: DosageProduct[];
-  setProducts: Dispatch<SetStateAction<DosageProduct[]>>;
+  products: ProductWithInternalId[];
+  setProducts: Dispatch<SetStateAction<ProductWithInternalId[]>>;
   setSelectedProductIds: Dispatch<SetStateAction<string[]>>;
   setProductSources: Dispatch<
     SetStateAction<Map<string, "warehouse" | "csv" | "ddt">>
@@ -203,6 +207,20 @@ export function ManageSection({
   endAt,
   setEndAt,
 }: ManageSectionProps): ReactElement {
+  // Counter for generating unique IDs for products imported from external sources
+  const productIdCounterRef = useRef<number>(0);
+  
+  // Wrapper function to convert DosageProduct[] to ProductWithInternalId[]
+  const handleProductsChange = (newProducts: DosageProduct[]): void => {
+    const productsWithIds: ProductWithInternalId[] = newProducts.map(
+      (product) => ({
+        ...product,
+        _internalId: `product-${Date.now()}-${++productIdCounterRef.current}`,
+      })
+    );
+    setProducts(productsWithIds);
+  };
+
   const [showMaxLimits, setShowMaxLimits] = useState(false);
   const [showAutomaticCompilation, setShowAutomaticCompilation] =
     useState(false);
@@ -509,7 +527,7 @@ export function ManageSection({
                   )) && (
                   <ImportProducts
                     onAddRows={handleAddRowsFromCsv}
-                    onProductsChange={setProducts}
+                    onProductsChange={handleProductsChange}
                     disabled={
                       !!selectedImportMethod &&
                       !ImportMethodPolicy.isSelected(
@@ -527,7 +545,7 @@ export function ManageSection({
                   )) && (
                   <ImportProductsFromDdt
                     onAddRows={handleAddRowsFromDdt}
-                    onProductsChange={setProducts}
+                    onProductsChange={handleProductsChange}
                     disabled={
                       !!selectedImportMethod &&
                       !ImportMethodPolicy.isSelected(
