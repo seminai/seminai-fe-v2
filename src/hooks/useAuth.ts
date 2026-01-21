@@ -23,8 +23,8 @@ export function useLogin() {
       // Il cookie httpOnly viene impostato automaticamente dal backend.
       // Salviamo il token in memoria SOLO per Socket.IO.
       authService.setAuthToken(result.data.token);
-      // Salviamo i dati utente per caching locale
-      authService.setUserData(result.data.user);
+      // NOTA: I dati utente NON vengono salvati in cookie per sicurezza.
+      // React Query gestisce il caching tramite /auth/me (useMe hook).
       return result;
     },
   });

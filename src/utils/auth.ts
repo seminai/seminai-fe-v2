@@ -1,15 +1,6 @@
-import cookieService from "./cookies";
-import type { User } from "@/api/auth";
-
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ??
   (typeof window !== "undefined" ? window.location.origin : "");
-
-// Cookie per dati utente (non sensibile, può essere letto da JS)
-const USER_COOKIE_NAME = "user_data";
-
-// Durata del cookie in giorni
-const COOKIE_DURATION = 7; // 1 settimana
 
 /**
  * Token in memoria per Socket.IO e altri casi che richiedono accesso diretto al token.
@@ -54,42 +45,17 @@ class AuthService {
   }
 
   /**
-   * Salva i dati dell'utente nel cookie (non sensibile)
-   * @param user - I dati dell'utente
-   */
-  setUserData(user: User): void {
-    try {
-      const userString = JSON.stringify(user);
-      cookieService.setCookie(USER_COOKIE_NAME, userString, COOKIE_DURATION);
-    } catch {
-      // Errore silenzioso - i dati utente sono solo per caching locale
-    }
-  }
-
-  /**
-   * Ottiene i dati dell'utente dal cookie
-   * @returns I dati dell'utente o null se non presenti
-   */
-  getUserData<T = User>(): T | null {
-    try {
-      const userString = cookieService.getCookie(USER_COOKIE_NAME);
-      if (!userString) return null;
-      return JSON.parse(userString) as T;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
    * Verifica se l'utente potrebbe essere autenticato.
    * NOTA: Con cookie httpOnly, non possiamo verificare il token direttamente.
-   * Questo metodo ora controlla solo se ci sono dati utente in cache.
+   * Questo metodo controlla solo se c'è un token in memoria (impostato al login).
    * Per una verifica affidabile, usa l'endpoint /auth/me.
-   * @returns true se ci sono dati utente in cache, false altrimenti
+   * 
+   * IMPORTANTE: I dati utente NON vengono salvati in cookie per sicurezza (vulnerabile XSS).
+   * Usa React Query con /auth/me per ottenere e cachare i dati utente.
+   * @returns true se c'è un token in memoria, false altrimenti
    */
   isAuthenticated(): boolean {
-    // Controlliamo se abbiamo dati utente in cache o token in memoria
-    return !!this.getUserData() || !!inMemoryToken;
+    return !!inMemoryToken;
   }
 
   /**
@@ -109,9 +75,8 @@ class AuthService {
     } catch {
       // Errore silenzioso - procediamo con la pulizia locale
     } finally {
-      // Pulisci dati locali
+      // Pulisci token dalla memoria
       inMemoryToken = null;
-      cookieService.deleteCookie(USER_COOKIE_NAME);
     }
   }
 
@@ -174,6 +139,5 @@ export default authService;
 
 // Esporta le funzioni di utilità per l'accessibilità
 export const getAuthToken = authService.getAuthToken.bind(authService);
-export const getUserData = authService.getUserData.bind(authService);
 export const isAuthenticated = authService.isAuthenticated.bind(authService);
 export const isTokenExpired = authService.isTokenExpired.bind(authService);
