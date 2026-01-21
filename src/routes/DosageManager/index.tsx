@@ -858,10 +858,14 @@ export default function DosageManager() {
   );
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
-  const [products, setProducts] = useState<DosageProduct[]>([]);
+  // Extended product type with internal ID for unique row identification
+  type ProductWithInternalId = DosageProduct & { _internalId: string };
+  const [products, setProducts] = useState<ProductWithInternalId[]>([]);
   const [productSources, setProductSources] = useState<
     Map<string, "warehouse" | "csv" | "ddt">
   >(new Map());
+  // Counter for generating unique IDs
+  const productIdCounterRef = useRef<number>(0);
   const [selectedImportMethod, setSelectedImportMethod] =
     useState<ImportMethod | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1101,21 +1105,28 @@ export default function DosageManager() {
     },
   ];
 
-  // Converte i dati della tabella in DosageProduct[]
+  // Converte i dati della tabella in ProductWithInternalId[]
   const convertTableRowsToProducts = useCallback(
-    (rows: Array<Record<string, unknown>>): DosageProduct[] => {
-      return rows.map((row) => ({
-        productName: String(row.productName || ""),
-        registrationNumber: String(row.registrationNumber || ""),
-        quantity: Number(row.quantity) || 0,
-        quantityUnitOfMeasure: String(row.quantityUnitOfMeasure || ""),
-        loadWarehouse:
-          typeof row.loadWarehouse === "boolean" ? row.loadWarehouse : false,
-        supplierName: row.supplierName ? String(row.supplierName) : undefined,
-        supplierVat: row.supplierVat ? String(row.supplierVat) : undefined,
-        ddtDate: row.ddtDate ? String(row.ddtDate) : undefined,
-        orderNumber: row.orderNumber ? String(row.orderNumber) : undefined,
-      }));
+    (rows: Array<Record<string, unknown>>): ProductWithInternalId[] => {
+      return rows.map((row) => {
+        // Use existing _internalId if present, otherwise generate a new one
+        const internalId =
+          (row._internalId as string | undefined) ||
+          `product-${Date.now()}-${++productIdCounterRef.current}`;
+        return {
+          productName: String(row.productName || ""),
+          registrationNumber: String(row.registrationNumber || ""),
+          quantity: Number(row.quantity) || 0,
+          quantityUnitOfMeasure: String(row.quantityUnitOfMeasure || ""),
+          loadWarehouse:
+            typeof row.loadWarehouse === "boolean" ? row.loadWarehouse : false,
+          supplierName: row.supplierName ? String(row.supplierName) : undefined,
+          supplierVat: row.supplierVat ? String(row.supplierVat) : undefined,
+          ddtDate: row.ddtDate ? String(row.ddtDate) : undefined,
+          orderNumber: row.orderNumber ? String(row.orderNumber) : undefined,
+          _internalId: internalId,
+        };
+      });
     },
     []
   );
@@ -1200,12 +1211,12 @@ export default function DosageManager() {
 
     // Aggiorna lo stato: rimuove quelli aggiornati, aggiunge i nuovi e gli aggiornati
     setProducts((prev) => {
-      const updatedIds = new Set(
-        updatedProducts.map((p) => `${p.productName}-${p.registrationNumber}`)
+      const updatedInternalIds = new Set(
+        updatedProducts.map((p) => p._internalId)
       );
-      // Rimuove i prodotti aggiornati dalla lista precedente
+      // Rimuove i prodotti aggiornati dalla lista precedente usando _internalId
       const filtered = prev.filter(
-        (p) => !updatedIds.has(`${p.productName}-${p.registrationNumber}`)
+        (p) => !updatedInternalIds.has(p._internalId)
       );
       // Aggiunge i nuovi prodotti e quelli aggiornati
       return [...filtered, ...createdProducts, ...updatedProducts];
@@ -1220,24 +1231,22 @@ export default function DosageManager() {
   const handleDeleteProducts = useCallback(
     (deletedRows: Array<Record<string, unknown>>): void => {
       const deletedProducts = convertTableRowsToProducts(deletedRows);
-      const deletedKeys = new Set(
-        deletedProducts.map(
-          (p) => `${p.productName}-${p.registrationNumber}`
-        )
+      const deletedInternalIds = new Set(
+        deletedProducts.map((p) => p._internalId)
       );
 
-      // Rimuove i prodotti eliminati dallo stato
+      // Rimuove i prodotti eliminati dallo stato usando _internalId
       setProducts((prev) =>
-        prev.filter((p) => {
-          const key = `${p.productName}-${p.registrationNumber}`;
-          return !deletedKeys.has(key);
-        })
+        prev.filter((p) => !deletedInternalIds.has(p._internalId))
       );
 
       // Rimuove anche le sorgenti dei prodotti eliminati
       setProductSources((prevSources) => {
         const updated = new Map(prevSources);
-        deletedKeys.forEach((key) => updated.delete(key));
+        deletedProducts.forEach((product) => {
+          const key = `${product.productName}-${product.registrationNumber}`;
+          updated.delete(key);
+        });
         return updated;
       });
 
@@ -1251,6 +1260,7 @@ export default function DosageManager() {
   // Converte i prodotti in formato per la tabella
   const productsAsRows = useMemo(() => {
     return products.map((product) => ({
+      _internalId: product._internalId,
       productName: product.productName,
       registrationNumber: product.registrationNumber,
       quantity: product.quantity,
@@ -1525,6 +1535,12 @@ export default function DosageManager() {
     (rows: Array<Record<string, unknown>>) => {
       const ids = rows
         .map((row) => {
+          // Use _internalId for unique identification
+          const internalId = row._internalId as string | undefined;
+          if (internalId) {
+            return internalId;
+          }
+          // Fallback to old method for backward compatibility
           const productName = row.productName as string | undefined;
           const registrationNumber = row.registrationNumber as
             | string
@@ -1641,17 +1657,25 @@ export default function DosageManager() {
         return prev;
       }
 
+      // Add _internalId to imported products
+      const productsWithIds: ProductWithInternalId[] = uniqueProducts.map(
+        (product) => ({
+          ...product,
+          _internalId: `product-${Date.now()}-${++productIdCounterRef.current}`,
+        })
+      );
+
       // Traccia la provenienza dei prodotti importati da magazzino
       setProductSources((prevSources) => {
         const updated = new Map(prevSources);
-        uniqueProducts.forEach((product) => {
+        productsWithIds.forEach((product) => {
           const key = DosageProductKeyBuilder.build(product);
           updated.set(key, "warehouse");
         });
         return updated;
       });
 
-      return [...prev, ...uniqueProducts];
+      return [...prev, ...productsWithIds];
     });
 
     setIsImportingFromWarehouse(false);
@@ -2015,11 +2039,16 @@ export default function DosageManager() {
     setIsSubmitting(true);
 
     try {
-      // Filter products to only include selected ones
-      const selectedProducts = products.filter((product) => {
-        const productId = `${product.productName}-${product.registrationNumber}`;
-        return selectedProductIds.includes(productId);
-      });
+      // Filter products to only include selected ones using _internalId
+      const selectedProducts = products
+        .filter((product) => {
+          return selectedProductIds.includes(product._internalId);
+        })
+        .map((product) => {
+          // Remove _internalId before sending to API
+          const { _internalId, ...productWithoutId } = product;
+          return productWithoutId;
+        });
 
       // Prepare units of production
       const unitsOfProduction: DosageUnitOfProduction[] = selectedUnits.map(

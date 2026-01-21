@@ -77,40 +77,30 @@ class FieldNoteSocketService {
     // Disconnetti da eventuali connessioni precedenti
     this.disconnect();
 
-    // Prova a ottenere il token con un meccanismo di retry
-    // per gestire casi in cui il token non è ancora disponibile
+    // Prova a ottenere il token dalla memoria (impostato al login)
+    // Se non disponibile (es. page refresh), prova a connettersi con withCredentials
     const attemptConnection = (retryCount = 0): void => {
       const token = authService.getAuthToken();
 
-      if (!token) {
-        // Se non c'è token e abbiamo ancora tentativi disponibili, riprova
-        const MAX_RETRIES = 3;
-        const RETRY_DELAY_MS = 100; // Delay base di 100ms
-
-        if (retryCount < MAX_RETRIES) {
-          setTimeout(() => {
-            attemptConnection(retryCount + 1);
-          }, RETRY_DELAY_MS * (retryCount + 1)); // Delay crescente: 100ms, 200ms, 300ms
-          return;
-        }
-
-        // Dopo tutti i tentativi, mostra l'errore
-        this.connectionState = "error";
-        callbacks.onError?.(
-          new Error("Token di autenticazione non disponibile")
-        );
+      // Se non c'è token in memoria e abbiamo ancora tentativi, riprova
+      // (il token potrebbe non essere ancora stato impostato subito dopo il login)
+      if (!token && retryCount < 3) {
+        setTimeout(() => {
+          attemptConnection(retryCount + 1);
+        }, 100 * (retryCount + 1)); // Delay crescente: 100ms, 200ms, 300ms
         return;
       }
 
-      // Token disponibile, procedi con la connessione
+      // Procedi con la connessione
       this.callbacks = callbacks;
       this.currentThreadId = threadId;
       this.connectionState = "connecting";
 
+      // Configura Socket.IO con token (se disponibile) o solo withCredentials
+      // Il backend dovrebbe supportare entrambi i metodi di autenticazione
       this.socket = io(SERVER_URL, {
-        auth: {
-          token,
-        },
+        ...(token ? { auth: { token } } : {}),
+        withCredentials: true, // Invia cookie httpOnly come fallback
         transports: ["websocket", "polling"],
       });
 

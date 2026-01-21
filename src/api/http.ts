@@ -9,25 +9,27 @@ export interface HttpRequestOptions extends RequestInit {
 /**
  * HTTP client che applica automaticamente i cookie di sessione
  * e forza il logout in caso di risposta non autorizzata.
+ * 
+ * IMPORTANTE: Dopo la migrazione di sicurezza (Gennaio 2025):
+ * - L'autenticazione avviene tramite cookie httpOnly impostato dal backend
+ * - Il frontend usa SOLO credentials: 'include' per inviare il cookie
+ * - NON inviamo più l'header Authorization (vulnerabile a XSS)
  */
 export class AuthenticatedHttpClient {
   public async request(
     input: RequestInfo | URL,
     options: HttpRequestOptions = {}
   ): Promise<Response> {
-    const authToken = authService.getAuthToken();
-
     const headers: HttpHeaders = {
       ...(options.headers ?? {}),
     };
 
-    if (authToken && !headers.Authorization) {
-      headers.Authorization = `Bearer ${authToken}`;
-    }
+    // Il cookie httpOnly viene inviato automaticamente con credentials: 'include'
+    // Non serve più impostare l'header Authorization
 
     const response = await fetch(input, {
       ...options,
-      credentials: "include",
+      credentials: "include", // IMPORTANTE: Invia cookie httpOnly automaticamente
       headers,
     });
 

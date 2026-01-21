@@ -5,46 +5,64 @@ const API_BASE_URL =
   import.meta.env.VITE_API_URL ??
   (typeof window !== "undefined" ? window.location.origin : "");
 
-// Nomi dei cookies
-// Nota: il token leggibile dal client usa un nome diverso dall'httpOnly del server
-// per evitare conflitti (un cookie httpOnly con lo stesso nome non è sovrascrivibile da JS)
-const TOKEN_COOKIE_NAME = "auth_bearer";
-const TOKEN_COOKIE_NAME_BE = "auth_token";
+// Cookie per dati utente (non sensibile, può essere letto da JS)
 const USER_COOKIE_NAME = "user_data";
 
 // Durata del cookie in giorni
 const COOKIE_DURATION = 7; // 1 settimana
 
 /**
+ * Token in memoria per Socket.IO e altri casi che richiedono accesso diretto al token.
+ * NON viene salvato in cookie/localStorage per sicurezza (vulnerabile a XSS).
+ * Il token viene impostato solo dalla risposta del login e perso al refresh della pagina.
+ * Per l'autenticazione HTTP normale, il backend usa cookie httpOnly.
+ */
+let inMemoryToken: string | null = null;
+
+/**
  * Classe per la gestione dell'autenticazione
+ * 
+ * IMPORTANTE: Dopo la migrazione di sicurezza (Gennaio 2025), il token JWT
+ * è gestito dal backend tramite cookie httpOnly (non accessibile da JavaScript).
+ * 
+ * Il frontend:
+ * - NON imposta più cookie di autenticazione manualmente
+ * - USA credentials: 'include' in tutte le richieste fetch
+ * - Mantiene un token in memoria SOLO per Socket.IO
  */
 class AuthService {
   /**
-   * Imposta il token di autenticazione nel cookie
-   * @param token - Il token JWT
+   * Imposta il token in memoria (solo per Socket.IO).
+   * NON salva in cookie/localStorage per sicurezza.
+   * @param token - Il token JWT dalla risposta del login
+   * @deprecated Per l'autenticazione HTTP, il backend usa cookie httpOnly.
+   *             Questo metodo salva il token solo in memoria per Socket.IO.
    */
   setAuthToken(token: string): void {
-    cookieService.setCookie(TOKEN_COOKIE_NAME, token, COOKIE_DURATION);
+    // Salva solo in memoria per Socket.IO, NON in cookie
+    inMemoryToken = token;
   }
 
   /**
-   * Ottiene il token di autenticazione dal cookie
+   * Ottiene il token dalla memoria (solo per Socket.IO).
    * @returns Il token JWT o null se non presente
+   * @deprecated Per l'autenticazione HTTP, usa credentials: 'include'.
+   *             Questo metodo è usato solo per Socket.IO.
    */
   getAuthToken(): string | null {
-    return cookieService.getCookie(TOKEN_COOKIE_NAME);
+    return inMemoryToken;
   }
 
   /**
-   * Salva i dati dell'utente nel cookie
+   * Salva i dati dell'utente nel cookie (non sensibile)
    * @param user - I dati dell'utente
    */
   setUserData(user: User): void {
     try {
       const userString = JSON.stringify(user);
       cookieService.setCookie(USER_COOKIE_NAME, userString, COOKIE_DURATION);
-    } catch (error: unknown) {
-      console.error("Errore durante il salvataggio dei dati utente:", error);
+    } catch {
+      // Errore silenzioso - i dati utente sono solo per caching locale
     }
   }
 
@@ -57,22 +75,26 @@ class AuthService {
       const userString = cookieService.getCookie(USER_COOKIE_NAME);
       if (!userString) return null;
       return JSON.parse(userString) as T;
-    } catch (error: unknown) {
-      console.error("Errore durante il recupero dei dati utente:", error);
+    } catch {
       return null;
     }
   }
 
   /**
-   * Verifica se l'utente è autenticato
-   * @returns true se l'utente è autenticato, false altrimenti
+   * Verifica se l'utente potrebbe essere autenticato.
+   * NOTA: Con cookie httpOnly, non possiamo verificare il token direttamente.
+   * Questo metodo ora controlla solo se ci sono dati utente in cache.
+   * Per una verifica affidabile, usa l'endpoint /auth/me.
+   * @returns true se ci sono dati utente in cache, false altrimenti
    */
   isAuthenticated(): boolean {
-    return !!this.getAuthToken();
+    // Controlliamo se abbiamo dati utente in cache o token in memoria
+    return !!this.getUserData() || !!inMemoryToken;
   }
 
   /**
-   * Effettua il logout, invalidando la sessione server-side e rimuovendo tutti i cookies relativi all'autenticazione
+   * Effettua il logout, invalidando la sessione server-side.
+   * Il backend cancella automaticamente il cookie httpOnly.
    */
   async logout(): Promise<void> {
     try {
@@ -82,13 +104,13 @@ class AuthService {
 
       await fetch(endpoint, {
         method: "POST",
-        credentials: "include",
+        credentials: "include", // Il backend cancella il cookie httpOnly
       });
-    } catch (error) {
-      console.error("Errore durante il logout server-side:", error);
+    } catch {
+      // Errore silenzioso - procediamo con la pulizia locale
     } finally {
-      cookieService.deleteCookie(TOKEN_COOKIE_NAME);
-      cookieService.deleteCookie(TOKEN_COOKIE_NAME_BE);
+      // Pulisci dati locali
+      inMemoryToken = null;
       cookieService.deleteCookie(USER_COOKIE_NAME);
     }
   }
@@ -113,18 +135,18 @@ class AuthService {
       );
 
       return JSON.parse(jsonPayload);
-    } catch (error: unknown) {
-      console.error("Errore durante la decodifica del token:", error);
+    } catch {
       return null;
     }
   }
 
   /**
-   * Verifica se il token è scaduto
-   * @returns true se il token è scaduto, false altrimenti
+   * Verifica se il token in memoria è scaduto.
+   * NOTA: Usato solo per Socket.IO. Per HTTP, il backend gestisce la scadenza.
+   * @returns true se il token è scaduto o non presente, false altrimenti
    */
   isTokenExpired(): boolean {
-    const token = this.getAuthToken();
+    const token = inMemoryToken;
     if (!token) return true;
 
     const decodedToken = this.decodeToken(token);
@@ -135,6 +157,14 @@ class AuthService {
     const currentTime = Date.now();
 
     return currentTime >= expirationTime;
+  }
+
+  /**
+   * Pulisce il token dalla memoria.
+   * Utile quando si rileva che l'autenticazione è fallita.
+   */
+  clearToken(): void {
+    inMemoryToken = null;
   }
 }
 

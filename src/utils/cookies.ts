@@ -16,9 +16,13 @@ class CookieService {
       expires = `; expires=${date.toUTCString()}`;
     }
 
+    // Aggiungi flag Secure in produzione (richiede HTTPS)
+    const isProduction = import.meta.env.PROD;
+    const secureFlag = isProduction ? "; Secure" : "";
+
     const cookieString = `${name}=${
       value || ""
-    }${expires}; path=/; SameSite=Lax`;
+    }${expires}; path=/; SameSite=Lax${secureFlag}`;
 
     document.cookie = cookieString;
   }
