@@ -161,7 +161,10 @@ export async function logout(baseUrl: string = BASE_URL): Promise<void> {
 
 export async function wakeUp(baseUrl: string = BASE_URL): Promise<void> {
   try {
-    const response = await fetch(`${baseUrl}/wake-up`, { method: "GET" });
+    const response = await fetch(`${baseUrl}/wake-up`, {
+      method: "GET",
+      credentials: "include", // Invia cookie per autenticazione se presente
+    });
     if (!response.ok) {
       const errorText = await safeReadText(response);
       throw new Error(errorText || "Wake-up call failed");

@@ -123,7 +123,9 @@ class FileViewer extends React.Component<FileViewerProps> {
       mimeType === "application/vnd.ms-excel"
     ) {
       try {
-        const response = await fetch(file.url);
+        const response = await fetch(file.url, {
+          credentials: "include", // Invia cookie per autenticazione
+        });
         if (!response.ok) {
           throw new Error("Failed to fetch Excel file");
         }
