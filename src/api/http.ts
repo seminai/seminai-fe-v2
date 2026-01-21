@@ -34,7 +34,15 @@ export class AuthenticatedHttpClient {
     });
 
     if (response.status === 401) {
-      await authService.logout();
+      // Non chiamare logout() automaticamente se siamo già sulla pagina di login
+      // Questo previene loop infiniti di chiamate quando l'utente non è autenticato
+      const isOnAuthPage = typeof window !== "undefined" && 
+                          (window.location.pathname === "/auth" || 
+                           window.location.pathname.startsWith("/auth/"));
+      
+      if (!isOnAuthPage) {
+        await authService.logout();
+      }
       throw new Error("Unauthorized");
     }
 
