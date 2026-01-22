@@ -79,25 +79,25 @@ export default function Auth() {
     }
   }, [meData]);
 
-  // Avvia il polling solo se abbiamo dati utente o se non c'è errore 401
-  // Non avviamo il polling se useMe() fallisce con 401 (utente non autenticato)
+  // Avvia il polling solo se abbiamo dati utente e NON c'è errore
+  // Fermiamo il polling per QUALSIASI errore (non solo 401)
+  // per evitare loop infiniti in caso di errori di rete
   useEffect(() => {
     if (authPollingServiceRef.current) {
-      // Se c'è un errore 401, significa che l'utente non è autenticato
-      // e non dovremmo fare polling sulla pagina di login
-      const isUnauthorized = meError?.message?.includes("Unauthorized") || 
-                            (meError && !meData);
-      
-      // Avviamo il polling solo se:
-      // 1. Abbiamo dati utente (per coprire il caso di refresh con sessione valida)
-      // 2. OPPURE non c'è errore (prima chiamata ancora in corso)
-      // NON avviamo il polling se c'è un errore 401 chiaro
-      if (!isUnauthorized) {
-        authPollingServiceRef.current.startPolling(!!meData);
-      } else {
-        // Ferma il polling se c'è un errore 401
+      // Ferma il polling se c'è QUALSIASI errore
+      // Questo previene loop infiniti in caso di:
+      // - 401 Unauthorized
+      // - ERR_CONNECTION_CLOSED
+      // - Errori di rete
+      // - Qualsiasi altro errore
+      if (meError) {
         authPollingServiceRef.current.stopPolling();
+        return;
       }
+
+      // Avviamo il polling solo se non abbiamo ancora dati utente
+      // e non c'è errore (prima chiamata ancora in corso)
+      authPollingServiceRef.current.startPolling(!!meData);
     }
   }, [meData, meError]);
 
