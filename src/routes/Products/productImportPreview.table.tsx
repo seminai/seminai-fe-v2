@@ -1,6 +1,8 @@
+import React from "react";
 import type { EditableColumn } from "@/components/organism/EditableTable";
 import type { BulkProductPayload } from "@/api/products";
 import type { ProductImportItem } from "./productImportPreview.types";
+import type { ReactNode } from "react";
 
 export interface ProductImportPreviewRow extends Record<string, unknown> {
   id: string;
@@ -95,19 +97,6 @@ export class ProductImportColumnsFactory {
         width: "200px",
       },
       {
-        id: "sku",
-        title: "SKU",
-        type: "text",
-        required: true,
-        width: "120px",
-      },
-      {
-        id: "registrationNumber",
-        title: "N. Registrazione",
-        type: "text",
-        width: "150px",
-      },
-      {
         id: "quantity",
         title: "Quantità",
         type: "number",
@@ -122,12 +111,6 @@ export class ProductImportColumnsFactory {
         width: "80px",
       },
       {
-        id: "supplierName",
-        title: "Fornitore",
-        type: "text",
-        width: "180px",
-      },
-      {
         id: "ddtCode",
         title: "Codice DDT",
         type: "text",
@@ -135,9 +118,74 @@ export class ProductImportColumnsFactory {
       },
       {
         id: "ddtDate",
-        title: "Data",
+        title: "Data DDT",
         type: "text",
         width: "120px",
+        render: (value): ReactNode => {
+          if (!value || value === "" || value === null || value === undefined) {
+            return <span className="text-muted-foreground">-</span>;
+          }
+          try {
+            const date = new Date(value as string);
+            if (isNaN(date.getTime())) {
+              return <span>{String(value)}</span>;
+            }
+            return <span>{date.toLocaleDateString("it-IT")}</span>;
+          } catch {
+            return <span>{String(value)}</span>;
+          }
+        },
+      },
+      {
+        id: "invoiceCode",
+        title: "Codice Fattura",
+        type: "text",
+        width: "120px",
+        render: (value): ReactNode => {
+          if (!value || value === "" || value === null || value === undefined) {
+            return <span className="text-muted-foreground">-</span>;
+          }
+          return <span>{String(value)}</span>;
+        },
+      },
+      {
+        id: "invoiceDate",
+        title: "Data Fattura",
+        type: "text",
+        width: "120px",
+        render: (value): ReactNode => {
+          if (!value || value === "" || value === null || value === undefined) {
+            return <span className="text-muted-foreground">-</span>;
+          }
+          try {
+            const date = new Date(value as string);
+            if (isNaN(date.getTime())) {
+              return <span>{String(value)}</span>;
+            }
+            return <span>{date.toLocaleDateString("it-IT")}</span>;
+          } catch {
+            return <span>{String(value)}</span>;
+          }
+        },
+      },
+      {
+        id: "sku",
+        title: "SKU",
+        type: "text",
+        required: true,
+        width: "120px",
+      },
+      {
+        id: "registrationNumber",
+        title: "N. Registrazione",
+        type: "text",
+        width: "150px",
+      },
+      {
+        id: "supplierName",
+        title: "Fornitore",
+        type: "text",
+        width: "180px",
       },
     ];
   }

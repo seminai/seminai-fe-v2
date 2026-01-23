@@ -659,7 +659,7 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <Badge variant="outline" className="text-[10px]">
-                  {selectedJobsCount > 0 ? "Contesto selezionato" : "Seleziona operazioni per dialogare"}
+                  {selectedJobsCount > 0 ? `${selectedJobsCount} operazioni selezionate` : "Seleziona operazioni per dialogare"}
                 </Badge>
                
                 {isTranscribing && (

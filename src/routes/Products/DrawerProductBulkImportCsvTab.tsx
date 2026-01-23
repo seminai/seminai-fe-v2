@@ -1,10 +1,10 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Upload, FileDown, Info, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { productsApiService, type ImportFromCsvExcelPreviewProduct } from "@/api/products";
 import type {
@@ -26,6 +26,11 @@ interface DrawerProductBulkImportCsvTabProps {
   warehouseId?: string;
   canShowImportSections: boolean;
   onPreviewReady: (payload: PreviewReadyPayload) => void;
+  onImportButtonStateChange?: (state: {
+    canImport: boolean;
+    isPreviewing: boolean;
+    onImport: () => void;
+  }) => void;
 }
 
 class BulkProductTemplateBuilder {
@@ -85,6 +90,7 @@ function DrawerProductBulkImportCsvTab({
   warehouseId,
   canShowImportSections,
   onPreviewReady,
+  onImportButtonStateChange,
 }: DrawerProductBulkImportCsvTabProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
@@ -198,6 +204,17 @@ function DrawerProductBulkImportCsvTab({
     }
   }, [canImport, companyId, onPreviewReady, selectedFile, warehouseId]);
 
+  // Notifica il componente padre dello stato del bottone
+  useEffect(() => {
+    if (onImportButtonStateChange) {
+      onImportButtonStateChange({
+        canImport,
+        isPreviewing,
+        onImport: handlePreviewImport,
+      });
+    }
+  }, [canImport, isPreviewing, handlePreviewImport, onImportButtonStateChange]);
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
@@ -301,31 +318,10 @@ function DrawerProductBulkImportCsvTab({
               <CardHeader className="space-y-2">
                 <CardTitle>File pronto per la preview</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Clicca su &quot;Importa prodotti&quot; per ottenere la preview
+                  Clicca su &quot;Importa prodotti&quot; nel footer per ottenere la preview
                   dal servizio e verificare i dati estratti.
                 </p>
               </CardHeader>
-              <CardContent>
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    onClick={handlePreviewImport}
-                    disabled={!canImport}
-                    className="gap-2"
-                  >
-                    {isPreviewing ? (
-                      <>
-                        <Spinner size={18} /> Import in corso...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-4 w-4" />
-                        Importa prodotti
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
             </Card>
           )}
         </>

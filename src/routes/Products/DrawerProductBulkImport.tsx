@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Upload } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import DrawerProductImportPreview from "./DrawerProductImportPreview";
 import DrawerProductBulkImportCsvTab from "./DrawerProductBulkImportCsvTab";
 import DrawerProductBulkImportDdtTab from "./DrawerProductBulkImportDdtTab";
@@ -44,6 +46,11 @@ function DrawerProductBulkImport({
   const [previewDrawerOpen, setPreviewDrawerOpen] = useState(false);
   const [previewImportSource, setPreviewImportSource] =
     useState<ProductImportSource>("ddt");
+  const [csvImportButtonState, setCsvImportButtonState] = useState<{
+    canImport: boolean;
+    isPreviewing: boolean;
+    onImport: () => void;
+  } | null>(null);
 
   const {
     companies,
@@ -102,6 +109,9 @@ function DrawerProductBulkImport({
 
   const handleTabChange = useCallback((value: string) => {
     setActiveTab(value as "csv" | "ddt");
+    if (value === "ddt") {
+      setCsvImportButtonState(null);
+    }
   }, []);
 
   const handlePreviewImportCompleted = useCallback(() => {
@@ -120,6 +130,7 @@ function DrawerProductBulkImport({
     setPreviewDrawerOpen(false);
     setPreviewImportSource("ddt");
     setResetCounter((prev) => prev + 1);
+    setCsvImportButtonState(null);
     onOpenChange(false);
   }, [onOpenChange]);
 
@@ -241,6 +252,7 @@ function DrawerProductBulkImport({
                   warehouseId={warehouseId || warehouses[0]?.id || undefined}
                   canShowImportSections={canShowImportSections}
                   onPreviewReady={handlePreviewReady}
+                  onImportButtonStateChange={setCsvImportButtonState}
                 />
               </TabsContent>
 
@@ -257,10 +269,29 @@ function DrawerProductBulkImport({
         </div>
 
         <SheetFooter className="flex flex-col gap-4 border-t pt-4">
-          <div className="flex flex-wrap justify-end gap-3">
+          <div className="flex flex-wrap justify-between w-full gap-3">
             <Button type="button" variant="ghost" onClick={handleCloseDrawer}>
               Annulla
             </Button>
+            {activeTab === "csv" && csvImportButtonState && (
+              <Button
+                type="button"
+                onClick={csvImportButtonState.onImport}
+                disabled={!csvImportButtonState.canImport}
+                className="gap-2 bg-agri-green-600 text-white shadow-sm hover:bg-agri-green-700 focus-visible:ring-agri-green-600/20 dark:focus-visible:ring-agri-green-600/40"
+              >
+                {csvImportButtonState.isPreviewing ? (
+                  <>
+                    <Spinner size={18} /> Import in corso...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4" />
+                    Importa prodotti
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </SheetFooter>
       </SheetContent>

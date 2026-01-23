@@ -3584,6 +3584,8 @@ export default function JobPage() {
       exportConfig={jobExportConfig}
       isRightSidebarOpen={isRightSidebarOpen}
       onToggleRightSidebar={setIsRightSidebarOpen}
+      selectedJobsForChat={selectedGroupJobs ?? []}
+      onConformityConfirmSuccess={handleConformityConfirmSuccess}
     />
   );
 
