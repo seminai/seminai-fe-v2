@@ -792,7 +792,7 @@ function JobVerificationMessageBubble({
     <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm",
+          "min-w-0 max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm",
           isUser
             ? "bg-emerald-600 text-white"
             : "bg-white border border-slate-200 text-slate-800"
@@ -801,7 +801,7 @@ function JobVerificationMessageBubble({
         {isUser ? (
           <p className="whitespace-pre-wrap break-words">{content}</p>
         ) : (
-          <div className="max-w-none break-words">
+          <div className="min-w-0 max-w-full break-words whitespace-pre-wrap">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
@@ -826,22 +826,22 @@ function JobVerificationMessageBubble({
                   </h4>
                 ),
                 p: ({ children }) => (
-                  <p className="mb-2 last:mb-0 text-slate-800 leading-relaxed">
+                  <p className="mb-2 last:mb-0 text-slate-800 leading-relaxed break-words">
                     {children}
                   </p>
                 ),
                 ul: ({ children }) => (
-                  <ul className="list-disc list-inside mb-2 space-y-1 text-slate-800">
+                  <ul className="list-disc list-inside mb-2 space-y-1 text-slate-800 break-words">
                     {children}
                   </ul>
                 ),
                 ol: ({ children }) => (
-                  <ol className="list-decimal list-inside mb-2 space-y-1 text-slate-800">
+                  <ol className="list-decimal list-inside mb-2 space-y-1 text-slate-800 break-words">
                     {children}
                   </ol>
                 ),
                 li: ({ children }) => (
-                  <li className="text-slate-800">{children}</li>
+                  <li className="text-slate-800 break-words">{children}</li>
                 ),
                 strong: ({ children }) => (
                   <strong className="font-semibold text-slate-900">
