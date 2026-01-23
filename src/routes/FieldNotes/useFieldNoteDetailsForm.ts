@@ -143,8 +143,11 @@ export function useFieldNoteDetailsForm({
   }, [fieldNote, open]);
 
   useEffect(() => {
+    // Only reset if we have a company selected AND the current production units
+    // don't belong to that company AND we actually have something to reset
     if (
       selectedCompanyId &&
+      selectedProductionUnitIds.length > 0 &&
       !productionUnits.some(
         (pu) =>
           pu.companyId === selectedCompanyId &&
@@ -154,7 +157,7 @@ export function useFieldNoteDetailsForm({
       setSelectedProductionUnitIds([]);
       setSelectedFieldIds([]);
     }
-  }, [selectedCompanyId, selectedProductionUnitIds, productionUnits]);
+  }, [selectedCompanyId, selectedProductionUnitIds.length, productionUnits]);
 
   const filteredProductionUnits = useMemo(() => {
     if (!selectedCompanyId) return [];

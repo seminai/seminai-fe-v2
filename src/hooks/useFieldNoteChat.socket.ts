@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { toast } from "sonner";
 import {
@@ -37,6 +37,19 @@ export function useFieldNoteChatSocket({
 }: UseFieldNoteChatSocketOptions): SocketConnectionState {
   const [socketState, setSocketState] =
     useState<SocketConnectionState>("disconnected");
+
+  // Use refs to store callbacks that might change, to avoid reconnecting the socket
+  const onFieldNoteSavedRef = useRef(onFieldNoteSaved);
+  const getNextMessageIdRef = useRef(getNextMessageId);
+
+  // Keep refs updated with latest values
+  useEffect(() => {
+    onFieldNoteSavedRef.current = onFieldNoteSaved;
+  }, [onFieldNoteSaved]);
+
+  useEffect(() => {
+    getNextMessageIdRef.current = getNextMessageId;
+  }, [getNextMessageId]);
 
   const handleSocketEvent = useCallback(
     (event: FieldNoteChatEvent) => {
@@ -104,7 +117,7 @@ export function useFieldNoteChatSocket({
 
           setIsProcessing(false);
           thinkingBuffer.current = "";
-          onFieldNoteSaved?.();
+          onFieldNoteSavedRef.current?.();
 
           if (event.message) {
             toast.success("Operazione completata", {
@@ -121,7 +134,7 @@ export function useFieldNoteChatSocket({
             appendMessage(
               prev,
               buildAssistantMessage(
-                getNextMessageId("error"),
+                getNextMessageIdRef.current("error"),
                 `❌ ${errorMessage}`
               )
             )
@@ -140,7 +153,7 @@ export function useFieldNoteChatSocket({
               appendMessage(
                 prev,
                 buildAssistantMessage(
-                  getNextMessageId("info"),
+                  getNextMessageIdRef.current("info"),
                   event.message || ""
                 )
               )
@@ -157,12 +170,11 @@ export function useFieldNoteChatSocket({
       setIsProcessing,
       scrollToBottom,
       thinkingBuffer,
-      getNextMessageId,
-      onFieldNoteSaved,
     ]
   );
 
-  const connectSocket = useCallback(() => {
+  // Connect socket only when threadId changes, not when callbacks change
+  useEffect(() => {
     fieldNoteSocketService.connect(threadId, {
       onConnect: () => {
         setSocketState("connected");
@@ -181,7 +193,7 @@ export function useFieldNoteChatSocket({
           appendMessage(
             prev,
             buildAssistantMessage(
-              getNextMessageId("info"),
+              getNextMessageIdRef.current("info"),
               "Connesso alla chat AI"
             )
           )
@@ -190,15 +202,11 @@ export function useFieldNoteChatSocket({
       },
       onEvent: handleSocketEvent,
     });
-  }, [threadId, setMessages, getNextMessageId, handleSocketEvent]);
-
-  useEffect(() => {
-    connectSocket();
 
     return () => {
       fieldNoteSocketService.disconnect();
     };
-  }, [connectSocket]);
+  }, [threadId, setMessages, handleSocketEvent]);
 
   return socketState;
 }

@@ -50,6 +50,7 @@ class FieldNoteSocketService {
   private currentThreadId: string | null = null;
   private callbacks: FieldNoteSocketCallbacks = {};
   private connectionState: SocketConnectionState = "disconnected";
+  private isConnecting: boolean = false;
 
   /**
    * Ottiene lo stato corrente della connessione
@@ -74,12 +75,26 @@ class FieldNoteSocketService {
       return;
     }
 
+    // Se già in fase di connessione allo stesso thread, non fare nulla
+    if (this.isConnecting && this.currentThreadId === threadId) {
+      return;
+    }
+
     // Disconnetti da eventuali connessioni precedenti
     this.disconnect();
+
+    // Mark as connecting to prevent duplicate connection attempts
+    this.isConnecting = true;
+    this.currentThreadId = threadId;
 
     // Prova a ottenere il token dalla memoria (impostato al login)
     // Se non disponibile (es. page refresh), prova a connettersi con withCredentials
     const attemptConnection = (retryCount = 0): void => {
+      // Check if we were disconnected while waiting
+      if (!this.isConnecting || this.currentThreadId !== threadId) {
+        return;
+      }
+
       const token = authService.getAuthToken();
 
       // Se non c'è token in memoria e abbiamo ancora tentativi, riprova
@@ -93,7 +108,6 @@ class FieldNoteSocketService {
 
       // Procedi con la connessione
       this.callbacks = callbacks;
-      this.currentThreadId = threadId;
       this.connectionState = "connecting";
 
       // Configura Socket.IO con token (se disponibile) o solo withCredentials
@@ -102,6 +116,7 @@ class FieldNoteSocketService {
         ...(token ? { auth: { token } } : {}),
         withCredentials: true, // Invia cookie httpOnly come fallback
         transports: ["websocket", "polling"],
+        reconnection: false, // Disable auto-reconnection to prevent loops
       });
 
       this.setupEventListeners();
@@ -117,6 +132,7 @@ class FieldNoteSocketService {
     if (!this.socket) return;
 
     this.socket.on("connect", () => {
+      this.isConnecting = false;
       this.connectionState = "connected";
       this.callbacks.onConnect?.();
 
@@ -127,11 +143,13 @@ class FieldNoteSocketService {
     });
 
     this.socket.on("connect_error", (error) => {
+      this.isConnecting = false;
       this.connectionState = "error";
       this.callbacks.onError?.(new Error(error.message));
     });
 
     this.socket.on("disconnect", () => {
+      this.isConnecting = false;
       this.connectionState = "disconnected";
       this.callbacks.onDisconnect?.();
     });
@@ -177,6 +195,7 @@ class FieldNoteSocketService {
     }
     this.currentThreadId = null;
     this.connectionState = "disconnected";
+    this.isConnecting = false;
     this.callbacks = {};
   }
 
