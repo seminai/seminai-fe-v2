@@ -1816,34 +1816,6 @@ export default function JobPage() {
     }));
   }, [productionUnits]);
 
-  // Funzione per ottenere le opzioni della select unità produttiva in base al contesto
-  // @ts-expect-error - Reserved for future use
-  const getProductionUnitOptions = (rowData: Record<string, unknown>) => {
-    // Per le righe esistenti, usa _companyId se _selectedCompanyForPU non è impostato
-    const selectedCompanyId =
-      (rowData._selectedCompanyForPU as string | undefined) ||
-      (rowData._companyId as string | undefined);
-
-    if (!selectedCompanyId) {
-      // Nessuna azienda selezionata: mostra le aziende
-      return companySelectOptions;
-    }
-
-    // Azienda selezionata: mostra le unità produttive di quell'azienda + opzione per tornare indietro
-    const filteredPUs = productionUnitSelectOptions.filter(
-      (pu) => pu.companyId === selectedCompanyId
-    );
-
-    return [
-      {
-        label: "🔵 Pulisci filtro (torna alle aziende)",
-        value: "clear_filter",
-        isBackOption: true,
-      },
-      ...filteredPUs,
-    ];
-  };
-
   const bulkVerifier = useMemo(() => new JobBulkVerifier(jobsApiService), []);
   const jobExportConfig = useMemo(
     () => new JobExportConfigBuilder().build(),
