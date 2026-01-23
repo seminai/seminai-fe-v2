@@ -9,8 +9,8 @@ import {
   JobSelectedDetails,
   type JobRow,
 } from "@/components/organism/JobSelectedDetails";
-import { type JobHistoryEntry } from "@/api/jobs";
-import { useMemo, useState } from "react";
+import { type JobHistoryEntry, type JobWithRelations } from "@/api/jobs";
+import { useMemo, useState, useRef } from "react";
 import {
   Popover,
   PopoverContent,
@@ -33,7 +33,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 import HistoryPanel from "./HistoryPanel";
-import ConformityCheckerPanel from "./ConformityCheckerPanel";
+import ConformityCheckerPanel, { type ConformityCheckerPanelRef } from "./ConformityCheckerPanel";
 
 type EditableTableRowData = Record<string, unknown>;
 
@@ -89,6 +89,7 @@ interface AllJobsViewProps {
   newRowDefaults?: Partial<Record<string, unknown>>;
   jobGroupId?: string;
   onConformityConfirmSuccess?: () => void;
+  selectedJobsForChat: JobWithRelations[];
 }
 
 export function JobIdMultiSelect({
@@ -268,10 +269,12 @@ export function AllJobsView({
   newRowDefaults,
   jobGroupId,
   onConformityConfirmSuccess,
+  selectedJobsForChat,
 }: AllJobsViewProps) {
   const hasError = Boolean(error);
   const errorMessage =
     error instanceof Error ? error.message : "Errore sconosciuto";
+  const conformityCheckerRef = useRef<ConformityCheckerPanelRef>(null);
 
   return (
     <div className="flex-1 flex overflow-hidden px-6 pb-6">
@@ -471,9 +474,19 @@ export function AllJobsView({
               )}
               {rightSidebarMode === "conformity" && (
                 <>
-                  <span className="text-sm font-medium text-slate-700">
-                    Verifica Conformità
-                  </span>
+                  <div className="flex items-center gap-2">
+                
+                    <Button
+                      onClick={() => conformityCheckerRef.current?.handleVerify()}
+                      disabled={conformityCheckerRef.current?.isVerifyDisabled}
+                      size="sm"
+                      variant="outline"
+                      className="h-7"
+                    >
+                      <Check className="h-3 w-3 mr-1.5" />
+                      Verifica conformità automatica
+                    </Button>
+                  </div>
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
@@ -528,7 +541,9 @@ export function AllJobsView({
               {rightSidebarMode === "conformity" &&
                 (jobGroupId ? (
                   <ConformityCheckerPanel
+                    ref={conformityCheckerRef}
                     jobGroupId={jobGroupId}
+                    selectedJobs={selectedJobsForChat}
                     onConfirmSuccess={onConformityConfirmSuccess}
                     onClose={() => onRightSidebarModeChange("details")}
                   />

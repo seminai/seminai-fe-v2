@@ -1905,6 +1905,18 @@ export default function JobPage() {
     );
   }, [selectedAllRows]);
 
+  const selectedAllJobsForChat = useMemo(() => {
+    if (selectedAllRows.length === 0 || allSelectedJobs.length === 0) {
+      return [];
+    }
+
+    const selectedIds = new Set(
+      selectedAllRows.map((row) => String(row.id))
+    );
+
+    return allSelectedJobs.filter((job) => selectedIds.has(job.job.id));
+  }, [allSelectedJobs, selectedAllRows]);
+
   // Funzione per trovare l'etichetta per nome prodotto e numero di registrazione
   const findLabelByProduct = (
     productName: string,
@@ -3526,6 +3538,7 @@ export default function JobPage() {
         selectedAllJobIds.length > 0 ? selectedAllJobIds[0] : undefined
       }
       onConformityConfirmSuccess={handleConformityConfirmSuccess}
+      selectedJobsForChat={selectedAllJobsForChat}
     />
   );
 

@@ -661,7 +661,7 @@ export default function FieldNotesPage() {
   }, []);
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 h-svh overflow-hidden">
       <PageHeader
         title="Note di Campo"
         className="hidden md:block"

@@ -171,31 +171,33 @@ export function FieldNoteChatPanel({
   }, []);
 
   return (
-    <div className="h-full min-h-0 flex flex-col bg-white">
-      <ScrollArea className="flex-1 min-h-0 p-4">
-        <div className="space-y-4">
-          {messages.length === 0 && <EmptyState />}
+    <div className="h-full flex flex-col bg-white overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <ScrollArea className="h-full">
+          <div className="p-4 space-y-4">
+            {messages.length === 0 && <EmptyState />}
 
-          {messages.map((msg) => (
-            <ChatMessageBubble key={msg.id} message={msg} />
-          ))}
+            {messages.map((msg) => (
+              <ChatMessageBubble key={msg.id} message={msg} />
+            ))}
 
-          {pendingApproval && (
-            <div className="flex justify-center">
-              <ApprovalDialog
-                toolCall={pendingApproval}
-                onApprove={approve}
-                onReject={reject}
-              />
-            </div>
-          )}
+            {pendingApproval && (
+              <div className="flex justify-center">
+                <ApprovalDialog
+                  toolCall={pendingApproval}
+                  onApprove={approve}
+                  onReject={reject}
+                />
+              </div>
+            )}
 
-          <div ref={messagesEndRef} />
-        </div>
-      </ScrollArea>
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+      </div>
 
-      <div className="flex-shrink-0 border-t border-slate-200 p-4 bg-slate-50">
-        <div className="space-y-2">
+      <div className="flex-shrink-0 border-t border-slate-200 bg-slate-50">
+        <div className="p-4 space-y-2">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -210,11 +212,11 @@ export function FieldNoteChatPanel({
               onRemove={handleRemoveFile}
             />
           )}
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-slate-500 flex-shrink-0">
               {isProcessing ? "Elaborazione in corso..." : ""}
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -261,7 +263,7 @@ export function FieldNoteChatPanel({
               <Button
                 onClick={handleSendMessage}
                 disabled={isProcessing || !input.trim()}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white flex-shrink-0"
                 size="sm"
               >
                 {isProcessing ? (

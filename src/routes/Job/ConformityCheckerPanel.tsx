@@ -1,8 +1,13 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -14,12 +19,22 @@ import {
   Send,
   Check,
   X,
+  MessageSquare,
   Wifi,
   WifiOff,
   Clock,
   Zap,
+  Brain,
+  Wrench,
+  Search,
+  ListTodo,
+  StopCircle,
+  Mic,
+  Square,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { JobWithRelations } from "@/api/jobs";
+import type { PendingAction, AgentTask } from "@/api/job-verification-agent";
 import {
   conformityCheckerApiService,
   type ConformityCheckResult,
@@ -28,6 +43,13 @@ import {
   type ConformityJobState,
 } from "@/api/conformity-checker";
 import {
+  useJobVerificationAgent,
+  type JobVerificationMessage,
+  type ThinkingStep,
+} from "@/hooks/useJobVerificationAgent";
+import { audioToTextApiService } from "@/api/audio-to-text";
+import { AudioRecorderService } from "@/routes/FieldNotes/FieldNoteAudioRecorder";
+import {
   dosageJobSocketService,
   type DosageLogEvent,
   type SocketConnectionState,
@@ -35,8 +57,14 @@ import {
 
 interface ConformityCheckerPanelProps {
   jobGroupId: string;
+  selectedJobs: JobWithRelations[];
   onConfirmSuccess?: () => void;
   onClose?: () => void;
+}
+
+export interface ConformityCheckerPanelRef {
+  handleVerify: () => Promise<void>;
+  isVerifyDisabled: boolean;
 }
 
 type PanelState = "idle" | "loading" | "polling" | "results" | "confirming";
@@ -50,11 +78,11 @@ interface LiveLogEntry {
   metadata?: Record<string, unknown>;
 }
 
-export function ConformityCheckerPanel({
+export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, ConformityCheckerPanelProps>(({
   jobGroupId,
+  selectedJobs,
   onConfirmSuccess,
-  onClose: _onClose,
-}: ConformityCheckerPanelProps) {
+}, ref) => {
   const [notes, setNotes] = useState<string>("");
   const [state, setState] = useState<PanelState>("idle");
   const [progress, setProgress] = useState<number>(0);
@@ -65,6 +93,35 @@ export function ConformityCheckerPanel({
   const [socketState, setSocketState] = useState<SocketConnectionState>("disconnected");
   const logsEndRef = useRef<HTMLDivElement>(null);
   const logIdCounter = useRef<number>(0);
+  const [threadId] = useState(
+    () => `job-verification-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+  );
+  const [deepThinking, setDeepThinking] = useState<boolean>(true);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const audioRecorderRef = useRef<AudioRecorderService | null>(null);
+  const {
+    messages: agentMessages,
+    thinkingSteps,
+    currentTasks,
+    currentTaskId,
+    isLoading: isAgentLoading,
+    pendingAction,
+    sendMessage: sendAgentMessage,
+    approveAction,
+    rejectAction,
+    cancelRequest,
+    messagesEndRef,
+  } = useJobVerificationAgent(threadId);
+  const selectedJobsCount = selectedJobs.length;
+  const thinkingEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto-scroll dei thinking steps
+  useEffect(() => {
+    if (deepThinking && thinkingSteps.length > 0) {
+      thinkingEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [thinkingSteps, deepThinking]);
 
   // Auto-scroll dei log
   useEffect(() => {
@@ -214,6 +271,97 @@ export function ConformityCheckerPanel({
     }
   };
 
+  const transcribeAudioFile = async (file: File) => {
+    setIsTranscribing(true);
+    try {
+      const response = await audioToTextApiService.transcribeAudio({ file });
+      const transcription = response.data?.text?.trim();
+      if (transcription) {
+        setNotes((prev) =>
+          prev ? `${prev}\n${transcription}` : transcription
+        );
+      } else {
+        toast.error("Trascrizione non disponibile");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Errore sconosciuto";
+      toast.error("Errore durante la trascrizione", {
+        description: errorMessage,
+      });
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  const getRecorder = () => {
+    if (!audioRecorderRef.current) {
+      audioRecorderRef.current = new AudioRecorderService(
+        AudioRecorderService.getSupportedMimeType()
+      );
+    }
+    return audioRecorderRef.current;
+  };
+
+  const handleRecordToggle = async () => {
+    if (isTranscribing || isAgentLoading) {
+      return;
+    }
+
+    if (isRecording) {
+      try {
+        const recorder = getRecorder();
+        const audioBlob = await recorder.stop();
+        setIsRecording(false);
+        const audioFile = AudioRecorderService.buildAudioFile(audioBlob);
+        await transcribeAudioFile(audioFile);
+      } catch (error) {
+        setIsRecording(false);
+        const errorMessage =
+          error instanceof Error ? error.message : "Errore sconosciuto";
+        toast.error("Errore durante la registrazione", {
+          description: errorMessage,
+        });
+      }
+      return;
+    }
+
+    try {
+      const recorder = getRecorder();
+      await recorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Errore sconosciuto";
+      toast.error("Microfono non disponibile", {
+        description: errorMessage,
+      });
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      audioRecorderRef.current?.cancel();
+    };
+  }, []);
+
+  const handleDialog = async () => {
+    const trimmedMessage = notes.trim();
+    if (!trimmedMessage) {
+      toast.error("Inserisci un messaggio per l'agente");
+      return;
+    }
+
+    if (selectedJobsCount === 0) {
+      toast.error("Seleziona almeno un job per dialogare con l'agente");
+      return;
+    }
+
+    const contextMessage = `Contesto: ${selectedJobsCount} job selezionati.\n${trimmedMessage}`;
+    await sendAgentMessage(contextMessage, selectedJobs, { deepThinking });
+    setNotes("");
+  };
+
   const handleConfirm = async () => {
     if (!result) return;
 
@@ -260,129 +408,303 @@ export function ConformityCheckerPanel({
     setProgress(0);
   };
 
+  const handleApprovePendingAction = () => {
+    if (!pendingAction) return;
+
+    if (pendingAction.type === "job_modification" && pendingAction.args) {
+      const args = pendingAction.args as {
+        jobId?: string;
+        field?: string;
+        newValue?: unknown;
+      };
+
+      if (args.jobId && args.field) {
+        approveAction({
+          jobId: args.jobId,
+          field: args.field,
+          newValue: args.newValue,
+        });
+        return;
+      }
+    }
+
+    approveAction();
+  };
+
+  const handleRejectPendingAction = () => {
+    if (!pendingAction) return;
+    const reason = prompt("Motivo del rifiuto:");
+    if (reason) {
+      rejectAction(reason);
+    }
+  };
+
   const isLoading = state === "loading" || state === "polling";
   const isConfirming = state === "confirming";
   const hasResults = state === "results" && result !== null;
+  const isIdle = !hasResults && !isLoading;
+  const isInputDisabled = isLoading || isConfirming || isAgentLoading || isTranscribing;
+  const isDialogDisabled =
+    isInputDisabled ||
+    Boolean(pendingAction) ||
+    selectedJobsCount === 0 ||
+    !notes.trim();
+  const isVerifyDisabled =
+    isInputDisabled || Boolean(pendingAction) || !jobGroupId;
+
+  useImperativeHandle(ref, () => ({
+    handleVerify,
+    isVerifyDisabled,
+  }));
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* Input Section */}
-      {!hasResults && !isLoading && (
-        <div className="flex-shrink-0 p-4 border-b border-slate-200 space-y-3">
-          <Textarea
-            placeholder="Inserisci note per la verifica di conformità (es. Evitare trattamenti in fioritura. Pressione oidio alta.)"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            disabled={isLoading}
-            className="min-h-[100px] resize-none text-sm"
-          />
+      <div className="flex-1 min-h-0 overflow-hidden">
+        {isIdle && (
+          <ScrollArea className="h-full">
+            <div className="p-4 space-y-4">
+              {agentMessages.length === 0 && !isAgentLoading && <JobVerificationEmptyState />}
 
-          {error && (
-            <div className="flex items-start gap-2 p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <span>{error}</span>
+              {/* Task Progress - solo con deepThinking */}
+              {deepThinking && currentTasks.length > 0 && (
+                <TaskProgressPanel tasks={currentTasks} currentTaskId={currentTaskId} />
+              )}
+
+              {/* Thinking Panel - solo con deepThinking */}
+              {deepThinking && (thinkingSteps.length > 0 || isAgentLoading) && (
+                <ThinkingPanel
+                  steps={thinkingSteps}
+                  isLoading={isAgentLoading}
+                  thinkingEndRef={thinkingEndRef}
+                />
+              )}
+
+              {/* Chat Rapida Loader - quando deepThinking è false */}
+              {!deepThinking && isAgentLoading && (
+                <QuickChatLoader />
+              )}
+
+              {agentMessages.map((message) => (
+                <JobVerificationMessageBubble
+                  key={message.id}
+                  message={message}
+                />
+              ))}
+              {pendingAction && (
+                <PendingActionCard
+                  pendingAction={pendingAction}
+                  isBusy={isAgentLoading}
+                  onApprove={handleApprovePendingAction}
+                  onReject={handleRejectPendingAction}
+                />
+              )}
+              {isAgentLoading && deepThinking && thinkingSteps.length === 0 && (
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <Spinner className="h-3 w-3" ariaLabel="Agente attivo" />
+                  L'agente sta elaborando...
+                </div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
-          )}
+          </ScrollArea>
+        )}
 
-          <div className="flex items-center justify-between gap-2">
-            <Button
-              onClick={handleVerify}
-              disabled={isLoading || !jobGroupId}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Verifica
-            </Button>
+        {/* Live Status Section - Durante la verifica */}
+        {isLoading && (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Header con stato e progresso */}
+            <div className="flex-shrink-0 p-4 border-b border-slate-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Spinner className="h-4 w-4" ariaLabel="Verifica in corso" />
+                  <span className="text-sm font-medium text-slate-700">
+                    Verifica in corso...
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {socketState === "connected" ? (
+                    <Badge className="bg-emerald-100 text-emerald-700 text-xs">
+                      <Wifi className="h-3 w-3 mr-1" />
+                      Live
+                    </Badge>
+                  ) : socketState === "connecting" ? (
+                    <Badge className="bg-amber-100 text-amber-700 text-xs">
+                      <Spinner
+                        className="h-3 w-3 mr-1"
+                        ariaLabel="Connessione"
+                      />
+                      Connessione...
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-slate-100 text-slate-500 text-xs">
+                      <WifiOff className="h-3 w-3 mr-1" />
+                      Offline
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Barra progresso */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-500 truncate max-w-[200px]">
+                    {currentPhase || "Inizializzazione..."}
+                  </span>
+                  <span className="text-slate-700 font-medium">{progress}%</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-emerald-500 h-full transition-all duration-300 ease-out"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Live Logs */}
+            <div className="flex-1 min-h-0 overflow-y-auto bg-slate-900 p-3">
+              <div className="space-y-1 font-mono text-xs">
+                {liveLogs.map((log) => (
+                  <LiveLogItem key={log.id} log={log} />
+                ))}
+                <div ref={logsEndRef} />
+              </div>
+              {liveLogs.length === 0 && (
+                <div className="text-slate-500 text-center py-4">
+                  In attesa di log dal server...
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Live Status Section - Durante la verifica */}
-      {isLoading && (
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header con stato e progresso */}
-          <div className="flex-shrink-0 p-4 border-b border-slate-200 space-y-3">
+        {/* Results Section - Scrollable */}
+        {hasResults && (
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="p-4 space-y-4">
+              {/* Summary */}
+              <ConformitySummaryCard summary={result.summary} />
+
+              {/* User Notes Analysis */}
+              {result.userNotesAnalysis && (
+                <UserNotesAnalysisCard analysis={result.userNotesAnalysis} />
+              )}
+
+              {/* Proposals */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-slate-700">
+                  Dettagli Operazioni
+                </h3>
+                {result.proposals.map((proposal, index) => (
+                  <ProposalCard
+                    key={proposal.jobId || index}
+                    proposal={proposal}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {isIdle && (
+        <div className="flex-shrink-0 border-t border-slate-200 bg-white">
+          <div className="p-4 space-y-3">
+            {/* Toggle per pensiero profondo vs chat rapida */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Spinner className="h-4 w-4" ariaLabel="Verifica in corso" />
-                <span className="text-sm font-medium text-slate-700">
-                  Verifica in corso...
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                {socketState === "connected" ? (
-                  <Badge className="bg-emerald-100 text-emerald-700 text-xs">
-                    <Wifi className="h-3 w-3 mr-1" />
-                    Live
-                  </Badge>
-                ) : socketState === "connecting" ? (
-                  <Badge className="bg-amber-100 text-amber-700 text-xs">
-                    <Spinner className="h-3 w-3 mr-1" ariaLabel="Connessione" />
-                    Connessione...
-                  </Badge>
-                ) : (
-                  <Badge className="bg-slate-100 text-slate-500 text-xs">
-                    <WifiOff className="h-3 w-3 mr-1" />
-                    Offline
+                <Checkbox
+                  id="deep-thinking"
+                  checked={deepThinking}
+                  onCheckedChange={(checked) => setDeepThinking(checked === true)}
+                  className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                />
+                <Label htmlFor="deep-thinking" className="text-xs text-slate-600 cursor-pointer">
+                  Pensiero profondo
+                </Label>
+                {!deepThinking && (
+                  <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">
+                    Chat rapida
                   </Badge>
                 )}
               </div>
+              {isAgentLoading && (
+                <Button
+                  onClick={cancelRequest}
+                  size="sm"
+                  variant="outline"
+                  className="text-red-600 border-red-200 hover:bg-red-50"
+                >
+                  <StopCircle className="h-4 w-4 mr-1" />
+                  Stop
+                </Button>
+              )}
             </div>
 
-            {/* Barra progresso */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500 truncate max-w-[200px]">
-                  {currentPhase || "Inizializzazione..."}
-                </span>
-                <span className="text-slate-700 font-medium">{progress}%</span>
-              </div>
-              <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                <div
-                  className="bg-emerald-500 h-full transition-all duration-300 ease-out"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-          </div>
+            <Textarea
+              placeholder="Inserisci note o domande per la verifica (es. Evitare trattamenti in fioritura.)"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              disabled={isInputDisabled}
+              className="min-h-[100px] resize-none text-sm"
+            />
 
-          {/* Live Logs */}
-          <div className="flex-1 min-h-0 overflow-y-auto bg-slate-900 p-3">
-            <div className="space-y-1 font-mono text-xs">
-              {liveLogs.map((log) => (
-                <LiveLogItem key={log.id} log={log} />
-              ))}
-              <div ref={logsEndRef} />
-            </div>
-            {liveLogs.length === 0 && (
-              <div className="text-slate-500 text-center py-4">
-                In attesa di log dal server...
+            {error && (
+              <div className="flex items-start gap-2 p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span>{error}</span>
               </div>
             )}
-          </div>
-        </div>
-      )}
 
-      {/* Results Section - Scrollable */}
-      {hasResults && (
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="p-4 space-y-4">
-            {/* Summary */}
-            <ConformitySummaryCard summary={result.summary} />
-
-            {/* User Notes Analysis */}
-            {result.userNotesAnalysis && (
-              <UserNotesAnalysisCard analysis={result.userNotesAnalysis} />
-            )}
-
-            {/* Proposals */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-slate-700">
-                Dettagli Operazioni
-              </h3>
-              {result.proposals.map((proposal, index) => (
-                <ProposalCard key={proposal.jobId || index} proposal={proposal} />
-              ))}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <Badge variant="outline" className="text-[10px]">
+                  {selectedJobsCount > 0 ? "Contesto selezionato" : "Seleziona operazioni per dialogare"}
+                </Badge>
+               
+                {isTranscribing && (
+                  <span className="text-amber-600">Trascrizione in corso...</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRecordToggle}
+                  disabled={isInputDisabled || isTranscribing}
+                  className="flex-shrink-0"
+                >
+                  {isTranscribing ? (
+                    <>
+                      <Spinner
+                        className="h-4 w-4 mr-2"
+                        ariaLabel="Trascrizione in corso"
+                      />
+                      Trascrivo...
+                    </>
+                  ) : isRecording ? (
+                    <>
+                      <Square className="h-4 w-4 mr-2" />
+                      Ferma
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="h-4 w-4 mr-2" />
+                      Vocale
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={handleDialog}
+                  size="sm"
+                  disabled={isDialogDisabled}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white flex-shrink-0"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Invia
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -408,7 +730,10 @@ export function ConformityCheckerPanel({
             >
               {isConfirming ? (
                 <>
-                  <Spinner className="h-4 w-4 mr-2" ariaLabel="Conferma in corso" />
+                  <Spinner
+                    className="h-4 w-4 mr-2"
+                    ariaLabel="Conferma in corso"
+                  />
                   Conferma...
                 </>
               ) : (
@@ -432,6 +757,201 @@ export function ConformityCheckerPanel({
           </div>
         </div>
       )}
+    </div>
+  );
+});
+
+ConformityCheckerPanel.displayName = "ConformityCheckerPanel";
+
+function JobVerificationEmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-10 text-center">
+      <div className="bg-emerald-50 rounded-full p-3 mb-3">
+        <MessageSquare className="h-6 w-6 text-emerald-600" />
+      </div>
+      <p className="text-sm font-medium text-slate-700">
+        Dialoga con l'agente
+      </p>
+      <p className="text-xs text-slate-500 max-w-xs mt-2">
+        Seleziona uno o piu job a sinistra e fai una domanda per la verifica.
+      </p>
+    </div>
+  );
+}
+
+function JobVerificationMessageBubble({
+  message,
+}: {
+  message: JobVerificationMessage;
+}) {
+  const isUser = message.role === "user";
+  const content =
+    message.content || (isUser ? "" : "Sto elaborando la risposta...");
+
+  return (
+    <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
+      <div
+        className={cn(
+          "max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm",
+          isUser
+            ? "bg-emerald-600 text-white"
+            : "bg-white border border-slate-200 text-slate-800"
+        )}
+      >
+        {isUser ? (
+          <p className="whitespace-pre-wrap break-words">{content}</p>
+        ) : (
+          <div className="max-w-none break-words">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                h1: ({ children }) => (
+                  <h1 className="text-base font-bold mb-2 mt-3 first:mt-0 text-slate-900">
+                    {children}
+                  </h1>
+                ),
+                h2: ({ children }) => (
+                  <h2 className="text-sm font-semibold mb-2 mt-3 first:mt-0 text-slate-800">
+                    {children}
+                  </h2>
+                ),
+                h3: ({ children }) => (
+                  <h3 className="text-sm font-semibold mb-1.5 mt-2.5 first:mt-0 text-slate-800">
+                    {children}
+                  </h3>
+                ),
+                h4: ({ children }) => (
+                  <h4 className="text-xs font-semibold mb-1 mt-2 first:mt-0 text-slate-700">
+                    {children}
+                  </h4>
+                ),
+                p: ({ children }) => (
+                  <p className="mb-2 last:mb-0 text-slate-800 leading-relaxed">
+                    {children}
+                  </p>
+                ),
+                ul: ({ children }) => (
+                  <ul className="list-disc list-inside mb-2 space-y-1 text-slate-800">
+                    {children}
+                  </ul>
+                ),
+                ol: ({ children }) => (
+                  <ol className="list-decimal list-inside mb-2 space-y-1 text-slate-800">
+                    {children}
+                  </ol>
+                ),
+                li: ({ children }) => (
+                  <li className="text-slate-800">{children}</li>
+                ),
+                strong: ({ children }) => (
+                  <strong className="font-semibold text-slate-900">
+                    {children}
+                  </strong>
+                ),
+                em: ({ children }) => (
+                  <em className="italic text-slate-700">{children}</em>
+                ),
+                a: ({ href, children }) => (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-700 hover:text-emerald-800 hover:underline break-all"
+                  >
+                    {children}
+                  </a>
+                ),
+                code: ({ children, className }) => {
+                  const isInline = !className;
+                  return isInline ? (
+                    <code className="bg-slate-100 text-slate-900 px-1 py-0.5 rounded text-xs font-mono">
+                      {children}
+                    </code>
+                  ) : (
+                    <code className="block bg-slate-100 text-slate-900 p-2 rounded text-xs font-mono overflow-x-auto">
+                      {children}
+                    </code>
+                  );
+                },
+                blockquote: ({ children }) => (
+                  <blockquote className="border-l-4 border-slate-300 pl-3 my-2 italic text-slate-600">
+                    {children}
+                  </blockquote>
+                ),
+                hr: () => (
+                  <hr className="my-3 border-slate-200" />
+                ),
+              }}
+            >
+              {content}
+            </ReactMarkdown>
+          </div>
+        )}
+        {!isUser && message.sources && message.sources.length > 0 && (
+          <div className="mt-2 border-t border-slate-200 pt-2 text-xs text-slate-600 space-y-1">
+            <p className="font-semibold text-slate-700">Fonti</p>
+            <ul className="space-y-1">
+              {message.sources.map((source, index) => (
+                <li key={`${source.url}-${index}`}>
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-700 hover:underline break-all"
+                  >
+                    {source.title || source.url}
+                  </a>
+                  {source.description && (
+                    <div className="text-slate-400">{source.description}</div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PendingActionCard({
+  pendingAction,
+  isBusy,
+  onApprove,
+  onReject,
+}: {
+  pendingAction: PendingAction;
+  isBusy: boolean;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  return (
+    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 space-y-2">
+      <p className="font-medium">Azione in attesa di approvazione</p>
+      <p className="text-xs text-amber-800">{pendingAction.description}</p>
+      {pendingAction.type === "job_modification" && (
+        <p className="text-xs text-amber-700">
+          Attenzione: questa modifica imposta conformityChecked=false.
+        </p>
+      )}
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          onClick={onApprove}
+          disabled={isBusy}
+        >
+          Approva
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onReject}
+          disabled={isBusy}
+        >
+          Rifiuta
+        </Button>
+      </div>
     </div>
   );
 }
@@ -848,5 +1368,210 @@ function LiveLogItem({ log }: { log: LiveLogEntry }) {
   );
 }
 
-export default ConformityCheckerPanel;
+// Thinking Panel Component - Mostra il pensiero dell'agente in tempo reale
+function ThinkingPanel({
+  steps,
+  isLoading,
+  thinkingEndRef,
+}: {
+  steps: ThinkingStep[];
+  isLoading: boolean;
+  thinkingEndRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  return (
+    <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+      <div className="px-3 py-2 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {isLoading && <span className="animate-pulse">🧠</span>}
+          {!isLoading && <Brain className="h-4 w-4 text-slate-500" />}
+          <span className="text-xs font-medium text-slate-600">
+            Pensiero dell'agente
+          </span>
+        </div>
+        {isLoading && (
+          <Badge className="bg-emerald-100 text-emerald-700 text-[10px] animate-pulse">
+            In elaborazione...
+          </Badge>
+        )}
+      </div>
 
+      <div className="max-h-48 overflow-y-auto p-2 space-y-1">
+        {steps.map((step) => (
+          <ThinkingStepItem key={step.id} step={step} />
+        ))}
+
+        {isLoading && steps.length === 0 && (
+          <div className="flex items-center gap-2 text-xs text-slate-500 py-2 px-2">
+            <Spinner className="h-3 w-3" ariaLabel="Inizializzazione" />
+            Inizializzazione...
+          </div>
+        )}
+
+        <div ref={thinkingEndRef} />
+      </div>
+    </div>
+  );
+}
+
+// Thinking Step Item Component
+function ThinkingStepItem({ step }: { step: ThinkingStep }) {
+  const getStepIcon = (type: ThinkingStep["type"]) => {
+    switch (type) {
+      case "thinking":
+        return <Brain className="h-3 w-3" />;
+      case "tool_start":
+        return <Wrench className="h-3 w-3" />;
+      case "tool_result":
+        return <CheckCircle2 className="h-3 w-3" />;
+      case "data_inspection":
+        return <Search className="h-3 w-3" />;
+      case "task_progress":
+        return <ListTodo className="h-3 w-3" />;
+      case "reasoning":
+        return <Brain className="h-3 w-3" />;
+      default:
+        return <Info className="h-3 w-3" />;
+    }
+  };
+
+  const getStepStyle = (type: ThinkingStep["type"]) => {
+    switch (type) {
+      case "thinking":
+        return "bg-blue-50 border-l-2 border-blue-300 text-blue-700";
+      case "tool_start":
+        return "bg-amber-50 border-l-2 border-amber-300 text-amber-700";
+      case "tool_result":
+        return "bg-emerald-50 border-l-2 border-emerald-300 text-emerald-700";
+      case "data_inspection":
+        return "bg-purple-50 border-l-2 border-purple-300 text-purple-700";
+      case "task_progress":
+        return "bg-slate-100 border-l-2 border-slate-300 text-slate-700";
+      case "reasoning":
+        return "bg-indigo-50 border-l-2 border-indigo-300 text-indigo-700";
+      default:
+        return "bg-slate-50 border-l-2 border-slate-300 text-slate-700";
+    }
+  };
+
+  const timeStr = step.timestamp.toLocaleTimeString("it-IT", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
+  return (
+    <div
+      className={cn(
+        "flex items-start gap-2 p-2 rounded-r text-xs",
+        getStepStyle(step.type)
+      )}
+    >
+      <span className="flex-shrink-0 mt-0.5">{getStepIcon(step.type)}</span>
+      <div className="flex-1 min-w-0">
+        <p className="break-words">{step.message}</p>
+        {step.toolName && (
+          <code className="text-[10px] bg-white/50 px-1 py-0.5 rounded mt-1 inline-block">
+            {step.toolName}
+          </code>
+        )}
+      </div>
+      <span className="text-[10px] opacity-60 flex-shrink-0">{timeStr}</span>
+    </div>
+  );
+}
+
+// Task Progress Panel Component - Mostra il piano di lavoro dell'agente
+function TaskProgressPanel({
+  tasks,
+  currentTaskId,
+}: {
+  tasks: AgentTask[];
+  currentTaskId: string | null;
+}) {
+  if (tasks.length === 0) return null;
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-3">
+      <div className="flex items-center gap-2 mb-3">
+        <ListTodo className="h-4 w-4 text-slate-500" />
+        <span className="text-xs font-semibold text-slate-600">
+          Piano di lavoro
+        </span>
+      </div>
+
+      <div className="space-y-2">
+        {tasks.map((task, index) => (
+          <div
+            key={task.id}
+            className={cn(
+              "flex items-center gap-3 p-2 rounded-lg transition-colors",
+              task.id === currentTaskId && "bg-blue-50 border border-blue-200"
+            )}
+          >
+            <div
+              className={cn(
+                "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium flex-shrink-0",
+                task.status === "completed" && "bg-emerald-500 text-white",
+                task.status === "in_progress" &&
+                  "bg-blue-500 text-white animate-pulse",
+                task.status === "pending" && "bg-slate-200 text-slate-600"
+              )}
+            >
+              {task.status === "completed" ? (
+                <Check className="h-3 w-3" />
+              ) : task.status === "in_progress" ? (
+                <Spinner className="h-3 w-3" ariaLabel="In corso" />
+              ) : (
+                index + 1
+              )}
+            </div>
+
+            <span
+              className={cn(
+                "text-xs flex-1",
+                task.status === "completed" &&
+                  "text-slate-500 line-through",
+                task.status === "in_progress" &&
+                  "text-blue-700 font-medium",
+                task.status === "pending" && "text-slate-700"
+              )}
+            >
+              {task.description}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Quick Chat Loader - Loader semplice per la modalità chat rapida
+function QuickChatLoader() {
+  return (
+    <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+            <MessageSquare className="h-4 w-4 text-emerald-600" />
+          </div>
+          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full animate-pulse" />
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-slate-700">Chat rapida</span>
+            <div className="flex gap-1">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Generazione risposta in corso...
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default ConformityCheckerPanel;

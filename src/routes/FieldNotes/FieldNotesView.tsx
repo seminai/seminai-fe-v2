@@ -121,7 +121,7 @@ export function FieldNotesView({
   const [socketState, setSocketState] = useState<string>("disconnected");
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden h-full">
       {/* Mobile Toggle Tabs - Visibile solo su mobile */}
       <div className="md:hidden flex-shrink-0 border-b border-slate-200 bg-white">
         <div className="px-4 py-3">
@@ -316,7 +316,7 @@ export function FieldNotesView({
 
           {/* Right Sidebar - Chat Panel */}
           <div
-            className="flex-shrink-0 h-full overflow-hidden flex flex-col bg-white border-l border-slate-200"
+            className="flex-shrink-0 self-stretch overflow-hidden flex flex-col bg-white border-l border-slate-200"
             style={{ width: `${rightSidebarWidth}px` }}
           >
             {/* Header unificato */}
@@ -339,7 +339,7 @@ export function FieldNotesView({
             </div>
 
             {/* Chat Content */}
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
               <FieldNoteChatPanel 
                 onFieldNoteSaved={onFieldNoteSaved}
                 onSocketStateChange={setSocketState}
