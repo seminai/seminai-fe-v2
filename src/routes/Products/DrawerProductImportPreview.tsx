@@ -14,137 +14,30 @@ import { AlertCircle, CheckCircle2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import {
   EditableTable,
-  type EditableColumn,
   type EditableTableRef,
 } from "@/components/organism/EditableTable";
-import { productsApiService, type BulkProductPayload } from "@/api/products";
-
-interface ProductImportPreviewRow extends Record<string, unknown> {
-  id: string;
-  name: string;
-  sku: string;
-  registrationNumber: string;
-  quantity: number;
-  unitOfMeasureQuantity: string;
-  ddtCode: string;
-  supplierName: string;
-  invoiceDate: string;
-}
+import { productsApiService } from "@/api/products";
+import type {
+  ImportPreviewError,
+  ProductImportItem,
+  ProductImportSource,
+} from "./productImportPreview.types";
+import {
+  ProductImportColumnsFactory,
+  ProductImportRowBuilder,
+  type ProductImportPreviewRow,
+} from "./productImportPreview.table";
 
 interface DrawerProductImportPreviewProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  products: Array<{
-    productName: string;
-    registrationNumber?: string;
-    quantity: number;
-    quantityUnitOfMeasure: string;
-    supplierName?: string;
-    supplierVat?: string;
-    ddtDate?: string;
-    orderNumber?: string;
-  }>;
+  products: ProductImportItem[];
+  previewErrors?: ImportPreviewError[];
   companyId: string;
   warehouseId?: string;
   warehouseName?: string;
-  importSource: "ddt" | "csv" | "excel";
+  importSource: ProductImportSource;
   onImportCompleted?: () => void;
-}
-
-class ProductImportRowBuilder {
-  public static build(
-    products: DrawerProductImportPreviewProps["products"]
-  ): ProductImportPreviewRow[] {
-    return products.map((product, index) => ({
-      id: `${product.productName}-${product.registrationNumber}-${index}`,
-      name: product.productName,
-      sku: product.registrationNumber || product.productName,
-      registrationNumber: product.registrationNumber || "",
-      quantity: product.quantity,
-      unitOfMeasureQuantity: product.quantityUnitOfMeasure || "kg",
-      ddtCode: product.orderNumber || "",
-      supplierName: product.supplierName || "",
-      invoiceDate: product.ddtDate || new Date().toISOString().split("T")[0],
-    }));
-  }
-
-  public static toBulkPayload(
-    rows: ProductImportPreviewRow[]
-  ): BulkProductPayload[] {
-    return rows.map((row) => ({
-      name: row.name,
-      sku: row.sku || row.registrationNumber || row.name,
-      registrationNumber: row.registrationNumber || undefined,
-      category: "PHYTOSANITARY",
-      stock: {
-        quantity: row.quantity,
-        unitOfMeasureQuantity: row.unitOfMeasureQuantity,
-        type: "IN" as const,
-        ddtCode: row.ddtCode || undefined,
-        ddtDate: row.invoiceDate || undefined,
-        companySupplierName: row.supplierName || undefined,
-      },
-    }));
-  }
-}
-
-class ProductImportColumnsFactory {
-  public static create(): EditableColumn[] {
-    return [
-      {
-        id: "name",
-        title: "Nome Prodotto",
-        type: "text",
-        required: true,
-        width: "200px",
-      },
-      {
-        id: "sku",
-        title: "SKU",
-        type: "text",
-        required: true,
-        width: "120px",
-      },
-      {
-        id: "registrationNumber",
-        title: "N. Registrazione",
-        type: "text",
-        width: "150px",
-      },
-      {
-        id: "quantity",
-        title: "Quantità",
-        type: "number",
-        required: true,
-        width: "100px",
-      },
-      {
-        id: "unitOfMeasureQuantity",
-        title: "Unità",
-        type: "text",
-        required: true,
-        width: "80px",
-      },
-      {
-        id: "supplierName",
-        title: "Fornitore",
-        type: "text",
-        width: "180px",
-      },
-      {
-        id: "ddtCode",
-        title: "Codice DDT",
-        type: "text",
-        width: "120px",
-      },
-      {
-        id: "invoiceDate",
-        title: "Data",
-        type: "text",
-        width: "120px",
-      },
-    ];
-  }
 }
 
 function DrawerProductImportPreview({
@@ -156,6 +49,7 @@ function DrawerProductImportPreview({
   warehouseName,
   importSource,
   onImportCompleted,
+  previewErrors,
 }: DrawerProductImportPreviewProps) {
   const tableRef = useRef<EditableTableRef>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -272,6 +166,8 @@ function DrawerProductImportPreview({
     }
   }, [importSource]);
 
+  const previewWarnings = useMemo(() => previewErrors ?? [], [previewErrors]);
+
   return (
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent
@@ -292,6 +188,25 @@ function DrawerProductImportPreview({
         </SheetHeader>
 
         <div className="flex-1 overflow-hidden flex flex-col px-4 py-4 gap-4">
+          {previewWarnings.length > 0 && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <div className="font-medium">
+                  {previewWarnings.length} problema/i rilevato/i
+                </div>
+                <ul className="mt-2 list-disc pl-5 space-y-1 text-xs">
+                  {previewWarnings.map((warning, index) => (
+                    <li key={`${warning.message}-${index}`}>
+                      {warning.row !== undefined
+                        ? `Riga ${warning.row}: ${warning.message}`
+                        : warning.message}
+                    </li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
           {importError && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />

@@ -24,12 +24,16 @@ export class AuthenticatedHttpClient {
       ...(options.headers ?? {}),
     };
 
-    // Il cookie httpOnly viene inviato automaticamente con credentials: 'include'
-    // Non serve più impostare l'header Authorization
+    // In produzione (cross-origin), i cookie third-party sono bloccati.
+    // Inviamo il token come Bearer header quando disponibile.
+    const token = authService.getAuthToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
 
     const response = await fetch(input, {
       ...options,
-      credentials: "include", // IMPORTANTE: Invia cookie httpOnly automaticamente
+      credentials: "include",
       headers,
     });
 

@@ -153,12 +153,16 @@ export type BulkProductStockPayload = {
   ddtCode?: string;
   ddtDate?: string;
   companySupplierName?: string;
+  addressSupplier?: string;
+  vatNumberSupplier?: string;
+  invoiceCode?: string;
   invoiceDate?: string;
 };
 
 export type BulkProductPayload = {
   name: string;
   sku?: string;
+  barcode?: string;
   category?: string;
   type?: string;
   description?: string;
@@ -207,6 +211,41 @@ export type ImportFromCsvExcelResponse = {
   data?: {
     imported?: number;
     skipped?: number;
+    errors?: Array<{
+      row?: number;
+      message: string;
+    }>;
+  };
+};
+
+export type ImportFromCsvExcelPreviewProduct = {
+  name: string;
+  sku?: string | null;
+  barcode?: string | null;
+  category?: string | null;
+  type?: string | null;
+  description?: string | null;
+  registrationNumber?: string | null;
+  stock?: {
+    quantity?: number | null;
+    unitOfMeasureQuantity?: string | null;
+    price?: number | null;
+    unitOfMeasurePrice?: string | null;
+    type?: "IN" | "OUT" | string | null;
+    ddtCode?: string | null;
+    ddtDate?: string | null;
+    invoiceCode?: string | null;
+    invoiceDate?: string | null;
+    companySupplierName?: string | null;
+    addressSupplier?: string | null;
+    vatNumberSupplier?: string | null;
+  };
+};
+
+export type ImportFromCsvExcelPreviewResponse = {
+  status: "success" | string;
+  data?: {
+    products?: ImportFromCsvExcelPreviewProduct[];
     errors?: Array<{
       row?: number;
       message: string;
@@ -444,6 +483,42 @@ export async function importFromCsvExcel(
   return (await response.json()) as ImportFromCsvExcelResponse;
 }
 
+export async function importFromCsvExcelPreview(
+  payload: ImportFromCsvExcelPayload,
+  baseUrl: string = BASE_URL
+): Promise<ImportFromCsvExcelPreviewResponse> {
+  if (!payload?.companyId) {
+    throw new Error("Company identifier is required");
+  }
+
+  if (!payload?.file) {
+    throw new Error("File is required");
+  }
+
+  const formData = new FormData();
+  formData.append("file", payload.file);
+  formData.append("companyId", payload.companyId);
+
+  if (payload.warehouseId) {
+    formData.append("warehouseId", payload.warehouseId);
+  }
+
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/products/import-from-csv-excel?preview=true`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "CSV/Excel preview failed");
+  }
+
+  return (await response.json()) as ImportFromCsvExcelPreviewResponse;
+}
+
 class ProductsApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -487,6 +562,12 @@ class ProductsApiService {
     payload: ImportFromCsvExcelPayload
   ): Promise<ImportFromCsvExcelResponse> {
     return await importFromCsvExcel(payload, this.baseUrl);
+  }
+
+  public async importFromCsvExcelPreview(
+    payload: ImportFromCsvExcelPayload
+  ): Promise<ImportFromCsvExcelPreviewResponse> {
+    return await importFromCsvExcelPreview(payload, this.baseUrl);
   }
 
   public async downloadTemplate(): Promise<void> {
