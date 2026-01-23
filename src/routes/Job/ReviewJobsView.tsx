@@ -19,6 +19,7 @@ import {
 } from "@/components/organism/JobSelectedDetails";
 import HistoryPanel from "./HistoryPanel";
 import JobGroupCard from "./JobGroupCard";
+import ConformityCheckerPanel from "./ConformityCheckerPanel";
 import { type RightSidebarMode } from "./AllJobsView";
 import {
   Brain,
@@ -35,9 +36,10 @@ import {
   X,
   Eraser,
   Sparkles,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { type JobGroupSummaryItem, type JobHistoryEntry } from "@/api/jobs";
+import { type JobGroupSummaryItem, type JobHistoryEntry, type JobWithRelations } from "@/api/jobs";
 
 type EditableTableRowData = Record<string, unknown>;
 
@@ -88,6 +90,8 @@ interface ReviewJobsViewProps {
   exportConfig?: CustomExportConfig;
   isRightSidebarOpen: boolean;
   onToggleRightSidebar: (open: boolean) => void;
+  selectedJobsForChat?: JobWithRelations[];
+  onConformityConfirmSuccess?: () => void;
 }
 
 export function ReviewJobsView({
@@ -130,6 +134,8 @@ export function ReviewJobsView({
   exportConfig,
   isRightSidebarOpen,
   onToggleRightSidebar,
+  selectedJobsForChat = [],
+  onConformityConfirmSuccess,
 }: ReviewJobsViewProps) {
   if (isMobile) {
     if (!selectedGroupSummary) {
@@ -228,13 +234,13 @@ export function ReviewJobsView({
               variant="ghost"
               size="sm"
               onClick={() => {
-                onRightSidebarModeChange("history");
+                onRightSidebarModeChange("conformity");
                 onMobileHistoryChange(true);
               }}
               className="p-2 h-auto"
-              title="Storico"
+              title="Chat"
             >
-              <Brain className="h-4 w-4" />
+              <MessageSquare className="h-4 w-4" />
             </Button>
           </div>
           {selectedReviewRows.length > 0 && (
@@ -294,7 +300,8 @@ export function ReviewJobsView({
           )}
         </div>
 
-        <Sheet open={mobileHistoryOpen} onOpenChange={onMobileHistoryChange}>
+        {/* Sheet per Details e History */}
+        <Sheet open={mobileHistoryOpen && rightSidebarMode !== "conformity"} onOpenChange={onMobileHistoryChange}>
           <SheetContent
             side="bottom"
             className="h-[70vh] p-0 flex flex-col border-0"
@@ -344,6 +351,58 @@ export function ReviewJobsView({
             </div>
           </SheetContent>
         </Sheet>
+
+        {/* Chat panel - SEMPRE montato per mantenere contesto, visibilità controllata con CSS */}
+        {selectedGroupSummary && (
+          <>
+            {/* Overlay quando chat è aperta */}
+            <div
+              className={cn(
+                "fixed inset-0 z-40 bg-black/50 transition-opacity duration-300",
+                rightSidebarMode === "conformity" && mobileHistoryOpen
+                  ? "opacity-100 pointer-events-auto"
+                  : "opacity-0 pointer-events-none"
+              )}
+              onClick={() => onMobileHistoryChange(false)}
+            />
+
+            {/* Chat container - sempre renderizzato, translate per mostrare/nascondere */}
+            <div
+              className={cn(
+                "fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-2xl border-t border-slate-200 flex flex-col transition-transform duration-300 ease-out",
+                rightSidebarMode === "conformity" && mobileHistoryOpen
+                  ? "translate-y-0"
+                  : "translate-y-full"
+              )}
+              style={{ height: "70vh" }}
+            >
+              {/* Header con handle per chiudere */}
+              <div className="flex-shrink-0 p-3 bg-white rounded-t-2xl border-b border-slate-100">
+                <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-2" />
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-semibold">Chat Verifica</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onMobileHistoryChange(false)}
+                    className="h-7 w-7 p-0"
+                    title="Chiudi"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <ConformityCheckerPanel
+                  jobGroupId={selectedGroupSummary.jobId}
+                  selectedJobs={selectedJobsForChat}
+                  onConfirmSuccess={onConformityConfirmSuccess}
+                  onClose={() => onMobileHistoryChange(false)}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
     );
   }
