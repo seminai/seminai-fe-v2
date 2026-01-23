@@ -389,7 +389,8 @@ class DosageStrategyOptionsFactory {
 
   public static buildCurlSnippet(
     strategy: DosageStrategy,
-    outStockLimiter: boolean
+    outStockLimiter: boolean,
+    loadWarehouse: boolean = false
   ): string {
     return [
       'curl -X POST "https://<host>/dosage-agent/start-job" \\',
@@ -405,14 +406,14 @@ class DosageStrategyOptionsFactory {
       '        "registrationNumber": "17754",',
       '        "quantity": 50,',
       '        "quantityUnitOfMeasure": "L",',
-      '        "loadWarehouse": true',
+      `        "loadWarehouse": ${loadWarehouse}`,
       "      },",
       "      {",
       '        "productName": "FORUM R WDG",',
       '        "registrationNumber": "11693",',
       '        "quantity": 20,',
       '        "quantityUnitOfMeasure": "kg",',
-      '        "loadWarehouse": true',
+      `        "loadWarehouse": ${loadWarehouse}`,
       "      }",
       "    ],",
       '    "unitOfProduction": [',
@@ -872,6 +873,7 @@ export default function DosageManager() {
   const [searchQuery, setSearchQuery] = useState("");
   const [strategy, setStrategy] = useState<DosageStrategy>("avg");
   const [outStockLimiter, setOutStockLimiter] = useState<boolean>(true);
+  const [loadWarehouse, setLoadWarehouse] = useState<boolean>(false);
   const [orchestratorSettings, setOrchestratorSettings] =
     useState<DosageOrchestratorSettings>(() =>
       OrchestratorDefaultsFactory.create()
@@ -2045,9 +2047,12 @@ export default function DosageManager() {
           return selectedProductIds.includes(product._internalId);
         })
         .map((product) => {
-          // Remove _internalId before sending to API
+          // Remove _internalId before sending to API and apply global loadWarehouse setting
           const { _internalId, ...productWithoutId } = product;
-          return productWithoutId;
+          return {
+            ...productWithoutId,
+            loadWarehouse,
+          };
         });
 
       // Prepare units of production
@@ -2125,6 +2130,7 @@ export default function DosageManager() {
       setSelectedImportMethod(null);
       setStrategy("avg");
       setOutStockLimiter(true);
+      setLoadWarehouse(false);
       setOrchestratorSettings(OrchestratorDefaultsFactory.create());
       setSelectedUnitIds([]);
       setSelectedProductIds([]);
@@ -2228,6 +2234,8 @@ export default function DosageManager() {
             selectedStrategyOption={selectedStrategyOption}
             outStockLimiter={outStockLimiter}
             setOutStockLimiter={setOutStockLimiter}
+            loadWarehouse={loadWarehouse}
+            setLoadWarehouse={setLoadWarehouse}
             orchestratorSettings={orchestratorSettings}
             setOrchestratorSettings={setOrchestratorSettings}
             orchestratorDatasets={orchestratorDatasets}

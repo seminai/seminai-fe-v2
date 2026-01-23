@@ -118,6 +118,8 @@ interface ManageSectionProps {
   };
   outStockLimiter: boolean;
   setOutStockLimiter: Dispatch<SetStateAction<boolean>>;
+  loadWarehouse: boolean;
+  setLoadWarehouse: Dispatch<SetStateAction<boolean>>;
   renderEmptyProductsPlaceholder: () => ReactElement;
   orchestratorSettings: DosageOrchestratorSettings;
   setOrchestratorSettings: Dispatch<SetStateAction<DosageOrchestratorSettings>>;
@@ -195,6 +197,8 @@ export function ManageSection({
   selectedStrategyOption,
   outStockLimiter,
   setOutStockLimiter,
+  loadWarehouse,
+  setLoadWarehouse,
   renderEmptyProductsPlaceholder,
   orchestratorSettings,
   setOrchestratorSettings,
@@ -329,9 +333,10 @@ export function ManageSection({
               setProductSources(new Map());
               onResetImportMethod();
               setShowAutomaticCompilation(false);
-              // Reset strategia e outStockLimiter ai valori di default
+              // Reset strategia, outStockLimiter e loadWarehouse ai valori di default
               setStrategy("avg");
               setOutStockLimiter(true);
+              setLoadWarehouse(false);
               // Reset orchestrator ai valori di default
               setOrchestratorSettings(OrchestratorDefaultsFactory.create());
               // Reset date di trattamento
@@ -688,6 +693,42 @@ export function ManageSection({
                 {outStockLimiter
                   ? "Il sistema tutela lo stock caricato, evitando di andare sotto le quantità disponibili in magazzino."
                   : "Il sistema esegue un calcolo preciso dei dosaggi, permettendo di andare anche sotto le quantità disponibili in magazzino."}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Load Warehouse Section */}
+        <div
+          className={
+            selectedCompanyIds.length > 0
+              ? "rounded-2xl border border-neutral-200 bg-white p-4 md:p-6 space-y-3"
+              : "rounded-2xl border border-neutral-200 bg-white p-4 md:p-6 space-y-3 pointer-events-none opacity-50"
+          }
+        >
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="loadWarehouse"
+              checked={loadWarehouse}
+              onCheckedChange={(checked) =>
+                setLoadWarehouse(checked === true)
+              }
+              disabled={selectedCompanyIds.length === 0}
+              className="mt-0.5"
+            />
+            <div className="flex-1 space-y-1">
+              <Label
+                htmlFor="loadWarehouse"
+                className="text-base font-medium text-neutral-900 cursor-pointer"
+              >
+                {loadWarehouse
+                  ? "Carica prodotti in magazzino (attivo)"
+                  : "Carica prodotti in magazzino (disattivo)"}
+              </Label>
+              <p className="text-sm text-neutral-600 leading-relaxed">
+                {loadWarehouse
+                  ? "I prodotti importati verranno caricati nel magazzino aziendale. Attiva questa opzione se stai importando prodotti da DDT."
+                  : "I prodotti importati non verranno caricati nel magazzino. Disattiva questa opzione per calcoli dosaggio senza modificare lo stock."}
               </p>
             </div>
           </div>

@@ -122,7 +122,14 @@ export default function Auth() {
         password: loginPassword,
       });
       toast.success(`Benvenuto ${result.data.user.name}`);
-      navigate("/dashboard");
+      // Refetch meData per triggerare l'useEffect che gestisce la navigazione
+      // Questo è più affidabile su Safari mobile rispetto a navigate() diretto
+      await refetchMe();
+      // Fallback: se dopo il refetch non siamo stati reindirizzati, forza la navigazione
+      // Usa setTimeout per dare tempo a Safari di processare il cambio di stato
+      setTimeout(() => {
+        navigate("/dashboard", { replace: true });
+      }, 100);
     } catch (error: unknown) {
       console.error("❌ Login failed:", error);
       const message =
