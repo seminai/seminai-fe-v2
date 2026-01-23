@@ -1,4 +1,3 @@
-import React from "react";
 import type { EditableColumn } from "@/components/organism/EditableTable";
 import type { BulkProductPayload } from "@/api/products";
 import type { ProductImportItem } from "./productImportPreview.types";
