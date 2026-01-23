@@ -1116,6 +1116,15 @@
     "estimatedYield": { "min": 8000, "max": 15000 }
   },
   {
+    "code": "ALLIU_ASC",
+    "species": "Allium ascalonicum",
+    "cropType": "scalogno",
+    "sowingPeriod": { "minDate": "15-10", "maxDate": "15-04" },
+    "floweringPeriod": { "minDate": "15-05", "maxDate": "31-06" },
+    "harvestPeriod": { "minDate": "15-06", "maxDate": "31-08" },
+    "estimatedYield": { "min": 20000, "max": 40000 }
+  },
+  {
     "code": "APIUM_GRA_DUL",
     "species": "Apium graveolens var. dulce",
     "cropType": "sedano",
