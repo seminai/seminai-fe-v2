@@ -262,6 +262,18 @@ class ProductionUnitAggregator {
   }
 }
 
+class ImportedVarietyResolver {
+  public resolve(unit: ExtractedProductionUnit): string {
+    return (
+      unit.variety ??
+      unit.cycles?.[0]?.variety ??
+      unit.cropName ??
+      unit.cropType ??
+      unit.name
+    );
+  }
+}
+
 type AggregatedUnit = {
   baseId: string;
   name: string;
@@ -361,6 +373,7 @@ export const ProductionUnitCsvImporter: React.FC<
 
     const warnings: string[] = [];
     const fieldMatcher = new FieldMatcher(selectedCompany.fields);
+    const varietyResolver = new ImportedVarietyResolver();
 
     const parseDateSafe = (value?: string | null): Date | null => {
       if (!value) return null;
@@ -434,13 +447,14 @@ export const ProductionUnitCsvImporter: React.FC<
 
         const startDate = parseDateSafe(pu.startDate ?? null);
         const endDate = parseDateSafe(pu.endDate ?? null);
+        const resolvedVariety = varietyResolver.resolve(pu);
 
         return {
           id: `import-${Date.now()}-${index}`,
           name: pu.name,
           cropName: pu.cropName ?? pu.name,
           cropType: pu.cropType ?? pu.cropName ?? pu.name,
-          variety: pu.variety ?? pu.cropType ?? pu.cropName ?? pu.name,
+          variety: resolvedVariety,
           protocoll: pu.protocoll ?? "Non specificato",
           protectionStructure: pu.protectionStructure ?? "Non specificato",
           startDate,
