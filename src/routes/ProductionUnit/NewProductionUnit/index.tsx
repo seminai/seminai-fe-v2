@@ -1515,6 +1515,7 @@ export default function NewProductionUnit(): React.ReactElement {
                   setProductionUnits((prev) =>
                     prev.map((u) => (u.id === editingUnitId ? unit : u))
                   );
+                  setEditingUnitId(null);
                 } else {
                   // Aggiungi l'unità all'array
                   setProductionUnits((prev) => [...prev, unit]);
