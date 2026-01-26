@@ -172,8 +172,8 @@ export function FieldNoteChatPanel({
 
   return (
     <div className="h-full flex flex-col bg-white overflow-hidden">
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <ScrollArea className="h-full">
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+        <ScrollArea className="flex-1">
           <div className="p-4 space-y-4">
             {messages.length === 0 && <EmptyState />}
 

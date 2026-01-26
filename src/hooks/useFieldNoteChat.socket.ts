@@ -7,7 +7,7 @@ import {
   type SocketConnectionState,
 } from "@/services/fieldNoteSocket";
 import type { AgentToolCall } from "@/api/field-notes";
-import type { ChatMessage } from "./useFieldNoteChat.types";
+import type { ChatMessage, ToolCallProgress } from "./useFieldNoteChat.types";
 import {
   appendMessage,
   buildAssistantMessage,
@@ -19,6 +19,7 @@ interface UseFieldNoteChatSocketOptions {
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   setPendingApproval: (toolCall: AgentToolCall | null) => void;
   setIsProcessing: (value: boolean) => void;
+  setToolCalls: Dispatch<SetStateAction<ToolCallProgress[]>>;
   scrollToBottom: () => void;
   thinkingBuffer: MutableRefObject<string>;
   getNextMessageId: (prefix: string) => string;
@@ -30,6 +31,7 @@ export function useFieldNoteChatSocket({
   setMessages,
   setPendingApproval,
   setIsProcessing,
+  setToolCalls,
   scrollToBottom,
   thinkingBuffer,
   getNextMessageId,
@@ -68,6 +70,11 @@ export function useFieldNoteChatSocket({
         }
         case "tool_call": {
           const toolName = event.toolCall?.name || "unknown";
+          // Mark previous tool as completed and add new one
+          setToolCalls((prev) => {
+            const updated = prev.map((t) => ({ ...t, completed: true }));
+            return [...updated, { name: toolName, completed: false }];
+          });
           setMessages((prev) =>
             updateLastAssistantMessage(prev, (last) => ({
               ...last,
@@ -82,6 +89,9 @@ export function useFieldNoteChatSocket({
           if (event.toolCall?.id) {
             setPendingApproval(event.toolCall as AgentToolCall);
           }
+
+          // Mark all tools as completed
+          setToolCalls((prev) => prev.map((t) => ({ ...t, completed: true })));
 
           setMessages((prev) =>
             updateLastAssistantMessage(prev, (last) => ({
@@ -117,6 +127,8 @@ export function useFieldNoteChatSocket({
 
           setIsProcessing(false);
           thinkingBuffer.current = "";
+          // Reset tool calls on completion
+          setToolCalls([]);
           onFieldNoteSavedRef.current?.();
 
           if (event.message) {
@@ -141,6 +153,8 @@ export function useFieldNoteChatSocket({
           );
           setIsProcessing(false);
           thinkingBuffer.current = "";
+          // Reset tool calls on error
+          setToolCalls([]);
           toast.error("Errore durante elaborazione", {
             description: errorMessage,
           });
@@ -168,6 +182,7 @@ export function useFieldNoteChatSocket({
       setMessages,
       setPendingApproval,
       setIsProcessing,
+      setToolCalls,
       scrollToBottom,
       thinkingBuffer,
     ]
