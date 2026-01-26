@@ -55,6 +55,57 @@ import type {
 
 const NO_CULTIVAR_VALUE = "__cultivar_none__";
 
+class ProductionUnitFormStateFactory {
+  private readonly allocatedFields: Map<string, number>;
+  private readonly productionUnits: ProductionUnitInput[];
+
+  constructor(
+    allocatedFields: Map<string, number>,
+    productionUnits: ProductionUnitInput[]
+  ) {
+    this.allocatedFields = allocatedFields;
+    this.productionUnits = productionUnits;
+  }
+
+  public build(editingUnitId?: string): ProductionUnitInput {
+    if (editingUnitId) {
+      const unitToEdit = this.productionUnits.find(
+        (unit) => unit.id === editingUnitId
+      );
+      if (unitToEdit) {
+        return this.buildFromExisting(unitToEdit);
+      }
+    }
+
+    return this.buildNew();
+  }
+
+  private buildFromExisting(unit: ProductionUnitInput): ProductionUnitInput {
+    return {
+      ...unit,
+      allocations: new Map(this.allocatedFields),
+    };
+  }
+
+  private buildNew(): ProductionUnitInput {
+    return {
+      id: `pu-${Date.now()}`,
+      name: "",
+      cropCode: "",
+      cultivarId: null,
+      totalAreaHa: null,
+      allocations: new Map(this.allocatedFields),
+      protectionStructure: "",
+      occupazione: "",
+      destinazioneDiUso: "",
+      acquaTotalePeridoL: 0,
+      customSowingDate: null,
+      customFloweringDate: null,
+      customHarvestingDate: null,
+    };
+  }
+}
+
 type SingleProductionUnitFormProps = {
   cropVarieties: CropVariety[];
   isLoadingVarieties: boolean;
@@ -98,38 +149,18 @@ export const SingleProductionUnitForm: React.FC<
   onDeleteUnit,
   isCreating,
 }) => {
-  const [formData, setFormData] = useState<ProductionUnitInput>(() => {
-    if (editingUnitId) {
-      const unitToEdit = productionUnits.find((u) => u.id === editingUnitId);
-      if (unitToEdit) {
-        // Assicuriamoci che allocations usi la Map aggiornata dallo step 1
-        return {
-          ...unitToEdit,
-          allocations: new Map(allocatedFields),
-        };
-      }
-    }
-    return {
-      id: `pu-${Date.now()}`,
-      name: "",
-      cropCode: "",
-      cultivarId: null,
-      totalAreaHa: null,
-      allocations: new Map(allocatedFields),
-      protectionStructure: "",
-      occupazione: "",
-      destinazioneDiUso: "",
-      acquaTotalePeridoL: 0,
-      customSowingDate: null,
-      customFloweringDate: null,
-      customHarvestingDate: null,
-    };
-  });
+  const formStateFactory = useMemo(
+    () => new ProductionUnitFormStateFactory(allocatedFields, productionUnits),
+    [allocatedFields, productionUnits]
+  );
+  const [formData, setFormData] = useState<ProductionUnitInput>(() =>
+    formStateFactory.build(editingUnitId)
+  );
 
   const [cropSearchQuery, setCropSearchQuery] = useState("");
   const [cultivarSearchQuery, setCultivarSearchQuery] = useState("");
   const [isNameManuallyEdited, setIsNameManuallyEdited] = useState(
-    !!editingUnitId
+    Boolean(editingUnitId)
   );
   const [harvestDateManuallyEdited, setHarvestDateManuallyEdited] =
     useState(false);
@@ -138,6 +169,15 @@ export const SingleProductionUnitForm: React.FC<
   );
 
   const selectedCrop = cropVarieties.find((v) => v.code === formData.cropCode);
+
+  useEffect(() => {
+    setFormData(formStateFactory.build(editingUnitId));
+    setIsNameManuallyEdited(Boolean(editingUnitId));
+    setCropSearchQuery("");
+    setCultivarSearchQuery("");
+    setHarvestDateManuallyEdited(false);
+    previousCultivarIdRef.current = null;
+  }, [editingUnitId, formStateFactory]);
 
   const filteredCropVarieties = useMemo(() => {
     if (!cropSearchQuery.trim()) return cropVarieties;

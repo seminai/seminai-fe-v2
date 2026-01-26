@@ -2195,147 +2195,8 @@ export default function JobPage() {
   };
 
   // Colonne per la tabella editabile (vista "Tutte")
+  // Le prime 7 colonne sono visibili di default
   const columns: EditableColumn[] = [
-    {
-      id: "jobCode",
-      title: "Codice Operazione",
-      type: "text",
-      width: "150px",
-      readOnly: true,
-      render: (value) => (
-        <Badge variant="outline" className="font-mono">
-          {value as string}
-        </Badge>
-      ),
-    },
-
-    {
-      id: "isVerified",
-      title: "Stato Verifica",
-      type: "select",
-      width: "220px",
-      readOnly: true, // Lo stato non può essere modificato manualmente
-      options: ["Verificato", "Non Verificato", "Conformità non verificata"],
-      onValueChange: ({ value }) => {
-        // Gestisce i 3 stati possibili
-        if (value === "Conformità non verificata") {
-          return {
-            _isVerifiedBoolean: false,
-            _conformityChecked: false,
-          };
-        }
-        return {
-          _isVerifiedBoolean: value === "Verificato",
-          _conformityChecked: true,
-        };
-      },
-      render: (value) => {
-        const stringValue = value as string;
-        const isVerified = stringValue === "Verificato";
-        const isConformityNotChecked =
-          stringValue === "Conformità non verificata";
-
-        if (isConformityNotChecked) {
-          return (
-            <Badge
-              variant="outline"
-              className="bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300"
-            >
-              {stringValue}
-            </Badge>
-          );
-        }
-
-        return (
-          <Badge
-            variant={isVerified ? "default" : "destructive"}
-            className={
-              isVerified
-                ? "bg-green-500 hover:bg-green-600 text-white"
-                : "bg-red-500 hover:bg-red-600 text-white animate-pulse"
-            }
-          >
-            {stringValue}
-          </Badge>
-        );
-      },
-    },
-    {
-      id: "dateOfOpeation",
-      title: "Data Operazione",
-      type: "date",
-      width: "150px",
-      readOnly: false,
-      required: true,
-      render: (value) => {
-        if (!value) return "-";
-        const date = value instanceof Date ? value : new Date(value as string);
-        return date.toLocaleDateString("it-IT");
-      },
-    },
-
-    {
-      id: "companyName",
-      title: "Azienda",
-      type: "select",
-      width: "200px",
-      readOnly: false,
-      required: true,
-      getOptions: () => companySelectOptions,
-      placeholder: "Seleziona azienda...",
-      enableSearch: true,
-      searchPlaceholder: "Cerca azienda...",
-      emptyStateMessage: "Nessuna azienda trovata",
-      onValueChange: ({ value }) => {
-        const stringValue = String(value);
-
-        // Se il valore è vuoto, resetta anche l'unità produttiva
-        if (!stringValue || stringValue.trim() === "") {
-          return {
-            companyName: "",
-            _companyId: "",
-            _selectedCompanyForPU: "",
-            _productionUnitId: "",
-            productionUnitName: "",
-            cropName: "",
-            cropType: "",
-          };
-        }
-
-        // Cerca l'azienda selezionata
-        const company = companySelectOptions.find(
-          (c) => c.value === stringValue
-        );
-
-        if (company) {
-          return {
-            companyName: company.companyName,
-            _companyId: company.companyId,
-            _selectedCompanyForPU: company.companyId,
-            // Reset unità produttiva quando cambia azienda
-            _productionUnitId: "",
-            productionUnitName: "",
-            cropName: "",
-            cropType: "",
-          };
-        }
-
-        return {
-          companyName: stringValue,
-          _companyId: "",
-          _selectedCompanyForPU: "",
-        };
-      },
-      render: (value) => {
-        const name = value as string | undefined;
-        return name ? (
-          <span>{name}</span>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        );
-      },
-    },
-
     {
       id: "productionUnitName",
       title: "Unità Produttiva",
@@ -2454,13 +2315,80 @@ export default function JobPage() {
         return <span className="text-muted-foreground">-</span>;
       },
     },
-
     {
-      id: "cropName",
-      title: "Coltura",
-      type: "text",
-      width: "150px",
+      id: "companyName",
+      title: "Azienda",
+      type: "select",
+      width: "200px",
+      readOnly: false,
+      required: true,
+      getOptions: () => companySelectOptions,
+      placeholder: "Seleziona azienda...",
+      enableSearch: true,
+      searchPlaceholder: "Cerca azienda...",
+      emptyStateMessage: "Nessuna azienda trovata",
+      onValueChange: ({ value }) => {
+        const stringValue = String(value);
+
+        // Se il valore è vuoto, resetta anche l'unità produttiva
+        if (!stringValue || stringValue.trim() === "") {
+          return {
+            companyName: "",
+            _companyId: "",
+            _selectedCompanyForPU: "",
+            _productionUnitId: "",
+            productionUnitName: "",
+            cropName: "",
+            cropType: "",
+          };
+        }
+
+        // Cerca l'azienda selezionata
+        const company = companySelectOptions.find(
+          (c) => c.value === stringValue
+        );
+
+        if (company) {
+          return {
+            companyName: company.companyName,
+            _companyId: company.companyId,
+            _selectedCompanyForPU: company.companyId,
+            // Reset unità produttiva quando cambia azienda
+            _productionUnitId: "",
+            productionUnitName: "",
+            cropName: "",
+            cropType: "",
+          };
+        }
+
+        return {
+          companyName: stringValue,
+          _companyId: "",
+          _selectedCompanyForPU: "",
+        };
+      },
+      render: (value) => {
+        const name = value as string | undefined;
+        return name ? (
+          <span>{name}</span>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        );
+      },
+    },
+    {
+      id: "treatedSurface",
+      title: "Superficie Trattata (ha)",
+      type: "number",
+      width: "180px",
       readOnly: true,
+      render: (value) => {
+        const numValue = Number(value);
+        if (isNaN(numValue) || numValue === 0) {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        return <span>{numValue.toFixed(2)}</span>;
+      },
     },
     {
       id: "productRegistrationNumber",
@@ -2509,11 +2437,11 @@ export default function JobPage() {
       },
       render: (_value, row) => {
         const name = row.productName as string | undefined;
-        return name ? (
-          <span>{name}</span>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        );
+        const registrationNumber = row.productRegistrationNumber as string | undefined;
+        if (!name || !registrationNumber || name.trim() === "" || registrationNumber.trim() === "") {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        return <span>{name}</span>;
       },
     },
     {
@@ -2525,8 +2453,10 @@ export default function JobPage() {
       required: true,
       render: (value) => {
         const numValue = Number(value);
-        if (isNaN(numValue)) return "-";
-        return numValue.toFixed(3);
+        if (isNaN(numValue) || numValue === 0) {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        return <span>{numValue.toFixed(3)}</span>;
       },
     },
     {
@@ -2542,12 +2472,112 @@ export default function JobPage() {
         { label: "G", value: "G" },
       ],
       placeholder: "UM",
+      render: (value) => {
+        if (!value || value === "" || value === null || value === undefined) {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        return <span>{value as string}</span>;
+      },
     },
     {
-      id: "treatedSurface",
-      title: "Superficie Trattata (ha)",
-      type: "number",
-      width: "180px",
+      id: "principioAttivo",
+      title: "Principio Attivo",
+      type: "text",
+      width: "200px",
+      readOnly: true,
+      render: (value) => {
+        const principioAttivo = value as string | null | undefined;
+        if (!principioAttivo || principioAttivo.trim() === "") {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        return (
+          <span className="text-sm font-medium text-slate-700">
+            {principioAttivo}
+          </span>
+        );
+      },
+    },
+    {
+      id: "jobCode",
+      title: "Codice Operazione",
+      type: "text",
+      width: "150px",
+      readOnly: true,
+      render: (value) => (
+        <Badge variant="outline" className="font-mono">
+          {value as string}
+        </Badge>
+      ),
+    },
+    {
+      id: "isVerified",
+      title: "Stato Verifica",
+      type: "select",
+      width: "220px",
+      readOnly: true, // Lo stato non può essere modificato manualmente
+      options: ["Verificato", "Non Verificato", "Conformità non verificata"],
+      onValueChange: ({ value }) => {
+        // Gestisce i 3 stati possibili
+        if (value === "Conformità non verificata") {
+          return {
+            _isVerifiedBoolean: false,
+            _conformityChecked: false,
+          };
+        }
+        return {
+          _isVerifiedBoolean: value === "Verificato",
+          _conformityChecked: true,
+        };
+      },
+      render: (value) => {
+        const stringValue = value as string;
+        const isVerified = stringValue === "Verificato";
+        const isConformityNotChecked =
+          stringValue === "Conformità non verificata";
+
+        if (isConformityNotChecked) {
+          return (
+            <Badge
+              variant="outline"
+              className="bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300"
+            >
+              {stringValue}
+            </Badge>
+          );
+        }
+
+        return (
+          <Badge
+            variant={isVerified ? "default" : "destructive"}
+            className={
+              isVerified
+                ? "bg-green-500 hover:bg-green-600 text-white"
+                : "bg-red-500 hover:bg-red-600 text-white animate-pulse"
+            }
+          >
+            {stringValue}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: "dateOfOpeation",
+      title: "Data Operazione",
+      type: "date",
+      width: "150px",
+      readOnly: false,
+      required: true,
+      render: (value) => {
+        if (!value) return "-";
+        const date = value instanceof Date ? value : new Date(value as string);
+        return date.toLocaleDateString("it-IT");
+      },
+    },
+    {
+      id: "cropName",
+      title: "Coltura",
+      type: "text",
+      width: "150px",
       readOnly: true,
     },
     {
@@ -2559,9 +2589,11 @@ export default function JobPage() {
       render: (_, row) => {
         const quantity = Number(row.quantity ?? 0);
         const treatedSurface = Number(row.treatedSurface ?? 0);
-        if (treatedSurface === 0) return "-";
+        if (treatedSurface === 0 || quantity === 0) {
+          return <span className="text-muted-foreground">-</span>;
+        }
         const quantityPerHa = quantity / treatedSurface;
-        return quantityPerHa.toFixed(4);
+        return <span>{quantityPerHa.toFixed(4)}</span>;
       },
     },
     {
@@ -2595,22 +2627,6 @@ export default function JobPage() {
       type: "text",
       width: "200px",
       readOnly: true,
-    },
-    {
-      id: "principioAttivo",
-      title: "Principio Attivo",
-      type: "text",
-      width: "200px",
-      readOnly: true,
-      render: (value) => {
-        const principioAttivo = value as string | null | undefined;
-        if (!principioAttivo) return "-";
-        return (
-          <span className="text-sm font-medium text-slate-700">
-            {principioAttivo}
-          </span>
-        );
-      },
     },
     {
       id: "doseEtichetta",
@@ -2914,10 +2930,16 @@ export default function JobPage() {
       readOnly: false,
       render: (value, row) => {
         const numValue = Number(value);
-        const formattedValue = isNaN(numValue) ? "-" : numValue.toFixed(3);
+        if (isNaN(numValue) || numValue === 0) {
+          return (
+            <span className="font-mono text-sm text-muted-foreground">
+              - {String(row.unitOfMeasureQuantity || "")}
+            </span>
+          );
+        }
         return (
           <span className="font-mono text-sm">
-            {formattedValue} {String(row.unitOfMeasureQuantity)}
+            {numValue.toFixed(3)} {String(row.unitOfMeasureQuantity || "")}
           </span>
         );
       },
@@ -2928,6 +2950,13 @@ export default function JobPage() {
       type: "number",
       width: "100px",
       readOnly: true,
+      render: (value) => {
+        const numValue = Number(value);
+        if (isNaN(numValue) || numValue === 0) {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        return <span>{numValue.toFixed(2)}</span>;
+      },
     },
     {
       id: "quantityPerHa",
@@ -2938,7 +2967,9 @@ export default function JobPage() {
       render: (_value, row) => {
         const quantity = Number(row.quantity ?? 0);
         const treatedSurface = Number(row.treatedSurface ?? 0);
-        if (treatedSurface === 0) return "-";
+        if (treatedSurface === 0 || quantity === 0) {
+          return <span className="font-mono text-sm text-muted-foreground">-</span>;
+        }
         const quantityPerHa = quantity / treatedSurface;
         return (
           <span className="font-mono text-sm">{quantityPerHa.toFixed(4)}</span>
