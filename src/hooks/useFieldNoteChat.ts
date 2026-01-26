@@ -5,7 +5,9 @@ import { fieldNoteChatApiService } from "@/api/field-note-chat";
 import type { AgentToolCall } from "@/api/field-notes";
 import type {
   ChatMessage,
+  DeepThinkingState,
   SendMessageOptions,
+  ToolCallProgress,
   UseFieldNoteChatOptions,
   UseFieldNoteChatResult,
 } from "./useFieldNoteChat.types";
@@ -20,7 +22,9 @@ import { useFieldNoteChatSocket } from "./useFieldNoteChat.socket";
 
 export type {
   ChatMessage,
+  DeepThinkingState,
   SendMessageOptions,
+  ToolCallProgress,
   UseFieldNoteChatOptions,
 } from "./useFieldNoteChat.types";
 
@@ -33,6 +37,7 @@ export function useFieldNoteChat(
     null
   );
   const [isProcessing, setIsProcessing] = useState(false);
+  const [toolCalls, setToolCalls] = useState<ToolCallProgress[]>([]);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const thinkingBuffer = useRef("");
   const messageIdCounter = useRef(0);
@@ -49,6 +54,7 @@ export function useFieldNoteChat(
 
   const clearMessages = useCallback(() => {
     setMessages([]);
+    setToolCalls([]);
     thinkingBuffer.current = "";
     messageIdCounter.current = 0;
   }, []);
@@ -58,11 +64,23 @@ export function useFieldNoteChat(
     setMessages,
     setPendingApproval,
     setIsProcessing,
+    setToolCalls,
     scrollToBottom,
     thinkingBuffer,
     getNextMessageId,
     onFieldNoteSaved: hookOptions?.onFieldNoteSaved,
   });
+
+  // Compute deep thinking state from current messages and processing state
+  // Get thinking from the last assistant message if it's in thinking status
+  const lastAssistantMessage = [...messages].reverse().find(
+    (m) => m.role === "assistant" && m.status === "thinking"
+  );
+  const deepThinking: DeepThinkingState = {
+    thinking: lastAssistantMessage?.thinking,
+    toolCalls,
+    isActive: isProcessing,
+  };
 
   const applyApprovalResponse = useCallback(
     (responseMessage?: string) => {
@@ -356,6 +374,7 @@ export function useFieldNoteChat(
     pendingApproval,
     isProcessing,
     messagesEndRef,
+    deepThinking,
     sendMessage,
     approve,
     reject,

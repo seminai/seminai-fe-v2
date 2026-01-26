@@ -24,17 +24,13 @@ import {
   WifiOff,
   Clock,
   Zap,
-  Brain,
-  Wrench,
-  Search,
-  ListTodo,
   StopCircle,
   Mic,
   Square,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { JobWithRelations } from "@/api/jobs";
-import type { PendingAction, AgentTask } from "@/api/job-verification-agent";
+import type { PendingAction } from "@/api/job-verification-agent";
 import {
   conformityCheckerApiService,
   type ConformityCheckResult,
@@ -45,7 +41,6 @@ import {
 import {
   useJobVerificationAgent,
   type JobVerificationMessage,
-  type ThinkingStep,
 } from "@/hooks/useJobVerificationAgent";
 import { audioToTextApiService } from "@/api/audio-to-text";
 import { AudioRecorderService } from "@/routes/FieldNotes/FieldNoteAudioRecorder";
@@ -54,6 +49,7 @@ import {
   type DosageLogEvent,
   type SocketConnectionState,
 } from "@/services/dosageJobSocket";
+import { JobDeepThinkingBars } from "./JobDeepThinkingBars";
 
 interface ConformityCheckerPanelProps {
   jobGroupId: string;
@@ -461,52 +457,50 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
     <div className="h-full flex flex-col overflow-hidden">
       <div className="flex-1 min-h-0 flex flex-col">
         {isIdle && (
-          <ScrollArea className="h-full">
-            <div className="p-4 space-y-4">
-              {agentMessages.length === 0 && !isAgentLoading && <JobVerificationEmptyState />}
+          <div className="flex flex-col h-full min-h-0">
+            {/* Sticky Deep Thinking Bars - solo con deepThinking */}
+            {deepThinking && (
+              <JobDeepThinkingBars
+                thinkingSteps={thinkingSteps}
+                tasks={currentTasks}
+                currentTaskId={currentTaskId}
+                isLoading={isAgentLoading}
+              />
+            )}
 
-              {/* Task Progress - solo con deepThinking */}
-              {deepThinking && currentTasks.length > 0 && (
-                <TaskProgressPanel tasks={currentTasks} currentTaskId={currentTaskId} />
-              )}
+            <ScrollArea className="flex-1 min-h-0">
+              <div className="p-4 space-y-4">
+                {agentMessages.length === 0 && !isAgentLoading && <JobVerificationEmptyState />}
 
-              {/* Thinking Panel - solo con deepThinking */}
-              {deepThinking && (thinkingSteps.length > 0 || isAgentLoading) && (
-                <ThinkingPanel
-                  steps={thinkingSteps}
-                  isLoading={isAgentLoading}
-                  thinkingEndRef={thinkingEndRef}
-                />
-              )}
+                {/* Chat Rapida Loader - quando deepThinking è false */}
+                {!deepThinking && isAgentLoading && (
+                  <QuickChatLoader />
+                )}
 
-              {/* Chat Rapida Loader - quando deepThinking è false */}
-              {!deepThinking && isAgentLoading && (
-                <QuickChatLoader />
-              )}
-
-              {agentMessages.map((message) => (
-                <JobVerificationMessageBubble
-                  key={message.id}
-                  message={message}
-                />
-              ))}
-              {pendingAction && (
-                <PendingActionCard
-                  pendingAction={pendingAction}
-                  isBusy={isAgentLoading}
-                  onApprove={handleApprovePendingAction}
-                  onReject={handleRejectPendingAction}
-                />
-              )}
-              {isAgentLoading && deepThinking && thinkingSteps.length === 0 && (
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <Spinner className="h-3 w-3" ariaLabel="Agente attivo" />
-                  L'agente sta elaborando...
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
+                {agentMessages.map((message) => (
+                  <JobVerificationMessageBubble
+                    key={message.id}
+                    message={message}
+                  />
+                ))}
+                {pendingAction && (
+                  <PendingActionCard
+                    pendingAction={pendingAction}
+                    isBusy={isAgentLoading}
+                    onApprove={handleApprovePendingAction}
+                    onReject={handleRejectPendingAction}
+                  />
+                )}
+                {isAgentLoading && !deepThinking && (
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <Spinner className="h-3 w-3" ariaLabel="Agente attivo" />
+                    L'agente sta elaborando...
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+          </div>
         )}
 
         {/* Live Status Section - Durante la verifica */}
@@ -1368,182 +1362,6 @@ function LiveLogItem({ log }: { log: LiveLogEntry }) {
   );
 }
 
-// Thinking Panel Component - Mostra il pensiero dell'agente in tempo reale
-function ThinkingPanel({
-  steps,
-  isLoading,
-  thinkingEndRef,
-}: {
-  steps: ThinkingStep[];
-  isLoading: boolean;
-  thinkingEndRef: React.RefObject<HTMLDivElement | null>;
-}) {
-  return (
-    <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
-      <div className="px-3 py-2 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {isLoading && <span className="animate-pulse">🧠</span>}
-          {!isLoading && <Brain className="h-4 w-4 text-slate-500" />}
-          <span className="text-xs font-medium text-slate-600">
-            Pensiero dell'agente
-          </span>
-        </div>
-        {isLoading && (
-          <Badge className="bg-emerald-100 text-emerald-700 text-[10px] animate-pulse">
-            In elaborazione...
-          </Badge>
-        )}
-      </div>
-
-      <div className="max-h-48 overflow-y-auto p-2 space-y-1">
-        {steps.map((step) => (
-          <ThinkingStepItem key={step.id} step={step} />
-        ))}
-
-        {isLoading && steps.length === 0 && (
-          <div className="flex items-center gap-2 text-xs text-slate-500 py-2 px-2">
-            <Spinner className="h-3 w-3" ariaLabel="Inizializzazione" />
-            Inizializzazione...
-          </div>
-        )}
-
-        <div ref={thinkingEndRef} />
-      </div>
-    </div>
-  );
-}
-
-// Thinking Step Item Component
-function ThinkingStepItem({ step }: { step: ThinkingStep }) {
-  const getStepIcon = (type: ThinkingStep["type"]) => {
-    switch (type) {
-      case "thinking":
-        return <Brain className="h-3 w-3" />;
-      case "tool_start":
-        return <Wrench className="h-3 w-3" />;
-      case "tool_result":
-        return <CheckCircle2 className="h-3 w-3" />;
-      case "data_inspection":
-        return <Search className="h-3 w-3" />;
-      case "task_progress":
-        return <ListTodo className="h-3 w-3" />;
-      case "reasoning":
-        return <Brain className="h-3 w-3" />;
-      default:
-        return <Info className="h-3 w-3" />;
-    }
-  };
-
-  const getStepStyle = (type: ThinkingStep["type"]) => {
-    switch (type) {
-      case "thinking":
-        return "bg-blue-50 border-l-2 border-blue-300 text-blue-700";
-      case "tool_start":
-        return "bg-amber-50 border-l-2 border-amber-300 text-amber-700";
-      case "tool_result":
-        return "bg-emerald-50 border-l-2 border-emerald-300 text-emerald-700";
-      case "data_inspection":
-        return "bg-purple-50 border-l-2 border-purple-300 text-purple-700";
-      case "task_progress":
-        return "bg-slate-100 border-l-2 border-slate-300 text-slate-700";
-      case "reasoning":
-        return "bg-indigo-50 border-l-2 border-indigo-300 text-indigo-700";
-      default:
-        return "bg-slate-50 border-l-2 border-slate-300 text-slate-700";
-    }
-  };
-
-  const timeStr = step.timestamp.toLocaleTimeString("it-IT", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-
-  return (
-    <div
-      className={cn(
-        "flex items-start gap-2 p-2 rounded-r text-xs",
-        getStepStyle(step.type)
-      )}
-    >
-      <span className="flex-shrink-0 mt-0.5">{getStepIcon(step.type)}</span>
-      <div className="flex-1 min-w-0">
-        <p className="break-words">{step.message}</p>
-        {step.toolName && (
-          <code className="text-[10px] bg-white/50 px-1 py-0.5 rounded mt-1 inline-block">
-            {step.toolName}
-          </code>
-        )}
-      </div>
-      <span className="text-[10px] opacity-60 flex-shrink-0">{timeStr}</span>
-    </div>
-  );
-}
-
-// Task Progress Panel Component - Mostra il piano di lavoro dell'agente
-function TaskProgressPanel({
-  tasks,
-  currentTaskId,
-}: {
-  tasks: AgentTask[];
-  currentTaskId: string | null;
-}) {
-  if (tasks.length === 0) return null;
-
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 p-3">
-      <div className="flex items-center gap-2 mb-3">
-        <ListTodo className="h-4 w-4 text-slate-500" />
-        <span className="text-xs font-semibold text-slate-600">
-          Piano di lavoro
-        </span>
-      </div>
-
-      <div className="space-y-2">
-        {tasks.map((task, index) => (
-          <div
-            key={task.id}
-            className={cn(
-              "flex items-center gap-3 p-2 rounded-lg transition-colors",
-              task.id === currentTaskId && "bg-blue-50 border border-blue-200"
-            )}
-          >
-            <div
-              className={cn(
-                "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium flex-shrink-0",
-                task.status === "completed" && "bg-emerald-500 text-white",
-                task.status === "in_progress" &&
-                  "bg-blue-500 text-white animate-pulse",
-                task.status === "pending" && "bg-slate-200 text-slate-600"
-              )}
-            >
-              {task.status === "completed" ? (
-                <Check className="h-3 w-3" />
-              ) : task.status === "in_progress" ? (
-                <Spinner className="h-3 w-3" ariaLabel="In corso" />
-              ) : (
-                index + 1
-              )}
-            </div>
-
-            <span
-              className={cn(
-                "text-xs flex-1",
-                task.status === "completed" &&
-                  "text-slate-500 line-through",
-                task.status === "in_progress" &&
-                  "text-blue-700 font-medium",
-                task.status === "pending" && "text-slate-700"
-              )}
-            >
-              {task.description}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // Quick Chat Loader - Loader semplice per la modalità chat rapida
 function QuickChatLoader() {

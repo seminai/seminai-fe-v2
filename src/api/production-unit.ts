@@ -317,6 +317,15 @@ export type ExtractedProductionUnit = {
   cropName: string;
   cropType: string;
   variety?: string;
+  cycles?: Array<{
+    cropName?: string;
+    cropType?: string;
+    variety?: string;
+    startDate?: string;
+    floweringDate?: string | null;
+    harvestingDate?: string | null;
+    endDate?: string;
+  }>;
   protocoll?: string;
   protectionStructure?: string;
   startDate?: string;

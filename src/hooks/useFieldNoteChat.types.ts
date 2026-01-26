@@ -22,12 +22,24 @@ export interface SendMessageOptions {
 import type { RefObject } from "react";
 import type { AgentToolCall } from "@/api/field-notes";
 
+export interface ToolCallProgress {
+  name: string;
+  completed: boolean;
+}
+
+export interface DeepThinkingState {
+  thinking: string | undefined;
+  toolCalls: ToolCallProgress[];
+  isActive: boolean;
+}
+
 export interface UseFieldNoteChatResult {
   messages: ChatMessage[];
   socketState: "disconnected" | "connecting" | "connected" | "error";
   pendingApproval: AgentToolCall | null;
   isProcessing: boolean;
   messagesEndRef: RefObject<HTMLDivElement | null>;
+  deepThinking: DeepThinkingState;
   sendMessage: (text: string, options?: SendMessageOptions) => Promise<void>;
   approve: () => Promise<void>;
   reject: (feedback: string) => Promise<void>;
