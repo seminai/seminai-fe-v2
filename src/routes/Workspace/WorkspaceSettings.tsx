@@ -268,12 +268,14 @@ function LogoUploader({
   onFileSelect,
   onRemove,
   isUploading,
+  isRemoving,
 }: {
   currentLogo?: string | null;
   logoPreview: string | null;
   onFileSelect: (file: File) => void;
   onRemove: () => void;
   isUploading: boolean;
+  isRemoving?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -323,9 +325,14 @@ function LogoUploader({
         <button
           type="button"
           onClick={onRemove}
-          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          disabled={isRemoving}
+          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <X className="w-4 h-4" />
+          {isRemoving ? (
+            <Spinner className="w-3 h-3" />
+          ) : (
+            <X className="w-4 h-4" />
+          )}
         </button>
       </div>
     );
@@ -424,10 +431,26 @@ function GeneralSettingsTab() {
     reader.readAsDataURL(file);
   }, []);
 
-  const handleLogoRemove = useCallback(() => {
-    setLogoFile(null);
-    setLogoPreview(null);
-  }, []);
+  const handleLogoRemove = useCallback(async () => {
+    if (!currentWorkspace) return;
+
+    try {
+      // Reset local state first
+      setLogoFile(null);
+      setLogoPreview(null);
+
+      // Call API to remove logo
+      await updateWorkspace({
+        workspaceId: currentWorkspace.id,
+        payload: { logoUrl: undefined },
+      });
+
+      toast.success("Logo rimosso con successo!");
+    } catch (error) {
+      console.error("Remove logo error:", error);
+      toast.error("Errore durante la rimozione del logo");
+    }
+  }, [currentWorkspace, updateWorkspace]);
 
   const onSubmit = async (values: GeneralFormValues) => {
     if (!currentWorkspace) return;
@@ -466,6 +489,7 @@ function GeneralSettingsTab() {
               onFileSelect={handleLogoSelect}
               onRemove={handleLogoRemove}
               isUploading={isUploading}
+              isRemoving={isPending}
             />
             <div className="flex-1 text-sm text-neutral-500">
               <p>Carica un logo per personalizzare il workspace.</p>
