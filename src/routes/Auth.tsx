@@ -101,6 +101,7 @@ export default function Auth() {
     }
   }, [meData, meError]);
 
+  const [activeTab, setActiveTab] = useState("login");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
@@ -151,6 +152,10 @@ export default function Auth() {
         address,
       });
       toast.success(result.data.message || "Registrazione completata");
+      // Cambia al tab login e precompila l'email
+      setActiveTab("login");
+      setLoginEmail(email);
+      toast.info("Ora puoi eseguire login. L'email è già inserita, inserisci solo la password.");
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Registrazione non riuscita";
@@ -200,7 +205,7 @@ export default function Auth() {
             <span className="text-lg font-semibold text-black">SeminAI</span>
           </div>
 
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="register">Registrati</TabsTrigger>
