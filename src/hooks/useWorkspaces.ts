@@ -12,6 +12,7 @@ import {
   getPendingInvitations,
   updateMember,
   removeMember,
+  cancelInvitation,
   getWorkspaceRules,
   getRule,
   createRule,
@@ -267,6 +268,26 @@ export function useRemoveMember() {
     }) => removeMember(workspaceId, memberId),
     onSuccess: (_, { workspaceId }) => {
       // Invalidate members list to refetch with updated data
+      queryClient.invalidateQueries({
+        queryKey: workspaceKeys.members(workspaceId),
+      });
+    },
+  });
+}
+
+export function useCancelInvitation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      workspaceId,
+      invitationId,
+    }: {
+      workspaceId: string;
+      invitationId: string;
+    }) => cancelInvitation(workspaceId, invitationId),
+    onSuccess: (_, { workspaceId }) => {
+      // Invalidate members list to refetch with updated data (invitations are part of members query)
       queryClient.invalidateQueries({
         queryKey: workspaceKeys.members(workspaceId),
       });

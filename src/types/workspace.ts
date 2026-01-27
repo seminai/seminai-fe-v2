@@ -148,7 +148,7 @@ export type CreateWorkspaceRequest = {
   plan?: WorkspacePlan;
 };
 
-export type UpdateWorkspaceRequest = Partial<CreateWorkspaceRequest> & {
+export type UpdateWorkspaceRequest = Omit<Partial<CreateWorkspaceRequest>, "logoUrl" | "iconUrl"> & {
   isActive?: boolean;
   customCss?: string;
   logoUrl?: string | null | ""; // Empty string for removal in production

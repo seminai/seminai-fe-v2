@@ -299,6 +299,22 @@ export async function removeMember(
   }
 }
 
+export async function cancelInvitation(
+  workspaceId: string,
+  invitationId: string,
+  baseUrl: string = BASE_URL
+): Promise<void> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/workspaces/${workspaceId}/invitations/${invitationId}`,
+    { method: "DELETE" }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to cancel invitation");
+  }
+}
+
 // ============ RULES ============
 
 export async function getWorkspaceRules(

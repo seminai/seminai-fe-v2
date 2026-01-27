@@ -3542,6 +3542,10 @@ export default function JobPage() {
       }
       onConformityConfirmSuccess={handleConformityConfirmSuccess}
       selectedJobsForChat={selectedAllJobsForChat}
+      getRowClassName={(row) => {
+        const quantity = Number(row.quantity ?? 0);
+        return quantity === 0 ? "text-gray-400" : undefined;
+      }}
     />
   );
 
@@ -3589,6 +3593,10 @@ export default function JobPage() {
       onToggleRightSidebar={setIsRightSidebarOpen}
       selectedJobsForChat={selectedGroupJobs ?? []}
       onConformityConfirmSuccess={handleConformityConfirmSuccess}
+      getRowClassName={(row) => {
+        const quantity = Number(row.quantity ?? 0);
+        return quantity === 0 ? "text-gray-400" : undefined;
+      }}
     />
   );
 

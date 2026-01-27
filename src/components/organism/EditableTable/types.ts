@@ -107,6 +107,11 @@ export interface EditableTableProps {
    */
   exportFileName?: string;
   customExportConfig?: CustomExportConfig;
+  /**
+   * Function to determine the CSS class for each row.
+   * Receives the row data and should return a class name string or undefined.
+   */
+  getRowClassName?: (row: Record<string, unknown>) => string | undefined;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

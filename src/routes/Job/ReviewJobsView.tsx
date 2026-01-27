@@ -92,6 +92,7 @@ interface ReviewJobsViewProps {
   onToggleRightSidebar: (open: boolean) => void;
   selectedJobsForChat?: JobWithRelations[];
   onConformityConfirmSuccess?: () => void;
+  getRowClassName?: (row: Record<string, unknown>) => string | undefined;
 }
 
 export function ReviewJobsView({
@@ -136,6 +137,7 @@ export function ReviewJobsView({
   onToggleRightSidebar,
   selectedJobsForChat = [],
   onConformityConfirmSuccess,
+  getRowClassName,
 }: ReviewJobsViewProps) {
   if (isMobile) {
     if (!selectedGroupSummary) {
@@ -295,6 +297,7 @@ export function ReviewJobsView({
                 className="flex-1 flex flex-col min-h-0"
                 customExportConfig={exportConfig}
                 exportFileName="operazioni_revisione"
+                getRowClassName={getRowClassName}
               />
             </div>
           )}
@@ -611,6 +614,7 @@ export function ReviewJobsView({
                     className="flex-1 flex flex-col min-h-0"
                     customExportConfig={exportConfig}
                     exportFileName="operazioni_revisione"
+                    getRowClassName={getRowClassName}
                   >
                     {selectedGroupSummary && !isRightSidebarOpen && (
                       <Button
