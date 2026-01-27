@@ -87,6 +87,7 @@ import {
   useInviteMember,
   useUpdateMember,
   useRemoveMember,
+  useCancelInvitation,
   useWorkspaceRules,
   useDeleteRule,
   useAssignRuleToCompany,
@@ -729,6 +730,7 @@ function MembersSettingsTab() {
     useInviteMember();
   const { mutateAsync: doUpdateMember } = useUpdateMember();
   const { mutateAsync: doRemoveMember } = useRemoveMember();
+  const { mutateAsync: doCancelInvitation } = useCancelInvitation();
 
   const [inviteDrawerOpen, setInviteDrawerOpen] = useState(false);
 
@@ -789,6 +791,21 @@ function MembersSettingsTab() {
     } catch (error) {
       console.error("Remove member error:", error);
       toast.error("Errore durante la rimozione del membro");
+    }
+  };
+
+  const handleCancelInvitation = async (invitationId: string) => {
+    if (!currentWorkspace) return;
+
+    try {
+      await doCancelInvitation({
+        workspaceId: currentWorkspace.id,
+        invitationId,
+      });
+      toast.success("Invito cancellato!");
+    } catch (error) {
+      console.error("Cancel invitation error:", error);
+      toast.error("Errore durante la cancellazione dell'invito");
     }
   };
 
@@ -934,6 +951,22 @@ function MembersSettingsTab() {
                     Invito in attesa
                   </Badge>
                   <MemberRoleBadge role={invitation.role} />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => handleCancelInvitation(invitation.id)}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Cancella invito
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             ))}

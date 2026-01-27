@@ -33,6 +33,7 @@ export interface EditableTableBodyProps {
   columnFilterSearchQueries: Record<string, string>;
   columnFilterDateRanges: Record<string, DateRange | undefined>;
   columnFilterSelectedDates: Record<string, Date | undefined>;
+  getRowClassName?: (row: Record<string, unknown>) => string | undefined;
   onToggleSelectAll: (value: boolean) => void;
   onToggleRowSelection: (rowId: string, value: boolean) => void;
   onCellChange: (
@@ -85,6 +86,7 @@ export function EditableTableBody({
   columnFilterSearchQueries,
   columnFilterDateRanges,
   columnFilterSelectedDates,
+  getRowClassName,
   onToggleSelectAll,
   onToggleRowSelection,
   onCellChange,
@@ -221,12 +223,15 @@ export function EditableTableBody({
             return v === undefined || v === null || String(v).trim() === "";
           });
 
+          const customRowClassName = getRowClassName?.(row.data);
+
           return (
             <TableRow
               key={row.id}
               className={cn(
                 "group bg-white transition-colors hover:bg-agri-green-50 border-agri-green-100",
-                rowHasRequiredMissing && "bg-red-50/30"
+                rowHasRequiredMissing && "bg-red-50/30",
+                customRowClassName
               )}
             >
               <td

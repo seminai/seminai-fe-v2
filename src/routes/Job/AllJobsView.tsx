@@ -90,6 +90,7 @@ interface AllJobsViewProps {
   jobGroupId?: string;
   onConformityConfirmSuccess?: () => void;
   selectedJobsForChat: JobWithRelations[];
+  getRowClassName?: (row: Record<string, unknown>) => string | undefined;
 }
 
 export function JobIdMultiSelect({
@@ -270,6 +271,7 @@ export function AllJobsView({
   jobGroupId,
   onConformityConfirmSuccess,
   selectedJobsForChat,
+  getRowClassName,
 }: AllJobsViewProps) {
   const hasError = Boolean(error);
   const errorMessage =
@@ -341,6 +343,7 @@ export function AllJobsView({
                   onSelectionChange={onSelectionChange}
                   customExportConfig={exportConfig}
                   exportFileName="operazioni"
+                  getRowClassName={getRowClassName}
                 >
                   {!isRightSidebarOpen && (
                     <Button

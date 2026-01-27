@@ -175,6 +175,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       showDeleteAction = true,
       exportFileName,
       customExportConfig,
+      getRowClassName,
     } = props;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -633,6 +634,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
               columnFilterSearchQueries={filters.columnFilterSearchQueries}
               columnFilterDateRanges={filters.columnFilterDateRanges}
               columnFilterSelectedDates={filters.columnFilterSelectedDates}
+              getRowClassName={getRowClassName}
               onToggleSelectAll={(value) =>
                 selection.toggleSelectAll(value, filteredRows)
               }
