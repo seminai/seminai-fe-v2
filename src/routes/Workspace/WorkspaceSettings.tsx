@@ -442,7 +442,7 @@ function GeneralSettingsTab() {
       // Call API to remove logo
       await updateWorkspace({
         workspaceId: currentWorkspace.id,
-        payload: { logoUrl: undefined },
+        payload: { logoUrl: null },
       });
 
       toast.success("Logo rimosso con successo!");
