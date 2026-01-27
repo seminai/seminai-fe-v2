@@ -151,8 +151,8 @@ export type CreateWorkspaceRequest = {
 export type UpdateWorkspaceRequest = Partial<CreateWorkspaceRequest> & {
   isActive?: boolean;
   customCss?: string;
-  logoUrl?: string | null;
-  iconUrl?: string | null;
+  logoUrl?: string | null | ""; // Empty string for removal in production
+  iconUrl?: string | null | ""; // Empty string for removal in production
 };
 
 export type InviteMemberRequest = {

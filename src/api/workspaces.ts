@@ -101,12 +101,28 @@ export async function updateWorkspace(
   payload: UpdateWorkspaceRequest,
   baseUrl: string = BASE_URL
 ): Promise<Workspace> {
+  // Convert null logoUrl to empty string for backend compatibility
+  // Some backends may not accept null for string fields
+  const processedPayload = { ...payload };
+  if (processedPayload.logoUrl === null) {
+    processedPayload.logoUrl = "";
+  }
+  if (processedPayload.iconUrl === null) {
+    processedPayload.iconUrl = "";
+  }
+  
+  const serializedPayload = JSON.stringify(processedPayload);
+  
+  if (import.meta.env.DEV) {
+    console.log("UpdateWorkspace payload:", serializedPayload);
+  }
+  
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/workspaces/${workspaceId}`,
     {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: serializedPayload,
     }
   );
 
