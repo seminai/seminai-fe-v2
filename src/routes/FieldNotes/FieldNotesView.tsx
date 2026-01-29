@@ -153,10 +153,10 @@ export function FieldNotesView({
 
       {/* Mobile Chat View */}
       <div className={cn(
-        "flex-1 overflow-hidden md:hidden",
-        mobileView === "chat" ? "block" : "hidden"
+        "flex-1 min-h-0 overflow-hidden md:hidden flex flex-col",
+        mobileView === "chat" ? "flex" : "hidden"
       )}>
-        <FieldNoteChatPanel 
+        <FieldNoteChatPanel
           onFieldNoteSaved={onFieldNoteSaved}
           onSocketStateChange={setSocketState}
         />

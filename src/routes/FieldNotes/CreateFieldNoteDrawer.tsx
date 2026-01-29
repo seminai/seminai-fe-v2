@@ -198,7 +198,7 @@ export function CreateFieldNoteDrawer({
           </DrawerDescription>
         </DrawerHeader>
 
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-180px)]">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto overflow-x-hidden max-h-[calc(100svh-180px)]">
           {/* Categoria */}
           <div className="space-y-2">
             <Label className="text-sm font-semibold text-muted-foreground">
@@ -385,7 +385,7 @@ export function CreateFieldNoteDrawer({
           </div>
         </div>
 
-        <DrawerFooter className="flex flex-row items-center justify-end gap-2 border-t border-border/50 px-4 sm:px-6 py-4">
+        <DrawerFooter className="flex flex-row items-center justify-end gap-2 border-t border-border/50 px-4 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}

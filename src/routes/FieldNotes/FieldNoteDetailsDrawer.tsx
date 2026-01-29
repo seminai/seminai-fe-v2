@@ -196,7 +196,7 @@ export function FieldNoteDetailsDrawer({
           isUploadingAttachment={isUploadingAttachment}
         />
 
-        <DrawerFooter className="flex flex-row items-center justify-end gap-2 border-t border-border/50 px-4 sm:px-6 py-4">
+        <DrawerFooter className="flex flex-row items-center justify-end gap-2 border-t border-border/50 px-4 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}

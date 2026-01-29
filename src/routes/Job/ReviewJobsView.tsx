@@ -39,7 +39,11 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { type JobGroupSummaryItem, type JobHistoryEntry, type JobWithRelations } from "@/api/jobs";
+import {
+  type JobGroupSummaryItem,
+  type JobHistoryEntry,
+  type JobWithRelations,
+} from "@/api/jobs";
 
 type EditableTableRowData = Record<string, unknown>;
 
@@ -82,7 +86,7 @@ interface ReviewJobsViewProps {
   onProductClick: (
     name: string,
     registration?: string,
-    showToast?: boolean
+    showToast?: boolean,
   ) => void;
   mobileHistoryOpen: boolean;
   onMobileHistoryChange: (open: boolean) => void;
@@ -304,7 +308,10 @@ export function ReviewJobsView({
         </div>
 
         {/* Sheet per Details e History */}
-        <Sheet open={mobileHistoryOpen && rightSidebarMode !== "conformity"} onOpenChange={onMobileHistoryChange}>
+        <Sheet
+          open={mobileHistoryOpen && rightSidebarMode !== "conformity"}
+          onOpenChange={onMobileHistoryChange}
+        >
           <SheetContent
             side="bottom"
             className="h-[70vh] p-0 flex flex-col border-0"
@@ -364,7 +371,7 @@ export function ReviewJobsView({
                 "fixed inset-0 z-40 bg-black/50 transition-opacity duration-300",
                 rightSidebarMode === "conformity" && mobileHistoryOpen
                   ? "opacity-100 pointer-events-auto"
-                  : "opacity-0 pointer-events-none"
+                  : "opacity-0 pointer-events-none",
               )}
               onClick={() => onMobileHistoryChange(false)}
             />
@@ -375,7 +382,7 @@ export function ReviewJobsView({
                 "fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-2xl border-t border-slate-200 flex flex-col transition-transform duration-300 ease-out",
                 rightSidebarMode === "conformity" && mobileHistoryOpen
                   ? "translate-y-0"
-                  : "translate-y-full"
+                  : "translate-y-full",
               )}
               style={{ height: "70vh" }}
             >
@@ -471,7 +478,7 @@ export function ReviewJobsView({
             onMouseDown={onGroupsResizeStart}
             className={cn(
               "w-1 flex-shrink-0 cursor-col-resize bg-slate-200 hover:bg-slate-300 transition-colors relative group",
-              isResizingGroupsSidebar && "bg-slate-400"
+              isResizingGroupsSidebar && "bg-slate-400",
             )}
             style={{ userSelect: "none" }}
           >
@@ -517,7 +524,7 @@ export function ReviewJobsView({
                     "w-full p-1.5 rounded-md transition-all text-center",
                     selectedGroupSummary?.jobId === group.jobId
                       ? "bg-agri-green-100 border border-agri-green-300 ring-1 ring-agri-green-200"
-                      : "bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                      : "bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50",
                   )}
                   title={`Operazione #${group.jobId} - ${group.totalOperations} operazioni`}
                 >
@@ -525,7 +532,7 @@ export function ReviewJobsView({
                     className={cn(
                       "font-mono text-xs w-full justify-center bg-agri-green-50",
                       selectedGroupSummary?.jobId === group.jobId &&
-                        " text-black "
+                        " text-black ",
                     )}
                   >
                     #{group.jobId}
@@ -617,7 +624,10 @@ export function ReviewJobsView({
                     getRowClassName={getRowClassName}
                   >
                     {selectedGroupSummary && !isRightSidebarOpen && (
-                      <div className="flex items-center gap-1" data-table-slot="right">
+                      <div
+                        className="flex items-center gap-1"
+                        data-table-slot="right"
+                      >
                         <Button
                           variant="ghost"
                           size="sm"
@@ -664,7 +674,7 @@ export function ReviewJobsView({
             onMouseDown={onResizeStart}
             className={cn(
               "w-1 flex-shrink-0 cursor-col-resize bg-slate-200 hover:bg-slate-300 transition-colors relative group",
-              isResizing && "bg-slate-400"
+              isResizing && "bg-slate-400",
             )}
             style={{ userSelect: "none" }}
           >

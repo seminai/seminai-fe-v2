@@ -196,7 +196,7 @@ export function FieldNoteChatPanel({
         </ScrollArea>
       </div>
 
-      <div className="flex-shrink-0 border-t border-slate-200 bg-slate-50">
+      <div className="flex-shrink-0 border-t border-slate-200 bg-slate-50 pb-[env(safe-area-inset-bottom,0px)]">
         <div className="p-4 space-y-2">
           <Textarea
             value={input}

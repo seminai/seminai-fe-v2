@@ -165,8 +165,9 @@ export function useFieldNoteDetailsForm({
   }, [selectedCompanyId, productionUnits]);
 
   const availableFields = useMemo(() => {
-    if (selectedProductionUnitIds.length === 0) return [];
     const allFields: Array<{ id: string; name: string }> = [];
+
+    // Fields from selected production units
     selectedProductionUnitIds.forEach((puId) => {
       const selectedPU = productionUnits.find(
         (pu) => pu.productionUnit.id === puId
@@ -179,8 +180,21 @@ export function useFieldNoteDetailsForm({
         });
       }
     });
+
+    // Include fields already on the field note (e.g. from API / extractedData) so they are always available for display and selection
+    if (fieldNote?.field) {
+      const noteFields = Array.isArray(fieldNote.field)
+        ? fieldNote.field
+        : [fieldNote.field];
+      noteFields.forEach((f) => {
+        if (f?.id && f?.name && !allFields.some((existing) => existing.id === f.id)) {
+          allFields.push({ id: f.id, name: f.name });
+        }
+      });
+    }
+
     return allFields;
-  }, [selectedProductionUnitIds, productionUnits]);
+  }, [selectedProductionUnitIds, productionUnits, fieldNote]);
 
   const companyOptions = useMemo(
     () =>
@@ -191,14 +205,24 @@ export function useFieldNoteDetailsForm({
     [companies]
   );
 
-  const productionUnitOptions = useMemo(
-    () =>
-      filteredProductionUnits.map((pu) => ({
-        label: pu.productionUnit.name,
-        value: pu.productionUnit.id,
-      })),
-    [filteredProductionUnits]
-  );
+  const productionUnitOptions = useMemo(() => {
+    const options = filteredProductionUnits.map((pu) => ({
+      label: pu.productionUnit.name,
+      value: pu.productionUnit.id,
+    }));
+    // Include the field note's production unit so it is always available for display when present
+    if (
+      fieldNote?.productionUnit?.id &&
+      fieldNote.productionUnit.name &&
+      !options.some((o) => o.value === fieldNote.productionUnit!.id)
+    ) {
+      options.push({
+        label: fieldNote.productionUnit.name,
+        value: fieldNote.productionUnit.id,
+      });
+    }
+    return options;
+  }, [filteredProductionUnits, fieldNote]);
 
   const fieldOptions = useMemo(
     () =>
