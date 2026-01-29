@@ -156,7 +156,7 @@ export function EditableTableHeader({
         )}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        {!showEditActions && !anySelected && rightActions}
+        {!showEditActions && rightActions}
         {isModify && !anySelected && !alwaysEdit && !isEditMode && (
           <Button
             onClick={onToggleEditMode}
@@ -190,18 +190,21 @@ export function EditableTableHeader({
             <span className="hidden sm:inline">Aggiungi</span>
           </Button>
         )}
-        {anySelected && !showEditActions && onDetailsButtonClick && (
-          <Button
-            onClick={onDetailsButtonClick}
-            className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-agri-green-100 dark:hover:bg-agri-green-100/10 dark:hover:text-black h-8 rounded-xl gap-1.5 px-3 has-[>svg]:px-2.5 text-black hover:text-gray-700 cursor-pointer focus-visible:ring-0 focus-visible:outline-none"
-            variant="ghost"
-            size="sm"
-            title="Apri pannello dettagli"
-          >
-            <PanelRightOpen className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Dettagli</span>
-          </Button>
-        )}
+        {anySelected &&
+          !showEditActions &&
+          onDetailsButtonClick &&
+          React.Children.count(rightActions) === 0 && (
+            <Button
+              onClick={onDetailsButtonClick}
+              className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-agri-green-100 dark:hover:bg-agri-green-100/10 dark:hover:text-black h-8 rounded-xl gap-1.5 px-3 has-[>svg]:px-2.5 text-black hover:text-gray-700 cursor-pointer focus-visible:ring-0 focus-visible:outline-none"
+              variant="ghost"
+              size="sm"
+              title="Apri pannello dettagli"
+            >
+              <PanelRightOpen className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Dettagli</span>
+            </Button>
+          )}
         {shouldRenderBulkVerifyButton && (
           <Button
             onClick={() => onBulkVerifySelected?.(selectionPayload)}

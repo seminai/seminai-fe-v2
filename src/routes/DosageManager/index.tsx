@@ -296,7 +296,7 @@ class JobHistoryTableRowBuilder {
     return [...jobs]
       .sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       )
       .map((job) => {
         const descriptor = ActiveJobStateDescriptor.describe(job.state);
@@ -390,7 +390,7 @@ class DosageStrategyOptionsFactory {
   public static buildCurlSnippet(
     strategy: DosageStrategy,
     outStockLimiter: boolean,
-    loadWarehouse: boolean = false
+    loadWarehouse: boolean = false,
   ): string {
     return [
       'curl -X POST "https://<host>/dosage-agent/start-job" \\',
@@ -459,6 +459,8 @@ interface ProductionUnitTableRow extends Record<string, unknown> {
   fieldsCount: number;
   areaHa: number;
   areaLabel: string;
+  treatedAreaHa: number;
+  treatedAreaLabel: string;
   companyName: string;
 }
 
@@ -487,7 +489,10 @@ class ProductionUnitTableRowBuilder {
   public build(): ProductionUnitTableRow[] {
     return this.units.map((unit) => {
       const areaFormatter = new ProductionUnitAreaFormatter(
-        unit.productionUnit.areaHa
+        unit.productionUnit.areaHa,
+      );
+      const treatedAreaFormatter = new ProductionUnitAreaFormatter(
+        unit.productionUnit.areaHa,
       );
 
       return {
@@ -500,6 +505,8 @@ class ProductionUnitTableRowBuilder {
         fieldsCount: unit.fields.length,
         areaHa: unit.productionUnit.areaHa,
         areaLabel: areaFormatter.format(),
+        treatedAreaHa: unit.productionUnit.areaHa,
+        treatedAreaLabel: treatedAreaFormatter.format(),
         companyName: unit.companyName,
       };
     });
@@ -515,6 +522,7 @@ class ProductionUnitTableColumnsFactory {
         width: "280px",
         render: (_value, row) =>
           ProductionUnitTableColumnsFactory.renderUnitInfo(row),
+        readOnly: true,
       },
       {
         id: "companyName",
@@ -522,6 +530,7 @@ class ProductionUnitTableColumnsFactory {
         width: "200px",
         render: (_value, row) =>
           ProductionUnitTableColumnsFactory.renderCompany(row),
+        readOnly: true,
       },
       {
         id: "variety",
@@ -529,13 +538,7 @@ class ProductionUnitTableColumnsFactory {
         width: "200px",
         render: (_value, row) =>
           ProductionUnitTableColumnsFactory.renderVariety(row),
-      },
-      {
-        id: "protectionStructure",
-        title: "Struttura di Protezione",
-        width: "220px",
-        render: (_value, row) =>
-          ProductionUnitTableColumnsFactory.renderStructure(row),
+        readOnly: true,
       },
       {
         id: "areaHa",
@@ -543,6 +546,33 @@ class ProductionUnitTableColumnsFactory {
         width: "160px",
         render: (_value, row) =>
           ProductionUnitTableColumnsFactory.renderArea(row),
+        readOnly: true,
+      },
+      {
+        id: "treatedAreaHa",
+        title: "Area da trattare",
+        width: "180px",
+        type: "number",
+        placeholder: "0.00",
+        render: (_value, row) =>
+          ProductionUnitTableColumnsFactory.renderTreatedArea(row),
+        onValueChange: ({ value, rowData }) => {
+          const numValue =
+            typeof value === "number" ? value : parseFloat(String(value));
+          if (!isNaN(numValue) && numValue > 0) {
+            const areaHa = (rowData.areaHa as number) ?? numValue;
+            // Limita treatedAreaHa a areaHa se supera
+            const treatedAreaHa = Math.min(numValue, areaHa);
+            const updatedTreatedAreaFormatter = new ProductionUnitAreaFormatter(
+              treatedAreaHa,
+            );
+            return {
+              treatedAreaHa,
+              treatedAreaLabel: updatedTreatedAreaFormatter.format(),
+            };
+          }
+          return {};
+        },
       },
       {
         id: "fieldsCount",
@@ -550,6 +580,7 @@ class ProductionUnitTableColumnsFactory {
         width: "120px",
         render: (_value, row) =>
           ProductionUnitTableColumnsFactory.renderFields(row),
+        readOnly: true,
       },
     ];
   }
@@ -592,16 +623,6 @@ class ProductionUnitTableColumnsFactory {
     );
   }
 
-  private static renderStructure(row: Record<string, unknown>): ReactElement {
-    const data = ProductionUnitTableColumnsFactory.asRow(row);
-
-    return (
-      <span className="text-sm text-neutral-700">
-        {data.protectionStructure || "-"}
-      </span>
-    );
-  }
-
   private static renderArea(row: Record<string, unknown>): ReactElement {
     const data = ProductionUnitTableColumnsFactory.asRow(row);
 
@@ -616,6 +637,15 @@ class ProductionUnitTableColumnsFactory {
     const data = ProductionUnitTableColumnsFactory.asRow(row);
 
     return <span className="text-sm text-neutral-700">{data.fieldsCount}</span>;
+  }
+
+  private static renderTreatedArea(row: Record<string, unknown>): ReactElement {
+    const data = ProductionUnitTableColumnsFactory.asRow(row);
+    return (
+      <Badge variant="secondary" className="text-xs">
+        {data.treatedAreaLabel}
+      </Badge>
+    );
   }
 }
 
@@ -665,14 +695,14 @@ class WarehouseProductRegistrationResolver {
   private readonly registryLookup: typeof findRegNumberByName;
 
   constructor(
-    registryLookup: typeof findRegNumberByName = findRegNumberByName
+    registryLookup: typeof findRegNumberByName = findRegNumberByName,
   ) {
     this.registryLookup = registryLookup;
   }
 
   public async resolve(
     productName: string,
-    fallbackCandidates: Array<string | undefined>
+    fallbackCandidates: Array<string | undefined>,
   ): Promise<string> {
     const fallback =
       WarehouseRegistrationNumberSanitizer.pickFirstNumeric(fallbackCandidates);
@@ -691,7 +721,7 @@ class WarehouseProductRegistrationResolver {
     } catch (error) {
       console.error(
         "Failed to resolve registration number from fitosanitari dataset:",
-        error
+        error,
       );
     }
 
@@ -704,7 +734,7 @@ class WarehouseProductsMapper {
     new WarehouseProductRegistrationResolver();
 
   public static async toDosageProducts(
-    products: Product[]
+    products: Product[],
   ): Promise<DosageProduct[]> {
     const mappedProducts = await Promise.all(
       products.map(async (product) => {
@@ -724,7 +754,7 @@ class WarehouseProductsMapper {
           loadWarehouse: true,
           supplierName: product.warehouse.company.name,
         };
-      })
+      }),
     );
 
     return mappedProducts.filter((product) => product.quantity > 0);
@@ -736,9 +766,6 @@ class DosageProductKeyBuilder {
     return `${product.productName}-${product.registrationNumber}`;
   }
 }
-
-
-
 
 /**
  * Componente per visualizzare un singolo evento di log live
@@ -752,7 +779,7 @@ function LiveLogEventCard({ event }: { event: DosageLogEvent }): ReactElement {
   });
 
   const getTypeStyles = (
-    type: DosageLogEvent["type"]
+    type: DosageLogEvent["type"],
   ): { bg: string; text: string; border: string; icon: ReactElement } => {
     switch (type) {
       case "match":
@@ -855,9 +882,12 @@ export default function DosageManager() {
   } = useProducts();
 
   const [currentPage, setCurrentPage] = useState<"manage" | "history">(
-    "manage"
+    "manage",
   );
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
+  const [treatedAreaHaMap, setTreatedAreaHaMap] = useState<Map<string, number>>(
+    new Map(),
+  );
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   // Extended product type with internal ID for unique row identification
   type ProductWithInternalId = DosageProduct & { _internalId: string };
@@ -876,7 +906,7 @@ export default function DosageManager() {
   const [loadWarehouse, setLoadWarehouse] = useState<boolean>(false);
   const [orchestratorSettings, setOrchestratorSettings] =
     useState<DosageOrchestratorSettings>(() =>
-      OrchestratorDefaultsFactory.create()
+      OrchestratorDefaultsFactory.create(),
     );
   const [orchestratorDatasets, setOrchestratorDatasets] =
     useState<OrchestratorDatasets | null>(null);
@@ -890,7 +920,7 @@ export default function DosageManager() {
   const [isJobDetailsLoading, setIsJobDetailsLoading] = useState(false);
   const [isCancellingJobs, setIsCancellingJobs] = useState(false);
   const [selectedActiveJobIds, setSelectedActiveJobIds] = useState<string[]>(
-    []
+    [],
   );
   const [isImportingFromWarehouse, setIsImportingFromWarehouse] =
     useState(false);
@@ -930,7 +960,7 @@ export default function DosageManager() {
     }
 
     const el = document.querySelector<HTMLElement>(
-      '[data-mobile-bottom-bar="true"]'
+      '[data-mobile-bottom-bar="true"]',
     );
     if (!el) {
       setMobileBottomOccupied(0);
@@ -1025,11 +1055,11 @@ export default function DosageManager() {
   }, []);
   const strategyOptions = useMemo(
     () => DosageStrategyOptionsFactory.create(),
-    []
+    [],
   );
   const selectedStrategyOption = useMemo(
     () => DosageStrategyOptionsFactory.getByValue(strategy),
-    [strategy]
+    [strategy],
   );
 
   const handleShowHistory = useCallback(() => {
@@ -1130,14 +1160,14 @@ export default function DosageManager() {
         };
       });
     },
-    []
+    [],
   );
 
   // Gestisce l'aggiunta di righe dalla tabella editabile
   const handleAddRows = useCallback(
     (
       rows: Array<Record<string, unknown>>,
-      source: "csv" | "ddt" = "csv"
+      source: "csv" | "ddt" = "csv",
     ): void => {
       if (!editableTableRef.current) {
         return;
@@ -1154,10 +1184,10 @@ export default function DosageManager() {
       const newProducts = convertTableRowsToProducts(rowsWithLoadWarehouse);
       setProducts((prev) => {
         const existingIds = new Set(
-          prev.map((p) => `${p.productName}-${p.registrationNumber}`)
+          prev.map((p) => `${p.productName}-${p.registrationNumber}`),
         );
         const uniqueNewProducts = newProducts.filter(
-          (p) => !existingIds.has(`${p.productName}-${p.registrationNumber}`)
+          (p) => !existingIds.has(`${p.productName}-${p.registrationNumber}`),
         );
         // Traccia la provenienza dei nuovi prodotti
         setProductSources((prevSources) => {
@@ -1171,7 +1201,7 @@ export default function DosageManager() {
         return [...prev, ...uniqueNewProducts];
       });
     },
-    [convertTableRowsToProducts]
+    [convertTableRowsToProducts],
   );
 
   // Wrapper per CSV import
@@ -1179,7 +1209,7 @@ export default function DosageManager() {
     (rows: Array<Record<string, unknown>>): void => {
       handleAddRows(rows, "csv");
     },
-    [handleAddRows]
+    [handleAddRows],
   );
 
   // Wrapper per DDT import
@@ -1187,7 +1217,7 @@ export default function DosageManager() {
     (rows: Array<Record<string, unknown>>): void => {
       handleAddRows(rows, "ddt");
     },
-    [handleAddRows]
+    [handleAddRows],
   );
 
   // Gestisce il salvataggio dalla tabella editabile
@@ -1214,11 +1244,11 @@ export default function DosageManager() {
     // Aggiorna lo stato: rimuove quelli aggiornati, aggiunge i nuovi e gli aggiornati
     setProducts((prev) => {
       const updatedInternalIds = new Set(
-        updatedProducts.map((p) => p._internalId)
+        updatedProducts.map((p) => p._internalId),
       );
       // Rimuove i prodotti aggiornati dalla lista precedente usando _internalId
       const filtered = prev.filter(
-        (p) => !updatedInternalIds.has(p._internalId)
+        (p) => !updatedInternalIds.has(p._internalId),
       );
       // Aggiunge i nuovi prodotti e quelli aggiornati
       return [...filtered, ...createdProducts, ...updatedProducts];
@@ -1234,12 +1264,12 @@ export default function DosageManager() {
     (deletedRows: Array<Record<string, unknown>>): void => {
       const deletedProducts = convertTableRowsToProducts(deletedRows);
       const deletedInternalIds = new Set(
-        deletedProducts.map((p) => p._internalId)
+        deletedProducts.map((p) => p._internalId),
       );
 
       // Rimuove i prodotti eliminati dallo stato usando _internalId
       setProducts((prev) =>
-        prev.filter((p) => !deletedInternalIds.has(p._internalId))
+        prev.filter((p) => !deletedInternalIds.has(p._internalId)),
       );
 
       // Rimuove anche le sorgenti dei prodotti eliminati
@@ -1256,7 +1286,7 @@ export default function DosageManager() {
         description: `${deletedRows.length} prodotti eliminati con successo`,
       });
     },
-    [convertTableRowsToProducts]
+    [convertTableRowsToProducts],
   );
 
   // Converte i prodotti in formato per la tabella
@@ -1305,7 +1335,7 @@ export default function DosageManager() {
       }
       return "kg";
     },
-    []
+    [],
   );
 
   const handleRegistryProductSelected = useCallback(
@@ -1320,10 +1350,8 @@ export default function DosageManager() {
         quantityUnitOfMeasure: getDefaultUnitOfMeasure(record),
       });
     },
-    [getDefaultUnitOfMeasure]
+    [getDefaultUnitOfMeasure],
   );
-
-
 
   const activeJobs = useMemo(
     () =>
@@ -1332,9 +1360,9 @@ export default function DosageManager() {
           job.state === "queued" ||
           job.state === "waiting" ||
           job.state === "active" ||
-          job.state === "delayed"
+          job.state === "delayed",
       ),
-    [jobs]
+    [jobs],
   );
   const activeJobColumns = useMemo<EditableColumn[]>(
     () => [
@@ -1378,15 +1406,15 @@ export default function DosageManager() {
       liveLogsJobId,
       handleOpenLiveLogs,
       handleCloseLiveLogs,
-    ]
+    ],
   );
   const activeJobRows = useMemo(
     () => ActiveJobsTableRowBuilder.build(activeJobs),
-    [activeJobs]
+    [activeJobs],
   );
   const historyJobRows = useMemo(
     () => JobHistoryTableRowBuilder.build(jobs),
-    [jobs]
+    [jobs],
   );
   const activeSelectionLabel = useMemo(() => {
     if (selectedActiveJobIds.length === 0) {
@@ -1497,7 +1525,7 @@ export default function DosageManager() {
         (unit) =>
           unit.productionUnit.name.toLowerCase().includes(query) ||
           unit.productionUnit.cropName.toLowerCase().includes(query) ||
-          unit.productionUnit.variety.toLowerCase().includes(query)
+          unit.productionUnit.variety.toLowerCase().includes(query),
       );
     }
 
@@ -1507,9 +1535,14 @@ export default function DosageManager() {
   // Get selected units data
   const selectedUnits = useMemo(() => {
     return filteredUnits.filter((unit) =>
-      selectedUnitIds.includes(unit.productionUnit.id)
+      selectedUnitIds.includes(unit.productionUnit.id),
     );
   }, [filteredUnits, selectedUnitIds]);
+
+  // Reset treatedAreaHaMap when company selection changes
+  useEffect(() => {
+    setTreatedAreaHaMap(new Map());
+  }, [selectedCompanyIds]);
 
   const productionUnitTableColumns = useMemo(() => {
     return ProductionUnitTableColumnsFactory.create();
@@ -1517,8 +1550,23 @@ export default function DosageManager() {
 
   const productionUnitTableRows = useMemo(() => {
     const builder = new ProductionUnitTableRowBuilder(filteredUnits);
-    return builder.build();
-  }, [filteredUnits]);
+    const rows = builder.build();
+    // Applica i treatedAreaHa modificati se presenti
+    return rows.map((row) => {
+      const modifiedTreatedAreaHa = treatedAreaHaMap.get(row.id);
+      if (modifiedTreatedAreaHa !== undefined) {
+        const updatedTreatedAreaFormatter = new ProductionUnitAreaFormatter(
+          modifiedTreatedAreaHa,
+        );
+        return {
+          ...row,
+          treatedAreaHa: modifiedTreatedAreaHa,
+          treatedAreaLabel: updatedTreatedAreaFormatter.format(),
+        };
+      }
+      return row;
+    });
+  }, [filteredUnits, treatedAreaHaMap]);
 
   const handleUnitSelectionChange = useCallback(
     (rows: Array<Record<string, unknown>>) => {
@@ -1530,7 +1578,28 @@ export default function DosageManager() {
         .filter((id): id is string => Boolean(id));
       setSelectedUnitIds(ids);
     },
-    []
+    [],
+  );
+
+  const handleUnitTableSave = useCallback(
+    (payload: {
+      created: Array<Record<string, unknown>>;
+      updated: Array<Record<string, unknown>>;
+    }) => {
+      // Aggiorna treatedAreaHaMap con i valori modificati
+      const allRows = [...payload.created, ...payload.updated];
+      setTreatedAreaHaMap((prev) => {
+        const updated = new Map(prev);
+        allRows.forEach((row) => {
+          const data = row as Partial<ProductionUnitTableRow>;
+          if (data.id && data.treatedAreaHa !== undefined) {
+            updated.set(data.id, data.treatedAreaHa);
+          }
+        });
+        return updated;
+      });
+    },
+    [],
   );
 
   const handleProductSelectionChange = useCallback(
@@ -1555,7 +1624,7 @@ export default function DosageManager() {
         .filter((id): id is string => Boolean(id));
       setSelectedProductIds(ids);
     },
-    []
+    [],
   );
 
   const handleActiveJobsSelectionChange = useCallback(
@@ -1563,7 +1632,7 @@ export default function DosageManager() {
       const ids = rows.map((row) => ActiveJobsTableRowBuilder.extractId(row));
       setSelectedActiveJobIds(ids);
     },
-    []
+    [],
   );
 
   const handleImportFromWarehouse = useCallback(async () => {
@@ -1588,7 +1657,7 @@ export default function DosageManager() {
 
     // Filter products by selected companies
     const companyProducts = warehouseInventory.filter((product) =>
-      selectedCompanyIds.includes(product.warehouse.company.id)
+      selectedCompanyIds.includes(product.warehouse.company.id),
     );
 
     if (companyProducts.length === 0) {
@@ -1611,9 +1680,8 @@ export default function DosageManager() {
         description: `Analisi di ${companyProducts.length} prodotti...`,
       });
 
-      mappedProducts = await WarehouseProductsMapper.toDosageProducts(
-        companyProducts
-      );
+      mappedProducts =
+        await WarehouseProductsMapper.toDosageProducts(companyProducts);
 
       toast.loading("Elaborazione prodotti...", {
         id: toastId,
@@ -1647,7 +1715,7 @@ export default function DosageManager() {
     let importedCount = 0;
     setProducts((prev) => {
       const existingKeys = new Set(
-        prev.map((product) => DosageProductKeyBuilder.build(product))
+        prev.map((product) => DosageProductKeyBuilder.build(product)),
       );
       const uniqueProducts = mappedProducts.filter((product) => {
         const key = DosageProductKeyBuilder.build(product);
@@ -1664,7 +1732,7 @@ export default function DosageManager() {
         (product) => ({
           ...product,
           _internalId: `product-${Date.now()}-${++productIdCounterRef.current}`,
-        })
+        }),
       );
 
       // Traccia la provenienza dei prodotti importati da magazzino
@@ -1758,7 +1826,7 @@ export default function DosageManager() {
         return products.some(
           (p) =>
             p.productName === productName &&
-            p.registrationNumber === registrationNumber
+            p.registrationNumber === registrationNumber,
         );
       });
     });
@@ -1798,8 +1866,8 @@ export default function DosageManager() {
         setSelectedJob(normalized);
         setJobs((prev) =>
           prev.map((existingJob) =>
-            existingJob.id === normalized.id ? normalized : existingJob
-          )
+            existingJob.id === normalized.id ? normalized : existingJob,
+          ),
         );
       } catch (error) {
         toast.error("Impossibile caricare i dettagli del job", {
@@ -1810,7 +1878,7 @@ export default function DosageManager() {
         setIsJobDetailsLoading(false);
       }
     },
-    [isJobDetailsLoading, selectedJob]
+    [isJobDetailsLoading, selectedJob],
   );
 
   const historyJobColumns = useMemo<EditableColumn[]>(() => {
@@ -1933,9 +2001,8 @@ export default function DosageManager() {
       setIsCancellingJobs(true);
 
       try {
-        const updatedJobs = await dosageJobCancellationService.cancel(
-          uniqueIds
-        );
+        const updatedJobs =
+          await dosageJobCancellationService.cancel(uniqueIds);
         setJobs(updatedJobs);
 
         if (selectedJob && uniqueIds.includes(selectedJob.id)) {
@@ -1954,7 +2021,7 @@ export default function DosageManager() {
         setIsCancellingJobs(false);
       }
     },
-    [selectedJob]
+    [selectedJob],
   );
 
   const handleCancelSelectedActiveJobs = useCallback(() => {
@@ -2013,7 +2080,7 @@ export default function DosageManager() {
       if (startAt && startAt < minDate) {
         toast.error("Data inizio non valida", {
           description: `La data di inizio non può essere prima del ${new Date(
-            minDate
+            minDate,
           ).toLocaleDateString("it-IT")}`,
         });
         return;
@@ -2023,7 +2090,7 @@ export default function DosageManager() {
         if (maxDate && endAt > maxDate) {
           toast.error("Data fine non valida", {
             description: `La data di fine non può essere dopo il ${new Date(
-              maxDate
+              maxDate,
             ).toLocaleDateString("it-IT")}`,
           });
           return;
@@ -2041,6 +2108,16 @@ export default function DosageManager() {
     setIsSubmitting(true);
 
     try {
+      // Get treatedAreaHa from the first selected unit (or use areaHa if not modified)
+      // If multiple units are selected, use the treatedAreaHa of the first one
+      const firstSelectedUnitRow = productionUnitTableRows.find((row) =>
+        selectedUnitIds.includes(row.id),
+      );
+      const treatedAreaHa =
+        firstSelectedUnitRow?.treatedAreaHa ??
+        firstSelectedUnitRow?.areaHa ??
+        undefined;
+
       // Filter products to only include selected ones using _internalId
       const selectedProducts = products
         .filter((product) => {
@@ -2049,10 +2126,19 @@ export default function DosageManager() {
         .map((product) => {
           // Remove _internalId before sending to API and apply global loadWarehouse setting
           const { _internalId, ...productWithoutId } = product;
-          return {
+          const productPayload: DosageProduct = {
             ...productWithoutId,
             loadWarehouse,
           };
+
+          // Add treatedAreaHa if available and valid
+          if (treatedAreaHa !== undefined && treatedAreaHa > 0) {
+            // Limit treatedAreaHa to areaHa if it exceeds it
+            const maxAreaHa = firstSelectedUnitRow?.areaHa ?? treatedAreaHa;
+            productPayload.treatedAreaHa = Math.min(treatedAreaHa, maxAreaHa);
+          }
+
+          return productPayload;
         });
 
       // Prepare units of production
@@ -2075,7 +2161,7 @@ export default function DosageManager() {
           occupazione: unit.productionUnit.occupazione,
           destinazioneDiUso: unit.productionUnit.destinazioneDiUso,
           acquaTotalePeridoL: unit.productionUnit.acquaTotalePeridoL,
-        })
+        }),
       );
 
       // Prepare request payload
@@ -2088,7 +2174,7 @@ export default function DosageManager() {
         outStockLimiter,
         orchestrator: OrchestratorRequestBuilder.build(
           orchestratorSettings,
-          orchestratorDatasets
+          orchestratorDatasets,
         ),
       };
 
@@ -2137,6 +2223,7 @@ export default function DosageManager() {
       setSearchQuery("");
       setStartAt("");
       setEndAt("");
+      setTreatedAreaHaMap(new Map());
     } catch (error) {
       toast.error("Errore durante l'avvio del calcolo", {
         description:
@@ -2213,6 +2300,7 @@ export default function DosageManager() {
             productionUnitTableColumns={productionUnitTableColumns}
             productionUnitTableRows={productionUnitTableRows}
             handleUnitSelectionChange={handleUnitSelectionChange}
+            handleUnitTableSave={handleUnitTableSave}
             products={products}
             setProducts={setProducts}
             setSelectedProductIds={setSelectedProductIds}
@@ -2276,8 +2364,8 @@ export default function DosageManager() {
           left: isMobile
             ? 0
             : sidebarState === "collapsed"
-            ? "calc(var(--sidebar-width-icon) + 1rem)"
-            : "var(--sidebar-width)",
+              ? "calc(var(--sidebar-width-icon) + 1rem)"
+              : "var(--sidebar-width)",
           marginBottom: isMobile ? 0 : undefined,
         }}
       >
@@ -2369,8 +2457,8 @@ export default function DosageManager() {
                   liveSocketState === "connected"
                     ? "default"
                     : liveSocketState === "connecting"
-                    ? "secondary"
-                    : "destructive"
+                      ? "secondary"
+                      : "destructive"
                 }
                 className="flex items-center gap-1.5"
               >

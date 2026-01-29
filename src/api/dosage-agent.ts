@@ -12,6 +12,7 @@ export type DosageProduct = {
   supplierVat?: string;
   ddtDate?: string;
   orderNumber?: string;
+  treatedAreaHa?: number;
 };
 
 export type DosageUnitOfProduction = {

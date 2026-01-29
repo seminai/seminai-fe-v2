@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import type { ComponentProps, ReactNode } from "react";
 import { PageHeader } from "@/components/organism/Header";
 import { useProducts } from "@/hooks/useProducts";
@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { IoOpenOutline } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -127,6 +127,7 @@ interface ProductTableRow extends Record<string, unknown> {
   warehouseName: string;
   companyName: string;
   movementsCount: number;
+  administrativeStatus: string | null;
   product: Product;
 }
 
@@ -155,6 +156,7 @@ class ProductTableRowBuilder {
         warehouseName: product.warehouse.name,
         companyName: product.warehouse.company.name,
         movementsCount: product.stocks.length,
+        administrativeStatus: product.administrativeStatus ?? null,
         product,
       };
     });
@@ -162,7 +164,9 @@ class ProductTableRowBuilder {
 }
 
 class ProductTableColumnsFactory {
-  public static create(): EditableColumn[] {
+  public static create(
+    onUpdateAdministrativeStatus: () => Promise<void>
+  ): EditableColumn[] {
     return [
       {
         id: "name",
@@ -188,6 +192,17 @@ class ProductTableColumnsFactory {
         title: "Azienda",
         width: "220px",
         render: ProductTableColumnsFactory.renderCompany,
+      },
+      {
+        id: "administrativeStatus",
+        title: "Stato amministrativo",
+        width: "220px",
+        render: (value, row) =>
+          ProductTableColumnsFactory.renderAdministrativeStatus(
+            value,
+            row,
+            onUpdateAdministrativeStatus
+          ),
       },
     ];
   }
@@ -241,6 +256,38 @@ class ProductTableColumnsFactory {
     const data = ProductTableColumnsFactory.asRow(row);
     return <span>{data.companyName}</span>;
   }
+
+  private static renderAdministrativeStatus(
+    _value: unknown,
+    row: Record<string, unknown>,
+    onUpdateAdministrativeStatus: () => Promise<void>
+  ): ReactNode {
+    const data = ProductTableColumnsFactory.asRow(row);
+    if (data.administrativeStatus === null || data.administrativeStatus === undefined) {
+      return (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onUpdateAdministrativeStatus}
+          className="h-7 px-2 text-xs"
+        >
+          <RefreshCw className="h-3 w-3 mr-1" />
+          Ricarica
+        </Button>
+      );
+    }
+    
+    // Mostra "Revocato" con badge rosso di allerta
+    if (data.administrativeStatus === "Revocato" || data.administrativeStatus?.toString().toLowerCase() === "revocato") {
+      return (
+        <Badge variant="destructive">
+          {data.administrativeStatus}
+        </Badge>
+      );
+    }
+    
+    return <span>{data.administrativeStatus}</span>;
+  }
 }
 
 function ProductsPage() {
@@ -263,7 +310,26 @@ function ProductsPage() {
     return sorter.sort();
   }, [products]);
 
-  const tableColumns = useMemo(() => ProductTableColumnsFactory.create(), []);
+  const handleUpdateAdministrativeStatus = useCallback(async () => {
+    try {
+      const response = await productsApiService.updateAdministrativeStatus();
+      toast.success("Stato amministrativo aggiornato", {
+        description: `${response.data.productsUpdated} prodotti aggiornati su ${response.data.totalProductsWithRegistration} totali`,
+      });
+      await refetch();
+    } catch (error) {
+      toast.error("Errore durante l'aggiornamento", {
+        description:
+          error instanceof Error ? error.message : "Riprova più tardi",
+      });
+      console.error("Error updating administrative status:", error);
+    }
+  }, [refetch]);
+
+  const tableColumns = useMemo(
+    () => ProductTableColumnsFactory.create(handleUpdateAdministrativeStatus),
+    [handleUpdateAdministrativeStatus]
+  );
 
   const tableRows = useMemo<ProductTableRow[]>(() => {
     const builder = new ProductTableRowBuilder(sortedProducts);

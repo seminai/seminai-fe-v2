@@ -83,6 +83,10 @@ interface ManageSectionProps {
   productionUnitTableColumns: EditableColumn[];
   productionUnitTableRows: Array<Record<string, unknown>>;
   handleUnitSelectionChange: (rows: Array<Record<string, unknown>>) => void;
+  handleUnitTableSave: (payload: {
+    created: Array<Record<string, unknown>>;
+    updated: Array<Record<string, unknown>>;
+  }) => void;
   products: ProductWithInternalId[];
   setProducts: Dispatch<SetStateAction<ProductWithInternalId[]>>;
   setSelectedProductIds: Dispatch<SetStateAction<string[]>>;
@@ -175,6 +179,7 @@ export function ManageSection({
   productionUnitTableColumns,
   productionUnitTableRows,
   handleUnitSelectionChange,
+  handleUnitTableSave,
   products,
   setProducts,
   setSelectedProductIds,
@@ -389,10 +394,11 @@ export function ManageSection({
             <EditableTable
               columns={productionUnitTableColumns}
               rows={productionUnitTableRows}
-              isModify={false}
+              isModify={true}
               addButton={false}
               onSelectionChange={handleUnitSelectionChange}
               showDeleteAction={false}
+              onSave={handleUnitTableSave}
               getRowId={(row: Record<string, unknown>) =>
                 (row as { id: string }).id
               }

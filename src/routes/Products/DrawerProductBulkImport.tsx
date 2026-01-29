@@ -41,7 +41,7 @@ function DrawerProductBulkImport({
   const [warehouseId, setWarehouseId] = useState("");
   const [previewErrors, setPreviewErrors] = useState<ImportPreviewError[]>([]);
   const [previewProducts, setPreviewProducts] = useState<ProductImportItem[]>(
-    []
+    [],
   );
   const [previewDrawerOpen, setPreviewDrawerOpen] = useState(false);
   const [previewImportSource, setPreviewImportSource] =
@@ -72,7 +72,7 @@ function DrawerProductBulkImport({
         value: company.id,
         label: company.name || company.id,
       })),
-    [companies]
+    [companies],
   );
 
   const warehouseOptions = useMemo(
@@ -81,7 +81,7 @@ function DrawerProductBulkImport({
         value: warehouse.id,
         label: warehouse.name || warehouse.id,
       })),
-    [warehouses]
+    [warehouses],
   );
 
   const handlePreviewReady = useCallback(
@@ -95,7 +95,7 @@ function DrawerProductBulkImport({
       setPreviewImportSource(payload.source);
       setPreviewDrawerOpen(true);
     },
-    []
+    [],
   );
 
   const handleCompanyChange = useCallback((value: string) => {
@@ -142,7 +142,7 @@ function DrawerProductBulkImport({
       }
       onOpenChange(true);
     },
-    [handleCloseDrawer, onOpenChange]
+    [handleCloseDrawer, onOpenChange],
   );
 
   const selectedWarehouse = useMemo(() => {
@@ -156,161 +156,171 @@ function DrawerProductBulkImport({
 
   return (
     <>
-    <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent side="right" className="w-screen max-w-full sm:w-full sm:max-w-4xl bg-white">
-        <SheetHeader>
-          <SheetTitle>Importazione massiva prodotti</SheetTitle>
-          <SheetDescription>
-            Seleziona un&apos;azienda, scegli il magazzino di destinazione e poi
-            carica un file CSV/Excel o importa da file DDT PDF.
-          </SheetDescription>
-        </SheetHeader>
+      <Sheet open={open} onOpenChange={handleOpenChange}>
+        <SheetContent
+          side="right"
+          className="w-screen max-w-full sm:w-full sm:max-w-4xl bg-white"
+        >
+          <SheetHeader>
+            <SheetTitle>Importazione massiva prodotti</SheetTitle>
+            <SheetDescription>
+              Seleziona un&apos;azienda, scegli il magazzino di destinazione e
+              poi carica un file CSV/Excel o importa da file DDT PDF.
+            </SheetDescription>
+          </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-4 pt-4">
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="csv">File CSV/Excel</TabsTrigger>
-              <TabsTrigger value="ddt">Importa da DDT</TabsTrigger>
-            </TabsList>
+          <div className="flex-1 overflow-y-auto px-4 pt-4">
+            <Tabs
+              value={activeTab}
+              onValueChange={handleTabChange}
+              className="w-full"
+            >
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="csv">File CSV/Excel</TabsTrigger>
+                <TabsTrigger value="ddt">Importa da DDT</TabsTrigger>
+              </TabsList>
 
-            <div className="space-y-5 pb-16">
-              <div className="space-y-2">
-                <Label>Seleziona azienda</Label>
-                <SearchableSelect
-                  value={companyId}
-                  options={companyOptions}
-                  placeholder="Seleziona azienda"
-                  searchPlaceholder="Cerca azienda..."
-                  emptyMessage="Nessuna azienda trovata"
-                  loading={isLoadingCompanies}
-                  loadingMessage="Caricamento aziende..."
-                  noneOptionLabel="Nessuna selezione"
-                  onChange={handleCompanyChange}
-                />
-                {!isLoadingCompanies && companyOptions.length === 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Nessuna azienda disponibile. Creane una prima di procedere.
-                  </p>
-                )}
-                {isCompaniesError && (
-                  <p className="text-xs text-red-600">
-                    {companiesError?.message ?? "Impossibile caricare le aziende"}
-                  </p>
-                )}
+              <div className="space-y-5 pb-16">
+                <div className="space-y-2">
+                  <Label>Seleziona azienda</Label>
+                  <SearchableSelect
+                    value={companyId}
+                    options={companyOptions}
+                    placeholder="Seleziona azienda"
+                    searchPlaceholder="Cerca azienda..."
+                    emptyMessage="Nessuna azienda trovata"
+                    loading={isLoadingCompanies}
+                    loadingMessage="Caricamento aziende..."
+                    noneOptionLabel="Nessuna selezione"
+                    onChange={handleCompanyChange}
+                  />
+                  {!isLoadingCompanies && companyOptions.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Nessuna azienda disponibile. Creane una prima di
+                      procedere.
+                    </p>
+                  )}
+                  {isCompaniesError && (
+                    <p className="text-xs text-red-600">
+                      {companiesError?.message ??
+                        "Impossibile caricare le aziende"}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Seleziona magazzino (opzionale)</Label>
+                  {companyId ? (
+                    <>
+                      <SearchableSelect
+                        value={warehouseId}
+                        options={warehouseOptions}
+                        placeholder="Seleziona magazzino (opzionale)"
+                        searchPlaceholder="Cerca magazzino..."
+                        emptyMessage="Nessun magazzino trovato"
+                        noneOptionLabel="Nessuna selezione (verrà usato il primo magazzino disponibile)"
+                        loading={isLoadingWarehouses}
+                        loadingMessage="Caricamento magazzini..."
+                        disabled={!companyId}
+                        onChange={setWarehouseId}
+                      />
+                      {!isLoadingWarehouses &&
+                        warehouseOptions.length === 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Nessun magazzino disponibile per l&apos;azienda
+                            selezionata. Verrà selezionato automaticamente il
+                            primo magazzino disponibile.
+                          </p>
+                        )}
+                      {!isLoadingWarehouses &&
+                        warehouseOptions.length > 0 &&
+                        !warehouseId && (
+                          <p className="text-xs text-muted-foreground">
+                            Se non selezioni un magazzino, verrà utilizzato il
+                            primo magazzino disponibile dell&apos;azienda.
+                          </p>
+                        )}
+                    </>
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-3 text-sm text-muted-foreground">
+                      Seleziona prima un&apos;azienda per visualizzare i suoi
+                      magazzini.
+                    </div>
+                  )}
+                  {isWarehousesError && (
+                    <p className="text-xs text-red-600">
+                      {warehousesError?.message ??
+                        "Impossibile caricare i magazzini"}
+                    </p>
+                  )}
+                </div>
+
+                <TabsContent value="csv" className="mt-0 space-y-4">
+                  <DrawerProductBulkImportCsvTab
+                    key={`csv-${resetCounter}`}
+                    companyId={companyId}
+                    warehouseId={warehouseId || warehouses[0]?.id || undefined}
+                    canShowImportSections={canShowImportSections}
+                    onPreviewReady={handlePreviewReady}
+                    onImportButtonStateChange={setCsvImportButtonState}
+                  />
+                </TabsContent>
+
+                <TabsContent value="ddt" className="mt-0 space-y-4">
+                  <DrawerProductBulkImportDdtTab
+                    key={`ddt-${resetCounter}`}
+                    companyId={companyId}
+                    canShowImportSections={canShowImportSections}
+                    onPreviewReady={handlePreviewReady}
+                  />
+                </TabsContent>
               </div>
-
-              <div className="space-y-2">
-                <Label>Seleziona magazzino (opzionale)</Label>
-                {companyId ? (
-                  <>
-                    <SearchableSelect
-                      value={warehouseId}
-                      options={warehouseOptions}
-                      placeholder="Seleziona magazzino (opzionale)"
-                      searchPlaceholder="Cerca magazzino..."
-                      emptyMessage="Nessun magazzino trovato"
-                      noneOptionLabel="Nessuna selezione (verrà usato il primo magazzino disponibile)"
-                      loading={isLoadingWarehouses}
-                      loadingMessage="Caricamento magazzini..."
-                      disabled={!companyId}
-                      onChange={setWarehouseId}
-                    />
-                    {!isLoadingWarehouses && warehouseOptions.length === 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Nessun magazzino disponibile per l&apos;azienda
-                        selezionata. Verrà selezionato automaticamente il primo
-                        magazzino disponibile.
-                      </p>
-                    )}
-                    {!isLoadingWarehouses &&
-                      warehouseOptions.length > 0 &&
-                      !warehouseId && (
-                        <p className="text-xs text-muted-foreground">
-                          Se non selezioni un magazzino, verrà utilizzato il primo
-                          magazzino disponibile dell&apos;azienda.
-                        </p>
-                      )}
-                  </>
-                ) : (
-                  <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-3 text-sm text-muted-foreground">
-                    Seleziona prima un&apos;azienda per visualizzare i suoi
-                    magazzini.
-                  </div>
-                )}
-                {isWarehousesError && (
-                  <p className="text-xs text-red-600">
-                    {warehousesError?.message ??
-                      "Impossibile caricare i magazzini"}
-                  </p>
-                )}
-              </div>
-
-              <TabsContent value="csv" className="mt-0 space-y-4">
-                <DrawerProductBulkImportCsvTab
-                  key={`csv-${resetCounter}`}
-                  companyId={companyId}
-                  warehouseId={warehouseId || warehouses[0]?.id || undefined}
-                  canShowImportSections={canShowImportSections}
-                  onPreviewReady={handlePreviewReady}
-                  onImportButtonStateChange={setCsvImportButtonState}
-                />
-              </TabsContent>
-
-              <TabsContent value="ddt" className="mt-0 space-y-4">
-                <DrawerProductBulkImportDdtTab
-                  key={`ddt-${resetCounter}`}
-                  companyId={companyId}
-                  canShowImportSections={canShowImportSections}
-                  onPreviewReady={handlePreviewReady}
-                />
-              </TabsContent>
-            </div>
-          </Tabs>
-        </div>
-
-        <SheetFooter className="flex flex-col gap-4 border-t pt-4">
-          <div className="flex flex-wrap justify-between w-full gap-3">
-            <Button type="button" variant="ghost" onClick={handleCloseDrawer}>
-              Annulla
-            </Button>
-            {activeTab === "csv" && csvImportButtonState && (
-              <Button
-                type="button"
-                onClick={csvImportButtonState.onImport}
-                disabled={!csvImportButtonState.canImport}
-                className="gap-2 bg-agri-green-600 text-white shadow-sm hover:bg-agri-green-700 focus-visible:ring-agri-green-600/20 dark:focus-visible:ring-agri-green-600/40"
-              >
-                {csvImportButtonState.isPreviewing ? (
-                  <>
-                    <Spinner size={18} /> Import in corso...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-4 w-4" />
-                    Importa prodotti
-                  </>
-                )}
-              </Button>
-            )}
+            </Tabs>
           </div>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
 
-    {/* Preview Drawer - separato dal Sheet principale */}
-    {previewDrawerOpen && (
-      <DrawerProductImportPreview
-        open={previewDrawerOpen}
-        onOpenChange={setPreviewDrawerOpen}
-        products={previewProducts}
-        previewErrors={previewErrors}
-        companyId={companyId}
-        warehouseId={warehouseId || warehouses[0]?.id || undefined}
-        warehouseName={selectedWarehouse?.name}
-        importSource={previewImportSource}
-        onImportCompleted={handlePreviewImportCompleted}
-      />
-    )}
+          <SheetFooter className="flex flex-col gap-4 border-t pt-4">
+            <div className="flex flex-wrap justify-between w-full gap-3">
+              <Button type="button" variant="ghost" onClick={handleCloseDrawer}>
+                Annulla
+              </Button>
+              {activeTab === "csv" && csvImportButtonState && (
+                <Button
+                  type="button"
+                  onClick={csvImportButtonState.onImport}
+                  disabled={!csvImportButtonState.canImport}
+                  className="gap-2 bg-agri-green-600 text-white shadow-sm hover:bg-agri-green-700 focus-visible:ring-agri-green-600/20 dark:focus-visible:ring-agri-green-600/40"
+                >
+                  {csvImportButtonState.isPreviewing ? (
+                    <>
+                      <Spinner size={18} /> Import in corso...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4" />
+                      Importa prodotti
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      {/* Preview Drawer - separato dal Sheet principale */}
+      {previewDrawerOpen && (
+        <DrawerProductImportPreview
+          open={previewDrawerOpen}
+          onOpenChange={setPreviewDrawerOpen}
+          products={previewProducts}
+          previewErrors={previewErrors}
+          companyId={companyId}
+          warehouseId={warehouseId || warehouses[0]?.id || undefined}
+          warehouseName={selectedWarehouse?.name}
+          importSource={previewImportSource}
+          onImportCompleted={handlePreviewImportCompleted}
+        />
+      )}
     </>
   );
 }

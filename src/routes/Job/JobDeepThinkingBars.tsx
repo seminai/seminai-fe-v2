@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ChevronDown, ChevronUp, Brain, ListTodo, Check, Wrench, Search, CheckCircle2, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
@@ -122,19 +122,6 @@ export function JobDeepThinkingBars({
 }: JobDeepThinkingBarsProps) {
   const [thinkingOpen, setThinkingOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
-
-  // Auto-open when loading starts and there's content
-  useEffect(() => {
-    if (isLoading && thinkingSteps.length > 0) {
-      setThinkingOpen(true);
-    }
-  }, [isLoading, thinkingSteps.length]);
-
-  useEffect(() => {
-    if (isLoading && tasks.length > 0) {
-      setTasksOpen(true);
-    }
-  }, [isLoading, tasks.length]);
 
   // Hide bars when not loading and no content
   if (!isLoading && thinkingSteps.length === 0 && tasks.length === 0) {

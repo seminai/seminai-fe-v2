@@ -7,6 +7,7 @@ import {
 } from "@/api/fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -175,6 +176,7 @@ export function DrawerFieldContent({
     magnesium: field.magnesium || null,
     inizioConduzione: field.inizioConduzione || "",
     fineConduzione: field.fineConduzione || "",
+    bufferZoneNotes: field.bufferZoneNotes || "",
   });
 
   // Aggiorna i dati quando il field cambia (dopo un update)
@@ -204,6 +206,7 @@ export function DrawerFieldContent({
         magnesium: field.magnesium || null,
         inizioConduzione: field.inizioConduzione || "",
         fineConduzione: field.fineConduzione || "",
+        bufferZoneNotes: field.bufferZoneNotes || "",
       });
     }
   }, [field, isEditing]);
@@ -260,6 +263,8 @@ export function DrawerFieldContent({
       updateData.inizioConduzione = editedData.inizioConduzione || null;
     if (editedData.fineConduzione !== (field.fineConduzione || ""))
       updateData.fineConduzione = editedData.fineConduzione || null;
+    if (editedData.bufferZoneNotes !== (field.bufferZoneNotes || ""))
+      updateData.bufferZoneNotes = editedData.bufferZoneNotes || null;
 
     onUpdate(updateData);
     setIsEditing(false);
@@ -290,6 +295,7 @@ export function DrawerFieldContent({
       magnesium: field.magnesium || null,
       inizioConduzione: field.inizioConduzione || "",
       fineConduzione: field.fineConduzione || "",
+      bufferZoneNotes: field.bufferZoneNotes || "",
     });
     setIsEditing(false);
   };
@@ -792,7 +798,7 @@ export function DrawerFieldContent({
 
   const renderConductionPeriod = (): React.ReactNode => {
     return (
-      <div className="pb-6">
+      <div className="border-b border-gray-100 pb-6">
         <h3 className="text-sm font-medium text-black mb-4">
           Periodo di Conduzione
         </h3>
@@ -862,6 +868,35 @@ export function DrawerFieldContent({
     );
   };
 
+  const renderBufferZoneNotes = (): React.ReactNode => {
+    return (
+      <div className="pb-6">
+        <h3 className="text-sm font-medium text-black mb-4">
+          Note Zona Buffer
+        </h3>
+        <div>
+          {isEditing ? (
+            <Textarea
+              value={editedData.bufferZoneNotes || ""}
+              onChange={(e) =>
+                setEditedData({
+                  ...editedData,
+                  bufferZoneNotes: e.target.value || null,
+                })
+              }
+              placeholder="Inserisci le note sulla zona buffer..."
+              className="bg-white border-gray-200 focus:border-gray-400 focus:ring-gray-300/50 rounded-lg min-h-[120px] resize-y"
+            />
+          ) : (
+            <p className="text-sm text-gray-900 whitespace-pre-wrap">
+              {field.bufferZoneNotes || "-"}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header con pulsante modifica */}
@@ -920,6 +955,7 @@ export function DrawerFieldContent({
         {renderNutrients()}
         {renderProductionUnits()}
         {renderConductionPeriod()}
+        {renderBufferZoneNotes()}
       </div>
     </div>
   );
