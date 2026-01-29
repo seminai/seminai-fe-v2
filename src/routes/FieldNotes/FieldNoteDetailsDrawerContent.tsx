@@ -37,7 +37,7 @@ export function FieldNoteDetailsDrawerContent({
   isUploadingAttachment,
 }: FieldNoteDetailsDrawerContentProps) {
   return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-180px)]">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto overflow-x-hidden max-h-[calc(100svh-180px)]">
       <FieldNoteMetaSection
         fieldNote={fieldNote}
         formState={formState}
