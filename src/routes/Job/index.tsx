@@ -1889,6 +1889,19 @@ export default function JobPage() {
     return allSelectedJobs.filter((job) => selectedIds.has(job.job.id));
   }, [allSelectedJobs, selectedAllRows]);
 
+  // Jobs selezionati per la chat nella vista Review (filtrati per le righe selezionate)
+  const selectedReviewJobsForChat = useMemo(() => {
+    if (selectedReviewRows.length === 0 || !selectedGroupJobs || selectedGroupJobs.length === 0) {
+      return [];
+    }
+
+    const selectedIds = new Set(
+      selectedReviewRows.map((row) => String(row.id))
+    );
+
+    return selectedGroupJobs.filter((job) => selectedIds.has(job.job.id));
+  }, [selectedGroupJobs, selectedReviewRows]);
+
   // Funzione per trovare l'etichetta per nome prodotto e numero di registrazione
   const findLabelByProduct = (
     productName: string,
@@ -3564,7 +3577,7 @@ export default function JobPage() {
       exportConfig={jobExportConfig}
       isRightSidebarOpen={isRightSidebarOpen}
       onToggleRightSidebar={setIsRightSidebarOpen}
-      selectedJobsForChat={selectedGroupJobs ?? []}
+      selectedJobsForChat={selectedReviewJobsForChat}
       onConformityConfirmSuccess={handleConformityConfirmSuccess}
       getRowClassName={(row) => {
         const quantity = Number(row.quantity ?? 0);
