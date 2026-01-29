@@ -617,17 +617,31 @@ export function ReviewJobsView({
                     getRowClassName={getRowClassName}
                   >
                     {selectedGroupSummary && !isRightSidebarOpen && (
-                      <Button
-                        data-table-slot="right"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onToggleRightSidebar(true)}
-                        className="text-black hover:text-gray-700 cursor-pointer focus-visible:ring-0 focus-visible:outline-none"
-                        title="Apri pannello dettagli"
-                      >
-                        <PanelRightOpen className="h-4 w-4 sm:mr-2" />
-                        <span className="hidden sm:inline">Dettagli</span>
-                      </Button>
+                      <div className="flex items-center gap-1" data-table-slot="right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onToggleRightSidebar(true)}
+                          className="text-black hover:text-gray-700 cursor-pointer focus-visible:ring-0 focus-visible:outline-none"
+                          title="Apri pannello dettagli"
+                        >
+                          <PanelRightOpen className="h-4 w-4 sm:mr-2" />
+                          <span className="hidden sm:inline">Dettagli</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            onRightSidebarModeChange("conformity");
+                            onToggleRightSidebar(true);
+                          }}
+                          className="text-black hover:text-gray-700 cursor-pointer focus-visible:ring-0 focus-visible:outline-none"
+                          title="Apri chat"
+                        >
+                          <MessageSquare className="h-4 w-4 sm:mr-2" />
+                          <span className="hidden sm:inline">Chat</span>
+                        </Button>
+                      </div>
                     )}
                   </EditableTable>
                 </div>
@@ -695,6 +709,15 @@ export function ReviewJobsView({
                       title="Mostra storico"
                     >
                       <Brain className="h-4 w-4 text-slate-500" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onRightSidebarModeChange("conformity")}
+                      className="h-7 w-7 p-0"
+                      title="Verifica conformità"
+                    >
+                      <MessageSquare className="h-4 w-4 text-slate-500" />
                     </Button>
                     <Button
                       variant="ghost"

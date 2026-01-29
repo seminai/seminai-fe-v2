@@ -114,12 +114,26 @@ function DrawerProductImportPreview({
         products: productsPayload,
       });
 
-      const imported = response.data?.imported || 0;
-      const skipped = response.data?.skipped || 0;
+      // Support both new format (productsCreated/productsUpdated/stocksCreated) and legacy format (imported/skipped)
+      const productsCreated = response.data?.productsCreated ?? 0;
+      const productsUpdated = response.data?.productsUpdated ?? 0;
+      const stocksCreated = response.data?.stocksCreated ?? 0;
+      const imported = response.data?.imported ?? 0;
+      const skipped = response.data?.skipped ?? 0;
       const errors = response.data?.errors || [];
 
+      // Use new format if available, otherwise fall back to legacy format
+      const totalProducts = productsCreated + productsUpdated > 0 
+        ? productsCreated + productsUpdated 
+        : imported;
+      const skippedCount = productsCreated + productsUpdated > 0 
+        ? 0 
+        : skipped;
+
       toast.success("Importazione completata", {
-        description: `${imported} prodotti importati, ${skipped} saltati`,
+        description: productsCreated + productsUpdated > 0
+          ? `${productsCreated} prodotti creati, ${productsUpdated} prodotti aggiornati${stocksCreated > 0 ? `, ${stocksCreated} stock creati` : ""}`
+          : `${totalProducts} prodotti importati${skippedCount > 0 ? `, ${skippedCount} saltati` : ""}`,
       });
 
       if (errors.length > 0) {

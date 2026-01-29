@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Upload, FileDown, Info, AlertTriangle } from "lucide-react";
+import { Upload, FileDown, Info, AlertTriangle, CheckCircle2, File } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { productsApiService, type ImportFromCsvExcelPreviewProduct } from "@/api/products";
+import {
+  productsApiService,
+  type ImportFromCsvExcelPreviewProduct,
+} from "@/api/products";
 import type {
   ImportPreviewError,
   ProductImportItem,
@@ -46,7 +49,7 @@ class BulkProductTemplateBuilder {
 
 class CsvExcelPreviewMapper {
   public map(
-    products: ImportFromCsvExcelPreviewProduct[]
+    products: ImportFromCsvExcelPreviewProduct[],
   ): ProductImportItem[] {
     return products.map((product) => ({
       name: product.name,
@@ -100,7 +103,9 @@ function DrawerProductBulkImportCsvTab({
   const [parserErrors, setParserErrors] = useState<string[]>([]);
 
   const canImport = useMemo(() => {
-    return Boolean(selectedFile) && companyId.trim().length > 0 && !isPreviewing;
+    return (
+      Boolean(selectedFile) && companyId.trim().length > 0 && !isPreviewing
+    );
   }, [selectedFile, companyId, isPreviewing]);
 
   const handleFileSelect = useCallback((file: File) => {
@@ -148,7 +153,7 @@ function DrawerProductBulkImportCsvTab({
         handleFileSelect(e.dataTransfer.files[0]);
       }
     },
-    [handleFileSelect]
+    [handleFileSelect],
   );
 
   const handlePreviewImport = useCallback(async () => {
@@ -167,7 +172,7 @@ function DrawerProductBulkImportCsvTab({
       });
 
       const previewProducts = new CsvExcelPreviewMapper().map(
-        response.data?.products ?? []
+        response.data?.products ?? [],
       );
       const previewErrors = response.data?.errors ?? [];
 
@@ -235,8 +240,9 @@ function DrawerProductBulkImportCsvTab({
           <Info className="h-4 w-4" />
           <AlertTitle>Seleziona i dati principali</AlertTitle>
           <AlertDescription>
-            Per poter importare il file devi prima scegliere un&apos;azienda. Una
-            volta completata la selezione appariranno i controlli di caricamento.
+            Per poter importare il file devi prima scegliere un&apos;azienda.
+            Una volta completata la selezione appariranno i controlli di
+            caricamento.
           </AlertDescription>
         </Alert>
       ) : (
@@ -244,10 +250,12 @@ function DrawerProductBulkImportCsvTab({
           <div className="space-y-2">
             <Label>File CSV o Excel</Label>
             <div
-              className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                dragActive
-                  ? "border-primary bg-primary/5"
-                  : "border-gray-300 hover:border-gray-400"
+              className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all ${
+                selectedFileName
+                  ? "border-green-500 bg-green-50/50"
+                  : dragActive
+                    ? "border-primary bg-primary/5"
+                    : "border-gray-300 hover:border-gray-400"
               } ${isPreviewing ? "opacity-50 pointer-events-none" : ""}`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
@@ -263,10 +271,17 @@ function DrawerProductBulkImportCsvTab({
                 disabled={isPreviewing}
               />
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex justify-center">
                   {isPreviewing ? (
                     <Spinner size={40} ariaLabel="Elaborazione file" />
+                  ) : selectedFileName ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="relative">
+                        <File className="h-12 w-12 text-green-600" />
+                        <CheckCircle2 className="h-6 w-6 text-green-600 absolute -top-1 -right-1 bg-white rounded-full" />
+                      </div>
+                    </div>
                   ) : (
                     <Upload className="h-12 w-12 text-gray-400" />
                   )}
@@ -274,19 +289,37 @@ function DrawerProductBulkImportCsvTab({
 
                 {!isPreviewing && (
                   <>
-                    <p className="text-sm font-medium text-gray-700">
-                      {selectedFileName
-                        ? `File selezionato: ${selectedFileName}`
-                        : "Trascina qui il file CSV o Excel"}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {selectedFileName
-                        ? "Clicca per selezionare un altro file"
-                        : "oppure clicca per selezionare il file"}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-2">
-                      Formati supportati: CSV, XLS, XLSX
-                    </p>
+                    {selectedFileName ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-center gap-2">
+                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          <p className="text-base font-semibold text-green-700">
+                            File selezionato
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-center gap-2 px-4 py-2 bg-white rounded-md border border-green-200 max-w-md mx-auto">
+                          <File className="h-4 w-4 text-green-600 flex-shrink-0" />
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {selectedFileName}
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Clicca per selezionare un altro file
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm font-medium text-gray-700">
+                          Trascina qui il file CSV o Excel
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          oppure clicca per selezionare il file
+                        </p>
+                        <p className="text-xs text-gray-400 mt-2">
+                          Formati supportati: CSV, XLS, XLSX
+                        </p>
+                      </>
+                    )}
                   </>
                 )}
 
@@ -318,8 +351,8 @@ function DrawerProductBulkImportCsvTab({
               <CardHeader className="space-y-2">
                 <CardTitle>File pronto per la preview</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Clicca su &quot;Importa prodotti&quot; nel footer per ottenere la preview
-                  dal servizio e verificare i dati estratti.
+                  Clicca su &quot;Importa prodotti&quot; nel footer per ottenere
+                  la preview dal servizio e verificare i dati estratti.
                 </p>
               </CardHeader>
             </Card>

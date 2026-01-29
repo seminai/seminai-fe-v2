@@ -69,6 +69,7 @@ export type Product = {
   sku: string;
   description?: string;
   barcode?: string;
+  administrativeStatus?: string | null;
   warehouseId: string;
   warehouse: {
     name: string;
@@ -181,8 +182,11 @@ export type BulkImportProductsPayload = {
 export type BulkImportProductsResponse = {
   status: "success" | string;
   data?: {
-    imported?: number;
-    skipped?: number;
+    productsCreated?: number;
+    productsUpdated?: number;
+    stocksCreated?: number;
+    imported?: number; // Legacy field for backward compatibility
+    skipped?: number; // Legacy field for backward compatibility
     errors?: Array<{
       row?: number;
       message: string;
@@ -250,6 +254,14 @@ export type ImportFromCsvExcelPreviewResponse = {
       row?: number;
       message: string;
     }>;
+  };
+};
+
+export type UpdateAdministrativeStatusResponse = {
+  status: "success" | string;
+  data: {
+    productsUpdated: number;
+    totalProductsWithRegistration: number;
   };
 };
 
@@ -519,6 +531,28 @@ export async function importFromCsvExcelPreview(
   return (await response.json()) as ImportFromCsvExcelPreviewResponse;
 }
 
+export async function updateAdministrativeStatus(
+  baseUrl: string = BASE_URL
+): Promise<UpdateAdministrativeStatusResponse> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/products/update-administrative-status`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Update administrative status failed");
+  }
+
+  return (await response.json()) as UpdateAdministrativeStatusResponse;
+}
+
 class ProductsApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -568,6 +602,10 @@ class ProductsApiService {
     payload: ImportFromCsvExcelPayload
   ): Promise<ImportFromCsvExcelPreviewResponse> {
     return await importFromCsvExcelPreview(payload, this.baseUrl);
+  }
+
+  public async updateAdministrativeStatus(): Promise<UpdateAdministrativeStatusResponse> {
+    return await updateAdministrativeStatus(this.baseUrl);
   }
 
   public async downloadTemplate(): Promise<void> {

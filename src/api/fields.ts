@@ -64,6 +64,7 @@ export type Field = {
   variazioneMq: string | null;
   inizioConduzione: string | null;
   fineConduzione: string | null;
+  bufferZoneNotes: string | null;
   createdAt: string;
   updatedAt: string;
   productionUnits: ProductionUnit[];
@@ -109,6 +110,7 @@ export type BulkFieldInput = {
   variazioneMq?: string | null;
   inizioConduzione?: string | null;
   fineConduzione?: string | null;
+  bufferZoneNotes?: string | null;
 };
 
 export type BulkFieldsRequest = {
@@ -338,6 +340,7 @@ export type FieldAvailability = {
   variazioneMq: string | null;
   inizioConduzione: string | null;
   fineConduzione: string | null;
+  bufferZoneNotes: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -417,6 +420,7 @@ export type FieldExtractionResponse = {
       variazioneMq: string | null;
       inizioConduzione: string | null;
       fineConduzione: string | null;
+      bufferZoneNotes: string | null;
     }>;
     extractedCount: number;
   };

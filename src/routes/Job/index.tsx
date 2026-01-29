@@ -2198,6 +2198,30 @@ export default function JobPage() {
   // Le prime 7 colonne sono visibili di default
   const columns: EditableColumn[] = [
     {
+      id: "isVerified",
+      title: "Stato",
+      type: "text",
+      width: "150px",
+      readOnly: true,
+      render: (_value, row) => {
+        const isVerified = row._isVerifiedBoolean as boolean | undefined;
+        const isVerifiedStatus = isVerified === true ? "Verificata" : "Non verificata";
+        
+        return (
+          <Badge
+            variant={isVerified ? "default" : "destructive"}
+            className={
+              isVerified
+                ? "bg-green-500 hover:bg-green-600 text-white"
+                : "bg-red-500 hover:bg-red-600 text-white"
+            }
+          >
+            {isVerifiedStatus}
+          </Badge>
+        );
+      },
+    },
+    {
       id: "productionUnitName",
       title: "Unità Produttiva",
       type: "select",
@@ -2508,57 +2532,6 @@ export default function JobPage() {
           {value as string}
         </Badge>
       ),
-    },
-    {
-      id: "isVerified",
-      title: "Stato Verifica",
-      type: "select",
-      width: "220px",
-      readOnly: true, // Lo stato non può essere modificato manualmente
-      options: ["Verificato", "Non Verificato", "Conformità non verificata"],
-      onValueChange: ({ value }) => {
-        // Gestisce i 3 stati possibili
-        if (value === "Conformità non verificata") {
-          return {
-            _isVerifiedBoolean: false,
-            _conformityChecked: false,
-          };
-        }
-        return {
-          _isVerifiedBoolean: value === "Verificato",
-          _conformityChecked: true,
-        };
-      },
-      render: (value) => {
-        const stringValue = value as string;
-        const isVerified = stringValue === "Verificato";
-        const isConformityNotChecked =
-          stringValue === "Conformità non verificata";
-
-        if (isConformityNotChecked) {
-          return (
-            <Badge
-              variant="outline"
-              className="bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300"
-            >
-              {stringValue}
-            </Badge>
-          );
-        }
-
-        return (
-          <Badge
-            variant={isVerified ? "default" : "destructive"}
-            className={
-              isVerified
-                ? "bg-green-500 hover:bg-green-600 text-white"
-                : "bg-red-500 hover:bg-red-600 text-white animate-pulse"
-            }
-          >
-            {stringValue}
-          </Badge>
-        );
-      },
     },
     {
       id: "dateOfOpeation",

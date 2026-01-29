@@ -525,42 +525,45 @@ export function JobSelectedDetails({
                       </div>
                     </div>
 
-                    {/* Stock - Utilizzato e Necessario */}
+                    {/* Stock - Disponibilità e Fabbisogno trattamenti */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <span className="text-xs font-medium text-red-700 uppercase tracking-wide flex items-center gap-1">
-                          Stock mancante
+                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                          Stato disponibilità
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Info className="h-3 w-3 cursor-help" />
                             </TooltipTrigger>
                             <TooltipContent className="bg-slate-900 text-white border border-slate-700 shadow-lg">
-                              Quantità mancante per tutti i trattamenti con{" "}
-                              {row.productName}
+                              Indica se lo stock in magazzino è sufficiente per
+                              tutti i trattamenti previsti con {row.productName}.
+                              Se manca quantità, viene mostrata quella da
+                              integrare.
                             </TooltipContent>
                           </Tooltip>
                         </span>
                         {formatter.getStockOut() &&
                         matchesSearch(formatter.getStockOut()) ? (
-                          <p className="text-sm text-red-700 font-medium underline">
-                            {formatter.getStockOut()}
+                          <p className="text-sm text-amber-700 font-medium">
+                            Quantità da integrare: {formatter.getStockOut()}
                           </p>
                         ) : (
-                          <p className="text-xs text-slate-400 italic">
-                            stock disponibile
+                          <p className="text-sm text-emerald-600 font-medium">
+                            Stock sufficiente
                           </p>
                         )}
                       </div>
                       <div className="space-y-1">
                         <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                          Stock Totale
+                          Fabbisogno trattamenti
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Info className="h-3 w-3 cursor-help" />
                             </TooltipTrigger>
                             <TooltipContent className="bg-slate-900 text-white border border-slate-700 shadow-lg">
-                              Quantità necessaria per tutti i trattamenti con{" "}
-                              {row.productName}
+                              Quantità totale necessaria per tutti i
+                              trattamenti pianificati con {row.productName}
+                              (non lo stock in magazzino).
                             </TooltipContent>
                           </Tooltip>
                         </span>
