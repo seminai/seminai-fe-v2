@@ -7,6 +7,25 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
 // Soglia per la compressione (1MB)
 const COMPRESSION_THRESHOLD_BYTES = 1 * 1024 * 1024;
 
+/** Dimensione chunk per evitare "Maximum call stack size exceeded" con fromCharCode */
+const BASE64_CHUNK_SIZE = 8192;
+
+/**
+ * Converte un Uint8Array in stringa binaria a chunk per evitare stack overflow
+ * (String.fromCharCode(...array) fallisce con array grandi).
+ */
+function uint8ArrayToBinaryString(bytes: Uint8Array): string {
+  let result = "";
+  for (let i = 0; i < bytes.length; i += BASE64_CHUNK_SIZE) {
+    const chunk = bytes.subarray(
+      i,
+      Math.min(i + BASE64_CHUNK_SIZE, bytes.length),
+    );
+    result += String.fromCharCode.apply(null, chunk as unknown as number[]);
+  }
+  return result;
+}
+
 /**
  * Comprime un payload JSON con gzip e lo codifica in base64.
  * Ritorna un oggetto wrapper con flag compressed e dati.
@@ -34,13 +53,14 @@ function compressPayload<T>(payload: T): {
   const inputBytes = encoder.encode(jsonString);
   const compressedBytes = pako.gzip(inputBytes);
 
-  // Converti in base64
-  const base64 = btoa(
-    String.fromCharCode(...new Uint8Array(compressedBytes))
+  // Converti in base64 a chunk per evitare "Maximum call stack size exceeded"
+  const binaryString = uint8ArrayToBinaryString(
+    new Uint8Array(compressedBytes),
   );
+  const base64 = btoa(binaryString);
 
   console.log(
-    `📦 Payload compresso: ${(originalSize / 1024 / 1024).toFixed(2)}MB → ${(compressedBytes.length / 1024 / 1024).toFixed(2)}MB (${((1 - compressedBytes.length / originalSize) * 100).toFixed(1)}% riduzione)`
+    `📦 Payload compresso: ${(originalSize / 1024 / 1024).toFixed(2)}MB → ${(compressedBytes.length / 1024 / 1024).toFixed(2)}MB (${((1 - compressedBytes.length / originalSize) * 100).toFixed(1)}% riduzione)`,
   );
 
   return {
@@ -199,9 +219,7 @@ class JobVerificationAgentApiService {
       headers["X-Compressed-Size"] = String(compressedSize);
     }
 
-    const body = compressed
-      ? JSON.stringify({ compressed: true, data })
-      : data;
+    const body = compressed ? JSON.stringify({ compressed: true, data }) : data;
 
     const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/job-verification-agent/stream`,
@@ -209,7 +227,7 @@ class JobVerificationAgentApiService {
         method: "POST",
         headers,
         body,
-      }
+      },
     );
 
     if (!response.ok) {
@@ -235,9 +253,7 @@ class JobVerificationAgentApiService {
       headers["X-Compressed-Size"] = String(compressedSize);
     }
 
-    const body = compressed
-      ? JSON.stringify({ compressed: true, data })
-      : data;
+    const body = compressed ? JSON.stringify({ compressed: true, data }) : data;
 
     const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/job-verification-agent/message`,
@@ -245,7 +261,7 @@ class JobVerificationAgentApiService {
         method: "POST",
         headers,
         body,
-      }
+      },
     );
 
     if (!response.ok) {
@@ -271,7 +287,7 @@ class JobVerificationAgentApiService {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(request),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -297,7 +313,7 @@ class JobVerificationAgentApiService {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(request),
-      }
+      },
     );
 
     if (!response.ok) {

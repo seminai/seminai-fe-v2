@@ -37,6 +37,7 @@ import {
   Trash2,
   Pencil,
   CheckCircle,
+  SplitSquareVertical,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -51,7 +52,9 @@ import type {
   DateRange,
   FieldWithCompany,
   ProductionUnitInput,
+  ProductionUnitSplitPart,
 } from "../types";
+import { SplitProductionUnitDialog } from "./SplitProductionUnitDialog";
 
 const NO_CULTIVAR_VALUE = "__cultivar_none__";
 
@@ -124,6 +127,7 @@ type SingleProductionUnitFormProps = {
   onCancel: () => void;
   onEditUnit: (unitId: string) => void;
   onDeleteUnit: (unitId: string) => void;
+  onSplitUnit: (unitId: string, parts: ProductionUnitSplitPart[]) => void;
   isCreating: boolean;
 };
 
@@ -147,6 +151,7 @@ export const SingleProductionUnitForm: React.FC<
   onCancel,
   onEditUnit,
   onDeleteUnit,
+  onSplitUnit,
   isCreating,
 }) => {
   const formStateFactory = useMemo(
@@ -164,6 +169,8 @@ export const SingleProductionUnitForm: React.FC<
   );
   const [harvestDateManuallyEdited, setHarvestDateManuallyEdited] =
     useState(false);
+  const [splitDialogUnit, setSplitDialogUnit] =
+    useState<ProductionUnitInput | null>(null);
   const previousCultivarIdRef = useRef<string | null>(
     formData.cultivarId ?? null
   );
@@ -411,6 +418,18 @@ export const SingleProductionUnitForm: React.FC<
                           size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
+                            setSplitDialogUnit(unit);
+                          }}
+                          title="Fraziona"
+                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                        >
+                          <SplitSquareVertical className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             onDeleteUnit(unit.id);
                           }}
                           title="Elimina"
@@ -523,6 +542,18 @@ export const SingleProductionUnitForm: React.FC<
             )}
           </Button>
         </div>
+
+        {splitDialogUnit && (
+          <SplitProductionUnitDialog
+            isOpen={!!splitDialogUnit}
+            onClose={() => setSplitDialogUnit(null)}
+            unit={splitDialogUnit}
+            onConfirm={(parts) => {
+              onSplitUnit(splitDialogUnit.id, parts);
+              setSplitDialogUnit(null);
+            }}
+          />
+        )}
       </div>
     );
   }

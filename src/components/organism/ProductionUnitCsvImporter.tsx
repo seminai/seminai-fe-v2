@@ -192,7 +192,7 @@ class ProductionUnitAggregator {
 
   private createAggregatedUnit(
     unit: ImportedProductionUnit,
-    index: number
+    index: number,
   ): AggregatedUnit {
     return {
       baseId: unit.id || `aggregated-${index}`,
@@ -216,7 +216,7 @@ class ProductionUnitAggregator {
 
   private mergeUnit(
     target: AggregatedUnit,
-    source: ImportedProductionUnit
+    source: ImportedProductionUnit,
   ): void {
     source.allocations.forEach((area, fieldId) => {
       const prev = target.allocations.get(fieldId) ?? 0;
@@ -226,7 +226,7 @@ class ProductionUnitAggregator {
     if (typeof source.totalAreaHa === "number") {
       const current = target.totalAreaHa ?? 0;
       target.totalAreaHa = parseFloat(
-        (current + source.totalAreaHa).toFixed(4)
+        (current + source.totalAreaHa).toFixed(4),
       );
     }
 
@@ -312,7 +312,7 @@ export const ProductionUnitCsvImporter: React.FC<
   }, [openSignal]);
 
   const selectedCompany = companies.find(
-    (c) => c.companyId === selectedCompanyId
+    (c) => c.companyId === selectedCompanyId,
   );
 
   /**
@@ -408,7 +408,7 @@ export const ProductionUnitCsvImporter: React.FC<
             const existingArea = allocations.get(alloc.fieldId) ?? 0;
             allocations.set(
               alloc.fieldId,
-              parseFloat((existingArea + area).toFixed(4))
+              parseFloat((existingArea + area).toFixed(4)),
             );
             if (!matchedFieldIds.includes(alloc.fieldId)) {
               matchedFieldIds.push(alloc.fieldId);
@@ -428,7 +428,7 @@ export const ProductionUnitCsvImporter: React.FC<
             const existingArea = allocations.get(matchedField.id) ?? 0;
             allocations.set(
               matchedField.id,
-              parseFloat((existingArea + area).toFixed(4))
+              parseFloat((existingArea + area).toFixed(4)),
             );
             if (!matchedFieldIds.includes(matchedField.id)) {
               matchedFieldIds.push(matchedField.id);
@@ -467,7 +467,7 @@ export const ProductionUnitCsvImporter: React.FC<
           matchedFieldIds,
           unmatchedAllocations,
         };
-      }
+      },
     );
 
     const mergedUnits = new ProductionUnitAggregator(importedUnits).merge();
@@ -524,10 +524,7 @@ export const ProductionUnitCsvImporter: React.FC<
   return (
     <Drawer open={isOpen} onOpenChange={handleDrawerOpenChange}>
       <DrawerTrigger asChild>
-        <Button
-          variant="outline"
-          className="gap-2 bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600"
-        >
+        <Button variant="default" className="gap-2">
           <Upload className="h-4 w-4" />
           Importa file
         </Button>
@@ -537,9 +534,7 @@ export const ProductionUnitCsvImporter: React.FC<
         className="!w-1/2 !max-w-[50vw] h-full overflow-y-auto overflow-x-hidden bg-white p-2"
       >
         <DrawerHeader>
-          <DrawerTitle>
-            Estrazione Automatica Unità Produttive da CSV
-          </DrawerTitle>
+          <DrawerTitle>Estrazione Automatica Unità Produttive</DrawerTitle>
           <DrawerDescription>
             Il sistema supporta il formato Excel del template AGEA della misura
             unica. Il formato varia in base alla regione. Seleziona l'azienda e
@@ -548,28 +543,17 @@ export const ProductionUnitCsvImporter: React.FC<
           </DrawerDescription>
         </DrawerHeader>
 
-        <div className="space-y-4 p-4">
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleDownloadTemplate}
-              className="gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Scarica template
-            </Button>
-          </div>
+        <div className="space-y-4 p-4 flex flex-col flex-1">
+          {/* Selezione azienda in evidenza per prima */}
           <div className="space-y-2">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Azienda di destinazione
+            <label className="text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Seleziona azienda di destinazione
             </label>
             <Select
               value={selectedCompanyId}
               onValueChange={setSelectedCompanyId}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Seleziona un'azienda" />
               </SelectTrigger>
               <SelectContent>
@@ -582,8 +566,9 @@ export const ProductionUnitCsvImporter: React.FC<
             </Select>
           </div>
 
+          {/* Area upload sotto alla selezione azienda */}
           <div
-            className={`transition-opacity duration-200 ${
+            className={`flex-1 transition-opacity duration-200 ${
               !selectedCompanyId ? "opacity-50 pointer-events-none" : ""
             }`}
           >
@@ -684,7 +669,18 @@ export const ProductionUnitCsvImporter: React.FC<
             </div>
           )}
 
-          <div className="flex justify-end pt-4 border-t">
+          {/* Footer: Scarica template a sinistra (testuale), Richiedi supporto a destra - space-between */}
+          <div className="flex justify-between items-center pt-4 mt-auto border-t">
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              onClick={handleDownloadTemplate}
+              className="gap-2 p-0 h-auto font-normal"
+            >
+              <Download className="h-4 w-4" />
+              Scarica template
+            </Button>
             <button
               type="button"
               onClick={() => setShowSupportForm(!showSupportForm)}

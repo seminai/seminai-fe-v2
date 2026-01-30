@@ -58,3 +58,9 @@ export type CultivarHarvestRecord = {
   harvestLabel: string;
 };
 
+export type ProductionUnitSplitPart = {
+  id: string;
+  name: string;
+  areaHa: number;
+};
+

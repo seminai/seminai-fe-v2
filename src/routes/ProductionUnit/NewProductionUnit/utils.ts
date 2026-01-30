@@ -1,4 +1,4 @@
-import type { CropVariety } from "./types";
+import type { CropVariety, ProductionUnitSplitPart } from "./types";
 
 const FIELD_SPLIT_DELIMITER = "__split__";
 
@@ -72,14 +72,56 @@ const getCurrentYearRange = (): { start: Date; end: Date } => {
   return { start, end };
 };
 
+const generateSplitUnitName = (originalName: string, index: number): string => {
+  const baseName = originalName.replace(/\s+\d+$/, "").trim();
+  return `${baseName} ${index + 1}`;
+};
+
+const distributeAllocationsProportionally = (
+  originalAllocations: Map<string, number>,
+  originalTotalArea: number,
+  partAreaHa: number
+): Map<string, number> => {
+  if (originalTotalArea <= 0) {
+    return new Map();
+  }
+  const ratio = partAreaHa / originalTotalArea;
+  const newAllocations = new Map<string, number>();
+
+  originalAllocations.forEach((area, fieldId) => {
+    const newArea = parseFloat((area * ratio).toFixed(4));
+    if (newArea > 0) {
+      newAllocations.set(fieldId, newArea);
+    }
+  });
+
+  return newAllocations;
+};
+
+const validateSplitSum = (
+  parts: ProductionUnitSplitPart[],
+  totalAreaHa: number,
+  tolerance: number = 0.01
+): { isValid: boolean; difference: number } => {
+  const sum = parts.reduce((acc, part) => acc + part.areaHa, 0);
+  const difference = Math.abs(sum - totalAreaHa);
+  return {
+    isValid: difference <= tolerance,
+    difference,
+  };
+};
+
 export {
   FIELD_SPLIT_DELIMITER,
   buildSplitAllocationKey,
   calculateCropDates,
+  distributeAllocationsProportionally,
+  generateSplitUnitName,
   getBaseFieldIdFromAllocation,
   getCurrentYearRange,
   getSplitDisplayLabel,
   getSplitIndexFromAllocation,
   isSplitAllocationKey,
+  validateSplitSum,
 };
 
