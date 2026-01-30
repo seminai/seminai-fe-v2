@@ -1,4 +1,11 @@
-import { useState, useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from "react";
+import {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  useImperativeHandle,
+  forwardRef,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
@@ -74,11 +81,10 @@ interface LiveLogEntry {
   metadata?: Record<string, unknown>;
 }
 
-export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, ConformityCheckerPanelProps>(({
-  jobGroupId,
-  selectedJobs,
-  onConfirmSuccess,
-}, ref) => {
+export const ConformityCheckerPanel = forwardRef<
+  ConformityCheckerPanelRef,
+  ConformityCheckerPanelProps
+>(({ jobGroupId, selectedJobs, onConfirmSuccess }, ref) => {
   const [notes, setNotes] = useState<string>("");
   const [state, setState] = useState<PanelState>("idle");
   const [progress, setProgress] = useState<number>(0);
@@ -86,11 +92,13 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
   const [result, setResult] = useState<ConformityCheckResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [liveLogs, setLiveLogs] = useState<LiveLogEntry[]>([]);
-  const [socketState, setSocketState] = useState<SocketConnectionState>("disconnected");
+  const [socketState, setSocketState] =
+    useState<SocketConnectionState>("disconnected");
   const logsEndRef = useRef<HTMLDivElement>(null);
   const logIdCounter = useRef<number>(0);
   const [threadId] = useState(
-    () => `job-verification-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+    () =>
+      `job-verification-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
   );
   const [deepThinking, setDeepThinking] = useState<boolean>(true);
   const [isRecording, setIsRecording] = useState(false);
@@ -156,40 +164,43 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
     }
   }, []);
 
-  const connectToSocket = useCallback((jobId: string) => {
-    dosageJobSocketService.connect(jobId, {
-      onConnect: () => {
-        setSocketState("connected");
-        addLog({
-          jobId,
-          userId: "",
-          timestamp: new Date().toISOString(),
-          type: "info",
-          message: "Connesso al server per aggiornamenti in tempo reale",
-        });
-      },
-      onDisconnect: () => {
-        setSocketState("disconnected");
-      },
-      onError: (err) => {
-        setSocketState("error");
-        console.error("Socket error:", err);
-      },
-      onJoined: (room) => {
-        addLog({
-          jobId,
-          userId: "",
-          timestamp: new Date().toISOString(),
-          type: "info",
-          message: `In ascolto sulla room: ${room}`,
-        });
-      },
-      onLog: (event) => {
-        addLog(event);
-      },
-    });
-    setSocketState("connecting");
-  }, [addLog]);
+  const connectToSocket = useCallback(
+    (jobId: string) => {
+      dosageJobSocketService.connect(jobId, {
+        onConnect: () => {
+          setSocketState("connected");
+          addLog({
+            jobId,
+            userId: "",
+            timestamp: new Date().toISOString(),
+            type: "info",
+            message: "Connesso al server per aggiornamenti in tempo reale",
+          });
+        },
+        onDisconnect: () => {
+          setSocketState("disconnected");
+        },
+        onError: (err) => {
+          setSocketState("error");
+          console.error("Socket error:", err);
+        },
+        onJoined: (room) => {
+          addLog({
+            jobId,
+            userId: "",
+            timestamp: new Date().toISOString(),
+            type: "info",
+            message: `In ascolto sulla room: ${room}`,
+          });
+        },
+        onLog: (event) => {
+          addLog(event);
+        },
+      });
+      setSocketState("connecting");
+    },
+    [addLog],
+  );
 
   const handleProgressUpdate = useCallback(
     (progressValue: number, jobState: ConformityJobState) => {
@@ -198,7 +209,7 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
         setState("polling");
       }
     },
-    []
+    [],
   );
 
   const handleVerify = async () => {
@@ -217,7 +228,7 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
       // Start the job
       const startResponse = await conformityCheckerApiService.startJob(
         jobGroupId,
-        notes
+        notes,
       );
 
       // Connetti al socket per ricevere log in tempo reale
@@ -232,7 +243,7 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
           intervalMs: 2000,
           timeoutMs: 300000,
           onProgress: handleProgressUpdate,
-        }
+        },
       );
 
       // Disconnetti dal socket
@@ -274,7 +285,7 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
       const transcription = response.data?.text?.trim();
       if (transcription) {
         setNotes((prev) =>
-          prev ? `${prev}\n${transcription}` : transcription
+          prev ? `${prev}\n${transcription}` : transcription,
         );
       } else {
         toast.error("Trascrizione non disponibile");
@@ -293,7 +304,7 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
   const getRecorder = () => {
     if (!audioRecorderRef.current) {
       audioRecorderRef.current = new AudioRecorderService(
-        AudioRecorderService.getSupportedMimeType()
+        AudioRecorderService.getSupportedMimeType(),
       );
     }
     return audioRecorderRef.current;
@@ -366,7 +377,7 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
     try {
       await conformityCheckerApiService.confirmProposals(
         result.jobGroupId,
-        result.proposals
+        result.proposals,
       );
 
       toast.success("Modifiche confermate", {
@@ -439,7 +450,8 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
   const isConfirming = state === "confirming";
   const hasResults = state === "results" && result !== null;
   const isIdle = !hasResults && !isLoading;
-  const isInputDisabled = isLoading || isConfirming || isAgentLoading || isTranscribing;
+  const isInputDisabled =
+    isLoading || isConfirming || isAgentLoading || isTranscribing;
   const isDialogDisabled =
     isInputDisabled ||
     Boolean(pendingAction) ||
@@ -470,12 +482,12 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
 
             <ScrollArea className="flex-1 min-h-0">
               <div className="p-4 space-y-4">
-                {agentMessages.length === 0 && !isAgentLoading && <JobVerificationEmptyState />}
+                {agentMessages.length === 0 && !isAgentLoading && (
+                  <JobVerificationEmptyState />
+                )}
 
                 {/* Chat Rapida Loader - quando deepThinking è false */}
-                {!deepThinking && isAgentLoading && (
-                  <QuickChatLoader />
-                )}
+                {!deepThinking && isAgentLoading && <QuickChatLoader />}
 
                 {agentMessages.map((message) => (
                   <JobVerificationMessageBubble
@@ -544,7 +556,9 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
                   <span className="text-slate-500 truncate max-w-[200px]">
                     {currentPhase || "Inizializzazione..."}
                   </span>
-                  <span className="text-slate-700 font-medium">{progress}%</span>
+                  <span className="text-slate-700 font-medium">
+                    {progress}%
+                  </span>
                 </div>
                 <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
                   <div
@@ -610,14 +624,22 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
                 <Checkbox
                   id="deep-thinking"
                   checked={deepThinking}
-                  onCheckedChange={(checked) => setDeepThinking(checked === true)}
+                  onCheckedChange={(checked) =>
+                    setDeepThinking(checked === true)
+                  }
                   className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
                 />
-                <Label htmlFor="deep-thinking" className="text-xs text-slate-600 cursor-pointer">
+                <Label
+                  htmlFor="deep-thinking"
+                  className="text-xs text-slate-600 cursor-pointer"
+                >
                   Pensiero profondo
                 </Label>
                 {!deepThinking && (
-                  <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] text-amber-600 border-amber-300"
+                  >
                     Chat rapida
                   </Badge>
                 )}
@@ -650,42 +672,45 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
               </div>
             )}
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 text-xs text-slate-500">
-                <Badge variant="outline" className="text-[10px]">
-                  {selectedJobsCount > 0 ? `${selectedJobsCount} operazioni selezionate` : "Seleziona operazioni per dialogare"}
+            <div className="flex flex-col gap-2 w-full min-w-0 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-xs text-slate-500">
+                <Badge variant="outline" className="text-[10px] shrink-0">
+                  {selectedJobsCount > 0
+                    ? `${selectedJobsCount} operazioni selezionate`
+                    : "Seleziona operazioni per dialogare"}
                 </Badge>
-               
                 {isTranscribing && (
-                  <span className="text-amber-600">Trascrizione in corso...</span>
+                  <span className="shrink-0 text-amber-600">
+                    Trascrizione in corso...
+                  </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 justify-end">
+              <div className="flex w-full shrink-0 flex-wrap items-center justify-end gap-2 sm:w-auto">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={handleRecordToggle}
                   disabled={isInputDisabled || isTranscribing}
-                  className="flex-shrink-0"
+                  className="min-w-0 flex-1 basis-0 sm:flex-initial"
                 >
                   {isTranscribing ? (
                     <>
                       <Spinner
-                        className="h-4 w-4 mr-2"
+                        className="h-4 w-4 mr-2 shrink-0"
                         ariaLabel="Trascrizione in corso"
                       />
-                      Trascrivo...
+                      <span className="truncate">Trascrivo...</span>
                     </>
                   ) : isRecording ? (
                     <>
-                      <Square className="h-4 w-4 mr-2" />
-                      Ferma
+                      <Square className="h-4 w-4 mr-2 shrink-0" />
+                      <span className="truncate">Ferma</span>
                     </>
                   ) : (
                     <>
-                      <Mic className="h-4 w-4 mr-2" />
-                      Vocale
+                      <Mic className="h-4 w-4 mr-2 shrink-0" />
+                      <span className="truncate">Vocale</span>
                     </>
                   )}
                 </Button>
@@ -693,10 +718,10 @@ export const ConformityCheckerPanel = forwardRef<ConformityCheckerPanelRef, Conf
                   onClick={handleDialog}
                   size="sm"
                   disabled={isDialogDisabled}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white flex-shrink-0"
+                  className="min-w-0 flex-1 basis-0 bg-emerald-600 hover:bg-emerald-700 text-white sm:flex-initial"
                 >
-                  <Send className="h-4 w-4 mr-2" />
-                  Invia
+                  <Send className="h-4 w-4 mr-2 shrink-0" />
+                  <span className="truncate">Invia</span>
                 </Button>
               </div>
             </div>
@@ -763,9 +788,7 @@ function JobVerificationEmptyState() {
       <div className="bg-emerald-50 rounded-full p-3 mb-3">
         <MessageSquare className="h-6 w-6 text-emerald-600" />
       </div>
-      <p className="text-sm font-medium text-slate-700">
-        Dialoga con l'agente
-      </p>
+      <p className="text-sm font-medium text-slate-700">Dialoga con l'agente</p>
       <p className="text-xs text-slate-500 max-w-xs mt-2">
         Seleziona uno o piu job a sinistra e fai una domanda per la verifica.
       </p>
@@ -789,7 +812,7 @@ function JobVerificationMessageBubble({
           "min-w-0 max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm",
           isUser
             ? "bg-emerald-600 text-white"
-            : "bg-white border border-slate-200 text-slate-800"
+            : "bg-white border border-slate-200 text-slate-800",
         )}
       >
         {isUser ? (
@@ -872,9 +895,7 @@ function JobVerificationMessageBubble({
                     {children}
                   </blockquote>
                 ),
-                hr: () => (
-                  <hr className="my-3 border-slate-200" />
-                ),
+                hr: () => <hr className="my-3 border-slate-200" />,
               }}
             >
               {content}
@@ -1112,7 +1133,7 @@ function ProposalCard({ proposal }: { proposal: ConformityProposal }) {
         proposal.isConform
           ? "bg-emerald-50 border-emerald-200"
           : "bg-red-50 border-red-200",
-        proposal.shouldExclude && "bg-amber-50 border-amber-200"
+        proposal.shouldExclude && "bg-amber-50 border-amber-200",
       )}
     >
       {/* Header */}
@@ -1234,7 +1255,7 @@ function ViolationItem({ violation }: { violation: ConformityViolation }) {
       className={cn(
         "flex items-start gap-2 p-2 rounded-lg border",
         config.bg,
-        config.border
+        config.border,
       )}
     >
       <Icon className={cn("h-4 w-4 mt-0.5 flex-shrink-0", config.text)} />
@@ -1348,7 +1369,9 @@ function LiveLogItem({ log }: { log: LiveLogEntry }) {
   return (
     <div className="flex items-start gap-2 py-0.5 hover:bg-slate-800/50 rounded px-1">
       <span className="text-slate-600 flex-shrink-0">{timeStr}</span>
-      <span className={cn("flex-shrink-0 flex items-center gap-1", config.color)}>
+      <span
+        className={cn("flex-shrink-0 flex items-center gap-1", config.color)}
+      >
         {config.icon}
         <span className="w-12">[{config.label}]</span>
       </span>
@@ -1361,7 +1384,6 @@ function LiveLogItem({ log }: { log: LiveLogEntry }) {
     </div>
   );
 }
-
 
 // Quick Chat Loader - Loader semplice per la modalità chat rapida
 function QuickChatLoader() {
@@ -1376,11 +1398,22 @@ function QuickChatLoader() {
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700">Chat rapida</span>
+            <span className="text-sm font-medium text-slate-700">
+              Chat rapida
+            </span>
             <div className="flex gap-1">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+              <span
+                className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce"
+                style={{ animationDelay: "0ms" }}
+              />
+              <span
+                className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce"
+                style={{ animationDelay: "150ms" }}
+              />
+              <span
+                className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce"
+                style={{ animationDelay: "300ms" }}
+              />
             </div>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">

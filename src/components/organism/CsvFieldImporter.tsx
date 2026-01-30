@@ -144,7 +144,7 @@ export function CsvFieldImporter({
 
           <Button
             type="button"
-            variant="outline"
+            variant="default"
             onClick={() => document.getElementById("csv-file-input")?.click()}
             disabled={isProcessing}
           >

@@ -68,7 +68,7 @@ export function ImportFieldByCsv({
 
       const response = await fieldsApiService.startJobFieldExtraction(
         selectedCompanyId,
-        file
+        file,
       );
 
       if (!response.data?.fields || response.data.fields.length === 0) {
@@ -110,7 +110,7 @@ export function ImportFieldByCsv({
           variazioneMq: field.variazioneMq,
           inizioConduzione: field.inizioConduzione,
           fineConduzione: field.fineConduzione,
-        })
+        }),
       );
 
       // Chiama la callback per aggiungere i campi alla tabella
@@ -119,7 +119,7 @@ export function ImportFieldByCsv({
       toast.success(
         `${response.data.extractedCount} camp${
           response.data.extractedCount === 1 ? "o estratto" : "i estratti"
-        } con successo`
+        } con successo`,
       );
 
       // Chiudi il dialog e resetta lo stato
@@ -175,10 +175,7 @@ export function ImportFieldByCsv({
   return (
     <Drawer open={isDrawerOpen} onOpenChange={handleDrawerOpenChange}>
       <DrawerTrigger asChild>
-        <Button
-          variant="outline"
-          className="gap-2 bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600"
-        >
+        <Button variant="default" className="gap-2">
           <Upload className="h-4 w-4" />
           Importa file
         </Button>
@@ -188,7 +185,7 @@ export function ImportFieldByCsv({
         className="!w-1/2 !max-w-[50vw] h-full overflow-y-auto overflow-x-hidden bg-white p-2"
       >
         <DrawerHeader>
-          <DrawerTitle>Estrazione Automatica Campi da CSV</DrawerTitle>
+          <DrawerTitle>Estrazione Automatica Campi </DrawerTitle>
           <DrawerDescription>
             Il sistema supporta il formato Excel del template AGEA della misura
             unica. Il formato varia in base alla regione. Seleziona l'azienda e
@@ -197,28 +194,17 @@ export function ImportFieldByCsv({
           </DrawerDescription>
         </DrawerHeader>
 
-        <div className="space-y-4 p-4">
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleDownloadTemplate}
-              className="gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Scarica template
-            </Button>
-          </div>
+        <div className="space-y-4 p-4 flex flex-col flex-1">
+          {/* Selezione azienda in evidenza per prima */}
           <div className="space-y-2">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Azienda di destinazione
+            <label className="text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Seleziona azienda di destinazione
             </label>
             <Select
               value={selectedCompanyId}
               onValueChange={setSelectedCompanyId}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Seleziona un'azienda" />
               </SelectTrigger>
               <SelectContent>
@@ -231,8 +217,9 @@ export function ImportFieldByCsv({
             </Select>
           </div>
 
+          {/* Area upload sotto alla selezione azienda */}
           <div
-            className={`transition-opacity duration-200 ${
+            className={`flex-1 transition-opacity duration-200 ${
               !selectedCompanyId ? "opacity-50 pointer-events-none" : ""
             }`}
           >
@@ -308,7 +295,18 @@ export function ImportFieldByCsv({
             </div>
           )}
 
-          <div className="flex justify-end pt-4 border-t">
+          {/* Footer: Scarica template a sinistra (testuale), Richiedi supporto a destra - space-between */}
+          <div className="flex justify-between items-center pt-4 mt-auto border-t">
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              onClick={handleDownloadTemplate}
+              className="gap-2 p-0 h-auto font-normal"
+            >
+              <Download className="h-4 w-4" />
+              Scarica template
+            </Button>
             <button
               type="button"
               onClick={() => setShowSupportForm(!showSupportForm)}

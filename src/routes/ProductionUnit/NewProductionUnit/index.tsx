@@ -54,6 +54,7 @@ import { useCultivarHarvestDates } from "./hooks/useCultivarHarvestDates";
 import {
   buildSplitAllocationKey,
   calculateCropDates,
+  distributeAllocationsProportionally,
   getBaseFieldIdFromAllocation,
   getCurrentYearRange,
   getSplitDisplayLabel,
@@ -65,6 +66,7 @@ import type {
   DateRange,
   FieldWithCompany,
   ProductionUnitInput,
+  ProductionUnitSplitPart,
 } from "./types";
 
 class NavigationManager {
@@ -664,6 +666,42 @@ export default function NewProductionUnit(): React.ReactElement {
       setCurrentStep(1);
     }
   };
+
+  const handleSplitUnit = useCallback(
+    (originalUnitId: string, parts: ProductionUnitSplitPart[]) => {
+      const originalUnit = productionUnits.find((u) => u.id === originalUnitId);
+      if (!originalUnit) return;
+
+      const totalArea =
+        originalUnit.totalAreaHa ??
+        Array.from(originalUnit.allocations.values()).reduce(
+          (sum, a) => sum + a,
+          0
+        );
+
+      const splitUnits: ProductionUnitInput[] = parts.map((part, index) => ({
+        ...originalUnit,
+        id: `${originalUnitId}__pu_split__${index}`,
+        name: part.name,
+        totalAreaHa: part.areaHa,
+        allocations: distributeAllocationsProportionally(
+          originalUnit.allocations,
+          totalArea,
+          part.areaHa
+        ),
+      }));
+
+      setProductionUnits((prev) => {
+        const withoutOriginal = prev.filter((u) => u.id !== originalUnitId);
+        return [...withoutOriginal, ...splitUnits];
+      });
+
+      toast.success(
+        `Unità "${originalUnit.name}" frazionata in ${parts.length} parti`
+      );
+    },
+    [productionUnits]
+  );
 
   // Handler per la creazione delle unità produttive
   const handleCreateProductionUnits = async () => {
@@ -1509,6 +1547,7 @@ export default function NewProductionUnit(): React.ReactElement {
               showList={step2ShowList}
               onEditUnit={handleEditUnit}
               onDeleteUnit={handleDeleteUnit}
+              onSplitUnit={handleSplitUnit}
               onSave={(unit) => {
                 if (editingUnitId) {
                   // Aggiorna l'unità esistente
