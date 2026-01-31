@@ -7,6 +7,11 @@ export type Machine = {
   name: string;
   identifier: string;
   lastPositiveRevisionDate: string | null;
+  functionalControlDate: string | null;
+  calibrationDate: string | null;
+  revisionReminderDays: number | null;
+  calibrationReminderDays: number | null;
+  functionalControlReminderDays: number | null;
   companyId: string;
   createdAt: string;
   updatedAt: string;
@@ -17,6 +22,11 @@ export type CreateMachineRequest = {
   identifier: string;
   companyId: string;
   lastPositiveRevisionDate?: string | null;
+  functionalControlDate?: string | null;
+  calibrationDate?: string | null;
+  revisionReminderDays?: number | null;
+  calibrationReminderDays?: number | null;
+  functionalControlReminderDays?: number | null;
 };
 
 export type BulkCreateMachineRequest = {
@@ -27,6 +37,11 @@ export type UpdateMachineRequest = {
   name?: string;
   identifier?: string;
   lastPositiveRevisionDate?: string | null;
+  functionalControlDate?: string | null;
+  calibrationDate?: string | null;
+  revisionReminderDays?: number | null;
+  calibrationReminderDays?: number | null;
+  functionalControlReminderDays?: number | null;
 };
 
 export type BulkDeleteMachineRequest = {
@@ -162,6 +177,11 @@ class MachinesApiService {
       name: data.name ?? "",
       identifier: data.identifier ?? "",
       lastPositiveRevisionDate: data.lastPositiveRevisionDate ?? null,
+      functionalControlDate: data.functionalControlDate ?? null,
+      calibrationDate: data.calibrationDate ?? null,
+      revisionReminderDays: data.revisionReminderDays ?? null,
+      calibrationReminderDays: data.calibrationReminderDays ?? null,
+      functionalControlReminderDays: data.functionalControlReminderDays ?? null,
       companyId: data.companyId ?? "",
       createdAt: data.createdAt ?? "",
       updatedAt: data.updatedAt ?? "",
