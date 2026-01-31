@@ -62,21 +62,22 @@ export default function PrivacyPolicy() {
               strumento tecnico e non un servizio SaaS autonomo.
             </p>
             <p className="text-gray-700 leading-relaxed">
-              Il Titolare si impegna a proteggere la tua privacy e a trattare i
-              tuoi dati personali in conformità con il Regolamento Generale
-              sulla Protezione dei Dati (GDPR - Reg. UE 2016/679) e le leggi
-              italiane applicabili.
+              Mazzi Francesco Saverio e i contributori del progetto software si
+              impegnano a proteggere la tua privacy e a trattare i tuoi dati
+              personali in conformità con il Regolamento Generale sulla
+              Protezione dei Dati (GDPR - Reg. UE 2016/679) e le leggi italiane
+              applicabili.
             </p>
           </section>
 
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              2. Titolare del Trattamento
+              2. Titolari del Trattamento
             </h2>
             <div className="bg-agri-green-50 p-4 rounded-lg mb-4">
               <p className="text-gray-700">
-                <strong>Titolare del Trattamento:</strong> Mazzi Francesco
-                Saverio
+                <strong>Titolari del Trattamento:</strong> Mazzi Francesco
+                Saverio e i contributori del progetto software
                 <br />
                 <strong>Libero professionista</strong>
                 <br />
@@ -447,11 +448,12 @@ export default function PrivacyPolicy() {
             <p className="text-gray-700 leading-relaxed mb-4">
               Per qualsiasi domanda o richiesta relativa alla presente Privacy
               Policy o al trattamento dei dati personali, è possibile contattare
-              il Titolare del Trattamento:
+              i Titolari del Trattamento:
             </p>
             <div className="bg-agri-green-50 p-4 rounded-lg">
               <p className="text-gray-700">
-                <strong>Titolare:</strong> Mazzi Francesco Saverio
+                <strong>Titolari:</strong> Mazzi Francesco Saverio e i
+                contributori del progetto software
                 <br />
                 <strong>Email:</strong> get.seminai@gmail.com
               </p>
