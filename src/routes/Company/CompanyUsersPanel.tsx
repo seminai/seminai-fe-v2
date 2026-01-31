@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useCompanyUsers } from "@/hooks/useCompanyUsers";
 import {
   EditableTable,
@@ -9,14 +9,23 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { FileText } from "lucide-react";
 import type { UserOnCompanyRole } from "@/api/userOnCompany";
+import { PatentiniDialog } from "@/components/organism/PatentiniDialog";
 
 interface CompanyUsersPanelProps {
   companyId: string;
   companyName: string;
 }
 
-const buildUsersColumns = (): EditableColumn[] => {
+type SelectedUser = {
+  userId: string;
+  name: string;
+};
+
+const buildUsersColumns = (
+  onPatentiniClick: (userId: string, name: string) => void
+): EditableColumn[] => {
   return [
     {
       id: "name",
@@ -83,6 +92,32 @@ const buildUsersColumns = (): EditableColumn[] => {
         );
       },
     },
+    {
+      id: "actions",
+      title: "Patentini",
+      type: "text",
+      required: false,
+      readOnly: true,
+      render: (_value: unknown, row: Record<string, unknown>) => {
+        const userId = row.userId as string | undefined;
+        const name = row.name as string | undefined;
+        if (!userId) return null;
+        return (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPatentiniClick(userId, name || "Utente");
+            }}
+            title="Gestisci patentini"
+          >
+            <FileText className="size-4" />
+          </Button>
+        );
+      },
+    },
   ];
 };
 
@@ -90,6 +125,7 @@ export function CompanyUsersPanel({
   companyId,
 }: CompanyUsersPanelProps): React.ReactElement {
   const tableRef = useRef<EditableTableRef>(null);
+  const [selectedUser, setSelectedUser] = useState<SelectedUser | null>(null);
 
   const {
     users,
@@ -102,7 +138,17 @@ export function CompanyUsersPanel({
     updateRole,
   } = useCompanyUsers(companyId);
 
-  const columns = React.useMemo(() => buildUsersColumns(), []);
+  const handlePatentiniClick = React.useCallback(
+    (userId: string, name: string) => {
+      setSelectedUser({ userId, name });
+    },
+    []
+  );
+
+  const columns = React.useMemo(
+    () => buildUsersColumns(handlePatentiniClick),
+    [handlePatentiniClick]
+  );
 
   const rows = React.useMemo(() => {
     return users.map((user) => {
@@ -227,6 +273,17 @@ export function CompanyUsersPanel({
           className="bg-white"
         />
       </div>
+
+      {selectedUser && (
+        <PatentiniDialog
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setSelectedUser(null);
+          }}
+          userId={selectedUser.userId}
+          userName={selectedUser.name}
+        />
+      )}
     </div>
   );
 }

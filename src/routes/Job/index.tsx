@@ -1751,11 +1751,14 @@ export default function JobPage() {
       });
   }, []);
 
-  // Opzioni prodotti fitosanitari per le select
+  // Opzioni prodotti fitosanitari per le select (searchText permette di filtrare anche per principio attivo)
   const fitosanitariOptions = useMemo(() => {
     return fitosanitariProducts.map((product) => ({
       label: `${product.productName} (${product.registrationNumber})`,
       value: product.registrationNumber,
+      searchText: [product.productName, product.registrationNumber, product.activeIngredients]
+        .filter(Boolean)
+        .join(" "),
       productName: product.productName,
       activeIngredients: product.activeIngredients,
       activity: product.activity,

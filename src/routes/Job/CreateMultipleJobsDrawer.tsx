@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
 import {
   Drawer,
   DrawerContent,
@@ -17,7 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { MultiSearchableSelect } from "../DosageManager/MultiSearchableSelect";
 
 interface ProductionUnitOption {
@@ -68,9 +78,8 @@ export function CreateMultipleJobsDrawer({
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
-  const [dateOfOperation, setDateOfOperation] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
+  const [dateOfOperation, setDateOfOperation] = useState<Date>(() => new Date());
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [quantity, setQuantity] = useState<string>("");
   const [unitOfMeasure, setUnitOfMeasure] = useState<string>("L");
 
@@ -80,7 +89,8 @@ export function CreateMultipleJobsDrawer({
       setSelectedCompanyId("");
       setSelectedUnitIds([]);
       setSelectedProductIds([]);
-      setDateOfOperation(new Date().toISOString().split("T")[0]);
+      setDateOfOperation(new Date());
+      setDatePickerOpen(false);
       setQuantity("");
       setUnitOfMeasure("L");
     }
@@ -157,7 +167,7 @@ export function CreateMultipleJobsDrawer({
           principioAttivo: product.activeIngredients,
 
           // Campi comuni
-          dateOfOpeation: new Date(dateOfOperation),
+          dateOfOpeation: dateOfOperation,
           quantity: parseFloat(quantity),
           unitOfMeasureQuantity: unitOfMeasure,
 
@@ -270,12 +280,37 @@ export function CreateMultipleJobsDrawer({
             <Label className="text-sm font-semibold text-muted-foreground">
               Data Operazione <span className="text-red-500">*</span>
             </Label>
-            <Input
-              type="date"
-              value={dateOfOperation}
-              onChange={(e) => setDateOfOperation(e.target.value)}
-              className="h-11 sm:h-10"
-            />
+            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal h-11 sm:h-10 rounded-xl border border-black/5 bg-white hover:bg-white",
+                    !dateOfOperation && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateOfOperation
+                    ? format(dateOfOperation, "dd/MM/yyyy", { locale: it })
+                    : "Seleziona data..."}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-transparent border-0 shadow-none" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateOfOperation}
+                  onSelect={(date) => {
+                    if (date) {
+                      setDateOfOperation(date);
+                      setDatePickerOpen(false);
+                    }
+                  }}
+                  initialFocus
+                  locale={it}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Quantità */}

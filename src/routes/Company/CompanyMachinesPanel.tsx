@@ -16,6 +16,29 @@ interface CompanyMachinesPanelProps {
   companyName: string;
 }
 
+const renderDateCell = (value: unknown): React.ReactElement => {
+  if (!value || typeof value !== "string") {
+    return <span className="text-muted-foreground">-</span>;
+  }
+  try {
+    const date = new Date(value);
+    return <span>{format(date, "dd/MM/yyyy", { locale: it })}</span>;
+  } catch {
+    return <span className="text-muted-foreground">-</span>;
+  }
+};
+
+const renderNumberCell = (value: unknown): React.ReactElement => {
+  if (value === null || value === undefined || value === "") {
+    return <span className="text-muted-foreground">-</span>;
+  }
+  const num = typeof value === "number" ? value : Number(value);
+  if (isNaN(num)) {
+    return <span className="text-muted-foreground">-</span>;
+  }
+  return <span>{num} giorni</span>;
+};
+
 const buildMachinesColumns = (): EditableColumn[] => {
   return [
     {
@@ -37,17 +60,42 @@ const buildMachinesColumns = (): EditableColumn[] => {
       title: "Ultima Revisione",
       type: "date",
       placeholder: "Data ultima revisione",
-      render: (value: unknown) => {
-        if (!value || typeof value !== "string") {
-          return <span className="text-muted-foreground">-</span>;
-        }
-        try {
-          const date = new Date(value);
-          return <span>{format(date, "dd/MM/yyyy", { locale: it })}</span>;
-        } catch {
-          return <span className="text-muted-foreground">-</span>;
-        }
-      },
+      render: renderDateCell,
+    },
+    {
+      id: "revisionReminderDays",
+      title: "Preavviso Revisione",
+      type: "number",
+      placeholder: "es. 30",
+      render: renderNumberCell,
+    },
+    {
+      id: "functionalControlDate",
+      title: "Controllo Funzionale",
+      type: "date",
+      placeholder: "Data ultimo controllo",
+      render: renderDateCell,
+    },
+    {
+      id: "functionalControlReminderDays",
+      title: "Preavviso Controllo",
+      type: "number",
+      placeholder: "es. 30",
+      render: renderNumberCell,
+    },
+    {
+      id: "calibrationDate",
+      title: "Ultima Taratura",
+      type: "date",
+      placeholder: "Data ultima taratura",
+      render: renderDateCell,
+    },
+    {
+      id: "calibrationReminderDays",
+      title: "Preavviso Taratura",
+      type: "number",
+      placeholder: "es. 60",
+      render: renderNumberCell,
     },
   ];
 };
@@ -97,6 +145,11 @@ export function CompanyMachinesPanel({
       lastPositiveRevisionDate: formatDateForInput(
         machine.lastPositiveRevisionDate
       ),
+      revisionReminderDays: machine.revisionReminderDays,
+      functionalControlDate: formatDateForInput(machine.functionalControlDate),
+      functionalControlReminderDays: machine.functionalControlReminderDays,
+      calibrationDate: formatDateForInput(machine.calibrationDate),
+      calibrationReminderDays: machine.calibrationReminderDays,
       companyId: machine.companyId,
       createdAt: machine.createdAt,
       updatedAt: machine.updatedAt,
@@ -127,6 +180,17 @@ export function CompanyMachinesPanel({
     }
   };
 
+  const formatNumberForApi = (value: unknown): number | null => {
+    if (value === null || value === undefined || value === "") {
+      return null;
+    }
+    const num = typeof value === "number" ? value : Number(value);
+    if (isNaN(num)) {
+      return null;
+    }
+    return num;
+  };
+
   const handleSave = async (payload: {
     created: Array<Record<string, unknown>>;
     updated: Array<Record<string, unknown>>;
@@ -139,6 +203,13 @@ export function CompanyMachinesPanel({
         lastPositiveRevisionDate: formatDateForApi(
           row.lastPositiveRevisionDate
         ),
+        revisionReminderDays: formatNumberForApi(row.revisionReminderDays),
+        functionalControlDate: formatDateForApi(row.functionalControlDate),
+        functionalControlReminderDays: formatNumberForApi(
+          row.functionalControlReminderDays
+        ),
+        calibrationDate: formatDateForApi(row.calibrationDate),
+        calibrationReminderDays: formatNumberForApi(row.calibrationReminderDays),
       }));
 
       await bulkCreate(machinesToCreate);
@@ -156,6 +227,11 @@ export function CompanyMachinesPanel({
           name?: string;
           identifier?: string;
           lastPositiveRevisionDate?: string | null;
+          revisionReminderDays?: number | null;
+          functionalControlDate?: string | null;
+          functionalControlReminderDays?: number | null;
+          calibrationDate?: string | null;
+          calibrationReminderDays?: number | null;
         } = {};
 
         if (row.name !== undefined) {
@@ -167,6 +243,29 @@ export function CompanyMachinesPanel({
         if (row.lastPositiveRevisionDate !== undefined) {
           updateData.lastPositiveRevisionDate = formatDateForApi(
             row.lastPositiveRevisionDate
+          );
+        }
+        if (row.revisionReminderDays !== undefined) {
+          updateData.revisionReminderDays = formatNumberForApi(
+            row.revisionReminderDays
+          );
+        }
+        if (row.functionalControlDate !== undefined) {
+          updateData.functionalControlDate = formatDateForApi(
+            row.functionalControlDate
+          );
+        }
+        if (row.functionalControlReminderDays !== undefined) {
+          updateData.functionalControlReminderDays = formatNumberForApi(
+            row.functionalControlReminderDays
+          );
+        }
+        if (row.calibrationDate !== undefined) {
+          updateData.calibrationDate = formatDateForApi(row.calibrationDate);
+        }
+        if (row.calibrationReminderDays !== undefined) {
+          updateData.calibrationReminderDays = formatNumberForApi(
+            row.calibrationReminderDays
           );
         }
 
@@ -247,6 +346,11 @@ export function CompanyMachinesPanel({
             name: "",
             identifier: "",
             lastPositiveRevisionDate: "",
+            revisionReminderDays: "",
+            functionalControlDate: "",
+            functionalControlReminderDays: "",
+            calibrationDate: "",
+            calibrationReminderDays: "",
           }}
           className="bg-white"
         />

@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 export type SearchableSelectOption = {
   label: string;
   value: string;
+  /** Optional text used only for filtering (e.g. active ingredient); not displayed. */
+  searchText?: string;
 };
 
 export interface SearchableSelectProps {
@@ -61,9 +63,11 @@ export function SearchableSelect({
     return options.filter((option) => {
       const label = option.label.toLowerCase();
       const optionValue = option.value.toLowerCase();
+      const searchText = option.searchText?.toLowerCase() ?? "";
       return (
         label.includes(normalizedSearch) ||
-        optionValue.includes(normalizedSearch)
+        optionValue.includes(normalizedSearch) ||
+        searchText.includes(normalizedSearch)
       );
     });
   }, [options, normalizedSearch]);
