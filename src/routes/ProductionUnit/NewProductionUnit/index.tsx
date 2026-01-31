@@ -860,8 +860,8 @@ export default function NewProductionUnit(): React.ReactElement {
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-auto px-6 pb-6">
-          {currentStep === 1 && (
+        {currentStep === 1 && (
+          <div className="flex-1 overflow-auto px-6 pb-6">
             <>
               {isLoading ? (
                 <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -1530,9 +1530,11 @@ export default function NewProductionUnit(): React.ReactElement {
                 </div>
               )}
             </>
-          )}
+          </div>
+        )}
 
-          {currentStep === 2 && (
+        {currentStep === 2 && (
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-6 pb-6">
             <SingleProductionUnitForm
               cropVarieties={cropVarieties}
               isLoadingVarieties={isLoadingVarieties}
@@ -1581,12 +1583,12 @@ export default function NewProductionUnit(): React.ReactElement {
               }}
               isCreating={isCreating}
             />
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Footer Step 1 - FIXED BOTTOM */}
         {currentStep === 1 && (
-          <div className="flex-shrink-0 border-t bg-white p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex justify-end items-center gap-6">
+          <div className="flex-shrink-0 border-t bg-white p-4 flex justify-end items-center gap-6">
             <div className="text-right">
               <p className="text-sm font-medium text-gray-500">
                 SAU Totale Allocata
