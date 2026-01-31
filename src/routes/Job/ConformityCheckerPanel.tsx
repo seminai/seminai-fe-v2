@@ -619,8 +619,8 @@ export const ConformityCheckerPanel = forwardRef<
         <div className="flex-shrink-0 border-t border-slate-200 bg-white">
           <div className="p-4 space-y-3">
             {/* Toggle per pensiero profondo vs chat rapida */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0 shrink-0">
                 <Checkbox
                   id="deep-thinking"
                   checked={deepThinking}
@@ -644,17 +644,24 @@ export const ConformityCheckerPanel = forwardRef<
                   </Badge>
                 )}
               </div>
-              {isAgentLoading && (
-                <Button
-                  onClick={cancelRequest}
-                  size="sm"
-                  variant="outline"
-                  className="text-red-600 border-red-200 hover:bg-red-50"
-                >
-                  <StopCircle className="h-4 w-4 mr-1" />
-                  Stop
-                </Button>
-              )}
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge variant="outline" className="text-[10px]">
+                  {selectedJobsCount > 0
+                    ? `${selectedJobsCount} operazioni selezionate`
+                    : "Seleziona operazioni per dialogare"}
+                </Badge>
+                {isAgentLoading && (
+                  <Button
+                    onClick={cancelRequest}
+                    size="sm"
+                    variant="outline"
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    <StopCircle className="h-4 w-4 mr-1" />
+                    Stop
+                  </Button>
+                )}
+              </div>
             </div>
 
             <Textarea
@@ -674,11 +681,6 @@ export const ConformityCheckerPanel = forwardRef<
 
             <div className="flex flex-col gap-2 w-full min-w-0 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-xs text-slate-500">
-                <Badge variant="outline" className="text-[10px] shrink-0">
-                  {selectedJobsCount > 0
-                    ? `${selectedJobsCount} operazioni selezionate`
-                    : "Seleziona operazioni per dialogare"}
-                </Badge>
                 {isTranscribing && (
                   <span className="shrink-0 text-amber-600">
                     Trascrizione in corso...

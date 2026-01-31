@@ -354,18 +354,19 @@ export const SingleProductionUnitForm: React.FC<
   }
 
   if (showList) {
-    // Visualizzazione lista unità produttive create
+    // Visualizzazione lista unità produttive create: area scrollabile + barra fissa sotto
     return (
-      <div className="space-y-6">
-        <Card className="bg-white border-gray-200">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-              Unità Produttive create ({productionUnits.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="single" collapsible className="w-full">
+      <div className="flex flex-col h-full min-h-0">
+        <div className="flex-1 overflow-auto min-h-0">
+          <Card className="bg-white border-gray-200">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+                Unità Produttive create ({productionUnits.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
               {productionUnits.map((unit) => {
                 const crop = cropVarieties.find(
                   (v) => v.code === unit.cropCode
@@ -512,8 +513,9 @@ export const SingleProductionUnitForm: React.FC<
             )}
           </CardContent>
         </Card>
+        </div>
 
-        <div className="flex justify-between gap-4">
+        <div className="flex-shrink-0 border-t bg-white p-4 flex justify-between items-center gap-4">
           <Button variant="outline" onClick={handleAddAnother} size="lg">
             <Plus className="mr-2 h-4 w-4" />
             Aggiungi un'altra unità produttiva
