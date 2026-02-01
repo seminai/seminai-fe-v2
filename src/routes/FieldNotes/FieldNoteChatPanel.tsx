@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { Mic, Send, Upload, Square } from "lucide-react";
 import { useFieldNoteChat } from "@/hooks/useFieldNoteChat";
@@ -172,8 +171,8 @@ export function FieldNoteChatPanel({
 
   return (
     <div className="h-full flex flex-col bg-white overflow-hidden">
-      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-        <ScrollArea className="flex-1">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
           <div className="p-4 space-y-4">
             {messages.length === 0 && <EmptyState />}
 
@@ -193,7 +192,7 @@ export function FieldNoteChatPanel({
 
             <div ref={messagesEndRef} />
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       <div className="flex-shrink-0 border-t border-slate-200 bg-slate-50 pb-[env(safe-area-inset-bottom,0px)]">
