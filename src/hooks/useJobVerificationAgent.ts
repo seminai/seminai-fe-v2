@@ -10,6 +10,7 @@ import {
   type StreamEvent,
   type SourceCitation,
 } from "@/api/job-verification-agent";
+import type { ChatMessage } from "@/api/chats";
 
 export type JobVerificationMessage = {
   id: string;
@@ -534,6 +535,37 @@ export function useJobVerificationAgent(threadId: string) {
     setThinkingSteps([]);
   }, []);
 
+  const loadMessages = useCallback(
+    (chatMessages: ChatMessage[]) => {
+      // Convert ChatMessage[] to JobVerificationMessage[]
+      const convertedMessages: JobVerificationMessage[] = chatMessages.map(
+        (msg, index) => ({
+          id: `loaded-${index}`,
+          role: msg.role === "USER" ? "user" : "assistant",
+          content: msg.content,
+          timestamp: new Date(msg.createdAt),
+        })
+      );
+      setMessages(convertedMessages);
+      setThinkingSteps([]);
+      setCurrentTasks([]);
+      setCurrentTaskId(null);
+      setPendingAction(null);
+      setSources([]);
+      scrollToBottom();
+    },
+    [scrollToBottom]
+  );
+
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+    setThinkingSteps([]);
+    setCurrentTasks([]);
+    setCurrentTaskId(null);
+    setPendingAction(null);
+    setSources([]);
+  }, []);
+
   return {
     messages,
     thinkingSteps,
@@ -547,6 +579,8 @@ export function useJobVerificationAgent(threadId: string) {
     rejectAction,
     cancelRequest,
     clearThinkingSteps,
+    loadMessages,
+    clearMessages,
     messagesEndRef,
   };
 }
