@@ -57,17 +57,26 @@ import {
   type SocketConnectionState,
 } from "@/services/dosageJobSocket";
 import { JobDeepThinkingBars } from "./JobDeepThinkingBars";
+import { chatsApiService } from "@/api/chats";
 
 interface ConformityCheckerPanelProps {
   jobGroupId: string;
   selectedJobs: JobWithRelations[];
   onConfirmSuccess?: () => void;
   onClose?: () => void;
+  /** Thread ID per caricare una chat esistente */
+  externalThreadId?: string;
+  /** Callback quando il threadId cambia (per sincronizzazione) */
+  onThreadIdChange?: (threadId: string) => void;
 }
 
 export interface ConformityCheckerPanelRef {
   handleVerify: () => Promise<void>;
   isVerifyDisabled: boolean;
+  /** Carica i messaggi di una chat esistente */
+  loadChat: (chatId: string) => Promise<void>;
+  /** Resetta la chat ad una nuova conversazione */
+  resetChat: () => void;
 }
 
 type PanelState = "idle" | "loading" | "polling" | "results" | "confirming";
@@ -84,7 +93,7 @@ interface LiveLogEntry {
 export const ConformityCheckerPanel = forwardRef<
   ConformityCheckerPanelRef,
   ConformityCheckerPanelProps
->(({ jobGroupId, selectedJobs, onConfirmSuccess }, ref) => {
+>(({ jobGroupId, selectedJobs, onConfirmSuccess, externalThreadId, onThreadIdChange }, ref) => {
   const [notes, setNotes] = useState<string>("");
   const [state, setState] = useState<PanelState>("idle");
   const [progress, setProgress] = useState<number>(0);
@@ -96,10 +105,16 @@ export const ConformityCheckerPanel = forwardRef<
     useState<SocketConnectionState>("disconnected");
   const logsEndRef = useRef<HTMLDivElement>(null);
   const logIdCounter = useRef<number>(0);
-  const [threadId] = useState(
-    () =>
-      `job-verification-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-  );
+
+  // Genera un nuovo threadId
+  const generateThreadId = useCallback(() =>
+    `job-verification-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+  []);
+
+  // ThreadId controllabile dall'esterno o generato internamente
+  const [internalThreadId, setInternalThreadId] = useState(generateThreadId);
+  const threadId = externalThreadId || internalThreadId;
+
   const [deepThinking, setDeepThinking] = useState<boolean>(true);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -115,6 +130,8 @@ export const ConformityCheckerPanel = forwardRef<
     approveAction,
     rejectAction,
     cancelRequest,
+    loadMessages,
+    clearMessages,
     messagesEndRef,
   } = useJobVerificationAgent(threadId);
   const selectedJobsCount = selectedJobs.length;
@@ -460,9 +477,34 @@ export const ConformityCheckerPanel = forwardRef<
   const isVerifyDisabled =
     isInputDisabled || Boolean(pendingAction) || !jobGroupId;
 
+  // Carica una chat esistente dal suo ID
+  const loadChat = useCallback(async (chatId: string) => {
+    try {
+      const chatDetail = await chatsApiService.getChatDetail(chatId);
+      // Imposta il threadId dalla chat caricata
+      setInternalThreadId(chatDetail.threadId);
+      onThreadIdChange?.(chatDetail.threadId);
+      // Carica i messaggi
+      loadMessages(chatDetail.messages);
+    } catch (error) {
+      console.error("Error loading chat:", error);
+      toast.error("Errore nel caricamento della chat");
+    }
+  }, [loadMessages, onThreadIdChange]);
+
+  // Resetta la chat ad una nuova conversazione
+  const resetChat = useCallback(() => {
+    const newThreadId = generateThreadId();
+    setInternalThreadId(newThreadId);
+    onThreadIdChange?.(newThreadId);
+    clearMessages();
+  }, [generateThreadId, clearMessages, onThreadIdChange]);
+
   useImperativeHandle(ref, () => ({
     handleVerify,
     isVerifyDisabled,
+    loadChat,
+    resetChat,
   }));
 
   return (

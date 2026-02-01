@@ -1,3 +1,4 @@
+import { useState, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -19,7 +20,8 @@ import {
 } from "@/components/organism/JobSelectedDetails";
 import HistoryPanel from "./HistoryPanel";
 import JobGroupCard from "./JobGroupCard";
-import ConformityCheckerPanel from "./ConformityCheckerPanel";
+import ConformityCheckerPanel, { type ConformityCheckerPanelRef } from "./ConformityCheckerPanel";
+import ChatHistoryDrawer from "./ChatHistoryDrawer";
 import { type RightSidebarMode } from "./AllJobsView";
 import {
   Brain,
@@ -37,6 +39,7 @@ import {
   Eraser,
   Sparkles,
   MessageSquare,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -143,6 +146,14 @@ export function ReviewJobsView({
   onConformityConfirmSuccess,
   getRowClassName,
 }: ReviewJobsViewProps) {
+  const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false);
+  const conformityCheckerRef = useRef<ConformityCheckerPanelRef>(null);
+
+  // Carica una chat dallo storico nel pannello conformità
+  const handleSelectChatFromHistory = (chatId: string) => {
+    conformityCheckerRef.current?.loadChat(chatId);
+  };
+
   if (isMobile) {
     if (!selectedGroupSummary) {
       return (
@@ -391,19 +402,31 @@ export function ReviewJobsView({
                 <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-2" />
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-semibold">Chat Verifica</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onMobileHistoryChange(false)}
-                    className="h-7 w-7 p-0"
-                    title="Chiudi"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsChatHistoryOpen(true)}
+                      className="h-7 w-7 p-0"
+                      title="Storico chat"
+                    >
+                      <History className="h-4 w-4 text-slate-500" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onMobileHistoryChange(false)}
+                      className="h-7 w-7 p-0"
+                      title="Chiudi"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
               <div className="flex-1 overflow-hidden">
                 <ConformityCheckerPanel
+                  ref={conformityCheckerRef}
                   jobGroupId={selectedGroupSummary.jobId}
                   selectedJobs={selectedJobsForChat}
                   onConfirmSuccess={onConformityConfirmSuccess}
@@ -793,6 +816,13 @@ export function ReviewJobsView({
           </div>
         </>
       )}
+
+      {/* Chat History Drawer */}
+      <ChatHistoryDrawer
+        open={isChatHistoryOpen}
+        onOpenChange={setIsChatHistoryOpen}
+        onSelectChat={handleSelectChatFromHistory}
+      />
     </div>
   );
 }

@@ -28,12 +28,14 @@ import {
   PanelRightOpen,
   Sparkles,
   MessageSquare,
+  History,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 import HistoryPanel from "./HistoryPanel";
 import ConformityCheckerPanel, { type ConformityCheckerPanelRef } from "./ConformityCheckerPanel";
+import ChatHistoryDrawer from "./ChatHistoryDrawer";
 
 type EditableTableRowData = Record<string, unknown>;
 
@@ -277,6 +279,12 @@ export function AllJobsView({
   const errorMessage =
     error instanceof Error ? error.message : "Errore sconosciuto";
   const conformityCheckerRef = useRef<ConformityCheckerPanelRef>(null);
+  const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false);
+
+  // Carica una chat dallo storico nel pannello conformità
+  const handleSelectChatFromHistory = (chatId: string) => {
+    conformityCheckerRef.current?.loadChat(chatId);
+  };
 
   return (
     <div className="flex-1 flex overflow-hidden px-6 pb-6">
@@ -492,7 +500,7 @@ export function AllJobsView({
               {rightSidebarMode === "conformity" && (
                 <>
                   <div className="flex items-center gap-2">
-                
+
                     <Button
                       onClick={() => conformityCheckerRef.current?.handleVerify()}
                       disabled={conformityCheckerRef.current?.isVerifyDisabled}
@@ -505,6 +513,15 @@ export function AllJobsView({
                     </Button>
                   </div>
                   <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsChatHistoryOpen(true)}
+                      className="h-7 w-7 p-0"
+                      title="Storico chat"
+                    >
+                      <History className="h-4 w-4 text-slate-500" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -577,6 +594,13 @@ export function AllJobsView({
           </div>
         </>
       )}
+
+      {/* Chat History Drawer */}
+      <ChatHistoryDrawer
+        open={isChatHistoryOpen}
+        onOpenChange={setIsChatHistoryOpen}
+        onSelectChat={handleSelectChatFromHistory}
+      />
     </div>
   );
 }
