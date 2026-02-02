@@ -1,4 +1,4 @@
-export type ImportMethod = "csv" | "ddt" | "warehouse" | "registry";
+export type ImportMethod = "csv" | "ddt" | "warehouse" | "registry" | "notes";
 
 export class ImportMethodPolicy {
   public static isSelected(
@@ -29,6 +29,8 @@ export class ImportMethodPolicy {
         return "Magazzino";
       case "registry":
         return "Registro";
+      case "notes":
+        return "Note";
       default:
         return method;
     }

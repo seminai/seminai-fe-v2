@@ -265,6 +265,48 @@ export type UpdateAdministrativeStatusResponse = {
   };
 };
 
+export type VerifiedPhytosanitaryProduct = {
+  id: string;
+  name: string;
+  sku: string;
+  barcode: string | null;
+  category: string;
+  type: string;
+  description: string | null;
+  administrativeStatus: string;
+  registrationNumber: string;
+  labelUrl: string | null;
+  labelMetadata: Record<string, unknown> | null;
+  warehouseId: string;
+  createdAt: string;
+  updatedAt: string;
+  stocks: Array<{
+    id: string;
+    quantity: number;
+    type: "IN" | "OUT";
+    unitOfMeasureQuantity: string;
+    createdAt: string;
+  }>;
+  warehouse: {
+    name: string;
+    company: {
+      id: string;
+      name: string;
+    };
+  };
+};
+
+export type GetVerifiedPhytosanitaryResponse = {
+  status: "success" | "error";
+  message?: string;
+  data?: {
+    products: VerifiedPhytosanitaryProduct[];
+    totalProducts: number;
+    verifiedProducts: number;
+    revokedProducts: number;
+  };
+};
+
 export async function getProducts(
   companyName?: string,
   baseUrl: string = BASE_URL
@@ -553,6 +595,33 @@ export async function updateAdministrativeStatus(
   return (await response.json()) as UpdateAdministrativeStatusResponse;
 }
 
+export async function getVerifiedPhytosanitary(
+  companyId: string,
+  baseUrl: string = BASE_URL
+): Promise<GetVerifiedPhytosanitaryResponse> {
+  if (!companyId) {
+    throw new Error("Company identifier is required");
+  }
+
+  const url = new URL(`${baseUrl}/products/verified-phytosanitary`);
+  url.searchParams.set("companyId", companyId);
+
+  const response = await authenticatedHttpClient.request(url.toString(), {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Get verified phytosanitary products failed");
+  }
+
+  return (await response.json()) as GetVerifiedPhytosanitaryResponse;
+}
+
 class ProductsApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -606,6 +675,12 @@ class ProductsApiService {
 
   public async updateAdministrativeStatus(): Promise<UpdateAdministrativeStatusResponse> {
     return await updateAdministrativeStatus(this.baseUrl);
+  }
+
+  public async getVerifiedPhytosanitary(
+    companyId: string
+  ): Promise<GetVerifiedPhytosanitaryResponse> {
+    return await getVerifiedPhytosanitary(companyId, this.baseUrl);
   }
 
   public async downloadTemplate(): Promise<void> {

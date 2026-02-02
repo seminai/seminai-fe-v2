@@ -35,6 +35,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  FileText,
   Loader2,
   Lock,
   Package,
@@ -91,7 +92,7 @@ interface ManageSectionProps {
   setProducts: Dispatch<SetStateAction<ProductWithInternalId[]>>;
   setSelectedProductIds: Dispatch<SetStateAction<string[]>>;
   setProductSources: Dispatch<
-    SetStateAction<Map<string, "warehouse" | "csv" | "ddt">>
+    SetStateAction<Map<string, "warehouse" | "csv" | "ddt" | "notes">>
   >;
   productColumns: EditableColumn[];
   productsAsRows: Array<Record<string, unknown>>;
@@ -104,8 +105,10 @@ interface ManageSectionProps {
   handleAddRowsFromCsv: (rows: Array<Record<string, unknown>>) => void;
   handleAddRowsFromDdt: (rows: Array<Record<string, unknown>>) => void;
   handleImportFromWarehouse: () => void;
+  handleImportFromNotes: () => void;
   isWarehouseProductsLoading: boolean;
   isImportingFromWarehouse: boolean;
+  isImportingFromNotes: boolean;
   handleRegistryProductSelected: (record: FitosanitariDatasetRecord) => void;
   editableTableRef: RefObject<EditableTableRef | null>;
   strategy: DosageStrategy;
@@ -192,8 +195,10 @@ export function ManageSection({
   handleAddRowsFromCsv,
   handleAddRowsFromDdt,
   handleImportFromWarehouse,
+  handleImportFromNotes,
   isWarehouseProductsLoading,
   isImportingFromWarehouse,
+  isImportingFromNotes,
   handleRegistryProductSelected,
   editableTableRef,
   strategy,
@@ -523,6 +528,53 @@ export function ManageSection({
                         <Package className="h-4 w-4" />
                         <span>
                           Importa da magazzino
+                          {selectedCompanyIds.length > 1
+                            ? ` (${selectedCompanyIds.length} aziende)`
+                            : ""}
+                        </span>
+                      </>
+                    )}
+                  </Button>
+                )}
+                {(!selectedImportMethod ||
+                  ImportMethodPolicy.isSelected(
+                    selectedImportMethod,
+                    "notes"
+                  )) && (
+                  <Button
+                    variant="outline"
+                    className="gap-2 bg-agri-green-500 text-white border-agri-green-500 hover:bg-agri-green-600 hover:text-white hover:border-agri-green-600"
+                    onClick={() => {
+                      onSelectImportMethod("notes");
+                      handleImportFromNotes();
+                    }}
+                    disabled={
+                      isImportingFromNotes ||
+                      selectedCompanyIds.length === 0 ||
+                      (!!selectedImportMethod &&
+                        !ImportMethodPolicy.isSelected(
+                          selectedImportMethod,
+                          "notes"
+                        ))
+                    }
+                    title={
+                      selectedCompanyIds.length === 0
+                        ? "Seleziona almeno un'azienda per importare da note"
+                        : selectedCompanyIds.length > 1
+                        ? `Importa prodotti da note per ${selectedCompanyIds.length} aziende selezionate`
+                        : "Importa prodotti fitosanitari verificati dall'azienda selezionata"
+                    }
+                  >
+                    {isImportingFromNotes ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Importazione in corso...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="h-4 w-4" />
+                        <span>
+                          Importa da note
                           {selectedCompanyIds.length > 1
                             ? ` (${selectedCompanyIds.length} aziende)`
                             : ""}

@@ -35,7 +35,8 @@ import {
 } from "@/api/dosage-agent";
 import type { DosageOrchestratorSettings } from "@/api/dosage-agent";
 import type { ProductionUnit } from "@/api/production-unit";
-import type { Product } from "@/api/products";
+import type { Product, VerifiedPhytosanitaryProduct } from "@/api/products";
+import { productsApiService } from "@/api/products";
 import { JobDetails } from "./JobDetails";
 import { useLiveLogs } from "./useLiveLogs";
 import { HistorySection } from "./HistorySection";
@@ -893,7 +894,7 @@ export default function DosageManager() {
   type ProductWithInternalId = DosageProduct & { _internalId: string };
   const [products, setProducts] = useState<ProductWithInternalId[]>([]);
   const [productSources, setProductSources] = useState<
-    Map<string, "warehouse" | "csv" | "ddt">
+    Map<string, "warehouse" | "csv" | "ddt" | "notes">
   >(new Map());
   // Counter for generating unique IDs
   const productIdCounterRef = useRef<number>(0);
@@ -924,6 +925,7 @@ export default function DosageManager() {
   );
   const [isImportingFromWarehouse, setIsImportingFromWarehouse] =
     useState(false);
+  const [isImportingFromNotes, setIsImportingFromNotes] = useState(false);
 
   const footerRef = useRef<HTMLDivElement | null>(null);
   const [footerHeight, setFooterHeight] = useState<number>(0);
@@ -1770,6 +1772,150 @@ export default function DosageManager() {
     selectedCompanyIds,
   ]);
 
+  const handleImportFromNotes = useCallback(async () => {
+    if (isImportingFromNotes) {
+      return;
+    }
+
+    if (selectedCompanyIds.length === 0) {
+      toast.error("Nessuna azienda selezionata", {
+        description:
+          "Seleziona almeno un'azienda prima di importare i prodotti da note.",
+      });
+      return;
+    }
+
+    setIsImportingFromNotes(true);
+    const toastId = toast.loading("Caricamento prodotti da note...", {
+      description: `Recupero prodotti per ${selectedCompanyIds.length} aziend${selectedCompanyIds.length === 1 ? "a" : "e"}...`,
+    });
+
+    try {
+      // Fetch verified phytosanitary products for each selected company
+      const allProducts: VerifiedPhytosanitaryProduct[] = [];
+
+      for (const companyId of selectedCompanyIds) {
+        try {
+          const response = await productsApiService.getVerifiedPhytosanitary(companyId);
+
+          if (response.status === "error") {
+            console.error(`Error fetching products for company ${companyId}:`, response.message);
+            continue;
+          }
+
+          if (response.data?.products && response.data.products.length > 0) {
+            allProducts.push(...response.data.products);
+          }
+        } catch (error) {
+          console.error(`Failed to fetch products for company ${companyId}:`, error);
+        }
+      }
+
+      if (allProducts.length === 0) {
+        toast.info("Nessun prodotto trovato", {
+          id: toastId,
+          description: "Non sono stati trovati prodotti fitosanitari verificati per le aziende selezionate.",
+        });
+        setIsImportingFromNotes(false);
+        return;
+      }
+
+      toast.loading("Elaborazione prodotti...", {
+        id: toastId,
+        description: `Elaborazione di ${allProducts.length} prodotti...`,
+      });
+
+      // Map verified phytosanitary products to DosageProduct format
+      const mappedProducts: DosageProduct[] = allProducts.map((product) => {
+        // Calculate net quantity from stocks
+        const netQuantity = product.stocks.reduce((total, stock) => {
+          const quantity = stock.quantity ?? 0;
+          return stock.type === "IN" ? total + quantity : total - quantity;
+        }, 0);
+
+        const unitOfMeasure = product.stocks[0]?.unitOfMeasureQuantity || "kg";
+
+        return {
+          productName: product.name,
+          registrationNumber: product.registrationNumber || "",
+          quantity: netQuantity > 0 ? netQuantity : 0,
+          quantityUnitOfMeasure: unitOfMeasure,
+          loadWarehouse: true,
+          supplierName: product.warehouse.company.name,
+        };
+      }).filter((product) => product.quantity > 0);
+
+      if (mappedProducts.length === 0) {
+        toast.info("Nessun prodotto importabile", {
+          id: toastId,
+          description: "I prodotti trovati non hanno quantità valide.",
+        });
+        setIsImportingFromNotes(false);
+        return;
+      }
+
+      let importedCount = 0;
+      setProducts((prev) => {
+        const existingKeys = new Set(
+          prev.map((product) => DosageProductKeyBuilder.build(product)),
+        );
+        const uniqueProducts = mappedProducts.filter((product) => {
+          const key = DosageProductKeyBuilder.build(product);
+          return !existingKeys.has(key);
+        });
+
+        importedCount = uniqueProducts.length;
+        if (uniqueProducts.length === 0) {
+          return prev;
+        }
+
+        // Add _internalId to imported products
+        const productsWithIds: ProductWithInternalId[] = uniqueProducts.map(
+          (product) => ({
+            ...product,
+            _internalId: `product-${Date.now()}-${++productIdCounterRef.current}`,
+          }),
+        );
+
+        // Track the source of imported products as "notes"
+        setProductSources((prevSources) => {
+          const updated = new Map(prevSources);
+          productsWithIds.forEach((product) => {
+            const key = DosageProductKeyBuilder.build(product);
+            updated.set(key, "notes");
+          });
+          return updated;
+        });
+
+        return [...prev, ...productsWithIds];
+      });
+
+      setIsImportingFromNotes(false);
+
+      if (importedCount === 0) {
+        toast.info("Tutti i prodotti da note sono già presenti", {
+          id: toastId,
+          description:
+            "Rimuovi quelli non necessari oppure importa nuovi prodotti.",
+        });
+        return;
+      }
+
+      toast.success("Prodotti importati da note", {
+        id: toastId,
+        description: `${importedCount} prodotti aggiunti alla tabella`,
+      });
+    } catch (error) {
+      console.error("Failed to import products from notes:", error);
+      toast.error("Importazione da note non riuscita", {
+        id: toastId,
+        description:
+          error instanceof Error ? error.message : "Riprova più tardi.",
+      });
+      setIsImportingFromNotes(false);
+    }
+  }, [isImportingFromNotes, selectedCompanyIds]);
+
   const handleSelectImportMethod = useCallback((method: ImportMethod) => {
     setSelectedImportMethod((current) => {
       if (ImportMethodPolicy.canSelect(current, method)) {
@@ -2313,8 +2459,10 @@ export default function DosageManager() {
             handleAddRowsFromCsv={handleAddRowsFromCsv}
             handleAddRowsFromDdt={handleAddRowsFromDdt}
             handleImportFromWarehouse={handleImportFromWarehouse}
+            handleImportFromNotes={handleImportFromNotes}
             isWarehouseProductsLoading={isWarehouseProductsLoading}
             isImportingFromWarehouse={isImportingFromWarehouse}
+            isImportingFromNotes={isImportingFromNotes}
             handleRegistryProductSelected={handleRegistryProductSelected}
             strategy={strategy}
             setStrategy={setStrategy}
