@@ -36,7 +36,11 @@ const renderNumberCell = (value: unknown): React.ReactElement => {
   if (isNaN(num)) {
     return <span className="text-muted-foreground">-</span>;
   }
-  return <span>{num} giorni</span>;
+  return (
+    <span>
+      {num} {num === 1 ? "anno" : "anni"}
+    </span>
+  );
 };
 
 const buildMachinesColumns = (): EditableColumn[] => {
@@ -64,9 +68,9 @@ const buildMachinesColumns = (): EditableColumn[] => {
     },
     {
       id: "revisionReminderDays",
-      title: "Preavviso Revisione",
+      title: "Preavviso Revisione (anni)",
       type: "number",
-      placeholder: "es. 30",
+      placeholder: "es. 2",
       render: renderNumberCell,
     },
     {
@@ -78,9 +82,9 @@ const buildMachinesColumns = (): EditableColumn[] => {
     },
     {
       id: "functionalControlReminderDays",
-      title: "Preavviso Controllo",
+      title: "Preavviso Controllo (anni)",
       type: "number",
-      placeholder: "es. 30",
+      placeholder: "es. 2",
       render: renderNumberCell,
     },
     {
@@ -92,9 +96,9 @@ const buildMachinesColumns = (): EditableColumn[] => {
     },
     {
       id: "calibrationReminderDays",
-      title: "Preavviso Taratura",
+      title: "Preavviso Taratura (anni)",
       type: "number",
-      placeholder: "es. 60",
+      placeholder: "es. 2",
       render: renderNumberCell,
     },
   ];
@@ -143,13 +147,18 @@ export function CompanyMachinesPanel({
       name: machine.name,
       identifier: machine.identifier,
       lastPositiveRevisionDate: formatDateForInput(
-        machine.lastPositiveRevisionDate
+        machine.lastPositiveRevisionDate,
       ),
-      revisionReminderDays: machine.revisionReminderDays,
+      // Converti giorni dal backend in anni per la visualizzazione
+      revisionReminderDays: convertDaysToYears(machine.revisionReminderDays),
       functionalControlDate: formatDateForInput(machine.functionalControlDate),
-      functionalControlReminderDays: machine.functionalControlReminderDays,
+      functionalControlReminderDays: convertDaysToYears(
+        machine.functionalControlReminderDays,
+      ),
       calibrationDate: formatDateForInput(machine.calibrationDate),
-      calibrationReminderDays: machine.calibrationReminderDays,
+      calibrationReminderDays: convertDaysToYears(
+        machine.calibrationReminderDays,
+      ),
       companyId: machine.companyId,
       createdAt: machine.createdAt,
       updatedAt: machine.updatedAt,
@@ -191,6 +200,23 @@ export function CompanyMachinesPanel({
     return num;
   };
 
+  // Converte anni in giorni per l'invio al backend
+  const convertYearsToDays = (years: unknown): number | null => {
+    const num = formatNumberForApi(years);
+    if (num === null) {
+      return null;
+    }
+    return Math.round(num * 365);
+  };
+
+  // Converte giorni in anni per la visualizzazione
+  const convertDaysToYears = (days: number | null): number | null => {
+    if (days === null || days === undefined) {
+      return null;
+    }
+    return Math.round(days / 365);
+  };
+
   const handleSave = async (payload: {
     created: Array<Record<string, unknown>>;
     updated: Array<Record<string, unknown>>;
@@ -201,15 +227,18 @@ export function CompanyMachinesPanel({
         name: String(row.name || ""),
         identifier: String(row.identifier || ""),
         lastPositiveRevisionDate: formatDateForApi(
-          row.lastPositiveRevisionDate
+          row.lastPositiveRevisionDate,
         ),
-        revisionReminderDays: formatNumberForApi(row.revisionReminderDays),
+        // Converti anni in giorni per l'invio al backend
+        revisionReminderDays: convertYearsToDays(row.revisionReminderDays),
         functionalControlDate: formatDateForApi(row.functionalControlDate),
-        functionalControlReminderDays: formatNumberForApi(
-          row.functionalControlReminderDays
+        functionalControlReminderDays: convertYearsToDays(
+          row.functionalControlReminderDays,
         ),
         calibrationDate: formatDateForApi(row.calibrationDate),
-        calibrationReminderDays: formatNumberForApi(row.calibrationReminderDays),
+        calibrationReminderDays: convertYearsToDays(
+          row.calibrationReminderDays,
+        ),
       }));
 
       await bulkCreate(machinesToCreate);
@@ -242,30 +271,33 @@ export function CompanyMachinesPanel({
         }
         if (row.lastPositiveRevisionDate !== undefined) {
           updateData.lastPositiveRevisionDate = formatDateForApi(
-            row.lastPositiveRevisionDate
+            row.lastPositiveRevisionDate,
           );
         }
         if (row.revisionReminderDays !== undefined) {
-          updateData.revisionReminderDays = formatNumberForApi(
-            row.revisionReminderDays
+          // Converti anni in giorni per l'invio al backend
+          updateData.revisionReminderDays = convertYearsToDays(
+            row.revisionReminderDays,
           );
         }
         if (row.functionalControlDate !== undefined) {
           updateData.functionalControlDate = formatDateForApi(
-            row.functionalControlDate
+            row.functionalControlDate,
           );
         }
         if (row.functionalControlReminderDays !== undefined) {
-          updateData.functionalControlReminderDays = formatNumberForApi(
-            row.functionalControlReminderDays
+          // Converti anni in giorni per l'invio al backend
+          updateData.functionalControlReminderDays = convertYearsToDays(
+            row.functionalControlReminderDays,
           );
         }
         if (row.calibrationDate !== undefined) {
           updateData.calibrationDate = formatDateForApi(row.calibrationDate);
         }
         if (row.calibrationReminderDays !== undefined) {
-          updateData.calibrationReminderDays = formatNumberForApi(
-            row.calibrationReminderDays
+          // Converti anni in giorni per l'invio al backend
+          updateData.calibrationReminderDays = convertYearsToDays(
+            row.calibrationReminderDays,
           );
         }
 
@@ -279,7 +311,7 @@ export function CompanyMachinesPanel({
   };
 
   const handleDelete = async (
-    removed: Array<Record<string, unknown>>
+    removed: Array<Record<string, unknown>>,
   ): Promise<void> => {
     const machineIds = removed
       .map((row) => {
