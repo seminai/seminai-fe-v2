@@ -122,7 +122,7 @@ function JobHistorySheet({
   const renderStandardEntry = (
     entry: JobStandardHistoryEntry,
     step: string,
-    idx: number
+    idx: number,
   ) => (
     <div
       key={`${step}-${idx}`}
@@ -135,7 +135,7 @@ function JobHistorySheet({
         <Badge
           variant="secondary"
           className={`text-xs shrink-0 ${HistoryEntryFormatter.getSourceColor(
-            entry.source
+            entry.source,
           )}`}
         >
           {HistoryEntryFormatter.formatSource(entry.source)}
@@ -165,7 +165,7 @@ function JobHistorySheet({
   const renderModificationEntry = (
     entry: JobModificationEntry,
     step: string,
-    idx: number
+    idx: number,
   ) => (
     <div
       key={`${step}-mod-${idx}`}
@@ -226,7 +226,7 @@ function JobHistorySheet({
                       return renderModificationEntry(
                         groupedEntry.entry,
                         step,
-                        idx
+                        idx,
                       );
                     }
                     return renderStandardEntry(groupedEntry.entry, step, idx);
@@ -480,7 +480,7 @@ function LabelDetailSheet({
                           )}
                         {detail.extractionConfidence !== undefined &&
                           matchesSearch(
-                            String(detail.extractionConfidence)
+                            String(detail.extractionConfidence),
                           ) && (
                             <div>
                               <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
@@ -532,7 +532,7 @@ function LabelDetailSheet({
                           )}
                         {detail.label.meccanismo_azione_frac &&
                           matchesSearch(
-                            detail.label.meccanismo_azione_frac
+                            detail.label.meccanismo_azione_frac,
                           ) && (
                             <div className="space-y-1">
                               <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
@@ -626,7 +626,7 @@ function LabelDetailSheet({
                         <div className="space-y-3">
                           {detail.label.dosaggi_dettagliati
                             .filter((dosaggio) =>
-                              sectionMatchesSearch(dosaggio)
+                              sectionMatchesSearch(dosaggio),
                             )
                             .map((dosaggio, idx) => (
                               <div
@@ -750,7 +750,7 @@ function LabelDetailSheet({
 
                   {/* Fasce di rispetto e deriva */}
                   {sectionMatchesSearch(
-                    detail.label?.fasce_di_rispetto_e_deriva
+                    detail.label?.fasce_di_rispetto_e_deriva,
                   ) &&
                     detail.label?.fasce_di_rispetto_e_deriva &&
                     Array.isArray(detail.label.fasce_di_rispetto_e_deriva) &&
@@ -834,7 +834,7 @@ function LabelDetailSheet({
                         <ul className="space-y-2 text-sm text-gray-700">
                           {detail.label.avvertenze
                             .filter((avvertenza) =>
-                              matchesSearch(String(avvertenza))
+                              matchesSearch(String(avvertenza)),
                             )
                             .map((avvertenza, idx) => (
                               <li
@@ -998,7 +998,7 @@ function LabelDetailSheet({
 
                   {/* Metadati */}
                   {matchesSearch(
-                    detail.id || detail.createdAt || detail.updatedAt
+                    detail.id || detail.createdAt || detail.updatedAt,
                   ) && (
                     <div className="space-y-3 bg-white rounded-2xl p-6 shadow-sm">
                       <h3 className="text-base font-semibold text-gray-900 pb-2">
@@ -1012,7 +1012,7 @@ function LabelDetailSheet({
                             </span>
                             <p className="text-gray-900 mt-1">
                               {new Date(detail.createdAt).toLocaleString(
-                                "it-IT"
+                                "it-IT",
                               )}
                             </p>
                           </div>
@@ -1024,7 +1024,7 @@ function LabelDetailSheet({
                             </span>
                             <p className="text-gray-900 mt-1">
                               {new Date(detail.updatedAt).toLocaleString(
-                                "it-IT"
+                                "it-IT",
                               )}
                             </p>
                           </div>
@@ -1209,7 +1209,7 @@ class JobTableRowBuilder {
   constructor(jobWithRelations: JobWithRelations) {
     this.jobWithRelations = jobWithRelations;
     this.productsFormatter = new JobProductsFormatter(
-      this.jobWithRelations.products
+      this.jobWithRelations.products,
     );
   }
 
@@ -1398,7 +1398,7 @@ class JobExportRowFormatter {
       notes.push(
         `${this.alertNotes.total_stock_required_for_jobs}${
           unit ? ` ${unit}` : ""
-        }`
+        }`,
       );
     }
 
@@ -1502,8 +1502,8 @@ class JobBulkVerifier {
 
     await Promise.all(
       actionableRows.map((row) =>
-        this.jobService.updateJob(String(row.id), { isVerified: true })
-      )
+        this.jobService.updateJob(String(row.id), { isVerified: true }),
+      ),
     );
 
     return actionableRows.length;
@@ -1523,7 +1523,7 @@ export default function JobPage() {
   const [selectedJobHistory] = useState<JobHistoryEntry[]>([]);
   const [selectedJobCode] = useState<string>("");
   const [selectedGroupCode, setSelectedGroupCode] = useState<string | null>(
-    null
+    null,
   );
   // Rimosso uso della paginazione nella vista "Tutte"
   const [selectedAllRows, setSelectedAllRows] = useState<
@@ -1531,7 +1531,7 @@ export default function JobPage() {
   >([]);
   const [selectedAllJobIds, setSelectedAllJobIds] = useState<string[]>([]);
   const [allSelectedJobs, setAllSelectedJobs] = useState<JobWithRelations[]>(
-    []
+    [],
   );
   const [isLoadingSelectedJobs, setIsLoadingSelectedJobs] =
     useState<boolean>(false);
@@ -1571,7 +1571,7 @@ export default function JobPage() {
         await userSettingsIndexDBManager.init();
         const savedWidth = await userSettingsIndexDBManager.getSetting<number>(
           "job",
-          "historyPanelWidth"
+          "historyPanelWidth",
         );
         if (savedWidth && typeof savedWidth === "number") {
           setHistoryPanelWidth(savedWidth);
@@ -1579,7 +1579,7 @@ export default function JobPage() {
         const savedGroupsSidebarOpen =
           await userSettingsIndexDBManager.getSetting<boolean>(
             "job",
-            "groupsSidebarOpen"
+            "groupsSidebarOpen",
           );
         if (typeof savedGroupsSidebarOpen === "boolean") {
           setIsGroupsSidebarOpen(savedGroupsSidebarOpen);
@@ -1587,7 +1587,7 @@ export default function JobPage() {
         const savedGroupsSidebarWidth =
           await userSettingsIndexDBManager.getSetting<number>(
             "job",
-            "groupsSidebarWidth"
+            "groupsSidebarWidth",
           );
         if (
           savedGroupsSidebarWidth &&
@@ -1614,7 +1614,7 @@ export default function JobPage() {
         await userSettingsIndexDBManager.saveSetting(
           "job",
           "historyPanelWidth",
-          historyPanelWidth
+          historyPanelWidth,
         );
       } catch (error) {
         console.error("Failed to save settings to IndexedDB:", error);
@@ -1633,7 +1633,7 @@ export default function JobPage() {
         await userSettingsIndexDBManager.saveSetting(
           "job",
           "groupsSidebarOpen",
-          isGroupsSidebarOpen
+          isGroupsSidebarOpen,
         );
       } catch (error) {
         console.error("Failed to save settings to IndexedDB:", error);
@@ -1652,7 +1652,7 @@ export default function JobPage() {
         await userSettingsIndexDBManager.saveSetting(
           "job",
           "groupsSidebarWidth",
-          groupsSidebarWidth
+          groupsSidebarWidth,
         );
       } catch (error) {
         console.error("Failed to save settings to IndexedDB:", error);
@@ -1692,7 +1692,7 @@ export default function JobPage() {
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [historyPanelWidth]
+    [historyPanelWidth],
   );
 
   // Handler per il resize della sidebar gruppi
@@ -1726,7 +1726,7 @@ export default function JobPage() {
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [groupsSidebarWidth]
+    [groupsSidebarWidth],
   );
   const { labels } = useLabelsSummary();
   const { productionUnits } = useProductionUnit();
@@ -1756,7 +1756,11 @@ export default function JobPage() {
     return fitosanitariProducts.map((product) => ({
       label: `${product.productName} (${product.registrationNumber})`,
       value: product.registrationNumber,
-      searchText: [product.productName, product.registrationNumber, product.activeIngredients]
+      searchText: [
+        product.productName,
+        product.registrationNumber,
+        product.activeIngredients,
+      ]
         .filter(Boolean)
         .join(" "),
       productName: product.productName,
@@ -1822,7 +1826,7 @@ export default function JobPage() {
   const bulkVerifier = useMemo(() => new JobBulkVerifier(jobsApiService), []);
   const jobExportConfig = useMemo(
     () => new JobExportConfigBuilder().build(),
-    []
+    [],
   );
 
   // Hook per la vista "da confermare" - API mirate
@@ -1876,7 +1880,7 @@ export default function JobPage() {
 
     return Array.from(uniqueHistory.values()).sort(
       (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
     );
   }, [selectedAllRows]);
 
@@ -1885,21 +1889,23 @@ export default function JobPage() {
       return [];
     }
 
-    const selectedIds = new Set(
-      selectedAllRows.map((row) => String(row.id))
-    );
+    const selectedIds = new Set(selectedAllRows.map((row) => String(row.id)));
 
     return allSelectedJobs.filter((job) => selectedIds.has(job.job.id));
   }, [allSelectedJobs, selectedAllRows]);
 
   // Jobs selezionati per la chat nella vista Review (filtrati per le righe selezionate)
   const selectedReviewJobsForChat = useMemo(() => {
-    if (selectedReviewRows.length === 0 || !selectedGroupJobs || selectedGroupJobs.length === 0) {
+    if (
+      selectedReviewRows.length === 0 ||
+      !selectedGroupJobs ||
+      selectedGroupJobs.length === 0
+    ) {
       return [];
     }
 
     const selectedIds = new Set(
-      selectedReviewRows.map((row) => String(row.id))
+      selectedReviewRows.map((row) => String(row.id)),
     );
 
     return selectedGroupJobs.filter((job) => selectedIds.has(job.job.id));
@@ -1908,7 +1914,7 @@ export default function JobPage() {
   // Funzione per trovare l'etichetta per nome prodotto e numero di registrazione
   const findLabelByProduct = (
     productName: string,
-    registrationNumber?: string
+    registrationNumber?: string,
   ): string | null => {
     const normalizedProductName = productName.trim().toLowerCase();
     const normalizedRegNumber = registrationNumber?.trim();
@@ -1934,7 +1940,7 @@ export default function JobPage() {
   const handleOpenLabel = (
     productName: string,
     registrationNumber?: string,
-    showToast: boolean = true
+    showToast: boolean = true,
   ) => {
     const labelId = findLabelByProduct(productName, registrationNumber);
     if (labelId) {
@@ -1957,7 +1963,7 @@ export default function JobPage() {
       return {
         value: group.jobId,
         label: `Operazione ${formattedJobId} creata il ${new Date(
-          group.createdAt
+          group.createdAt,
         ).toLocaleDateString("it-IT")}`,
         jobId: formattedJobId,
         createdAt: group.createdAt,
@@ -1982,7 +1988,9 @@ export default function JobPage() {
       setErrorSelectedJobs(null);
       try {
         const responses = await Promise.all(
-          selectedAllJobIds.map((jobId) => jobsApiService.getGroupDetail(jobId))
+          selectedAllJobIds.map((jobId) =>
+            jobsApiService.getGroupDetail(jobId),
+          ),
         );
         const jobs = responses.flatMap((res) => res.data.jobs ?? []);
         setAllSelectedJobs(jobs);
@@ -1999,7 +2007,7 @@ export default function JobPage() {
   const allGroupRows = useMemo(() => {
     if (!allSelectedJobs || allSelectedJobs.length === 0) return [];
     return allSelectedJobs.map((jobWithRelations) =>
-      new JobTableRowBuilder(jobWithRelations).build()
+      new JobTableRowBuilder(jobWithRelations).build(),
     );
   }, [allSelectedJobs]);
 
@@ -2022,7 +2030,7 @@ export default function JobPage() {
   const totalPendingOperations = useMemo(() => {
     return jobGroupsSummary.reduce(
       (acc, group) => acc + group.pendingOperations,
-      0
+      0,
     );
   }, [jobGroupsSummary]);
 
@@ -2083,7 +2091,7 @@ export default function JobPage() {
 
     return Array.from(uniqueHistory.values()).sort(
       (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
     );
   }, [selectedGroupJobs]);
 
@@ -2091,7 +2099,7 @@ export default function JobPage() {
   const selectedGroupRows = useMemo(() => {
     if (!selectedGroupJobs || selectedGroupJobs.length === 0) return [];
     return selectedGroupJobs.map((jobWithRelations) =>
-      new JobTableRowBuilder(jobWithRelations).build()
+      new JobTableRowBuilder(jobWithRelations).build(),
     );
   }, [selectedGroupJobs]);
 
@@ -2126,11 +2134,11 @@ export default function JobPage() {
           } catch (error) {
             console.error(
               `Error loading machines for company ${companyId}:`,
-              error
+              error,
             );
             machinesByCompany.set(companyId, []);
           }
-        })
+        }),
       );
       return machinesByCompany;
     },
@@ -2151,19 +2159,18 @@ export default function JobPage() {
       await Promise.all(
         uniqueCompanyIds.map(async (companyId) => {
           try {
-            const response = await userOnCompanyApiService.listByCompany(
-              companyId
-            );
+            const response =
+              await userOnCompanyApiService.listByCompany(companyId);
             const users = response.data?.users ?? [];
             usersByCompany.set(companyId, users);
           } catch (error) {
             console.error(
               `Error loading users for company ${companyId}:`,
-              error
+              error,
             );
             usersByCompany.set(companyId, []);
           }
-        })
+        }),
       );
       return usersByCompany;
     },
@@ -2188,7 +2195,7 @@ export default function JobPage() {
   const currentGroupIndex = useMemo(() => {
     if (!selectedGroupSummary) return -1;
     return pendingJobGroups.findIndex(
-      (g) => g.jobId === selectedGroupSummary.jobId
+      (g) => g.jobId === selectedGroupSummary.jobId,
     );
   }, [pendingJobGroups, selectedGroupSummary]);
 
@@ -2221,8 +2228,24 @@ export default function JobPage() {
       readOnly: true,
       render: (_value, row) => {
         const isVerified = row._isVerifiedBoolean as boolean | undefined;
-        const isVerifiedStatus = isVerified === true ? "Verificata" : "Non verificata";
-        
+        const conformityChecked = row._conformityChecked as boolean | undefined;
+
+        // Se conformityChecked è false, mostra "Conformità non verificata"
+        if (!conformityChecked) {
+          return (
+            <Badge
+              variant="outline"
+              className="bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300"
+            >
+              Conformità N/V
+            </Badge>
+          );
+        }
+
+        // Altrimenti mostra lo stato standard
+        const isVerifiedStatus =
+          isVerified === true ? "Verificata" : "Non verificata";
+
         return (
           <Badge
             variant={isVerified ? "default" : "destructive"}
@@ -2263,7 +2286,7 @@ export default function JobPage() {
 
         // Filtra le unità produttive per l'azienda selezionata
         const filtered = productionUnitSelectOptions.filter(
-          (pu) => pu.companyId === selectedCompanyId
+          (pu) => pu.companyId === selectedCompanyId,
         );
 
         if (filtered.length === 0) {
@@ -2385,7 +2408,7 @@ export default function JobPage() {
 
         // Cerca l'azienda selezionata
         const company = companySelectOptions.find(
-          (c) => c.value === stringValue
+          (c) => c.value === stringValue,
         );
 
         if (company) {
@@ -2477,8 +2500,15 @@ export default function JobPage() {
       },
       render: (_value, row) => {
         const name = row.productName as string | undefined;
-        const registrationNumber = row.productRegistrationNumber as string | undefined;
-        if (!name || !registrationNumber || name.trim() === "" || registrationNumber.trim() === "") {
+        const registrationNumber = row.productRegistrationNumber as
+          | string
+          | undefined;
+        if (
+          !name ||
+          !registrationNumber ||
+          name.trim() === "" ||
+          registrationNumber.trim() === ""
+        ) {
           return <span className="text-muted-foreground">-</span>;
         }
         return <span>{name}</span>;
@@ -2957,7 +2987,9 @@ export default function JobPage() {
         const quantity = Number(row.quantity ?? 0);
         const treatedSurface = Number(row.treatedSurface ?? 0);
         if (treatedSurface === 0 || quantity === 0) {
-          return <span className="font-mono text-sm text-muted-foreground">-</span>;
+          return (
+            <span className="font-mono text-sm text-muted-foreground">-</span>
+          );
         }
         const quantityPerHa = quantity / treatedSurface;
         return (
@@ -3175,7 +3207,7 @@ export default function JobPage() {
             ? selectedAllJobIds.length > 0
               ? selectedAllJobIds[0]
               : undefined
-            : selectedGroupCode ?? undefined;
+            : (selectedGroupCode ?? undefined);
 
         const createPayloads = payload.created
           .filter((row) => {
@@ -3353,7 +3385,9 @@ export default function JobPage() {
       // Ricarica i job selezionati se presenti
       if (selectedAllJobIds.length > 0) {
         const responses = await Promise.all(
-          selectedAllJobIds.map((jobId) => jobsApiService.getGroupDetail(jobId))
+          selectedAllJobIds.map((jobId) =>
+            jobsApiService.getGroupDetail(jobId),
+          ),
         );
         const jobs = responses.flatMap((res) => res.data.jobs ?? []);
         setAllSelectedJobs(jobs);
@@ -3370,7 +3404,7 @@ export default function JobPage() {
   // Gestisce l'eliminazione multipla
   // Handler per salvare job multipli dalla drawer custom
   const handleSaveMultipleJobs = async (
-    jobs: Array<Record<string, unknown>>
+    jobs: Array<Record<string, unknown>>,
   ) => {
     await handleSave({
       created: jobs,
@@ -3379,7 +3413,7 @@ export default function JobPage() {
   };
 
   const handleDeleteSelected = async (
-    removed: Array<Record<string, unknown>>
+    removed: Array<Record<string, unknown>>,
   ) => {
     try {
       const jobIds = removed.map((row) => row.id as string);
@@ -3408,7 +3442,7 @@ export default function JobPage() {
   };
 
   const handleBulkVerifySelected = async (
-    selectedRows: EditableTableRowData[]
+    selectedRows: EditableTableRowData[],
   ) => {
     if (selectedRows.length === 0 || isBulkVerifying) {
       return;
@@ -3432,7 +3466,9 @@ export default function JobPage() {
       // Ricarica i job selezionati se presenti (per la vista "all")
       if (selectedAllJobIds.length > 0) {
         const responses = await Promise.all(
-          selectedAllJobIds.map((jobId) => jobsApiService.getGroupDetail(jobId))
+          selectedAllJobIds.map((jobId) =>
+            jobsApiService.getGroupDetail(jobId),
+          ),
         );
         const jobs = responses.flatMap((res) => res.data.jobs ?? []);
         setAllSelectedJobs(jobs);
@@ -3470,7 +3506,7 @@ export default function JobPage() {
       productName: "",
       principioAttivo: "",
     }),
-    []
+    [],
   );
 
   // Handler per il successo della conferma conformità
@@ -3485,7 +3521,7 @@ export default function JobPage() {
     // Ricarica i job selezionati
     if (selectedAllJobIds.length > 0) {
       const responses = await Promise.all(
-        selectedAllJobIds.map((jobId) => jobsApiService.getGroupDetail(jobId))
+        selectedAllJobIds.map((jobId) => jobsApiService.getGroupDetail(jobId)),
       );
       const jobs = responses.flatMap((res) => res.data.jobs ?? []);
       setAllSelectedJobs(jobs);
