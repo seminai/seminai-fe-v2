@@ -113,7 +113,7 @@ function getActionChildren(children: React.ReactNode): {
 
 function getChildrenForSlot(
   children: React.ReactNode,
-  slotName: string
+  slotName: string,
 ): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
   React.Children.forEach(children, (child) => {
@@ -213,7 +213,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       columns,
       filteredRows,
       exportFileName,
-      customExportConfig
+      customExportConfig,
     );
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -248,7 +248,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
         addRows: tableState.addRows,
         prefillCreateRow: tableState.prefillCreateRow,
       }),
-      [tableState.addRows, tableState.prefillCreateRow]
+      [tableState.addRows, tableState.prefillCreateRow],
     );
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -320,7 +320,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
         selection.selectedIds,
         columns,
         tableState.setRows,
-        () => {}
+        () => {},
       );
     }, [bulkEdit, selection.selectedIds, columns, tableState.setRows]);
 
@@ -332,17 +332,17 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       const selectedColumn = getColumnById(
         filters.filterDraft.columnId,
         columns,
-        tableState.rows
+        tableState.rows,
       );
       const operatorOptions = getOperatorsForColumn(selectedColumn);
       const selectedOperator = operatorOptions.find(
-        (op) => op.value === filters.filterDraft.operator
+        (op) => op.value === filters.filterDraft.operator,
       );
 
       const columnOptions = selectedColumn?.options
         ? Array.isArray(selectedColumn.options)
           ? selectedColumn.options.map((o) =>
-              typeof o === "string" ? { label: o, value: o } : o
+              typeof o === "string" ? { label: o, value: o } : o,
             )
           : []
         : [];
@@ -362,8 +362,8 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
         selectedOperator?.inputType === "number"
           ? "number"
           : selectedOperator?.inputType === "date"
-          ? "date"
-          : "text";
+            ? "date"
+            : "text";
 
       const searchableValueConfig = getSearchableValueConfig(selectedColumn);
       const showSearchableValueSelect = Boolean(searchableValueConfig);
@@ -402,10 +402,10 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
           onChange?: (
             targetRow: InternalRow,
             targetColumn: EditableColumn,
-            value: unknown
+            value: unknown,
           ) => void;
           touchedOverride?: Record<string, boolean>;
-        }
+        },
       ): React.ReactNode => {
         return (
           <EditableTableCell
@@ -422,7 +422,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
           />
         );
       },
-      [columns, tableState.touched, tableState.handleCellChange]
+      [columns, tableState.touched, tableState.handleCellChange],
     );
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -607,7 +607,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
         <div
           className={cn(
             "w-full overflow-auto",
-            isFlexLayout ? "flex-1 min-h-0" : "max-h-[calc(100vh-300px)]"
+            isFlexLayout ? "flex-1 min-h-0" : "max-h-[calc(100vh-300px)]",
           )}
         >
           <table
@@ -727,7 +727,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
         />
       </div>
     );
-  }
+  },
 );
 
 // Default export for backwards compatibility
