@@ -24,7 +24,7 @@ export interface EditableColumn {
   width?: string;
   options?: Array<{ label: string; value: string }> | string[];
   getOptions?: (
-    rowData: Record<string, unknown>
+    rowData: Record<string, unknown>,
   ) => Array<{ label: string; value: string }> | string[];
   placeholder?: string;
   render?: (value: unknown, row: Record<string, unknown>) => React.ReactNode;

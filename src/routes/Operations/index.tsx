@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/organism/Header";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { type EditableColumn } from "@/components/organism/EditableTable";
 import { EditableTable } from "@/components/organism/EditableTable";
 import { type JobRow } from "@/components/organism/JobSelectedDetails";
@@ -85,7 +85,7 @@ class JobProductsFormatter {
   }>;
 
   constructor(
-    products?: Array<{ name: string; registrationNumber?: string | null }>
+    products?: Array<{ name: string; registrationNumber?: string | null }>,
   ) {
     this.products = products ?? [];
   }
@@ -116,7 +116,7 @@ class JobTableRowBuilder {
   constructor(jobWithRelations: JobWithRelations) {
     this.jobWithRelations = jobWithRelations;
     this.productsFormatter = new JobProductsFormatter(
-      this.jobWithRelations.products
+      this.jobWithRelations.products,
     );
   }
 
@@ -231,7 +231,7 @@ function MissingDataCell({
     <div
       className={cn(
         "w-full h-full flex items-center px-2 -mx-2",
-        isMissing && "bg-amber-100"
+        isMissing && "bg-amber-100",
       )}
     >
       {children}
@@ -289,11 +289,11 @@ export default function OperationsPage() {
           } catch (error) {
             console.error(
               `Error loading machines for company ${companyId}:`,
-              error
+              error,
             );
             machinesByCompany.set(companyId, []);
           }
-        })
+        }),
       );
       return machinesByCompany;
     },
@@ -314,19 +314,18 @@ export default function OperationsPage() {
       await Promise.all(
         uniqueCompanyIds.map(async (companyId) => {
           try {
-            const response = await userOnCompanyApiService.listByCompany(
-              companyId
-            );
+            const response =
+              await userOnCompanyApiService.listByCompany(companyId);
             const users = response.data?.users ?? [];
             usersByCompany.set(companyId, users);
           } catch (error) {
             console.error(
               `Error loading users for company ${companyId}:`,
-              error
+              error,
             );
             usersByCompany.set(companyId, []);
           }
-        })
+        }),
       );
       return usersByCompany;
     },
@@ -525,7 +524,7 @@ export default function OperationsPage() {
         readOnly: true,
       },
     ],
-    []
+    [],
   );
 
   // Colonne per il drawer di dettaglio (modificabili)
@@ -729,11 +728,13 @@ export default function OperationsPage() {
         },
       },
     ],
-    [machinesByCompanyMap, usersByCompanyMap, getUserFullName]
+    [machinesByCompanyMap, usersByCompanyMap, getUserFullName],
   );
 
   // Stato per tracciare tutte le modifiche nel form del drawer
-  const [drawerFormChanges, setDrawerFormChanges] = useState<Record<string, Record<string, unknown>>>({});
+  const [drawerFormChanges, setDrawerFormChanges] = useState<
+    Record<string, Record<string, unknown>>
+  >({});
 
   // Stato per il filtro di ricerca nei dettagli
   const [detailsSearchTerm, setDetailsSearchTerm] = useState<string>("");
@@ -749,7 +750,11 @@ export default function OperationsPage() {
       const hasChanges = Object.keys(currentChanges).length > 0;
 
       // Handler per modificare un campo
-      const handleFieldChange = (field: string, value: unknown, columnConfig: EditableColumn) => {
+      const handleFieldChange = (
+        field: string,
+        value: unknown,
+        columnConfig: EditableColumn,
+      ) => {
         const updates = columnConfig.onValueChange?.({
           value,
           rowData: { ...row, ...currentChanges, [field]: value },
@@ -798,7 +803,8 @@ export default function OperationsPage() {
             updatePayload.modeOfApplication = currentChanges.modeOfApplication;
           }
           if ("isLocalizedTreatment" in currentChanges) {
-            updatePayload.isLocalizedTreatment = currentChanges.isLocalizedTreatment;
+            updatePayload.isLocalizedTreatment =
+              currentChanges.isLocalizedTreatment;
           }
 
           if (Object.keys(updatePayload).length > 0) {
@@ -808,7 +814,7 @@ export default function OperationsPage() {
               queryKey: ["verified-jobs"],
             });
             await refetch();
-            
+
             // Resetta le modifiche dopo il salvataggio
             setDrawerFormChanges((prev) => {
               const next = { ...prev };
@@ -857,9 +863,10 @@ export default function OperationsPage() {
           {/* Campi modificabili */}
           <div className="space-y-2">
             {detailColumns.map((column) => {
-              const currentValue = currentChanges[column.id] !== undefined 
-                ? currentChanges[column.id] 
-                : row[column.id];
+              const currentValue =
+                currentChanges[column.id] !== undefined
+                  ? currentChanges[column.id]
+                  : row[column.id];
               const options = column.getOptions?.(row) ?? column.options ?? [];
 
               return (
@@ -949,12 +956,12 @@ export default function OperationsPage() {
         </div>
       );
     },
-    [detailColumns, drawerFormChanges, queryClient, refetch, detailsSearchTerm]
+    [detailColumns, drawerFormChanges, queryClient, refetch, detailsSearchTerm],
   );
 
   // Gestisce l'eliminazione multipla
   const handleDeleteSelected = async (
-    removed: Array<Record<string, unknown>>
+    removed: Array<Record<string, unknown>>,
   ) => {
     try {
       const jobIds = removed.map((row) => row.id as string);
@@ -979,22 +986,6 @@ export default function OperationsPage() {
           error instanceof Error ? error.message : "Riprova più tardi",
       });
       console.error("Error deleting jobs:", error);
-    }
-  };
-
-  // Gestisce il click sul bottone Elimina
-  const handleDeleteClick = () => {
-    if (selectedRows.length === 0) {
-      return;
-    }
-
-    const confirmMessage =
-      selectedRows.length === 1
-        ? "Sei sicuro di voler eliminare questa operazione?"
-        : `Sei sicuro di voler eliminare ${selectedRows.length} operazioni?`;
-
-    if (window.confirm(confirmMessage)) {
-      handleDeleteSelected(selectedRows);
     }
   };
 
@@ -1058,17 +1049,7 @@ export default function OperationsPage() {
               detailsTitle=""
               className="bg-background"
             >
-              {selectedRows.length > 0 ? (
-                <Button
-                  data-table-slot="right"
-                  variant="destructive"
-                  className="gap-2"
-                  onClick={handleDeleteClick}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Elimina ({selectedRows.length})
-                </Button>
-              ) : (
+              {selectedRows.length === 0 && (
                 <Button
                   data-table-slot="right"
                   variant="ghost"
