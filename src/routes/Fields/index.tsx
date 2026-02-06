@@ -33,7 +33,7 @@ class FieldProductionUnitInspector {
   }
 
   public static fromRow(
-    row: Record<string, unknown>
+    row: Record<string, unknown>,
   ): FieldProductionUnitInspector {
     return FieldProductionUnitInspector.fromField(row as Partial<Field>);
   }
@@ -46,7 +46,7 @@ class FieldProductionUnitInspector {
     const names = this.getActiveUnits(referenceDate)
       .map((unit) => unit.name)
       .filter((name): name is string =>
-        Boolean(name && name.trim().length > 0)
+        Boolean(name && name.trim().length > 0),
       );
 
     return names.length === 0 ? "-" : names.join(", ");
@@ -252,9 +252,7 @@ export default function Fields(): React.ReactElement {
       superficieCatastaleMq: field.superficieCatastaleMq || "",
       city: field.city || "",
       sauHa:
-        field.sauHa !== undefined && field.sauHa !== null
-          ? field.sauHa
-          : "",
+        field.sauHa !== undefined && field.sauHa !== null ? field.sauHa : "",
       uso: field.uso || "",
       soilType: field.soilType || "",
       currentProductionUnitLabel: 0,
@@ -266,7 +264,7 @@ export default function Fields(): React.ReactElement {
     toast.success(
       `${fieldsToImport.length} camp${
         fieldsToImport.length === 1 ? "o aggiunto" : "i aggiunti"
-      } alla tabella. Completa i dati e salva.`
+      } alla tabella. Completa i dati e salva.`,
     );
   };
 
@@ -276,13 +274,13 @@ export default function Fields(): React.ReactElement {
   }) => {
     // Validazione: verifica che tutti i campi da creare abbiano un'azienda
     const fieldsWithoutCompany = payload.created.filter(
-      (field) => !field.companyName
+      (field) => !field.companyName,
     );
     if (fieldsWithoutCompany.length > 0) {
       toast.error(
         `Devi selezionare un'azienda per ${
           fieldsWithoutCompany.length === 1 ? "il campo" : "i campi"
-        } da creare`
+        } da creare`,
       );
       throw new Error("Azienda mancante per i nuovi campi");
     }
@@ -328,9 +326,7 @@ export default function Fields(): React.ReactElement {
       if (field.city !== undefined) updateField.city = String(field.city);
       if (field.sauHa !== undefined)
         updateField.sauHa =
-          field.sauHa !== null && field.sauHa !== ""
-            ? Number(field.sauHa)
-            : 0;
+          field.sauHa !== null && field.sauHa !== "" ? Number(field.sauHa) : 0;
       if (field.uso !== undefined) updateField.uso = String(field.uso);
       if (field.soilType !== undefined)
         updateField.soilType = String(field.soilType);
@@ -352,7 +348,7 @@ export default function Fields(): React.ReactElement {
 
       if (fieldsToUpdate.length > 0) {
         promises.push(
-          updateFieldsAsync(fieldsToUpdate as BulkFieldUpdateInput[])
+          updateFieldsAsync(fieldsToUpdate as BulkFieldUpdateInput[]),
         );
       }
 
@@ -364,7 +360,7 @@ export default function Fields(): React.ReactElement {
   };
 
   const handleDeleteSelected = async (
-    removed: Array<Record<string, unknown>>
+    removed: Array<Record<string, unknown>>,
   ) => {
     if (removed.length === 0) {
       return;
@@ -442,6 +438,8 @@ export default function Fields(): React.ReactElement {
             onDeleteSelected={handleDeleteSelected}
             showDeleteAction={true}
             exportFileName="campi"
+            createDrawerImportTitle="Importa file"
+            createDrawerImportDescription="Il sistema supporta il formato del template AGEA della misura unica, con parcelle e uso del suolo primario e secondario (CSV, XLS, XLSX). Il formato può variare in base alla regione. Seleziona l'azienda e carica un file; i dati dei campi verranno estratti automaticamente."
             newRowDefaults={{
               companyName: "",
               name: "",
@@ -462,6 +460,7 @@ export default function Fields(): React.ReactElement {
           >
             <ImportFieldByCsv
               slot="create-drawer"
+              embedded
               companies={companies}
               onImportSuccess={handleImportFromCsv}
             />

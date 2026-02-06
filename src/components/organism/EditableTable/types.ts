@@ -112,6 +112,18 @@ export interface EditableTableProps {
    * Receives the row data and should return a class name string or undefined.
    */
   getRowClassName?: (row: Record<string, unknown>) => string | undefined;
+  /** Create drawer: title when showing choice (Importa file / Crea a mano) */
+  createDrawerChoiceTitle?: string;
+  /** Create drawer: description when showing choice */
+  createDrawerChoiceDescription?: string;
+  /** Create drawer: title when showing import view */
+  createDrawerImportTitle?: string;
+  /** Create drawer: description when showing import view */
+  createDrawerImportDescription?: string;
+  /** Create drawer: title when showing manual form */
+  createDrawerFormTitle?: string;
+  /** Create drawer: description when showing manual form */
+  createDrawerFormDescription?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

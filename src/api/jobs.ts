@@ -62,13 +62,13 @@ export type JobHistoryEntry = JobStandardHistoryEntry | JobModificationEntry;
 
 // Type guard per distinguere i tipi di entry
 export function isJobModificationEntry(
-  entry: JobHistoryEntry
+  entry: JobHistoryEntry,
 ): entry is JobModificationEntry {
   return (entry as JobModificationEntry).type === "modification";
 }
 
 export function isJobStandardHistoryEntry(
-  entry: JobHistoryEntry
+  entry: JobHistoryEntry,
 ): entry is JobStandardHistoryEntry {
   return !isJobModificationEntry(entry);
 }
@@ -105,6 +105,7 @@ export type ProductionUnit = {
   name: string;
   cropName: string;
   cropType: string;
+  sauHa?: number;
 };
 
 export type Field = {
@@ -251,7 +252,7 @@ export type GetVerifiedJobsResponse = {
 
 export async function getJobs(
   companyName?: string,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<GetJobsResponse> {
   const url = new URL(`${baseUrl}/jobs/me`);
   if (companyName) {
@@ -284,7 +285,7 @@ export async function getJobs(
 export async function updateJob(
   jobId: string,
   payload: UpdateJobPayload,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<UpdateJobResponse> {
   console.log("Updating job:", jobId, payload);
 
@@ -297,7 +298,7 @@ export async function updateJob(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-    }
+    },
   );
 
   console.log("Update job response status:", response.status);
@@ -316,7 +317,7 @@ export async function updateJob(
 
 export async function bulkDeleteJobs(
   payload: BulkDeleteJobsPayload,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<BulkDeleteJobsResponse> {
   console.log("Bulk deleting jobs:", payload);
 
@@ -329,7 +330,7 @@ export async function bulkDeleteJobs(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-    }
+    },
   );
 
   console.log("Bulk delete response status:", response.status);
@@ -347,7 +348,7 @@ export async function bulkDeleteJobs(
 }
 
 export async function getJobGroupsSummary(
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<GetJobGroupsSummaryResponse> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/jobs/groups-summary`,
@@ -356,7 +357,7 @@ export async function getJobGroupsSummary(
       headers: {
         Accept: "application/json",
       },
-    }
+    },
   );
 
   if (!response.ok) {
@@ -371,7 +372,7 @@ export async function getJobGroupsSummary(
 
 export async function getJobGroupDetail(
   jobId: string,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<GetJobGroupDetailResponse> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/jobs/group/${jobId}`,
@@ -380,7 +381,7 @@ export async function getJobGroupDetail(
       headers: {
         Accept: "application/json",
       },
-    }
+    },
   );
 
   if (!response.ok) {
@@ -395,7 +396,7 @@ export async function getJobGroupDetail(
 
 export async function createProductAndJob(
   payload: CreateJobPayload[],
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<CreateProductAndJobResponse> {
   console.log("Creating product and job:", payload);
 
@@ -408,7 +409,7 @@ export async function createProductAndJob(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-    }
+    },
   );
 
   console.log("Create product and job response status:", response.status);
@@ -431,10 +432,10 @@ export async function getVerifiedJobs(
     page?: number;
     limit?: number;
   } = {},
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<GetVerifiedJobsResponse> {
   const url = new URL(`${baseUrl}/jobs/me/verified`);
-  
+
   if (options.companyName) {
     url.searchParams.append("companyName", options.companyName);
   }
@@ -481,13 +482,13 @@ class JobsApiService {
 
   public async updateJob(
     jobId: string,
-    payload: UpdateJobPayload
+    payload: UpdateJobPayload,
   ): Promise<UpdateJobResponse> {
     return await updateJob(jobId, payload, this.baseUrl);
   }
 
   public async bulkDelete(
-    payload: BulkDeleteJobsPayload
+    payload: BulkDeleteJobsPayload,
   ): Promise<BulkDeleteJobsResponse> {
     return await bulkDeleteJobs(payload, this.baseUrl);
   }
@@ -497,13 +498,13 @@ class JobsApiService {
   }
 
   public async getGroupDetail(
-    jobId: string
+    jobId: string,
   ): Promise<GetJobGroupDetailResponse> {
     return await getJobGroupDetail(jobId, this.baseUrl);
   }
 
   public async createProductAndJob(
-    payload: CreateJobPayload[]
+    payload: CreateJobPayload[],
   ): Promise<CreateProductAndJobResponse> {
     return await createProductAndJob(payload, this.baseUrl);
   }

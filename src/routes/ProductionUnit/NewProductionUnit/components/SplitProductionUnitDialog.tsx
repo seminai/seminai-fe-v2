@@ -16,10 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Trash2, AlertCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 
-import type {
-  ProductionUnitInput,
-  ProductionUnitSplitPart,
-} from "../types";
+import type { ProductionUnitInput, ProductionUnitSplitPart } from "../types";
 import { generateSplitUnitName, validateSplitSum } from "../utils";
 
 type SplitProductionUnitDialogProps = {
@@ -31,7 +28,7 @@ type SplitProductionUnitDialogProps = {
 
 const createInitialParts = (
   unit: ProductionUnitInput,
-  numberOfParts: number = 2
+  numberOfParts: number = 2,
 ): ProductionUnitSplitPart[] => {
   const totalArea =
     unit.totalAreaHa ??
@@ -60,11 +57,11 @@ export const SplitProductionUnitDialog: React.FC<
   }, [unit]);
 
   const [parts, setParts] = useState<ProductionUnitSplitPart[]>(() =>
-    createInitialParts(unit, 2)
+    createInitialParts(unit, 2),
   );
 
   const [customizedNames, setCustomizedNames] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   React.useEffect(() => {
@@ -76,7 +73,7 @@ export const SplitProductionUnitDialog: React.FC<
 
   const validation = useMemo(
     () => validateSplitSum(parts, totalAreaHa),
-    [parts, totalAreaHa]
+    [parts, totalAreaHa],
   );
 
   const handleAddPart = useCallback(() => {
@@ -103,7 +100,7 @@ export const SplitProductionUnitDialog: React.FC<
           id: `split-${Date.now()}`,
           name: generateSplitUnitName(unit.name, newCount - 1),
           areaHa: parseFloat(
-            (totalAreaHa - equalPart * (newCount - 1)).toFixed(2)
+            (totalAreaHa - equalPart * (newCount - 1)).toFixed(2),
           ),
         },
       ];
@@ -120,7 +117,7 @@ export const SplitProductionUnitDialog: React.FC<
       setParts((prev) => {
         const remaining = prev.filter((p) => p.id !== partId);
         const equalPart = parseFloat(
-          (totalAreaHa / remaining.length).toFixed(2)
+          (totalAreaHa / remaining.length).toFixed(2),
         );
 
         return remaining.map((p, idx) => ({
@@ -128,7 +125,7 @@ export const SplitProductionUnitDialog: React.FC<
           areaHa:
             idx === remaining.length - 1
               ? parseFloat(
-                  (totalAreaHa - equalPart * (remaining.length - 1)).toFixed(2)
+                  (totalAreaHa - equalPart * (remaining.length - 1)).toFixed(2),
                 )
               : equalPart,
           name: customizedNames.has(p.id)
@@ -143,7 +140,7 @@ export const SplitProductionUnitDialog: React.FC<
         return next;
       });
     },
-    [parts.length, totalAreaHa, unit.name, customizedNames]
+    [parts.length, totalAreaHa, unit.name, customizedNames],
   );
 
   const handleAreaChange = useCallback(
@@ -163,12 +160,12 @@ export const SplitProductionUnitDialog: React.FC<
         return updated;
       });
     },
-    [totalAreaHa]
+    [totalAreaHa],
   );
 
   const handleNameChange = useCallback((partId: string, newName: string) => {
     setParts((prev) =>
-      prev.map((p) => (p.id === partId ? { ...p, name: newName } : p))
+      prev.map((p) => (p.id === partId ? { ...p, name: newName } : p)),
     );
     setCustomizedNames((prev) => new Set(prev).add(partId));
   }, []);
@@ -178,7 +175,9 @@ export const SplitProductionUnitDialog: React.FC<
       toast.error(
         `La somma delle aree (${parts
           .reduce((s, p) => s + p.areaHa, 0)
-          .toFixed(2)} Ha) non corrisponde all'area totale (${totalAreaHa.toFixed(2)} Ha)`
+          .toFixed(
+            2,
+          )} Ha) non corrisponde all'area totale (${totalAreaHa.toFixed(2)} Ha)`,
       );
       return;
     }
@@ -198,8 +197,12 @@ export const SplitProductionUnitDialog: React.FC<
   };
 
   return (
-    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()} direction="right">
-      <DrawerContent className="!w-[50vw] !max-w-[50vw] h-full">
+    <Drawer
+      open={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+      direction="right"
+    >
+      <DrawerContent className="!w-[50vw] !max-w-[50vw] h-dvh flex flex-col">
         <DrawerHeader className="border-b">
           <DrawerTitle>Fraziona Unità Produttiva</DrawerTitle>
           <DrawerDescription>
@@ -309,7 +312,7 @@ export const SplitProductionUnitDialog: React.FC<
                               onChange={(e) =>
                                 handleAreaChange(
                                   part.id,
-                                  parseFloat(e.target.value) || 0
+                                  parseFloat(e.target.value) || 0,
                                 )
                               }
                               className="text-right"

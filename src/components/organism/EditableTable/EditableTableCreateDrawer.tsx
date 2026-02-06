@@ -7,10 +7,10 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import type {
-  EditableColumn,
-  InternalRow,
-} from "./index";
+import { Upload, PenLine } from "lucide-react";
+import type { EditableColumn, InternalRow } from "./index";
+
+export type CreateDrawerViewMode = "choice" | "form" | "import";
 
 interface EditableTableCreateDrawerProps {
   open: boolean;
@@ -25,7 +25,7 @@ interface EditableTableCreateDrawerProps {
   onCellChange: (
     row: InternalRow,
     column: EditableColumn,
-    value: unknown
+    value: unknown,
   ) => void;
   renderInput: (
     row: InternalRow,
@@ -34,11 +34,20 @@ interface EditableTableCreateDrawerProps {
       onChange?: (
         targetRow: InternalRow,
         targetColumn: EditableColumn,
-        value: unknown
+        value: unknown,
       ) => void;
       touchedOverride?: Record<string, boolean>;
-    }
+    },
   ) => React.ReactNode;
+  /** Override title when showing choice */
+  choiceTitle?: string;
+  choiceDescription?: string;
+  /** Override title and description when showing import view */
+  importTitle?: string;
+  importDescription?: string;
+  /** Override title and description when showing form */
+  formTitle?: string;
+  formDescription?: string;
 }
 
 /**
@@ -60,13 +69,34 @@ const FIELD_LAYOUT: FieldGroup[] = [
   { columns: ["currentProductionUnitLabel"], gridCols: "grid-cols-1" },
 ];
 
-export class EditableTableCreateDrawer extends React.PureComponent<EditableTableCreateDrawerProps> {
+interface EditableTableCreateDrawerState {
+  createViewMode: CreateDrawerViewMode;
+}
+
+export class EditableTableCreateDrawer extends React.PureComponent<
+  EditableTableCreateDrawerProps,
+  EditableTableCreateDrawerState
+> {
+  public state: EditableTableCreateDrawerState = {
+    createViewMode: "choice",
+  };
+
+  public static getDerivedStateFromProps(
+    nextProps: EditableTableCreateDrawerProps,
+    _prevState: EditableTableCreateDrawerState, // eslint-disable-line @typescript-eslint/no-unused-vars -- required by React signature
+  ): Partial<EditableTableCreateDrawerState> | null {
+    if (!nextProps.open) {
+      return { createViewMode: "choice" };
+    }
+    return null;
+  }
+
   /**
    * Organizza le colonne in gruppi per il layout a griglia
    */
   private organizeColumns(): Map<string, FieldGroup> {
     const columnMap = new Map<string, FieldGroup>();
-    
+
     FIELD_LAYOUT.forEach((group) => {
       group.columns.forEach((columnId) => {
         columnMap.set(columnId, group);
@@ -79,9 +109,15 @@ export class EditableTableCreateDrawer extends React.PureComponent<EditableTable
   /**
    * Raggruppa le colonne per riga
    */
-  private groupColumnsByRow(): Array<{ group: FieldGroup; columns: EditableColumn[] }> {
+  private groupColumnsByRow(): Array<{
+    group: FieldGroup;
+    columns: EditableColumn[];
+  }> {
     const columnMap = this.organizeColumns();
-    const grouped = new Map<string, { group: FieldGroup; columns: EditableColumn[] }>();
+    const grouped = new Map<
+      string,
+      { group: FieldGroup; columns: EditableColumn[] }
+    >();
     const unmappedColumns: EditableColumn[] = [];
 
     // Raggruppa le colonne mappate
@@ -126,6 +162,18 @@ export class EditableTableCreateDrawer extends React.PureComponent<EditableTable
     return result;
   }
 
+  private handleSelectImport = (): void => {
+    this.setState({ createViewMode: "import" });
+  };
+
+  private handleSelectManual = (): void => {
+    this.setState({ createViewMode: "form" });
+  };
+
+  private handleBackFromImport = (): void => {
+    this.setState({ createViewMode: "choice" });
+  };
+
   render(): React.ReactNode {
     const {
       open,
@@ -138,60 +186,133 @@ export class EditableTableCreateDrawer extends React.PureComponent<EditableTable
       onCellChange,
       createTouched,
       renderInput,
+      choiceTitle,
+      choiceDescription,
+      importTitle,
+      importDescription,
+      formTitle,
+      formDescription,
     } = this.props;
+
+    const { createViewMode } = this.state;
+    const showChoice = drawerChildren.length > 0 && createViewMode === "choice";
+    const showImport = drawerChildren.length > 0 && createViewMode === "import";
+    const showForm = createViewMode === "form" || drawerChildren.length === 0;
+
+    const title = showChoice
+      ? (choiceTitle ?? "Nuovo elemento")
+      : showImport
+        ? (importTitle ?? "Importa file")
+        : (formTitle ?? "Nuovo elemento");
+    const description = showChoice
+      ? (choiceDescription ?? "Scegli come aggiungere un nuovo elemento")
+      : showImport
+        ? (importDescription ?? "Importa i dati da file")
+        : (formDescription ??
+          "Compila i campi per aggiungere un nuovo elemento alla tabella");
 
     const groupedColumns = this.groupColumnsByRow();
 
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent 
+        <DrawerContent
           data-vaul-drawer-direction="right"
           className="!w-[95vw] !max-w-[95vw] sm:!w-1/2 sm:!max-w-[50vw] overflow-x-hidden"
         >
           <DrawerHeader className="px-4 sm:px-6">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+            <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <DrawerTitle className="text-lg sm:text-xl">Nuovo elemento</DrawerTitle>
+                <DrawerTitle className="text-lg sm:text-xl">
+                  {title}
+                </DrawerTitle>
                 <DrawerDescription className="text-sm mt-1.5">
-                  Compila i campi per aggiungere un nuovo elemento alla tabella
+                  {description}
                 </DrawerDescription>
               </div>
-              {drawerChildren.length > 0 && (
-                <div className="flex-shrink-0">
-                  {drawerChildren}
-                </div>
+              {showImport && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={this.handleBackFromImport}
+                  className="flex-shrink-0 h-9 px-3"
+                >
+                  Indietro
+                </Button>
               )}
             </div>
           </DrawerHeader>
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-180px)]">
-            {pendingRow ? (
+            {showChoice ? (
+              <div className="flex flex-col gap-4 py-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="w-full h-auto min-h-[100px] flex flex-col gap-3 py-6 border-2 hover:border-primary hover:bg-primary/5 hover:text-foreground"
+                  onClick={this.handleSelectImport}
+                >
+                  <Upload className="h-10 w-10 text-muted-foreground hover:text-muted-foreground" />
+                  <span className="text-base font-semibold hover:text-foreground">
+                    Importa file
+                  </span>
+                  <span className="text-sm text-muted-foreground font-normal hover:text-muted-foreground">
+                    Carica un file per estrarre i dati automaticamente
+                  </span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="w-full h-auto min-h-[100px] flex flex-col gap-3 py-6 border-2 hover:border-primary hover:bg-primary/5 hover:text-foreground"
+                  onClick={this.handleSelectManual}
+                >
+                  <PenLine className="h-10 w-10 text-muted-foreground hover:text-muted-foreground" />
+                  <span className="text-base font-semibold hover:text-foreground">
+                    Crea a mano
+                  </span>
+                  <span className="text-sm text-muted-foreground font-normal hover:text-muted-foreground">
+                    Compila i campi manualmente
+                  </span>
+                </Button>
+              </div>
+            ) : showImport ? (
+              <div className="flex flex-col gap-4">{drawerChildren}</div>
+            ) : pendingRow ? (
               <div className="space-y-4 sm:space-y-5">
-                {groupedColumns.map(({ group, columns: rowColumns }, groupIndex) => {
-                  // Su mobile, le griglie con più colonne diventano a colonna singola
-                  const mobileGridClass = group.gridCols === "grid-cols-1" 
-                    ? "grid-cols-1" 
-                    : "grid-cols-1 sm:" + group.gridCols;
-                  return (
-                    <div key={groupIndex} className={`grid ${mobileGridClass} gap-3 sm:gap-4`}>
-                      {rowColumns.map((column) => (
-                        <div key={column.id} className="space-y-1.5 sm:space-y-2">
-                          <div className="text-sm font-semibold text-muted-foreground flex items-center gap-1">
-                            <span>{column.title}</span>
-                            {column.required ? (
-                              <span className="text-red-500">*</span>
-                            ) : null}
+                {groupedColumns.map(
+                  ({ group, columns: rowColumns }, groupIndex) => {
+                    const mobileGridClass =
+                      group.gridCols === "grid-cols-1"
+                        ? "grid-cols-1"
+                        : "grid-cols-1 sm:" + group.gridCols;
+                    return (
+                      <div
+                        key={groupIndex}
+                        className={`grid ${mobileGridClass} gap-3 sm:gap-4`}
+                      >
+                        {rowColumns.map((column) => (
+                          <div
+                            key={column.id}
+                            className="space-y-1.5 sm:space-y-2"
+                          >
+                            <div className="text-sm font-semibold text-muted-foreground flex items-center gap-1">
+                              <span>{column.title}</span>
+                              {column.required ? (
+                                <span className="text-red-500">*</span>
+                              ) : null}
+                            </div>
+                            <div className="[&_input]:h-11 [&_input]:text-base sm:[&_input]:h-10 sm:[&_input]:text-sm [&_select]:h-11 [&_select]:text-base sm:[&_select]:h-10 sm:[&_select]:text-sm [&_textarea]:text-base sm:[&_textarea]:text-sm">
+                              {renderInput(pendingRow, column, {
+                                onChange: onCellChange,
+                                touchedOverride: createTouched,
+                              })}
+                            </div>
                           </div>
-                          <div className="[&_input]:h-11 [&_input]:text-base sm:[&_input]:h-10 sm:[&_input]:text-sm [&_select]:h-11 [&_select]:text-base sm:[&_select]:h-10 sm:[&_select]:text-sm [&_textarea]:text-base sm:[&_textarea]:text-sm">
-                            {renderInput(pendingRow, column, {
-                              onChange: onCellChange,
-                              touchedOverride: createTouched,
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })}
+                        ))}
+                      </div>
+                    );
+                  },
+                )}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
@@ -199,17 +320,26 @@ export class EditableTableCreateDrawer extends React.PureComponent<EditableTable
               </p>
             )}
           </div>
-          <div className="flex items-center justify-end gap-2 border-t border-border/50 px-4 sm:px-6 py-4">
-            <Button variant="ghost" onClick={onCancel} className="h-11 sm:h-10 px-4 sm:px-3">
-              Annulla
-            </Button>
-            <Button onClick={onSave} disabled={disableSave} className="h-11 sm:h-10 px-5 sm:px-4">
-              Salva
-            </Button>
-          </div>
+          {showForm && (
+            <div className="flex items-center justify-end gap-2 border-t border-border/50 px-4 sm:px-6 py-4">
+              <Button
+                variant="ghost"
+                onClick={onCancel}
+                className="h-11 sm:h-10 px-4 sm:px-3"
+              >
+                Annulla
+              </Button>
+              <Button
+                onClick={onSave}
+                disabled={disableSave}
+                className="h-11 sm:h-10 px-5 sm:px-4"
+              >
+                Salva
+              </Button>
+            </div>
+          )}
         </DrawerContent>
       </Drawer>
     );
   }
 }
-

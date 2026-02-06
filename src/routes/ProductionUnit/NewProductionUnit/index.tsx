@@ -35,8 +35,10 @@ import {
   RefreshCcw,
   Filter,
   X,
+  PenLine,
+  FileUp,
+  ArrowLeft,
 } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -46,7 +48,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
 
 import { SingleProductionUnitForm } from "./components/SingleProductionUnitForm";
 import { useCropVarieties } from "./hooks/useCropVarieties";
@@ -99,14 +100,9 @@ class ImportedCropResolver {
   }
 
   private buildCandidateLabels(
-    unit: ImportResult["productionUnits"][number]
+    unit: ImportResult["productionUnits"][number],
   ): string[] {
-    const labels = [
-      unit.cropName,
-      unit.cropType,
-      unit.occupazione,
-      unit.name,
-    ];
+    const labels = [unit.cropName, unit.cropType, unit.occupazione, unit.name];
     const expanded = new Set<string>();
 
     labels.forEach((label) => {
@@ -114,7 +110,10 @@ class ImportedCropResolver {
         return;
       }
       expanded.add(label);
-      const cleanedParentheses = label.replace(/[()]/g, " ").replace(/\s+/g, " ").trim();
+      const cleanedParentheses = label
+        .replace(/[()]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
       if (cleanedParentheses) {
         expanded.add(cleanedParentheses);
       }
@@ -167,17 +166,17 @@ export default function NewProductionUnit(): React.ReactElement {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("all");
   // Map: fieldId -> allocatedArea (in ettari)
   const [allocatedFields, setAllocatedFields] = useState<Map<string, number>>(
-    new Map()
+    new Map(),
   );
   // Set di campi selezionati per multiselect
   const [selectedFieldIds, setSelectedFieldIds] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   // Range di date per il calendario (default: anno corrente)
   const [dateRange, setDateRange] = useState<DateRange>(getCurrentYearRange());
   const [tempDateRange, setTempDateRange] = useState<DateRange>(
-    getCurrentYearRange()
+    getCurrentYearRange(),
   );
   const [entryMode, setEntryMode] = useState<"search" | "import" | null>(null);
   const [hasPerformedSearch, setHasPerformedSearch] = useState(false);
@@ -185,7 +184,7 @@ export default function NewProductionUnit(): React.ReactElement {
   const navigate = useNavigate();
   const navigationManager = useMemo(
     () => new NavigationManager(navigate),
-    [navigate]
+    [navigate],
   );
   const handleCancelNavigation = useCallback(() => {
     navigationManager.goBack();
@@ -205,12 +204,27 @@ export default function NewProductionUnit(): React.ReactElement {
 
   const [showSearch, setShowSearch] = useState(false);
 
+  // Modalità creazione: null = scelta iniziale, "manual" = form manuale, "import" = import da file
+  const [creationMode, setCreationMode] = useState<null | "manual" | "import">(
+    null,
+  );
+
+  const handleBackToChoice = useCallback(() => {
+    setCreationMode(null);
+    setCurrentStep(1);
+    setProductionUnits([]);
+    setAllocatedFields(new Map());
+    setSelectedFieldIds(new Set());
+    setEditingUnitId(null);
+    setStep2ShowList(false);
+  }, []);
+
   // Stepper state
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
 
   // Production units management
   const [productionUnits, setProductionUnits] = useState<ProductionUnitInput[]>(
-    []
+    [],
   );
   const [isCreating, setIsCreating] = useState(false);
   const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
@@ -231,12 +245,13 @@ export default function NewProductionUnit(): React.ReactElement {
   useEffect(() => {
     if (cultivarCatalogError) {
       toast.error(
-        "Impossibile caricare il dataset delle cultivar. Continuerai senza suggerimenti automatici."
+        "Impossibile caricare il dataset delle cultivar. Continuerai senza suggerimenti automatici.",
       );
     }
   }, [cultivarCatalogError]);
 
-  const isAvailabilitySearchEnabled = entryMode === "search" && hasPerformedSearch;
+  const isAvailabilitySearchEnabled =
+    entryMode === "search" && hasPerformedSearch;
   const availabilityStart = isAvailabilitySearchEnabled
     ? dateRange.start.toISOString().split("T")[0]
     : "";
@@ -247,7 +262,7 @@ export default function NewProductionUnit(): React.ReactElement {
   const { companies, isLoading, isError, error } = useFieldsAvailability(
     availabilityStart,
     availabilityEnd,
-    { enabled: isAvailabilitySearchEnabled }
+    { enabled: isAvailabilitySearchEnabled },
   );
 
   // Tutti i campi disponibili (flattening da tutte le aziende)
@@ -258,7 +273,7 @@ export default function NewProductionUnit(): React.ReactElement {
           ...field,
           companyName: company.companyName,
           companyId: company.companyId,
-        }))
+        })),
       )
       .map((field) => field as FieldWithCompany);
   }, [companies]);
@@ -268,7 +283,10 @@ export default function NewProductionUnit(): React.ReactElement {
       return [];
     }
 
-    const fieldsByCompanyId = new Map<string, typeof companies[number]["fields"]>();
+    const fieldsByCompanyId = new Map<
+      string,
+      (typeof companies)[number]["fields"]
+    >();
     companies.forEach((company) => {
       fieldsByCompanyId.set(company.companyId, company.fields);
     });
@@ -297,7 +315,7 @@ export default function NewProductionUnit(): React.ReactElement {
         .filter(
           (allocationKey) =>
             isSplitAllocationKey(allocationKey) &&
-            getBaseFieldIdFromAllocation(allocationKey) === field.id
+            getBaseFieldIdFromAllocation(allocationKey) === field.id,
         )
         .map((allocationKey) => ({
           ...field,
@@ -315,7 +333,7 @@ export default function NewProductionUnit(): React.ReactElement {
       selectedCompanyId === "all"
         ? allFieldsWithSplits
         : allFieldsWithSplits.filter(
-            (field) => field.companyId === selectedCompanyId
+            (field) => field.companyId === selectedCompanyId,
           );
     return dataset;
   }, [allFieldsWithSplits, selectedCompanyId]);
@@ -349,7 +367,7 @@ export default function NewProductionUnit(): React.ReactElement {
       (total, allocatedArea) => {
         return total + allocatedArea;
       },
-      0
+      0,
     );
   }, [allocatedFields]);
 
@@ -408,7 +426,7 @@ export default function NewProductionUnit(): React.ReactElement {
       });
       return total;
     },
-    [allocatedFields]
+    [allocatedFields],
   );
 
   const getAvailableCapacityForAllocation = useCallback(
@@ -436,7 +454,7 @@ export default function NewProductionUnit(): React.ReactElement {
 
       return Math.max(field.areaAvailable - totalUsedInPUs - totalOther, 0);
     },
-    [allFields, allocatedFields, getFieldsAlreadyUsedInPUs]
+    [allFields, allocatedFields, getFieldsAlreadyUsedInPUs],
   );
 
   const getNextSplitIndex = useCallback(
@@ -444,7 +462,7 @@ export default function NewProductionUnit(): React.ReactElement {
       const existingSplits = Array.from(allocatedFields.keys()).filter(
         (key) =>
           isSplitAllocationKey(key) &&
-          getBaseFieldIdFromAllocation(key) === fieldId
+          getBaseFieldIdFromAllocation(key) === fieldId,
       );
       if (existingSplits.length === 0) {
         return 2;
@@ -455,7 +473,7 @@ export default function NewProductionUnit(): React.ReactElement {
       }, 0);
       return maxIndex + 1;
     },
-    [allocatedFields]
+    [allocatedFields],
   );
 
   const removeAllocationEntries = useCallback((allocationKeys: string[]) => {
@@ -473,7 +491,7 @@ export default function NewProductionUnit(): React.ReactElement {
     (allocationKey: string) => {
       removeAllocationEntries([allocationKey]);
     },
-    [removeAllocationEntries]
+    [removeAllocationEntries],
   );
 
   const updateFieldAllocation = useCallback(
@@ -504,7 +522,7 @@ export default function NewProductionUnit(): React.ReactElement {
         return newMap;
       });
     },
-    [allFields, getAvailableCapacityForAllocation, removeAllocationEntries]
+    [allFields, getAvailableCapacityForAllocation, removeAllocationEntries],
   );
 
   const allocateMaxForField = useCallback(
@@ -520,7 +538,7 @@ export default function NewProductionUnit(): React.ReactElement {
         return newMap;
       });
     },
-    [getAvailableCapacityForAllocation]
+    [getAvailableCapacityForAllocation],
   );
 
   const handleAddIndependentArea = useCallback(
@@ -531,11 +549,11 @@ export default function NewProductionUnit(): React.ReactElement {
       }
       const remainingArea = Math.max(
         field.areaAvailable - getTotalAllocatedForField(fieldId),
-        0
+        0,
       );
       if (remainingArea <= 0) {
         toast.error(
-          "Non ci sono superfici disponibili per creare una nuova area."
+          "Non ci sono superfici disponibili per creare una nuova area.",
         );
         return;
       }
@@ -547,7 +565,7 @@ export default function NewProductionUnit(): React.ReactElement {
         return newMap;
       });
     },
-    [allFields, getNextSplitIndex, getTotalAllocatedForField]
+    [allFields, getNextSplitIndex, getTotalAllocatedForField],
   );
 
   const getAllocatedArea = useCallback(
@@ -556,7 +574,7 @@ export default function NewProductionUnit(): React.ReactElement {
         ? allocatedFields.get(fieldId)
         : undefined;
     },
-    [allocatedFields]
+    [allocatedFields],
   );
 
   // Handler per l'importazione CSV - popola lo stato locale per revisione
@@ -599,7 +617,7 @@ export default function NewProductionUnit(): React.ReactElement {
           importedVariety: importedUnit.variety || null,
           importedCompanyId: result.companyId || null,
         };
-      }
+      },
     );
 
     const importedStartDates = convertedUnits
@@ -611,10 +629,10 @@ export default function NewProductionUnit(): React.ReactElement {
 
     if (importedStartDates.length > 0 && importedEndDates.length > 0) {
       const minStart = new Date(
-        Math.min(...importedStartDates.map((date) => date.getTime()))
+        Math.min(...importedStartDates.map((date) => date.getTime())),
       );
       const maxEnd = new Date(
-        Math.max(...importedEndDates.map((date) => date.getTime()))
+        Math.max(...importedEndDates.map((date) => date.getTime())),
       );
       setDateRange({ start: minStart, end: maxEnd });
       setTempDateRange({ start: minStart, end: maxEnd });
@@ -626,22 +644,22 @@ export default function NewProductionUnit(): React.ReactElement {
     // Mostra messaggi di successo/warning
     const totalAllocations = convertedUnits.reduce(
       (sum, u) => sum + u.allocations.size,
-      0
+      0,
     );
     const unitsWithMissingCrop = convertedUnits.filter((u) => !u.cropCode);
 
     toast.success(
-      `Importate ${convertedUnits.length} unità produttive con ${totalAllocations} allocazioni campi.`
+      `Importate ${convertedUnits.length} unità produttive con ${totalAllocations} allocazioni campi.`,
     );
 
     if (unitsWithMissingCrop.length > 0) {
       toast.warning(
         `${unitsWithMissingCrop.length} unità non hanno una varietà abbinata. Selezionala manualmente.`,
-        { duration: 5000 }
+        { duration: 5000 },
       );
     }
 
-    // Passa allo step 2 per mostrare la lista
+    // Passa allo step 2 per mostrare la lista con anteprima
     setCurrentStep(2);
     setStep2ShowList(true);
   };
@@ -676,7 +694,7 @@ export default function NewProductionUnit(): React.ReactElement {
         originalUnit.totalAreaHa ??
         Array.from(originalUnit.allocations.values()).reduce(
           (sum, a) => sum + a,
-          0
+          0,
         );
 
       const splitUnits: ProductionUnitInput[] = parts.map((part, index) => ({
@@ -687,7 +705,7 @@ export default function NewProductionUnit(): React.ReactElement {
         allocations: distributeAllocationsProportionally(
           originalUnit.allocations,
           totalArea,
-          part.areaHa
+          part.areaHa,
         ),
       }));
 
@@ -697,36 +715,35 @@ export default function NewProductionUnit(): React.ReactElement {
       });
 
       toast.success(
-        `Unità "${originalUnit.name}" frazionata in ${parts.length} parti`
+        `Unità "${originalUnit.name}" frazionata in ${parts.length} parti`,
       );
     },
-    [productionUnits]
+    [productionUnits],
   );
 
   // Handler per la creazione delle unità produttive
   const handleCreateProductionUnits = async () => {
     setIsCreating(true);
     try {
-      const { productionUnitApiService } = await import(
-        "@/api/production-unit"
-      );
+      const { productionUnitApiService } =
+        await import("@/api/production-unit");
 
       // Filtra le unità senza allocazioni: le saltiamo ma avvisiamo l'utente
       const unitsWithAllocations = productionUnits.filter(
-        (unit) => unit.allocations.size > 0
+        (unit) => unit.allocations.size > 0,
       );
       const skippedUnits = productionUnits.length - unitsWithAllocations.length;
 
       if (unitsWithAllocations.length === 0) {
         toast.error(
-          "Nessuna unità ha campi allocati. Assegna almeno un campo e riprova."
+          "Nessuna unità ha campi allocati. Assegna almeno un campo e riprova.",
         );
         return;
       }
 
       if (skippedUnits > 0) {
         toast.warning(
-          `${skippedUnits} unità senza campi allocati sono state escluse dalla creazione.`
+          `${skippedUnits} unità senza campi allocati sono state escluse dalla creazione.`,
         );
       }
 
@@ -740,7 +757,7 @@ export default function NewProductionUnit(): React.ReactElement {
 
           // Raggruppa per campo base
           const allocationsByField = Array.from(
-            unit.allocations.entries()
+            unit.allocations.entries(),
           ).reduce<Map<string, number>>((acc, [allocationKey, areaHa]) => {
             const targetFieldId = getBaseFieldIdFromAllocation(allocationKey);
             acc.set(targetFieldId, (acc.get(targetFieldId) || 0) + areaHa);
@@ -761,7 +778,7 @@ export default function NewProductionUnit(): React.ReactElement {
 
           if (!companyId) {
             throw new Error(
-              `Impossibile determinare l'azienda per l'unità "${unit.name}". Seleziona un'azienda o assegna almeno un campo valido.`
+              `Impossibile determinare l'azienda per l'unità "${unit.name}". Seleziona un'azienda o assegna almeno un campo valido.`,
             );
           }
 
@@ -774,7 +791,8 @@ export default function NewProductionUnit(): React.ReactElement {
             const cropDates = calculateCropDates(crop, dateRange.start);
             finalSowingDate = finalSowingDate || cropDates.sowingDate;
             finalFloweringDate = finalFloweringDate || cropDates.floweringDate;
-            finalHarvestingDate = finalHarvestingDate || cropDates.harvestingDate;
+            finalHarvestingDate =
+              finalHarvestingDate || cropDates.harvestingDate;
           }
 
           // Fallback per le date se ancora mancanti
@@ -787,7 +805,8 @@ export default function NewProductionUnit(): React.ReactElement {
           const cropName = crop?.species || unit.importedCropName || unit.name;
           const cropType = crop?.cropType || unit.importedCropType || unit.name;
           const resolvedVariety =
-            (unit.cultivarId && cultivarCatalog?.getCultivarName(unit.cultivarId)) ||
+            (unit.cultivarId &&
+              cultivarCatalog?.getCultivarName(unit.cultivarId)) ||
             crop?.code ||
             unit.importedVariety ||
             unit.name;
@@ -803,7 +822,7 @@ export default function NewProductionUnit(): React.ReactElement {
               ([fieldId, areaHa]) => ({
                 fieldId,
                 areaHa,
-              })
+              }),
             ),
             protectionStructure: unit.protectionStructure || "",
             startDate: finalSowingDate.toISOString(),
@@ -824,7 +843,7 @@ export default function NewProductionUnit(): React.ReactElement {
           productionUnits.length === 1
             ? "produttiva creata"
             : "produttive create"
-        } con successo!`
+        } con successo!`,
       );
 
       // Redirect to production units list
@@ -834,7 +853,7 @@ export default function NewProductionUnit(): React.ReactElement {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Errore nella creazione delle unità produttive"
+          : "Errore nella creazione delle unità produttive",
       );
     } finally {
       setIsCreating(false);
@@ -846,695 +865,772 @@ export default function NewProductionUnit(): React.ReactElement {
       <div className="flex-shrink-0 bg-gray-50/50 backdrop-blur-sm z-10">
         <PageHeader
           title="Nuova Unità Produttiva"
-          totalItems={displayedFieldsCount}
-          filteredItems={displayedFieldsCount}
+          totalItems={creationMode ? displayedFieldsCount : 0}
+          filteredItems={creationMode ? displayedFieldsCount : 0}
         >
-          <Button
-            variant="outline"
-            onClick={handleCancelNavigation}
-            className="border-red-200 text-red-600 bg-transparent hover:bg-transparent hover:text-red-600 hover:border-red-200"
-          >
-            Annulla
-          </Button>
+          <div className="flex items-center gap-2">
+            {creationMode !== null && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackToChoice}
+                className="text-muted-foreground"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Torna alla scelta
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={handleCancelNavigation}
+              className="border-red-200 text-red-600 bg-transparent hover:bg-transparent hover:text-red-600 hover:border-red-200"
+            >
+              Annulla
+            </Button>
+          </div>
         </PageHeader>
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        {currentStep === 1 && (
+        {/* Schermata scelta: Creazione manuale o Importa da file */}
+        {creationMode === null && (
+          <div className="flex-1 overflow-auto px-6 pb-6 flex items-center justify-center">
+            <div className="w-full max-w-lg">
+              <h2 className="text-xl font-semibold text-center mb-2">
+                Come vuoi creare le unità produttive?
+              </h2>
+              <p className="text-sm text-muted-foreground text-center mb-8">
+                Scegli tra creazione manuale (selezione campi e dati) o
+                importazione da file (CSV/XLS template AGEA).
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-auto py-6 flex flex-col gap-2 border-2 hover:border-agri-green-500 hover:bg-agri-green-50 hover:text-foreground"
+                  onClick={() => setCreationMode("manual")}
+                >
+                  <PenLine className="h-10 w-10 text-agri-green-600 hover:text-agri-green-600" />
+                  <span className="font-medium hover:text-foreground">
+                    Creazione manuale
+                  </span>
+                  <span className="text-xs text-muted-foreground font-normal hover:text-muted-foreground">
+                    Seleziona campi e compila i dati
+                  </span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-auto py-6 flex flex-col gap-2 border-2 hover:border-agri-green-500 hover:bg-agri-green-50 hover:text-foreground"
+                  onClick={() => setCreationMode("import")}
+                >
+                  <FileUp className="h-10 w-10 text-agri-green-600 hover:text-agri-green-600" />
+                  <span className="font-medium hover:text-foreground">
+                    Importa da file
+                  </span>
+                  <span className="text-xs text-muted-foreground font-normal hover:text-muted-foreground">
+                    CSV, XLS, XLSX (template AGEA)
+                  </span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {creationMode !== null && currentStep === 1 && (
           <div className="flex-1 overflow-auto px-6 pb-6">
-            <>
-              {isLoading ? (
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Spinner size={20} ariaLabel="Caricamento campi" />
-                  <span>Caricamento campi disponibili…</span>
-                </div>
-              ) : isError ? (
-                <div className="text-center py-8 text-red-600 bg-red-50 rounded-lg border border-red-200">
-                  <p className="text-sm font-medium">
-                    Errore nel caricamento dei campi
-                  </p>
-                  <p className="text-xs mt-1">
-                    {error instanceof Error
-                      ? error.message
-                      : "Errore sconosciuto"}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {/* Calendario per periodo di disponibilità */}
-                  <Card className="bg-white shadow-md">
-                    <CardContent className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
-                      <div className="flex flex-col gap-2 w-full lg:max-w-lg">
-                        <div className="flex items-center gap-3">
-                          <CalendarIcon className="h-6 w-6" />
-                          <div className="flex flex-col">
-                            <span className="text-base font-semibold">
-                              Periodo di disponibilità dei campi
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              Seleziona il periodo per visualizzare i campi
-                              disponibili
-                            </span>
+            {/* Step 1 - Import da file: solo importer inline */}
+            {creationMode === "import" ? (
+              <div className="max-w-4xl mx-auto py-6">
+                <h3 className="text-lg font-semibold mb-2">Importa da file</h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Il sistema supporta il formato del template AGEA della misura
+                  unica. Seleziona l'azienda e carica un file; i dati delle
+                  unità produttive verranno estratti automaticamente.
+                </p>
+                <ProductionUnitCsvImporter
+                  embedded
+                  companies={importerCompanies}
+                  onImportSuccess={handleCsvImport}
+                  onCloseParentDrawer={handleBackToChoice}
+                />
+              </div>
+            ) : (
+              <>
+                {isLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Spinner size={20} ariaLabel="Caricamento campi" />
+                    <span>Caricamento campi disponibili…</span>
+                  </div>
+                ) : isError ? (
+                  <div className="text-center py-8 text-red-600 bg-red-50 rounded-lg border border-red-200">
+                    <p className="text-sm font-medium">
+                      Errore nel caricamento dei campi
+                    </p>
+                    <p className="text-xs mt-1">
+                      {error instanceof Error
+                        ? error.message
+                        : "Errore sconosciuto"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Calendario per periodo di disponibilità */}
+                    <Card className="bg-white shadow-md">
+                      <CardContent className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
+                        <div className="flex flex-col gap-2 w-full lg:max-w-lg">
+                          <div className="flex items-center gap-3">
+                            <CalendarIcon className="h-6 w-6" />
+                            <div className="flex flex-col">
+                              <span className="text-base font-semibold">
+                                Periodo di disponibilità dei campi
+                              </span>
+                              <span className="text-sm text-muted-foreground">
+                                Seleziona il periodo per visualizzare i campi
+                                disponibili
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        {dateRange?.start && dateRange?.end && (
-                          <p className="text-xs font-medium text-foreground">
-                            Periodo selezionato:{" "}
-                            <span className="font-semibold">
-                              {format(dateRange.start, "dd MMMM yyyy", {
-                                locale: it,
-                              })}{" "}
-                              -{" "}
-                              {format(dateRange.end, "dd MMMM yyyy", {
-                                locale: it,
-                              })}
-                            </span>
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex flex-col gap-4 w-full lg:w-auto lg:flex-row lg:items-end">
-                        <div className="flex flex-col gap-2 w-full lg:w-[220px]">
-                          <label className="text-sm font-medium text-foreground">
-                            Data Inizio
-                          </label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "w-full justify-start text-left font-normal bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600",
-                                  !tempDateRange.start &&
-                                    "text-muted-foreground"
-                                )}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {tempDateRange.start ? (
-                                  format(tempDateRange.start, "dd/MM/yyyy", {
-                                    locale: it,
-                                  })
-                                ) : (
-                                  <span>Seleziona data</span>
-                                )}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className="w-auto p-0 bg-white"
-                              align="start"
-                            >
-                              <Calendar
-                                mode="single"
-                                selected={tempDateRange.start}
-                                onSelect={(date) =>
-                                  date &&
-                                  setTempDateRange((prev) => ({
-                                    ...prev,
-                                    start: date,
-                                  }))
-                                }
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-
-                        <div className="flex flex-col gap-2 w-full lg:w-[220px]">
-                          <label className="text-sm font-medium text-foreground">
-                            Data Fine
-                          </label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "w-full justify-start text-left font-normal bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600",
-                                  !tempDateRange.end && "text-muted-foreground"
-                                )}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {tempDateRange.end ? (
-                                  format(tempDateRange.end, "dd/MM/yyyy", {
-                                    locale: it,
-                                  })
-                                ) : (
-                                  <span>Seleziona data</span>
-                                )}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className="w-auto p-0 bg-white"
-                              align="start"
-                            >
-                              <Calendar
-                                mode="single"
-                                selected={tempDateRange.end}
-                                onSelect={(date) =>
-                                  date &&
-                                  setTempDateRange((prev) => ({
-                                    ...prev,
-                                    end: date,
-                                  }))
-                                }
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-
-                        <div className="flex gap-2 w-full lg:w-auto lg:justify-end">
-                          <Button
-                            onClick={handleSearch}
-                            className="bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600"
-                            variant="outline"
-                          >
-                            <Search className="mr-2 h-4 w-4" />
-                            Cerca
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={handleReset}
-                            className="bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600"
-                          >
-                            <RefreshCcw className="mr-2 h-4 w-4" />
-                            Reset
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  {/* Info banner quando ci sono unità produttive configurate */}
-                  {productionUnits.length > 0 && (
-                    <div className="bg-white shadow-md border border-border rounded-lg p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0">
-                          <svg
-                            className="h-5 w-5 text-foreground"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-foreground">
-                            Hai già creato {productionUnits.length} unità{" "}
-                            {productionUnits.length === 1
-                              ? "produttiva"
-                              : "produttive"}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            I campi già allocati nelle unità produttive create
-                            sono evidenziati e non possono essere riselezionati.
-                            Seleziona altri campi per creare una nuova unità
-                            produttiva.
-                          </p>
-                          {editingUnitId && (
-                            <p className="text-sm font-bold text-foreground mt-2">
-                              Stai modificando un'unità esistente. Le modifiche
-                              verranno salvate solo alla conferma.
+                          {dateRange?.start && dateRange?.end && (
+                            <p className="text-xs font-medium text-foreground">
+                              Periodo selezionato:{" "}
+                              <span className="font-semibold">
+                                {format(dateRange.start, "dd MMMM yyyy", {
+                                  locale: it,
+                                })}{" "}
+                                -{" "}
+                                {format(dateRange.end, "dd MMMM yyyy", {
+                                  locale: it,
+                                })}
+                              </span>
                             </p>
                           )}
                         </div>
-                      </div>
-                    </div>
-                  )}
+                        <div className="flex flex-col gap-4 w-full lg:w-auto lg:flex-row lg:items-end">
+                          <div className="flex flex-col gap-2 w-full lg:w-[220px]">
+                            <label className="text-sm font-medium text-foreground">
+                              Data Inizio
+                            </label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full justify-start text-left font-normal bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600",
+                                    !tempDateRange.start &&
+                                      "text-muted-foreground",
+                                  )}
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {tempDateRange.start ? (
+                                    format(tempDateRange.start, "dd/MM/yyyy", {
+                                      locale: it,
+                                    })
+                                  ) : (
+                                    <span>Seleziona data</span>
+                                  )}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-auto p-0 bg-white"
+                                align="start"
+                              >
+                                <Calendar
+                                  mode="single"
+                                  selected={tempDateRange.start}
+                                  onSelect={(date) =>
+                                    date &&
+                                    setTempDateRange((prev) => ({
+                                      ...prev,
+                                      start: date,
+                                    }))
+                                  }
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
 
-                  {/* Header con azioni bulk - solo su desktop */}
-                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white shadow-md rounded-lg p-4 gap-4">
-                    {/* Ricerca Toggle */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-                      <div className="flex items-center gap-2 w-full sm:w-auto">
-                        {showSearch ? (
-                          <div className="relative flex-1 min-w-[250px]">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                            <Input
-                              type="text"
-                              placeholder="Cerca campi..."
-                              value={searchValue}
-                              onChange={(e) => setSearchValue(e.target.value)}
-                              className="pl-10 pr-10 w-full h-9 bg-white"
-                              autoFocus
-                            />
+                          <div className="flex flex-col gap-2 w-full lg:w-[220px]">
+                            <label className="text-sm font-medium text-foreground">
+                              Data Fine
+                            </label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full justify-start text-left font-normal bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600",
+                                    !tempDateRange.end &&
+                                      "text-muted-foreground",
+                                  )}
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {tempDateRange.end ? (
+                                    format(tempDateRange.end, "dd/MM/yyyy", {
+                                      locale: it,
+                                    })
+                                  ) : (
+                                    <span>Seleziona data</span>
+                                  )}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-auto p-0 bg-white"
+                                align="start"
+                              >
+                                <Calendar
+                                  mode="single"
+                                  selected={tempDateRange.end}
+                                  onSelect={(date) =>
+                                    date &&
+                                    setTempDateRange((prev) => ({
+                                      ...prev,
+                                      end: date,
+                                    }))
+                                  }
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+
+                          <div className="flex gap-2 w-full lg:w-auto lg:justify-end">
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              className="absolute right-0 top-0 h-9 w-9 hover:bg-transparent"
-                              onClick={() => {
-                                setSearchValue("");
-                                setShowSearch(false);
-                              }}
+                              onClick={handleSearch}
+                              className="bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600"
+                              variant="outline"
                             >
-                              <X className="h-4 w-4 text-gray-500" />
+                              <Search className="mr-2 h-4 w-4" />
+                              Cerca
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={handleReset}
+                              className="bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600"
+                            >
+                              <RefreshCcw className="mr-2 h-4 w-4" />
+                              Reset
                             </Button>
                           </div>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowSearch(true)}
-                            className="bg-white"
-                          >
-                            <Filter className="mr-2 h-4 w-4" />
-                            Filtra Campi
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto md:ml-auto">
-                      <ProductionUnitCsvImporter
-                        companies={importerCompanies}
-                        onImportSuccess={handleCsvImport}
-                      />
-                      <div className="w-full sm:w-[240px]">
-                        <Select
-                          value={selectedCompanyId}
-                          onValueChange={setSelectedCompanyId}
-                        >
-                          <SelectTrigger className="w-full bg-white">
-                            <SelectValue placeholder="Tutte le aziende" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">
-                              Tutte le aziende
-                            </SelectItem>
-                            {companies.map((company) => (
-                              <SelectItem
-                                key={company.companyId}
-                                value={company.companyId}
-                              >
-                                {company.companyName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    {(selectedFieldIds.size > 0 ||
-                      allocatedFields.size > 0) && (
-                      <div className="flex flex-wrap items-center justify-end gap-2 w-full md:w-auto">
-                        {selectedFieldIds.size > 0 && (
-                          <>
-                            <Badge variant="secondary" className="text-sm">
-                              {selectedFieldIds.size}{" "}
-                              {selectedFieldIds.size === 1
-                                ? "campo selezionato"
-                                : "campi selezionati"}
-                            </Badge>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                selectedFieldIds.forEach((fieldId) => {
-                                  const baseFieldId =
-                                    getBaseFieldIdFromAllocation(fieldId);
-                                  allocateMaxForField(baseFieldId, fieldId);
-                                });
-                              }}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    {/* Info banner quando ci sono unità produttive configurate */}
+                    {productionUnits.length > 0 && (
+                      <div className="bg-white shadow-md border border-border rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0">
+                            <svg
+                              className="h-5 w-5 text-foreground"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
                             >
-                              Alloca Max su selezionati
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                selectedFieldIds.forEach((fieldId) => {
-                                  removeFieldAllocation(fieldId);
-                                });
-                                setSelectedFieldIds(new Set());
-                              }}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              Rimuovi selezionati
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setSelectedFieldIds(new Set())}
-                            >
-                              Deseleziona tutto
-                            </Button>
-                          </>
-                        )}
-                        {allocatedFields.size > 0 && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              removeAllocationEntries(
-                                Array.from(allocatedFields.keys())
-                              );
-                              setSelectedFieldIds(new Set());
-                            }}
-                          >
-                            Rimuovi tutte le allocazioni
-                          </Button>
-                        )}
+                              <path
+                                fillRule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-foreground">
+                              Hai già creato {productionUnits.length} unità{" "}
+                              {productionUnits.length === 1
+                                ? "produttiva"
+                                : "produttive"}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              I campi già allocati nelle unità produttive create
+                              sono evidenziati e non possono essere
+                              riselezionati. Seleziona altri campi per creare
+                              una nuova unità produttiva.
+                            </p>
+                            {editingUnitId && (
+                              <p className="text-sm font-bold text-foreground mt-2">
+                                Stai modificando un'unità esistente. Le
+                                modifiche verranno salvate solo alla conferma.
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )}
-                  </div>
 
-                  {/* Lista campi */}
-                  {filteredFields.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Search className="mx-auto h-12 w-12 text-gray-400" />
-                      <h3 className="mt-2 text-sm font-medium text-gray-900">
-                        {showPreSearchEmptyState
-                          ? "Nessun campo selezionato"
-                          : "Nessun campo trovato"}
-                      </h3>
-                      <p className="mt-1 text-sm text-gray-500">
-                        {showPreSearchEmptyState
-                          ? "Devi effettuare una ricerca in un range di tempo o importare file."
-                          : "Prova a modificare i filtri di ricerca o il periodo selezionato."}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {filteredFields.map((field) => {
-                        const isSplitField = isSplitAllocationKey(field.id);
-                        const baseFieldId = getBaseFieldIdFromAllocation(
-                          field.id
-                        );
-                        const baseField = allFields.find(
-                          (item) => item.id === baseFieldId
-                        );
-                        if (!baseField) {
-                          return null;
-                        }
+                    {/* Header con azioni bulk - solo su desktop */}
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white shadow-md rounded-lg p-4 gap-4">
+                      {/* Ricerca Toggle */}
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                          {showSearch ? (
+                            <div className="relative flex-1 min-w-[250px]">
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                              <Input
+                                type="text"
+                                placeholder="Cerca campi..."
+                                value={searchValue}
+                                onChange={(e) => setSearchValue(e.target.value)}
+                                className="pl-10 pr-10 w-full h-9 bg-white"
+                                autoFocus
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-0 top-0 h-9 w-9 hover:bg-transparent"
+                                onClick={() => {
+                                  setSearchValue("");
+                                  setShowSearch(false);
+                                }}
+                              >
+                                <X className="h-4 w-4 text-gray-500" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShowSearch(true)}
+                              className="bg-white"
+                            >
+                              <Filter className="mr-2 h-4 w-4" />
+                              Filtra Campi
+                            </Button>
+                          )}
+                        </div>
+                      </div>
 
-                        const allocationKey = field.id;
-                        const allocationValue = getAllocatedArea(allocationKey);
-                        const totalAllocatedForField =
-                          getTotalAllocatedForField(baseFieldId);
-                        const allocationCapacity =
-                          getAvailableCapacityForAllocation(
-                            baseFieldId,
-                            allocationKey
-                          );
-
-                        // Calcola quanto è già usato nelle PU
-                        const usedInPUs = getFieldsAlreadyUsedInPUs();
-                        const areaUsedInPUs = usedInPUs.get(baseFieldId) || 0;
-                        const isPartiallyUsedInPUs = areaUsedInPUs > 0;
-                        const isFullyUsedInPUs =
-                          areaUsedInPUs >= baseField.areaAvailable;
-
-                        const remainingArea = Math.max(
-                          baseField.areaAvailable -
-                            totalAllocatedForField -
-                            areaUsedInPUs,
-                          0
-                        );
-                        const normalizedAllocationValue = allocationValue ?? 0;
-                        const fieldHasAllocations = totalAllocatedForField > 0;
-                        const isCardAllocated = isSplitField
-                          ? normalizedAllocationValue > 0
-                          : fieldHasAllocations;
-                        const canIncreaseAllocation =
-                          allocationCapacity - normalizedAllocationValue >
-                          0.0001;
-                        const areaBadgeLabel = isSplitField
-                          ? getSplitDisplayLabel(allocationKey)
-                          : "Area 1";
-                        const shouldShowRemoveButton =
-                          isSplitField || fieldHasAllocations;
-                        const isSelected = selectedFieldIds.has(allocationKey);
-                        const isDisabled =
-                          isFullyUsedInPUs || allocationCapacity <= 0;
-
-                        return (
-                          <Card
-                            key={allocationKey}
-                            className={cn(
-                              "transition-all hover:shadow-md",
-                              !isDisabled && "cursor-pointer",
-                              isDisabled &&
-                                "opacity-60 cursor-not-allowed bg-gray-100",
-                              isCardAllocated &&
-                                !isDisabled &&
-                                "ring-2 ring-muted bg-muted/20",
-                              isSelected &&
-                                !isDisabled &&
-                                "ring-2 ring-agri-green-500 bg-agri-green-50"
-                            )}
-                            onClick={() => {
-                              if (isDisabled) return;
-                              const newSelected = new Set(selectedFieldIds);
-                              if (isSelected) {
-                                newSelected.delete(allocationKey);
-                              } else {
-                                newSelected.add(allocationKey);
-                              }
-                              setSelectedFieldIds(newSelected);
-                            }}
+                      <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto md:ml-auto">
+                        <div className="w-full sm:w-[240px]">
+                          <Select
+                            value={selectedCompanyId}
+                            onValueChange={setSelectedCompanyId}
                           >
-                            <CardContent className="p-4">
-                              <div className="flex flex-col gap-4 md:flex-row md:items-center">
-                                {/* Checkbox per multiselect */}
-                                <div
-                                  className="flex-shrink-0 self-start lg:self-center"
-                                  onClick={(e) => e.stopPropagation()}
+                            <SelectTrigger className="w-full bg-white">
+                              <SelectValue placeholder="Tutte le aziende" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">
+                                Tutte le aziende
+                              </SelectItem>
+                              {companies.map((company) => (
+                                <SelectItem
+                                  key={company.companyId}
+                                  value={company.companyId}
                                 >
-                                  <Checkbox
-                                    checked={isSelected}
-                                    disabled={isDisabled}
-                                    onCheckedChange={(checked) => {
-                                      if (isDisabled) return;
-                                      const newSelected = new Set(
-                                        selectedFieldIds
-                                      );
-                                      if (checked) {
-                                        newSelected.add(allocationKey);
-                                      } else {
-                                        newSelected.delete(allocationKey);
-                                      }
-                                      setSelectedFieldIds(newSelected);
-                                    }}
-                                  />
-                                </div>
+                                  {company.companyName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
 
-                                {/* Info campo */}
-                                <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
-                                  {/* Nome e azienda */}
-                                  <div className="md:col-span-3">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <h3 className="font-semibold text-base">
-                                        {baseField.name}
-                                      </h3>
-                                      <Badge
-                                        variant="secondary"
-                                        className="text-xs"
-                                      >
-                                        {areaBadgeLabel}
-                                      </Badge>
-                                      {isCardAllocated && (
-                                        <Badge
-                                          variant="default"
-                                          className="bg-muted text-muted-foreground text-xs"
-                                        >
-                                          Allocato
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <p className="text-sm text-gray-600 mt-1">
-                                      {baseField.companyName}
-                                    </p>
-                                  </div>
+                      {(selectedFieldIds.size > 0 ||
+                        allocatedFields.size > 0) && (
+                        <div className="flex flex-wrap items-center justify-end gap-2 w-full md:w-auto">
+                          {selectedFieldIds.size > 0 && (
+                            <>
+                              <Badge variant="secondary" className="text-sm">
+                                {selectedFieldIds.size}{" "}
+                                {selectedFieldIds.size === 1
+                                  ? "campo selezionato"
+                                  : "campi selezionati"}
+                              </Badge>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  selectedFieldIds.forEach((fieldId) => {
+                                    const baseFieldId =
+                                      getBaseFieldIdFromAllocation(fieldId);
+                                    allocateMaxForField(baseFieldId, fieldId);
+                                  });
+                                }}
+                              >
+                                Alloca Max su selezionati
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  selectedFieldIds.forEach((fieldId) => {
+                                    removeFieldAllocation(fieldId);
+                                  });
+                                  setSelectedFieldIds(new Set());
+                                }}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                Rimuovi selezionati
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedFieldIds(new Set())}
+                              >
+                                Deseleziona tutto
+                              </Button>
+                            </>
+                          )}
+                          {allocatedFields.size > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                removeAllocationEntries(
+                                  Array.from(allocatedFields.keys()),
+                                );
+                                setSelectedFieldIds(new Set());
+                              }}
+                            >
+                              Rimuovi tutte le allocazioni
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
-                                  {/* Dettagli località */}
-                                  <div className="md:col-span-3 space-y-1">
-                                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                                      <MapPin className="h-4 w-4 flex-shrink-0" />
-                                      <span className="truncate">
-                                        {baseField.address ?? "N/A"},{" "}
-                                        {baseField.city ?? "N/A"}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                                      <Ruler className="h-4 w-4 flex-shrink-0" />
-                                      <span>
-                                        Foglio {baseField.foglio}, Part.{" "}
-                                        {baseField.particella}
-                                      </span>
-                                    </div>
-                                  </div>
+                    {/* Lista campi */}
+                    {filteredFields.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Search className="mx-auto h-12 w-12 text-gray-400" />
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">
+                          {showPreSearchEmptyState
+                            ? "Nessun campo selezionato"
+                            : "Nessun campo trovato"}
+                        </h3>
+                        <p className="mt-1 text-sm text-gray-500">
+                          {showPreSearchEmptyState
+                            ? "Devi effettuare una ricerca in un range di tempo o importare file."
+                            : "Prova a modificare i filtri di ricerca o il periodo selezionato."}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {filteredFields.map((field) => {
+                          const isSplitField = isSplitAllocationKey(field.id);
+                          const baseFieldId = getBaseFieldIdFromAllocation(
+                            field.id,
+                          );
+                          const baseField = allFields.find(
+                            (item) => item.id === baseFieldId,
+                          );
+                          if (!baseField) {
+                            return null;
+                          }
 
-                                  {/* Disponibilità e badge */}
-                                  <div className="md:col-span-4 flex flex-wrap gap-2">
-                                    {isFullyUsedInPUs ? (
-                                      <Badge
-                                        variant="outline"
-                                        className="bg-gray-200 text-gray-700 border-gray-400"
-                                      >
-                                        Campo già allocato
-                                      </Badge>
-                                    ) : (
-                                      <Badge
-                                        variant={
-                                          remainingArea > 0
-                                            ? "secondary"
-                                            : "outline"
-                                        }
-                                        className={
-                                          remainingArea > 0
-                                            ? "bg-muted text-muted-foreground"
-                                            : ""
-                                        }
-                                      >
-                                        Disp. {remainingArea.toFixed(2)} Ha
-                                      </Badge>
-                                    )}
+                          const allocationKey = field.id;
+                          const allocationValue =
+                            getAllocatedArea(allocationKey);
+                          const totalAllocatedForField =
+                            getTotalAllocatedForField(baseFieldId);
+                          const allocationCapacity =
+                            getAvailableCapacityForAllocation(
+                              baseFieldId,
+                              allocationKey,
+                            );
 
-                                    {isPartiallyUsedInPUs &&
-                                      !isFullyUsedInPUs && (
-                                        <Badge
-                                          variant="outline"
-                                          className="bg-purple-100 text-purple-800 border-purple-300"
-                                        >
-                                          {areaUsedInPUs.toFixed(2)} Ha in UP
-                                          create
-                                        </Badge>
-                                      )}
+                          // Calcola quanto è già usato nelle PU
+                          const usedInPUs = getFieldsAlreadyUsedInPUs();
+                          const areaUsedInPUs = usedInPUs.get(baseFieldId) || 0;
+                          const isPartiallyUsedInPUs = areaUsedInPUs > 0;
+                          const isFullyUsedInPUs =
+                            areaUsedInPUs >= baseField.areaAvailable;
 
-                                    {typeof baseField.areaOccupied ===
-                                      "number" &&
-                                      baseField.areaOccupied > 0 && (
-                                        <Badge
-                                          variant="outline"
-                                          className="text-orange-600 border-orange-200"
-                                        >
-                                          {baseField.areaOccupied.toFixed(2)} Ha
-                                          occ.
-                                        </Badge>
-                                      )}
+                          const remainingArea = Math.max(
+                            baseField.areaAvailable -
+                              totalAllocatedForField -
+                              areaUsedInPUs,
+                            0,
+                          );
+                          const normalizedAllocationValue =
+                            allocationValue ?? 0;
+                          const fieldHasAllocations =
+                            totalAllocatedForField > 0;
+                          const isCardAllocated = isSplitField
+                            ? normalizedAllocationValue > 0
+                            : fieldHasAllocations;
+                          const canIncreaseAllocation =
+                            allocationCapacity - normalizedAllocationValue >
+                            0.0001;
+                          const areaBadgeLabel = isSplitField
+                            ? getSplitDisplayLabel(allocationKey)
+                            : "Area 1";
+                          const shouldShowRemoveButton =
+                            isSplitField || fieldHasAllocations;
+                          const isSelected =
+                            selectedFieldIds.has(allocationKey);
+                          const isDisabled =
+                            isFullyUsedInPUs || allocationCapacity <= 0;
 
-                                    {baseField.soilType && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs"
-                                      >
-                                        {baseField.soilType}
-                                      </Badge>
-                                    )}
-                                    {baseField.uso && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs"
-                                      >
-                                        {baseField.uso}
-                                      </Badge>
-                                    )}
-                                  </div>
-
-                                  {/* Controlli allocazione */}
+                          return (
+                            <Card
+                              key={allocationKey}
+                              className={cn(
+                                "transition-all hover:shadow-md",
+                                !isDisabled && "cursor-pointer",
+                                isDisabled &&
+                                  "opacity-60 cursor-not-allowed bg-gray-100",
+                                isCardAllocated &&
+                                  !isDisabled &&
+                                  "ring-2 ring-muted bg-muted/20",
+                                isSelected &&
+                                  !isDisabled &&
+                                  "ring-2 ring-agri-green-500 bg-agri-green-50",
+                              )}
+                              onClick={() => {
+                                if (isDisabled) return;
+                                const newSelected = new Set(selectedFieldIds);
+                                if (isSelected) {
+                                  newSelected.delete(allocationKey);
+                                } else {
+                                  newSelected.add(allocationKey);
+                                }
+                                setSelectedFieldIds(newSelected);
+                              }}
+                            >
+                              <CardContent className="p-4">
+                                <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                                  {/* Checkbox per multiselect */}
                                   <div
-                                    className="md:col-span-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:justify-end md:self-center"
+                                    className="flex-shrink-0 self-start lg:self-center"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      max={allocationCapacity}
-                                      step="0.1"
-                                      value={allocationValue ?? ""}
-                                      onChange={(e) => {
-                                        if (isDisabled) return;
-                                        const rawValue = e.target.value;
-                                        const parsedValue =
-                                          rawValue === ""
-                                            ? null
-                                            : Number.parseFloat(rawValue);
-                                        const value =
-                                          parsedValue === null ||
-                                          Number.isNaN(parsedValue)
-                                            ? null
-                                            : parsedValue;
-                                        updateFieldAllocation(
-                                          baseFieldId,
-                                          value,
-                                          allocationKey
-                                        );
-                                      }}
-                                      placeholder="0.00"
-                                      className="text-right w-full sm:w-24"
+                                    <Checkbox
+                                      checked={isSelected}
                                       disabled={isDisabled}
+                                      onCheckedChange={(checked) => {
+                                        if (isDisabled) return;
+                                        const newSelected = new Set(
+                                          selectedFieldIds,
+                                        );
+                                        if (checked) {
+                                          newSelected.add(allocationKey);
+                                        } else {
+                                          newSelected.delete(allocationKey);
+                                        }
+                                        setSelectedFieldIds(newSelected);
+                                      }}
                                     />
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() =>
-                                        allocateMaxForField(
-                                          baseFieldId,
-                                          allocationKey
-                                        )
-                                      }
-                                      disabled={
-                                        isDisabled || !canIncreaseAllocation
-                                      }
+                                  </div>
+
+                                  {/* Info campo */}
+                                  <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                                    {/* Nome e azienda */}
+                                    <div className="md:col-span-3">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <h3 className="font-semibold text-base">
+                                          {baseField.name}
+                                        </h3>
+                                        <Badge
+                                          variant="secondary"
+                                          className="text-xs"
+                                        >
+                                          {areaBadgeLabel}
+                                        </Badge>
+                                        {isCardAllocated && (
+                                          <Badge
+                                            variant="default"
+                                            className="bg-muted text-muted-foreground text-xs"
+                                          >
+                                            Allocato
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className="text-sm text-gray-600 mt-1">
+                                        {baseField.companyName}
+                                      </p>
+                                    </div>
+
+                                    {/* Dettagli località */}
+                                    <div className="md:col-span-3 space-y-1">
+                                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                                        <MapPin className="h-4 w-4 flex-shrink-0" />
+                                        <span className="truncate">
+                                          {baseField.address ?? "N/A"},{" "}
+                                          {baseField.city ?? "N/A"}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                                        <Ruler className="h-4 w-4 flex-shrink-0" />
+                                        <span>
+                                          Foglio {baseField.foglio}, Part.{" "}
+                                          {baseField.particella}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* Disponibilità e badge */}
+                                    <div className="md:col-span-4 flex flex-wrap gap-2">
+                                      {isFullyUsedInPUs ? (
+                                        <Badge
+                                          variant="outline"
+                                          className="bg-gray-200 text-gray-700 border-gray-400"
+                                        >
+                                          Campo già allocato
+                                        </Badge>
+                                      ) : (
+                                        <Badge
+                                          variant={
+                                            remainingArea > 0
+                                              ? "secondary"
+                                              : "outline"
+                                          }
+                                          className={
+                                            remainingArea > 0
+                                              ? "bg-muted text-muted-foreground"
+                                              : ""
+                                          }
+                                        >
+                                          Disp. {remainingArea.toFixed(2)} Ha
+                                        </Badge>
+                                      )}
+
+                                      {isPartiallyUsedInPUs &&
+                                        !isFullyUsedInPUs && (
+                                          <Badge
+                                            variant="outline"
+                                            className="bg-purple-100 text-purple-800 border-purple-300"
+                                          >
+                                            {areaUsedInPUs.toFixed(2)} Ha in UP
+                                            create
+                                          </Badge>
+                                        )}
+
+                                      {typeof baseField.areaOccupied ===
+                                        "number" &&
+                                        baseField.areaOccupied > 0 && (
+                                          <Badge
+                                            variant="outline"
+                                            className="text-orange-600 border-orange-200"
+                                          >
+                                            {baseField.areaOccupied.toFixed(2)}{" "}
+                                            Ha occ.
+                                          </Badge>
+                                        )}
+
+                                      {baseField.soilType && (
+                                        <Badge
+                                          variant="outline"
+                                          className="text-xs"
+                                        >
+                                          {baseField.soilType}
+                                        </Badge>
+                                      )}
+                                      {baseField.uso && (
+                                        <Badge
+                                          variant="outline"
+                                          className="text-xs"
+                                        >
+                                          {baseField.uso}
+                                        </Badge>
+                                      )}
+                                    </div>
+
+                                    {/* Controlli allocazione */}
+                                    <div
+                                      className="md:col-span-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:justify-end md:self-center"
+                                      onClick={(e) => e.stopPropagation()}
                                     >
-                                      Max
-                                    </Button>
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        max={allocationCapacity}
+                                        step="0.1"
+                                        value={allocationValue ?? ""}
+                                        onChange={(e) => {
+                                          if (isDisabled) return;
+                                          const rawValue = e.target.value;
+                                          const parsedValue =
+                                            rawValue === ""
+                                              ? null
+                                              : Number.parseFloat(rawValue);
+                                          const value =
+                                            parsedValue === null ||
+                                            Number.isNaN(parsedValue)
+                                              ? null
+                                              : parsedValue;
+                                          updateFieldAllocation(
+                                            baseFieldId,
+                                            value,
+                                            allocationKey,
+                                          );
+                                        }}
+                                        placeholder="0.00"
+                                        className="text-right w-full sm:w-24"
+                                        disabled={isDisabled}
+                                      />
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                          allocateMaxForField(
+                                            baseFieldId,
+                                            allocationKey,
+                                          )
+                                        }
+                                        disabled={
+                                          isDisabled || !canIncreaseAllocation
+                                        }
+                                      >
+                                        Max
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                  {/* Azioni */}
+                                  <div
+                                    className="flex-shrink-0 flex flex-col md:flex-row gap-2 w-full md:w-auto lg:w-[180px] items-stretch md:items-center md:justify-end md:self-center"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {!isSplitField && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                          handleAddIndependentArea(baseFieldId)
+                                        }
+                                        disabled={remainingArea <= 0}
+                                        className="text-foreground hover:text-foreground hover:bg-muted gap-1"
+                                        title="Aggiungi area indipendente"
+                                      >
+                                        <SplitSquareVertical className="h-4 w-4" />
+                                        <span className="hidden lg:inline">
+                                          Dividi
+                                        </span>
+                                      </Button>
+                                    )}
+                                    {shouldShowRemoveButton && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                          removeFieldAllocation(allocationKey)
+                                        }
+                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        title="Rimuovi area"
+                                      >
+                                        <span>Rimuovi</span>
+                                      </Button>
+                                    )}
                                   </div>
                                 </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    )}
 
-                                {/* Azioni */}
-                                <div
-                                  className="flex-shrink-0 flex flex-col md:flex-row gap-2 w-full md:w-auto lg:w-[180px] items-stretch md:items-center md:justify-end md:self-center"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {!isSplitField && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() =>
-                                        handleAddIndependentArea(baseFieldId)
-                                      }
-                                      disabled={remainingArea <= 0}
-                                      className="text-foreground hover:text-foreground hover:bg-muted gap-1"
-                                      title="Aggiungi area indipendente"
-                                    >
-                                      <SplitSquareVertical className="h-4 w-4" />
-                                      <span className="hidden lg:inline">
-                                        Dividi
-                                      </span>
-                                    </Button>
-                                  )}
-                                  {shouldShowRemoveButton && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() =>
-                                        removeFieldAllocation(allocationKey)
-                                      }
-                                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                      title="Rimuovi area"
-                                    >
-                                      <span>Rimuovi</span>
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Navigation buttons for step 1 - MOVED TO FOOTER */}
-                </div>
-              )}
-            </>
+                    {/* Navigation buttons for step 1 - MOVED TO FOOTER */}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
 
         {currentStep === 2 && (
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-6 pb-6">
+          <div className="flex-1 flex flex-col min-h-0 overflow-auto px-6 pb-6">
             <SingleProductionUnitForm
               cropVarieties={cropVarieties}
               isLoadingVarieties={isLoadingVarieties}
@@ -1554,7 +1650,7 @@ export default function NewProductionUnit(): React.ReactElement {
                 if (editingUnitId) {
                   // Aggiorna l'unità esistente
                   setProductionUnits((prev) =>
-                    prev.map((u) => (u.id === editingUnitId ? unit : u))
+                    prev.map((u) => (u.id === editingUnitId ? unit : u)),
                   );
                   setEditingUnitId(null);
                 } else {
@@ -1586,8 +1682,8 @@ export default function NewProductionUnit(): React.ReactElement {
           </div>
         )}
 
-        {/* Footer Step 1 - FIXED BOTTOM */}
-        {currentStep === 1 && (
+        {/* Footer Step 1 - FIXED BOTTOM (solo creazione manuale) */}
+        {creationMode === "manual" && currentStep === 1 && (
           <div className="flex-shrink-0 border-t bg-white p-4 flex justify-end items-center gap-6">
             <div className="text-right">
               <p className="text-sm font-medium text-gray-500">
@@ -1601,7 +1697,7 @@ export default function NewProductionUnit(): React.ReactElement {
               onClick={() => {
                 if (!canProceedToNextStep.canProceed) {
                   toast.error(
-                    canProceedToNextStep.error || "Errore nella validazione"
+                    canProceedToNextStep.error || "Errore nella validazione",
                   );
                   return;
                 }

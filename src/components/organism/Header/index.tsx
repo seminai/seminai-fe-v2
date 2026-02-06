@@ -57,6 +57,11 @@ interface PageHeaderProps {
    * Classe CSS per il componente
    */
   className?: string;
+
+  /**
+   * Stile inline per il componente
+   */
+  style?: React.CSSProperties;
 }
 
 /**
@@ -74,6 +79,7 @@ export function PageHeader({
   rightElement,
   filterElement,
   className,
+  style,
   children,
 }: PageHeaderProps): React.ReactElement {
   const canShowResults =
@@ -113,7 +119,7 @@ export function PageHeader({
   const searchContent = renderSearchArea();
 
   return (
-    <div className={cn(className, "flex-shrink-0 p-6 mb-1 mt-1")}>
+    <div className={cn(className, "flex-shrink-0 p-6 mb-1 mt-1")} style={style}>
       {/* Layout desktop/tablet */}
       <div className="hidden md:flex flex-col gap-4 mb-4">
         <div className="flex flex-wrap items-center gap-4">

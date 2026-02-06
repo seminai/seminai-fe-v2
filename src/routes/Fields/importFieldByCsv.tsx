@@ -11,24 +11,16 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Upload, AlertCircle, Download } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Spinner } from "@/components/ui/spinner";
+import { ImportFieldByCsvContent } from "./ImportFieldByCsvContent";
+import { Upload } from "lucide-react";
 import { toast } from "sonner";
-import { CsvFieldImporter } from "@/components/organism/CsvFieldImporter";
-import { SupportRequestForm } from "@/components/organism/SupportRequestForm";
 
 interface ImportFieldByCsvProps {
   companies: Company[];
   onImportSuccess: (fields: BulkFieldInput[]) => void;
   onCloseParentDrawer?: () => void;
+  /** When true, render only the form content (no Drawer/Trigger); for use inside create drawer */
+  embedded?: boolean;
   slot?: string;
 }
 
@@ -40,6 +32,7 @@ export function ImportFieldByCsv({
   companies,
   onImportSuccess,
   onCloseParentDrawer,
+  embedded = false,
 }: ImportFieldByCsvProps): React.ReactElement {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -122,13 +115,16 @@ export function ImportFieldByCsv({
         } con successo`,
       );
 
-      // Chiudi il dialog e resetta lo stato
-      setIsDrawerOpen(false);
       setImportErrors([]);
       setImportWarnings([]);
       setSelectedCompanyId("");
       setShowSupportForm(false);
-      onCloseParentDrawer?.();
+      if (embedded) {
+        onCloseParentDrawer?.();
+      } else {
+        setIsDrawerOpen(false);
+        onCloseParentDrawer?.();
+      }
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Errore sconosciuto";
@@ -172,6 +168,26 @@ export function ImportFieldByCsv({
     toast.success("Richiesta inviata. Ti risponderemo al più presto.");
   };
 
+  const importContent = (
+    <ImportFieldByCsvContent
+      companies={companies}
+      selectedCompanyId={selectedCompanyId}
+      onCompanyChange={setSelectedCompanyId}
+      onFileSelect={handleExtraction}
+      isProcessing={isProcessing}
+      importErrors={importErrors}
+      importWarnings={importWarnings}
+      showSupportForm={showSupportForm}
+      onToggleSupportForm={() => setShowSupportForm(!showSupportForm)}
+      onDownloadTemplate={handleDownloadTemplate}
+      onSupportRequestSuccess={handleSupportRequestSuccess}
+    />
+  );
+
+  if (embedded) {
+    return importContent;
+  }
+
   return (
     <Drawer open={isDrawerOpen} onOpenChange={handleDrawerOpenChange}>
       <DrawerTrigger asChild>
@@ -187,135 +203,13 @@ export function ImportFieldByCsv({
         <DrawerHeader>
           <DrawerTitle>Estrazione Automatica Campi </DrawerTitle>
           <DrawerDescription>
-            Il sistema supporta il formato Excel del template AGEA della misura
-            unica. Il formato varia in base alla regione. Seleziona l'azienda e
-            carica un file CSV. Il sistema estrarrà automaticamente i dati dei
-            campi.
+            Il sistema supporta il formato del template AGEA della misura unica,
+            con parcelle e uso del suolo primario e secondario (CSV, XLS, XLSX).
+            Il formato può variare in base alla regione. Seleziona l'azienda e
+            carica un file; i dati dei campi verranno estratti automaticamente.
           </DrawerDescription>
         </DrawerHeader>
-
-        <div className="space-y-4 p-4 flex flex-col flex-1">
-          {/* Selezione azienda in evidenza per prima */}
-          <div className="space-y-2">
-            <label className="text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Seleziona azienda di destinazione
-            </label>
-            <Select
-              value={selectedCompanyId}
-              onValueChange={setSelectedCompanyId}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Seleziona un'azienda" />
-              </SelectTrigger>
-              <SelectContent>
-                {companies.map((company) => (
-                  <SelectItem key={company.id} value={company.id}>
-                    {company.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Area upload sotto alla selezione azienda */}
-          <div
-            className={`flex-1 transition-opacity duration-200 ${
-              !selectedCompanyId ? "opacity-50 pointer-events-none" : ""
-            }`}
-          >
-            <CsvFieldImporter
-              onFileSelect={handleExtraction}
-              isProcessing={isProcessing}
-            />
-          </div>
-
-          {!selectedCompanyId && (
-            <p className="text-xs text-muted-foreground text-center">
-              Seleziona un'azienda per abilitare l'upload del file
-            </p>
-          )}
-
-          {isProcessing && (
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Spinner size={20} ariaLabel="Elaborazione file" />
-              <span>
-                Estrazione campi in corso... (potrebbe richiedere alcuni minuti)
-              </span>
-            </div>
-          )}
-
-          {importErrors.length > 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="font-medium mb-2">
-                  Errori trovati ({importErrors.length}):
-                </div>
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                  {importErrors.slice(0, 10).map((error, index) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                  {importErrors.length > 10 && (
-                    <li className="text-muted-foreground">
-                      ... e altri {importErrors.length - 10} errori
-                    </li>
-                  )}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {importWarnings.length > 0 && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="font-medium mb-2">
-                  Avvisi ({importWarnings.length}):
-                </div>
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                  {importWarnings.map((warning, index) => (
-                    <li key={index}>{warning}</li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {showSupportForm && (
-            <div className="bg-white p-6 rounded-3xl border border-agri-green-100 text-left shadow-lg shadow-agri-green-50">
-              <h4 className="font-medium text-lg mb-4">Richiedi supporto</h4>
-              <p className="text-sm text-gray-600 mb-4">
-                In caso di problemi con l'importazione del file, compila il form
-                qui sotto per contattare il servizio di supporto.
-              </p>
-              <SupportRequestForm
-                onSuccess={handleSupportRequestSuccess}
-                className="shadow-none border-none bg-transparent p-0"
-              />
-            </div>
-          )}
-
-          {/* Footer: Scarica template a sinistra (testuale), Richiedi supporto a destra - space-between */}
-          <div className="flex justify-between items-center pt-4 mt-auto border-t">
-            <Button
-              type="button"
-              variant="link"
-              size="sm"
-              onClick={handleDownloadTemplate}
-              className="gap-2 p-0 h-auto font-normal"
-            >
-              <Download className="h-4 w-4" />
-              Scarica template
-            </Button>
-            <button
-              type="button"
-              onClick={() => setShowSupportForm(!showSupportForm)}
-              className="text-sm text-black hover:text-black underline transition-colors"
-            >
-              Richiedi supporto
-            </button>
-          </div>
-        </div>
+        {importContent}
       </DrawerContent>
     </Drawer>
   );

@@ -65,6 +65,10 @@ export interface AlertNotes {
   ddt_date_is_ok?: boolean | null;
   ddt_date_conformity?: string | boolean | null;
   ddt_date_after_treatment?: string | boolean | null;
+  /** When true, DDT code is present and valid; when absent, treated as unknown (no alert if date is ok). */
+  ddt_code_is_ok?: boolean | null;
+  /** DDT code value; if present and non-empty, considered as "code present" for alert logic. */
+  ddt_code?: string | null;
   waterHlJob?: number | null;
   acquaMaxJob?: number | null;
   acquaMaxJob_um?: string | null;
@@ -183,6 +187,22 @@ class AlertNotesFormatter {
     return this.alertNotes?.ddt_date_is_ok === true;
   }
 
+  /** True when DDT code is present. If backend sends no code-related fields, treated as ok (backward compatibility). */
+  public isDdtCodeOk(): boolean {
+    const notes = this.alertNotes;
+    if (notes?.ddt_code_is_ok === true) return true;
+    if (notes?.ddt_code_is_ok === false) return false;
+    const code = notes?.ddt_code;
+    if (code === undefined || code === null) return true;
+    if (typeof code === "string" && code.trim() !== "") return true;
+    return false;
+  }
+
+  /** Show "Data DDT Mancante" when date or code is missing. No alert when both date and code are present. */
+  public shouldShowDdtMissingAlert(): boolean {
+    return !(this.isDdtDateOk() && this.isDdtCodeOk());
+  }
+
   public getFasceDeriva(): string[] {
     return this.toArray(this.alertNotes?.fasce_di_rispetto_e_deriva);
   }
@@ -229,22 +249,22 @@ export function JobSelectedDetails({
     Set<string>
   >(new Set());
   const [expandedNoteTecniche, setExpandedNoteTecniche] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [expandedResistenze, setExpandedResistenze] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [expandedFasceDeriva, setExpandedFasceDeriva] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [expandedFasceDerivaLLM, setExpandedFasceDerivaLLM] = useState<
     Set<string>
   >(new Set());
   const [expandedFasceAcqua, setExpandedFasceAcqua] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [expandedFasceColture, setExpandedFasceColture] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   // Funzione per verificare se un testo corrisponde al termine di ricerca
@@ -274,13 +294,13 @@ export function JobSelectedDetails({
     <div
       className={cn(
         "h-full flex flex-col",
-        isMobile ? "bg-white" : "bg-slate-50"
+        isMobile ? "bg-white" : "bg-slate-50",
       )}
     >
       <div
         className={cn(
           "flex-shrink-0 p-4 bg-white",
-          !isMobile && "border-b border-slate-200"
+          !isMobile && "border-b border-slate-200",
         )}
       >
         {selectedRows.length > 0 && !hideSearch && (
@@ -340,7 +360,7 @@ export function JobSelectedDetails({
                       <span className="text-xs text-slate-500 flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         {new Date(row.dateOfOpeation).toLocaleDateString(
-                          "it-IT"
+                          "it-IT",
                         )}
                       </span>
                     )}
@@ -536,8 +556,8 @@ export function JobSelectedDetails({
                             </TooltipTrigger>
                             <TooltipContent className="bg-slate-900 text-white border border-slate-700 shadow-lg">
                               Indica se lo stock in magazzino è sufficiente per
-                              tutti i trattamenti previsti con {row.productName}.
-                              Se manca quantità, viene mostrata quella da
+                              tutti i trattamenti previsti con {row.productName}
+                              . Se manca quantità, viene mostrata quella da
                               integrare.
                             </TooltipContent>
                           </Tooltip>
@@ -561,8 +581,8 @@ export function JobSelectedDetails({
                               <Info className="h-3 w-3 cursor-help" />
                             </TooltipTrigger>
                             <TooltipContent className="bg-slate-900 text-white border border-slate-700 shadow-lg">
-                              Quantità totale necessaria per tutti i
-                              trattamenti pianificati con {row.productName}
+                              Quantità totale necessaria per tutti i trattamenti
+                              pianificati con {row.productName}
                               (non lo stock in magazzino).
                             </TooltipContent>
                           </Tooltip>
@@ -580,8 +600,8 @@ export function JobSelectedDetails({
                       </div>
                     </div>
 
-                    {/* Data DDT */}
-                    {!formatter.isDdtDateOk() && (
+                    {/* Data DDT: no alert when both date and code are present */}
+                    {formatter.shouldShowDdtMissingAlert() && (
                       <div className="flex items-start gap-1.5 p-2 border border-red-200 rounded">
                         <FileX className="h-3.5 w-3.5 text-red-600 mt-0.5 shrink-0" />
                         <div className="flex-1">
@@ -885,7 +905,7 @@ export function JobSelectedDetails({
                             .some(
                               (r) =>
                                 matchesSearch(r.testo_completo) ||
-                                matchesSearch(r.raccomandazioni)
+                                matchesSearch(r.raccomandazioni),
                             ) ? (
                             <div className="space-y-2 pl-4">
                               {formatter
@@ -893,7 +913,7 @@ export function JobSelectedDetails({
                                 .filter(
                                   (r) =>
                                     matchesSearch(r.testo_completo) ||
-                                    matchesSearch(r.raccomandazioni)
+                                    matchesSearch(r.raccomandazioni),
                                 )
                                 .map((resistenza, idx) => (
                                   <div key={idx} className="space-y-1">

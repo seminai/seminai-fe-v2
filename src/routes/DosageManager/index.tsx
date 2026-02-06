@@ -1796,10 +1796,14 @@ export default function DosageManager() {
 
       for (const companyId of selectedCompanyIds) {
         try {
-          const response = await productsApiService.getVerifiedPhytosanitary(companyId);
+          const response =
+            await productsApiService.getVerifiedPhytosanitary(companyId);
 
           if (response.status === "error") {
-            console.error(`Error fetching products for company ${companyId}:`, response.message);
+            console.error(
+              `Error fetching products for company ${companyId}:`,
+              response.message,
+            );
             continue;
           }
 
@@ -1807,14 +1811,18 @@ export default function DosageManager() {
             allProducts.push(...response.data.products);
           }
         } catch (error) {
-          console.error(`Failed to fetch products for company ${companyId}:`, error);
+          console.error(
+            `Failed to fetch products for company ${companyId}:`,
+            error,
+          );
         }
       }
 
       if (allProducts.length === 0) {
         toast.info("Nessun prodotto trovato", {
           id: toastId,
-          description: "Non sono stati trovati prodotti fitosanitari verificati per le aziende selezionate.",
+          description:
+            "Non sono stati trovati prodotti fitosanitari verificati per le aziende selezionate.",
         });
         setIsImportingFromNotes(false);
         return;
@@ -1826,24 +1834,27 @@ export default function DosageManager() {
       });
 
       // Map verified phytosanitary products to DosageProduct format
-      const mappedProducts: DosageProduct[] = allProducts.map((product) => {
-        // Calculate net quantity from stocks
-        const netQuantity = product.stocks.reduce((total, stock) => {
-          const quantity = stock.quantity ?? 0;
-          return stock.type === "IN" ? total + quantity : total - quantity;
-        }, 0);
+      const mappedProducts: DosageProduct[] = allProducts
+        .map((product) => {
+          // Calculate net quantity from stocks
+          const netQuantity = product.stocks.reduce((total, stock) => {
+            const quantity = stock.quantity ?? 0;
+            return stock.type === "IN" ? total + quantity : total - quantity;
+          }, 0);
 
-        const unitOfMeasure = product.stocks[0]?.unitOfMeasureQuantity || "kg";
+          const unitOfMeasure =
+            product.stocks[0]?.unitOfMeasureQuantity || "kg";
 
-        return {
-          productName: product.name,
-          registrationNumber: product.registrationNumber || "",
-          quantity: netQuantity > 0 ? netQuantity : 0,
-          quantityUnitOfMeasure: unitOfMeasure,
-          loadWarehouse: true,
-          supplierName: product.warehouse.company.name,
-        };
-      }).filter((product) => product.quantity > 0);
+          return {
+            productName: product.name,
+            registrationNumber: product.registrationNumber || "",
+            quantity: netQuantity > 0 ? netQuantity : 0,
+            quantityUnitOfMeasure: unitOfMeasure,
+            loadWarehouse: true,
+            supplierName: product.warehouse.company.name,
+          };
+        })
+        .filter((product) => product.quantity > 0);
 
       if (mappedProducts.length === 0) {
         toast.info("Nessun prodotto importabile", {
@@ -2194,60 +2205,14 @@ export default function DosageManager() {
       return;
     }
 
-    // Validate date range against selected units
+    // Validate date range against selected units (with 3 months buffer)
     if (startAt || endAt) {
-      const startDates = selectedUnits
-        .map((unit) => unit.productionUnit.startDate)
-        .filter((date): date is string => Boolean(date));
-
-      if (startDates.length === 0) {
+      if (endAt && startAt && endAt < startAt) {
         toast.error("Date non valide", {
           description:
-            "Le unità produttive selezionate non hanno date di inizio valide",
+            "La data di fine non può essere prima della data di inizio",
         });
         return;
-      }
-
-      const minDate = startDates.reduce((earliest, current) => {
-        return current < earliest ? current : earliest;
-      }, startDates[0]);
-
-      const endDates = selectedUnits
-        .map((unit) => unit.productionUnit.endDate)
-        .filter((date): date is string => Boolean(date));
-
-      const maxDate =
-        endDates.length > 0
-          ? endDates.reduce((latest, current) => {
-              return current > latest ? current : latest;
-            }, endDates[0])
-          : undefined;
-
-      if (startAt && startAt < minDate) {
-        toast.error("Data inizio non valida", {
-          description: `La data di inizio non può essere prima del ${new Date(
-            minDate,
-          ).toLocaleDateString("it-IT")}`,
-        });
-        return;
-      }
-
-      if (endAt) {
-        if (maxDate && endAt > maxDate) {
-          toast.error("Data fine non valida", {
-            description: `La data di fine non può essere dopo il ${new Date(
-              maxDate,
-            ).toLocaleDateString("it-IT")}`,
-          });
-          return;
-        }
-        if (startAt && endAt < startAt) {
-          toast.error("Date non valide", {
-            description:
-              "La data di fine non può essere prima della data di inizio",
-          });
-          return;
-        }
       }
     }
 
@@ -2271,6 +2236,7 @@ export default function DosageManager() {
         })
         .map((product) => {
           // Remove _internalId before sending to API and apply global loadWarehouse setting
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { _internalId, ...productWithoutId } = product;
           const productPayload: DosageProduct = {
             ...productWithoutId,
@@ -2402,6 +2368,14 @@ export default function DosageManager() {
   return (
     <div className="flex min-h-svh flex-col">
       <PageHeader
+        className="fixed top-0 right-0 z-30 bg-white"
+        style={{
+          left: isMobile
+            ? 0
+            : sidebarState === "collapsed"
+              ? "calc(var(--sidebar-width-icon) + 1rem)"
+              : "var(--sidebar-width)",
+        }}
         title="Genera Dosaggi"
         totalItems={totalUnits}
         filteredItems={filteredUnits.length}
@@ -2425,7 +2399,7 @@ export default function DosageManager() {
       </PageHeader>
 
       <div
-        className="flex-1 overflow-auto px-4 md:px-6"
+        className="flex-1 overflow-auto px-4 md:px-6 pt-32 md:pt-28"
         style={{
           paddingBottom: isMobile
             ? Math.max(footerHeight + mobileBottomOccupied + 24, 160) // evita overlay con bottom navbar + footer
