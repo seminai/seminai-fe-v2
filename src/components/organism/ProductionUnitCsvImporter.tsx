@@ -54,6 +54,16 @@ class CompanySearchOptionsFactory {
   }
 }
 
+export type FieldAllocationDetails = {
+  fieldId: string;
+  fieldName: string;
+  areaHa: number;
+  foglio: string | null;
+  particella: string | null;
+  sezione: string | null;
+  subalterno?: string | null;
+};
+
 export type ImportedProductionUnit = {
   id: string;
   name: string;
@@ -68,6 +78,7 @@ export type ImportedProductionUnit = {
   destinazioneDiUso: string;
   acquaTotalePeridoL: number;
   allocations: Map<string, number>;
+  allocationsWithDetails?: FieldAllocationDetails[];
   matchedFieldIds: string[];
   totalAreaHa: number | null;
   unmatchedAllocations: Array<{
@@ -191,6 +202,7 @@ class ProductionUnitAggregator {
       acquaTotalePeridoL: entry.acquaTotalePeridoL,
       totalAreaHa: entry.totalAreaHa,
       allocations: entry.allocations,
+      allocationsWithDetails: entry.allocationsWithDetails,
       matchedFieldIds: Array.from(entry.matchedFieldIds),
       unmatchedAllocations: entry.unmatchedAllocations,
     }));
@@ -224,6 +236,7 @@ class ProductionUnitAggregator {
       acquaTotalePeridoL: unit.acquaTotalePeridoL,
       totalAreaHa: unit.totalAreaHa,
       allocations: new Map(unit.allocations),
+      allocationsWithDetails: [...(unit.allocationsWithDetails ?? [])],
       matchedFieldIds: new Set(unit.matchedFieldIds),
       unmatchedAllocations: [...unit.unmatchedAllocations],
     };
@@ -250,6 +263,10 @@ class ProductionUnitAggregator {
     });
 
     target.unmatchedAllocations.push(...source.unmatchedAllocations);
+
+    if (source.allocationsWithDetails) {
+      target.allocationsWithDetails.push(...source.allocationsWithDetails);
+    }
 
     if (
       !target.startDate ||
@@ -304,6 +321,7 @@ type AggregatedUnit = {
   acquaTotalePeridoL: number;
   totalAreaHa: number | null;
   allocations: Map<string, number>;
+  allocationsWithDetails: FieldAllocationDetails[];
   matchedFieldIds: Set<string>;
   unmatchedAllocations: ImportedProductionUnit["unmatchedAllocations"];
 };
@@ -474,6 +492,50 @@ export const ProductionUnitCsvImporter: React.FC<
         const endDate = parseDateSafe(pu.endDate ?? null);
         const resolvedVariety = varietyResolver.resolve(pu);
 
+        // Costruisci allocationsWithDetails dalle allocations dell'API
+        const allocationsWithDetails: FieldAllocationDetails[] = (
+          pu.allocations ?? []
+        )
+          .map((alloc) => {
+            const parsedArea =
+              typeof alloc.areaHa === "string"
+                ? parseFloat(alloc.areaHa)
+                : alloc.areaHa;
+            const area = Number.isFinite(parsedArea) ? parsedArea : 0;
+
+            // Se il backend ha fornito fieldId, trova i dettagli del campo
+            let fieldId = alloc.fieldId;
+            let fieldName = alloc.fieldName ?? "Campo";
+
+            if (!fieldId) {
+              // Prova matching locale
+              const matchedField = fieldMatcher.match({
+                fieldName: alloc.fieldName ?? "",
+                sezione: alloc.sezione,
+                foglio: alloc.foglio,
+                particella: alloc.particella,
+              });
+              if (matchedField) {
+                fieldId = matchedField.id;
+                fieldName = matchedField.name;
+              } else {
+                // Campo non matchato, usa dati dall'API
+                fieldId = `unmatched-${index}-${alloc.foglio}-${alloc.particella}`;
+              }
+            }
+
+            return {
+              fieldId: fieldId || `field-${index}`,
+              fieldName,
+              areaHa: area,
+              foglio: alloc.foglio || null,
+              particella: alloc.particella || null,
+              sezione: alloc.sezione || null,
+              subalterno: alloc.subalterno,
+            };
+          })
+          .filter((alloc) => alloc.areaHa > 0);
+
         return {
           id: `import-${Date.now()}-${index}`,
           name: pu.name,
@@ -489,6 +551,7 @@ export const ProductionUnitCsvImporter: React.FC<
           acquaTotalePeridoL: pu.acquaTotalePeridoL ?? 0,
           totalAreaHa,
           allocations,
+          allocationsWithDetails,
           matchedFieldIds,
           unmatchedAllocations,
         };

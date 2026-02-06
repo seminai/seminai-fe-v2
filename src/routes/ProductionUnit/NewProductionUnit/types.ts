@@ -8,6 +8,16 @@ export type CropVariety = {
   estimatedYield: { min: number; max: number };
 };
 
+export type FieldAllocation = {
+  fieldId: string;
+  fieldName: string;
+  areaHa: number;
+  foglio: string | null;
+  particella: string | null;
+  sezione: string | null;
+  subalterno?: string | null;
+};
+
 export type ProductionUnitInput = {
   id: string;
   name: string;
@@ -15,6 +25,7 @@ export type ProductionUnitInput = {
   cultivarId?: string | null;
   totalAreaHa?: number | null;
   allocations: Map<string, number>;
+  allocationsWithDetails?: FieldAllocation[];
   protectionStructure: string;
   occupazione: string;
   destinazioneDiUso: string;
@@ -63,4 +74,3 @@ export type ProductionUnitSplitPart = {
   name: string;
   areaHa: number;
 };
-
