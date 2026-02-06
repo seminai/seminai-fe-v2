@@ -604,6 +604,7 @@ export default function NewProductionUnit(): React.ReactElement {
           cultivarId: null,
           totalAreaHa: importedUnit.totalAreaHa ?? null,
           allocations: importedUnit.allocations,
+          allocationsWithDetails: importedUnit.allocationsWithDetails,
           protectionStructure: importedUnit.protectionStructure,
           occupazione: importedUnit.occupazione,
           destinazioneDiUso: importedUnit.destinazioneDiUso,
@@ -719,6 +720,90 @@ export default function NewProductionUnit(): React.ReactElement {
       );
     },
     [productionUnits],
+  );
+
+  const handleMoveField = useCallback(
+    (
+      sourceUnitId: string,
+      targetUnitId: string,
+      fieldId: string,
+      areaHa: number,
+    ) => {
+      setProductionUnits((prev) => {
+        // Trova i dettagli del campo nell'unità di origine
+        const sourceUnit = prev.find((u) => u.id === sourceUnitId);
+        const movedFieldDetail = sourceUnit?.allocationsWithDetails?.find(
+          (d) => d.fieldId === fieldId,
+        );
+
+        return prev.map((unit) => {
+          if (unit.id === sourceUnitId) {
+            // Rimuovi il campo dall'unità di origine
+            const newAllocations = new Map(unit.allocations);
+            newAllocations.delete(fieldId);
+            const newDetails = unit.allocationsWithDetails?.filter(
+              (d) => d.fieldId !== fieldId,
+            );
+            return {
+              ...unit,
+              allocations: newAllocations,
+              allocationsWithDetails: newDetails,
+              totalAreaHa:
+                unit.totalAreaHa !== null && unit.totalAreaHa !== undefined
+                  ? Math.max(unit.totalAreaHa - areaHa, 0)
+                  : null,
+            };
+          } else if (unit.id === targetUnitId) {
+            // Aggiungi il campo all'unità di destinazione
+            const newAllocations = new Map(unit.allocations);
+            newAllocations.set(fieldId, areaHa);
+            const newDetails = [
+              ...(unit.allocationsWithDetails ?? []),
+              ...(movedFieldDetail ? [movedFieldDetail] : []),
+            ];
+            return {
+              ...unit,
+              allocations: newAllocations,
+              allocationsWithDetails: newDetails,
+              totalAreaHa:
+                unit.totalAreaHa !== null && unit.totalAreaHa !== undefined
+                  ? unit.totalAreaHa + areaHa
+                  : null,
+            };
+          }
+          return unit;
+        });
+      });
+    },
+    [],
+  );
+
+  const handleRemoveFieldFromUnit = useCallback(
+    (unitId: string, fieldId: string, areaHa: number) => {
+      setProductionUnits((prev) => {
+        return prev.map((unit) => {
+          if (unit.id === unitId) {
+            // Rimuovi il campo dall'unità
+            const newAllocations = new Map(unit.allocations);
+            newAllocations.delete(fieldId);
+            const newDetails = unit.allocationsWithDetails?.filter(
+              (d) => d.fieldId !== fieldId,
+            );
+            return {
+              ...unit,
+              allocations: newAllocations,
+              allocationsWithDetails: newDetails,
+              totalAreaHa:
+                unit.totalAreaHa !== null && unit.totalAreaHa !== undefined
+                  ? Math.max(unit.totalAreaHa - areaHa, 0)
+                  : null,
+            };
+          }
+          return unit;
+        });
+      });
+    },
+    [],
   );
 
   // Handler per la creazione delle unità produttive
@@ -1646,6 +1731,8 @@ export default function NewProductionUnit(): React.ReactElement {
               onEditUnit={handleEditUnit}
               onDeleteUnit={handleDeleteUnit}
               onSplitUnit={handleSplitUnit}
+              onMoveField={handleMoveField}
+              onRemoveFieldFromUnit={handleRemoveFieldFromUnit}
               onSave={(unit) => {
                 if (editingUnitId) {
                   // Aggiorna l'unità esistente

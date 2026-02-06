@@ -38,6 +38,7 @@ import {
   Pencil,
   CheckCircle,
   SplitSquareVertical,
+  MoveRight,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -64,7 +65,7 @@ class ProductionUnitFormStateFactory {
 
   constructor(
     allocatedFields: Map<string, number>,
-    productionUnits: ProductionUnitInput[]
+    productionUnits: ProductionUnitInput[],
   ) {
     this.allocatedFields = allocatedFields;
     this.productionUnits = productionUnits;
@@ -73,7 +74,7 @@ class ProductionUnitFormStateFactory {
   public build(editingUnitId?: string): ProductionUnitInput {
     if (editingUnitId) {
       const unitToEdit = this.productionUnits.find(
-        (unit) => unit.id === editingUnitId
+        (unit) => unit.id === editingUnitId,
       );
       if (unitToEdit) {
         return this.buildFromExisting(unitToEdit);
@@ -128,6 +129,17 @@ type SingleProductionUnitFormProps = {
   onEditUnit: (unitId: string) => void;
   onDeleteUnit: (unitId: string) => void;
   onSplitUnit: (unitId: string, parts: ProductionUnitSplitPart[]) => void;
+  onMoveField?: (
+    sourceUnitId: string,
+    targetUnitId: string,
+    fieldId: string,
+    areaHa: number,
+  ) => void;
+  onRemoveFieldFromUnit?: (
+    unitId: string,
+    fieldId: string,
+    areaHa: number,
+  ) => void;
   isCreating: boolean;
 };
 
@@ -152,27 +164,34 @@ export const SingleProductionUnitForm: React.FC<
   onEditUnit,
   onDeleteUnit,
   onSplitUnit,
+  onMoveField,
+  onRemoveFieldFromUnit,
   isCreating,
 }) => {
   const formStateFactory = useMemo(
     () => new ProductionUnitFormStateFactory(allocatedFields, productionUnits),
-    [allocatedFields, productionUnits]
+    [allocatedFields, productionUnits],
   );
   const [formData, setFormData] = useState<ProductionUnitInput>(() =>
-    formStateFactory.build(editingUnitId)
+    formStateFactory.build(editingUnitId),
   );
 
   const [cropSearchQuery, setCropSearchQuery] = useState("");
   const [cultivarSearchQuery, setCultivarSearchQuery] = useState("");
   const [isNameManuallyEdited, setIsNameManuallyEdited] = useState(
-    Boolean(editingUnitId)
+    Boolean(editingUnitId),
   );
   const [harvestDateManuallyEdited, setHarvestDateManuallyEdited] =
     useState(false);
   const [splitDialogUnit, setSplitDialogUnit] =
     useState<ProductionUnitInput | null>(null);
+  const [moveFieldDialog, setMoveFieldDialog] = useState<{
+    sourceUnitId: string;
+    fieldId: string;
+    areaHa: number;
+  } | null>(null);
   const previousCultivarIdRef = useRef<string | null>(
-    formData.cultivarId ?? null
+    formData.cultivarId ?? null,
   );
 
   const selectedCrop = cropVarieties.find((v) => v.code === formData.cropCode);
@@ -193,7 +212,7 @@ export const SingleProductionUnitForm: React.FC<
       (variety) =>
         variety.species.toLowerCase().includes(query) ||
         variety.cropType.toLowerCase().includes(query) ||
-        variety.code.toLowerCase().includes(query)
+        variety.code.toLowerCase().includes(query),
     );
   }, [cropVarieties, cropSearchQuery]);
 
@@ -207,7 +226,7 @@ export const SingleProductionUnitForm: React.FC<
     }
     const query = cultivarSearchQuery.toLowerCase();
     return baseList.filter((record) =>
-      record.cultivar.toLowerCase().includes(query)
+      record.cultivar.toLowerCase().includes(query),
     );
   }, [cultivarCatalog, selectedCrop, cultivarSearchQuery]);
 
@@ -228,7 +247,7 @@ export const SingleProductionUnitForm: React.FC<
     }
     return cultivarCatalog.getRecommendedHarvestDate(
       formData.cultivarId,
-      dateRange.start
+      dateRange.start,
     );
   }, [cultivarCatalog, formData.cultivarId, dateRange.start]);
 
@@ -247,7 +266,7 @@ export const SingleProductionUnitForm: React.FC<
   const totalAllocatedSAU = useMemo(() => {
     return Array.from(allocatedFields.values()).reduce(
       (sum, area) => sum + area,
-      0
+      0,
     );
   }, [allocatedFields]);
 
@@ -327,7 +346,7 @@ export const SingleProductionUnitForm: React.FC<
     toast.success(
       editingUnitId
         ? "Unità produttiva aggiornata con successo!"
-        : "Unità produttiva creata con successo!"
+        : "Unità produttiva creata con successo!",
     );
   };
 
@@ -367,152 +386,245 @@ export const SingleProductionUnitForm: React.FC<
             </CardHeader>
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
-              {productionUnits.map((unit) => {
-                const crop = cropVarieties.find(
-                  (v) => v.code === unit.cropCode
-                );
-                const unitTotalArea =
-                  unit.totalAreaHa ??
-                  Array.from(unit.allocations.values()).reduce(
-                    (sum, area) => sum + area,
-                    0
+                {productionUnits.map((unit) => {
+                  const crop = cropVarieties.find(
+                    (v) => v.code === unit.cropCode,
                   );
-                const cultivarLabel =
-                  (unit.cultivarId &&
-                    cultivarCatalog?.getCultivarLabel(unit.cultivarId)) ||
-                  crop?.code;
+                  const unitTotalArea =
+                    unit.totalAreaHa ??
+                    Array.from(unit.allocations.values()).reduce(
+                      (sum, area) => sum + area,
+                      0,
+                    );
+                  const cultivarLabel =
+                    (unit.cultivarId &&
+                      cultivarCatalog?.getCultivarLabel(unit.cultivarId)) ||
+                    crop?.code;
 
-                return (
-                  <AccordionItem
-                    key={unit.id}
-                    value={unit.id}
-                    className="border rounded-lg mb-2 px-4"
-                  >
-                    <div className="flex items-center justify-between py-4">
-                      <AccordionTrigger className="hover:no-underline py-0 flex-1">
-                        <div className="flex items-center gap-4 text-left">
-                          <div>
-                            <h4 className="font-semibold text-gray-900">
-                              {unit.name}
-                            </h4>
-                            <p className="text-sm text-gray-500">
-                              {crop?.species} • {unitTotalArea.toFixed(2)} Ha
-                            </p>
+                  return (
+                    <AccordionItem
+                      key={unit.id}
+                      value={unit.id}
+                      className="border rounded-lg mb-2 px-4"
+                    >
+                      <div className="flex items-center justify-between py-4">
+                        <AccordionTrigger className="hover:no-underline py-0 flex-1">
+                          <div className="flex items-center gap-4 text-left">
+                            <div>
+                              <h4 className="font-semibold text-gray-900">
+                                {unit.name}
+                              </h4>
+                              <p className="text-sm text-gray-500">
+                                {crop?.species} • {unitTotalArea.toFixed(2)} Ha
+                              </p>
+                            </div>
                           </div>
+                        </AccordionTrigger>
+                        <div className="flex items-center gap-2 ml-4">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditUnit(unit.id);
+                            }}
+                            title="Modifica"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSplitDialogUnit(unit);
+                            }}
+                            title="Fraziona"
+                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                          >
+                            <SplitSquareVertical className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteUnit(unit.id);
+                            }}
+                            title="Elimina"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </AccordionTrigger>
-                      <div className="flex items-center gap-2 ml-4">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditUnit(unit.id);
-                          }}
-                          title="Modifica"
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSplitDialogUnit(unit);
-                          }}
-                          title="Fraziona"
-                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                        >
-                          <SplitSquareVertical className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteUnit(unit.id);
-                          }}
-                          title="Elimina"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
-                    </div>
-                    <AccordionContent>
-                      <div className="pt-2 pb-4 space-y-4 border-t mt-2">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="font-medium text-gray-700 block">
-                              Coltura:
-                            </span>
-                            {crop?.species} ({crop?.cropType})
-                          </div>
-                          <div>
-                            <span className="font-medium text-gray-700 block">
-                              Varietà:
-                            </span>
-                            {cultivarLabel || "N/A"}
-                          </div>
-                          {unit.protectionStructure && (
+                      <AccordionContent>
+                        <div className="pt-2 pb-4 space-y-4 border-t mt-2">
+                          <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <span className="font-medium text-gray-700 block">
-                                Struttura:
+                                Coltura:
                               </span>
-                              {unit.protectionStructure}
+                              {crop?.species} ({crop?.cropType})
                             </div>
-                          )}
-                          {unit.destinazioneDiUso && (
                             <div>
                               <span className="font-medium text-gray-700 block">
-                                Destinazione:
+                                Varietà:
                               </span>
-                              {unit.destinazioneDiUso}
+                              {cultivarLabel || "N/A"}
                             </div>
-                          )}
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-700 block mb-2">
-                            Campi Allocati:
-                          </span>
-                          <div className="space-y-1">
-                            {Array.from(unit.allocations.entries()).map(
-                              ([fieldId, area]) => {
-                                const baseFieldId =
-                                  getBaseFieldIdFromAllocation(fieldId);
-                                const field = allFields.find(
-                                  (f) => f.id === baseFieldId
-                                );
-                                return (
-                                  <div
-                                    key={fieldId}
-                                    className="text-sm flex justify-between bg-gray-50 p-2 rounded"
-                                  >
-                                    <span>{field?.name || "Campo"}</span>
-                                    <span className="font-medium">
-                                      {area.toFixed(2)} Ha
-                                    </span>
-                                  </div>
-                                );
-                              }
+                            {unit.protectionStructure && (
+                              <div>
+                                <span className="font-medium text-gray-700 block">
+                                  Struttura:
+                                </span>
+                                {unit.protectionStructure}
+                              </div>
+                            )}
+                            {unit.destinazioneDiUso && (
+                              <div>
+                                <span className="font-medium text-gray-700 block">
+                                  Destinazione:
+                                </span>
+                                {unit.destinazioneDiUso}
+                              </div>
                             )}
                           </div>
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                );
-              })}
-            </Accordion>
+                          <div>
+                            <span className="font-medium text-gray-700 block mb-2">
+                              Campi Allocati:
+                            </span>
+                            <div className="space-y-2">
+                              {Array.from(unit.allocations.entries()).map(
+                                ([fieldId, area]) => {
+                                  const baseFieldId =
+                                    getBaseFieldIdFromAllocation(fieldId);
+                                  // Cerca dettagli in allocationsWithDetails (dati importati)
+                                  const detailFromImport =
+                                    unit.allocationsWithDetails?.find(
+                                      (d) =>
+                                        d.fieldId === fieldId ||
+                                        d.fieldId === baseFieldId,
+                                    );
+                                  // Cerca dettagli in allFields (dati da ricerca disponibilità)
+                                  const fieldFromSearch = allFields.find(
+                                    (f) => f.id === baseFieldId,
+                                  );
+                                  // Merge: priorità a allocationsWithDetails, poi allFields
+                                  const displayName =
+                                    detailFromImport?.fieldName ||
+                                    fieldFromSearch?.name ||
+                                    "Campo";
+                                  const displayFoglio =
+                                    detailFromImport?.foglio ||
+                                    fieldFromSearch?.foglio ||
+                                    null;
+                                  const displayParticella =
+                                    detailFromImport?.particella ||
+                                    fieldFromSearch?.particella ||
+                                    null;
+                                  const displaySezione =
+                                    detailFromImport?.sezione ||
+                                    fieldFromSearch?.sezione ||
+                                    null;
 
-            {productionUnits.length === 0 && (
-              <div className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg">
-                Nessuna unità produttiva presente.
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                                  return (
+                                    <div
+                                      key={fieldId}
+                                      className="bg-gray-50 p-3 rounded border border-gray-200"
+                                    >
+                                      <div className="flex items-start justify-between gap-2 mb-2">
+                                        <div className="flex-1">
+                                          <h5 className="font-semibold text-gray-900">
+                                            {displayName}
+                                          </h5>
+                                          <div className="flex items-center gap-3 mt-1 text-xs text-gray-600">
+                                            {displayFoglio && (
+                                              <span className="flex items-center gap-1">
+                                                <Ruler className="h-3 w-3" />
+                                                Foglio {displayFoglio}
+                                              </span>
+                                            )}
+                                            {displayParticella && (
+                                              <span>
+                                                Part. {displayParticella}
+                                              </span>
+                                            )}
+                                            {displaySezione && (
+                                              <span>Sez. {displaySezione}</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <span className="font-bold text-gray-900 text-sm">
+                                          {area.toFixed(2)} Ha
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-1 justify-end">
+                                        {onMoveField &&
+                                          productionUnits.length > 1 && (
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setMoveFieldDialog({
+                                                  sourceUnitId: unit.id,
+                                                  fieldId,
+                                                  areaHa: area,
+                                                });
+                                              }}
+                                              title="Sposta in altra unità produttiva"
+                                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-7 px-2"
+                                            >
+                                              <MoveRight className="h-3 w-3 mr-1" />
+                                              <span className="text-xs">
+                                                Sposta
+                                              </span>
+                                            </Button>
+                                          )}
+                                        {onRemoveFieldFromUnit && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onRemoveFieldFromUnit(
+                                                unit.id,
+                                                fieldId,
+                                                area,
+                                              );
+                                              toast.success(
+                                                "Campo rimosso dall'unità produttiva",
+                                              );
+                                            }}
+                                            title="Rimuovi campo"
+                                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-7 w-7 p-0"
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                },
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
+
+              {productionUnits.length === 0 && (
+                <div className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg">
+                  Nessuna unità produttiva presente.
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         <div className="flex-shrink-0 border-t bg-white p-4 flex justify-between items-center gap-4">
@@ -555,6 +667,81 @@ export const SingleProductionUnitForm: React.FC<
               setSplitDialogUnit(null);
             }}
           />
+        )}
+
+        {moveFieldDialog && onMoveField && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-md mx-4">
+              <CardHeader>
+                <CardTitle>Sposta Campo</CardTitle>
+                <p className="text-sm text-gray-600">
+                  Seleziona l'unità produttiva di destinazione
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-3 bg-blue-50 rounded border border-blue-200">
+                  <p className="text-sm font-medium text-blue-900">
+                    Campo da spostare:
+                  </p>
+                  <p className="text-sm text-blue-700 mt-1">
+                    {allFields.find(
+                      (f) =>
+                        getBaseFieldIdFromAllocation(
+                          moveFieldDialog.fieldId,
+                        ) === f.id,
+                    )?.name || "Campo"}{" "}
+                    - {moveFieldDialog.areaHa.toFixed(2)} Ha
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  {productionUnits
+                    .filter((u) => u.id !== moveFieldDialog.sourceUnitId)
+                    .map((targetUnit) => {
+                      const crop = cropVarieties.find(
+                        (v) => v.code === targetUnit.cropCode,
+                      );
+                      return (
+                        <Button
+                          key={targetUnit.id}
+                          variant="outline"
+                          className="w-full justify-start text-left h-auto py-3"
+                          onClick={() => {
+                            onMoveField(
+                              moveFieldDialog.sourceUnitId,
+                              targetUnit.id,
+                              moveFieldDialog.fieldId,
+                              moveFieldDialog.areaHa,
+                            );
+                            setMoveFieldDialog(null);
+                            toast.success("Campo spostato con successo!");
+                          }}
+                        >
+                          <div className="flex flex-col gap-1">
+                            <span className="font-semibold">
+                              {targetUnit.name}
+                            </span>
+                            <span className="text-xs text-gray-600">
+                              {crop?.species} -{" "}
+                              {Array.from(targetUnit.allocations.values())
+                                .reduce((sum, a) => sum + a, 0)
+                                .toFixed(2)}{" "}
+                              Ha
+                            </span>
+                          </div>
+                        </Button>
+                      );
+                    })}
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setMoveFieldDialog(null)}
+                >
+                  Annulla
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     );
@@ -622,7 +809,7 @@ export const SingleProductionUnitForm: React.FC<
                     </div>
                   </div>
                 );
-              }
+              },
             )}
           </div>
         </CardContent>
@@ -652,7 +839,9 @@ export const SingleProductionUnitForm: React.FC<
                 <div className="grid grid-cols-2 gap-2 text-amber-800">
                   {formData.importedCropName && (
                     <div>
-                      <span className="text-xs text-amber-600">Nome coltura:</span>
+                      <span className="text-xs text-amber-600">
+                        Nome coltura:
+                      </span>
                       <p className="font-medium">{formData.importedCropName}</p>
                     </div>
                   )}
@@ -670,7 +859,8 @@ export const SingleProductionUnitForm: React.FC<
                   )}
                 </div>
                 <p className="text-xs text-amber-600 mt-2">
-                  Questi dati verranno usati se non selezioni una coltura locale.
+                  Questi dati verranno usati se non selezioni una coltura
+                  locale.
                 </p>
               </div>
             )}
@@ -693,7 +883,13 @@ export const SingleProductionUnitForm: React.FC<
               }}
             >
               <SelectTrigger className="mt-1">
-                <SelectValue placeholder={formData.importedCropName ? "(Opzionale) Abbina a coltura locale..." : "Seleziona una varietà..."} />
+                <SelectValue
+                  placeholder={
+                    formData.importedCropName
+                      ? "(Opzionale) Abbina a coltura locale..."
+                      : "Seleziona una varietà..."
+                  }
+                />
               </SelectTrigger>
               <SelectContent className="max-h-[400px]">
                 <div className="sticky top-0 z-10 bg-white border-b p-2">
@@ -888,7 +1084,7 @@ export const SingleProductionUnitForm: React.FC<
                         variant="outline"
                         className={cn(
                           "w-full justify-start text-left font-normal mt-1",
-                          !effectiveSowingDate && "text-muted-foreground"
+                          !effectiveSowingDate && "text-muted-foreground",
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -928,7 +1124,7 @@ export const SingleProductionUnitForm: React.FC<
                         variant="outline"
                         className={cn(
                           "w-full justify-start text-left font-normal mt-1",
-                          !effectiveFloweringDate && "text-muted-foreground"
+                          !effectiveFloweringDate && "text-muted-foreground",
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -968,7 +1164,7 @@ export const SingleProductionUnitForm: React.FC<
                         variant="outline"
                         className={cn(
                           "w-full justify-start text-left font-normal mt-1",
-                          !effectiveHarvestingDate && "text-muted-foreground"
+                          !effectiveHarvestingDate && "text-muted-foreground",
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
