@@ -5,7 +5,13 @@ import {
   EditableTable,
   type EditableColumn,
 } from "@/components/organism/EditableTable";
-import { PanelRightClose, PanelRightOpen, GripVertical, MessageSquare, Table, Bot } from "lucide-react";
+import {
+  PanelRightClose,
+  GripVertical,
+  MessageSquare,
+  Table,
+  Bot,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Wifi, WifiOff, AlertCircle, Loader2 } from "lucide-react";
@@ -116,7 +122,7 @@ export function FieldNotesView({
 
   // State per gestire la vista mobile (chat o tabella)
   const [mobileView, setMobileView] = useState<"chat" | "table">("chat");
-  
+
   // State per lo stato del socket della chat
   const [socketState, setSocketState] = useState<string>("disconnected");
 
@@ -127,9 +133,7 @@ export function FieldNotesView({
         <div className="px-4 py-3">
           <Tabs
             value={mobileView}
-            onValueChange={(value) =>
-              setMobileView(value as "chat" | "table")
-            }
+            onValueChange={(value) => setMobileView(value as "chat" | "table")}
           >
             <TabsList className="bg-white border border-neutral-200 p-1 rounded-xl inline-flex w-auto">
               <TabsTrigger
@@ -137,7 +141,7 @@ export function FieldNotesView({
                 className="rounded-lg text-xs whitespace-nowrap"
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
-                Chat AI
+                Chat
               </TabsTrigger>
               <TabsTrigger
                 value="table"
@@ -152,10 +156,12 @@ export function FieldNotesView({
       </div>
 
       {/* Mobile Chat View */}
-      <div className={cn(
-        "flex-1 min-h-0 overflow-hidden md:hidden flex flex-col",
-        mobileView === "chat" ? "flex" : "hidden"
-      )}>
+      <div
+        className={cn(
+          "flex-1 min-h-0 overflow-hidden md:hidden flex flex-col",
+          mobileView === "chat" ? "flex" : "hidden",
+        )}
+      >
         <FieldNoteChatPanel
           onFieldNoteSaved={onFieldNoteSaved}
           onSocketStateChange={setSocketState}
@@ -163,10 +169,12 @@ export function FieldNotesView({
       </div>
 
       {/* Mobile Table View */}
-      <div className={cn(
-        "flex-1 overflow-hidden md:hidden px-4 pb-4",
-        mobileView === "table" ? "block" : "hidden"
-      )}>
+      <div
+        className={cn(
+          "flex-1 overflow-hidden md:hidden px-4 pb-4",
+          mobileView === "table" ? "block" : "hidden",
+        )}
+      >
         <div className="h-full flex flex-col">
           {hasError && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 mb-4">
@@ -185,8 +193,9 @@ export function FieldNotesView({
                   Parla con Seminai
                 </h3>
                 <p className="text-sm text-neutral-600 mb-6">
-                  Inizia una conversazione con l'assistente AI per aggiungere le tue prime note di campo.
-                  Puoi descrivere le operazioni svolte e Seminai le convertirà automaticamente in note strutturate.
+                  Inizia una conversazione con l'assistente AI per aggiungere le
+                  tue prime note di campo. Puoi descrivere le operazioni svolte
+                  e Seminai le convertirà automaticamente in note strutturate.
                 </p>
                 <Button
                   onClick={() => setMobileView("chat")}
@@ -228,126 +237,128 @@ export function FieldNotesView({
       <div className="hidden md:flex flex-1 min-h-0 overflow-hidden px-6 pb-6">
         <div className="flex-1 min-h-0 overflow-hidden">
           <div className="h-full space-y-4">
-          {hasError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-              <p className="font-semibold">Errore nel caricamento dei dati</p>
-              <p className="text-sm mt-1">{errorMessage}</p>
-            </div>
-          )}
+            {hasError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+                <p className="font-semibold">Errore nel caricamento dei dati</p>
+                <p className="text-sm mt-1">{errorMessage}</p>
+              </div>
+            )}
 
-          {fieldNotesLength === 0 && !isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 px-4">
-              <div className="flex flex-col items-center justify-center max-w-md text-center">
-                <div className="flex items-center justify-center h-20 w-20 rounded-full bg-emerald-100 text-emerald-600 mb-6">
-                  <Bot className="h-10 w-10" />
+            {fieldNotesLength === 0 && !isLoading ? (
+              <div className="flex flex-col items-center justify-center py-16 px-4">
+                <div className="flex flex-col items-center justify-center max-w-md text-center">
+                  <div className="flex items-center justify-center h-20 w-20 rounded-full bg-emerald-100 text-emerald-600 mb-6">
+                    <Bot className="h-10 w-10" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-neutral-900 mb-2">
+                    Parla con Seminai
+                  </h3>
+                  <p className="text-sm text-neutral-600 mb-6">
+                    Inizia una conversazione con l'assistente AI per aggiungere
+                    le tue prime note di campo. Puoi descrivere le operazioni
+                    svolte e Seminai le convertirà automaticamente in note
+                    strutturate.
+                  </p>
+                  <Button
+                    onClick={() => onToggleRightSidebar(true)}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    size="lg"
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Apri Chat AI
+                  </Button>
                 </div>
-                <h3 className="text-xl font-semibold text-neutral-900 mb-2">
-                  Parla con Seminai
-                </h3>
-                <p className="text-sm text-neutral-600 mb-6">
-                  Inizia una conversazione con l'assistente AI per aggiungere le tue prime note di campo.
-                  Puoi descrivere le operazioni svolte e Seminai le convertirà automaticamente in note strutturate.
-                </p>
-                <Button
-                  onClick={() => onToggleRightSidebar(true)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                  size="lg"
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Apri Chat AI
-                </Button>
               </div>
-            </div>
-          ) : (
-            <div className="h-full flex flex-col relative">
-              <div className="flex-1 min-h-0">
-                <EditableTable
-                  addButton={showAddButton}
-                  createMode="drawer"
-                  onAddClick={onAddClick}
-                  newRowDefaults={newRowDefaults}
-                  columns={columns}
-                  rows={rows}
-                  isModify={false}
-                  onSave={onSave}
-                  onDeleteSelected={onDeleteSelected}
-                  getRowId={(row) => row.id as string}
-                  exportFileName="note-di-campo"
-                  onOpenDetails={onOpenDetails}
-                  onBulkVerifySelected={onBulkVerifySelected}
-                  isBulkVerifyLoading={isBulkVerifying}
-                  bulkVerifyButtonLabel="Verifica"
-                >
-                  {!isRightSidebarOpen && (
-                    <Button
-                      data-table-slot="right"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onToggleRightSidebar(true)}
-                      className="text-black hover:text-gray-700 cursor-pointer focus-visible:ring-0 focus-visible:outline-none"
-                      title="Apri chat AI"
-                    >
-                      <PanelRightOpen className="h-4 w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">Chat AI</span>
-                    </Button>
-                  )}
-                </EditableTable>
+            ) : (
+              <div className="h-full flex flex-col relative">
+                <div className="flex-1 min-h-0">
+                  <EditableTable
+                    addButton={showAddButton}
+                    createMode="drawer"
+                    onAddClick={onAddClick}
+                    newRowDefaults={newRowDefaults}
+                    columns={columns}
+                    rows={rows}
+                    isModify={false}
+                    onSave={onSave}
+                    onDeleteSelected={onDeleteSelected}
+                    getRowId={(row) => row.id as string}
+                    exportFileName="note-di-campo"
+                    onOpenDetails={onOpenDetails}
+                    onBulkVerifySelected={onBulkVerifySelected}
+                    isBulkVerifyLoading={isBulkVerifying}
+                    bulkVerifyButtonLabel="Verifica"
+                  >
+                    {!isRightSidebarOpen && (
+                      <Button
+                        data-table-slot="right"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onToggleRightSidebar(true)}
+                        className="text-black hover:text-gray-700 cursor-pointer focus-visible:ring-0 focus-visible:outline-none"
+                        title="Apri chat AI"
+                      >
+                        <MessageSquare className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Chat AI</span>
+                      </Button>
+                    )}
+                  </EditableTable>
+                </div>
               </div>
-            </div>
-          )}
+            )}
           </div>
         </div>
 
-      {isRightSidebarOpen && (
-        <>
-          {/* Resizer */}
-          <div
-            onMouseDown={onResizeStart}
-            className={cn(
-              "w-1 flex-shrink-0 cursor-col-resize bg-slate-200 hover:bg-slate-300 transition-colors relative group",
-              isResizing && "bg-slate-400"
-            )}
-            style={{ userSelect: "none" }}
-          >
-            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <GripVertical className="h-4 w-4 text-slate-500" />
-            </div>
-          </div>
-
-          {/* Right Sidebar - Chat Panel */}
-          <div
-            className="flex-shrink-0 self-stretch overflow-hidden flex flex-col bg-white border-l border-slate-200"
-            style={{ width: `${rightSidebarWidth}px` }}
-          >
-            {/* Header unificato */}
-            <div className="flex-shrink-0 p-3 border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-slate-700">
-                  Chat AI Assistant
-                </span>
-                <ConnectionStatusBadge state={socketState} />
+        {isRightSidebarOpen && (
+          <>
+            {/* Resizer */}
+            <div
+              onMouseDown={onResizeStart}
+              className={cn(
+                "w-1 flex-shrink-0 cursor-col-resize bg-slate-200 hover:bg-slate-300 transition-colors relative group",
+                isResizing && "bg-slate-400",
+              )}
+              style={{ userSelect: "none" }}
+            >
+              <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <GripVertical className="h-4 w-4 text-slate-500" />
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onToggleRightSidebar(false)}
-                className="h-7 w-7 p-0"
-                title="Chiudi pannello"
-              >
-                <PanelRightClose className="h-4 w-4 text-slate-500" />
-              </Button>
             </div>
 
-            {/* Chat Content */}
-            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-              <FieldNoteChatPanel 
-                onFieldNoteSaved={onFieldNoteSaved}
-                onSocketStateChange={setSocketState}
-              />
+            {/* Right Sidebar - Chat Panel */}
+            <div
+              className="flex-shrink-0 self-stretch overflow-hidden flex flex-col bg-white border-l border-slate-200"
+              style={{ width: `${rightSidebarWidth}px` }}
+            >
+              {/* Header unificato */}
+              <div className="flex-shrink-0 p-3 border-b border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Chat AI Assistant
+                  </span>
+                  <ConnectionStatusBadge state={socketState} />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onToggleRightSidebar(false)}
+                  className="h-7 w-7 p-0"
+                  title="Chiudi pannello"
+                >
+                  <PanelRightClose className="h-4 w-4 text-slate-500" />
+                </Button>
+              </div>
+
+              {/* Chat Content */}
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                <FieldNoteChatPanel
+                  onFieldNoteSaved={onFieldNoteSaved}
+                  onSocketStateChange={setSocketState}
+                />
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
       </div>
     </div>
   );

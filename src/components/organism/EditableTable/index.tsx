@@ -176,6 +176,12 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       exportFileName,
       customExportConfig,
       getRowClassName,
+      createDrawerChoiceTitle,
+      createDrawerChoiceDescription,
+      createDrawerImportTitle,
+      createDrawerImportDescription,
+      createDrawerFormTitle,
+      createDrawerFormDescription,
     } = props;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -546,6 +552,12 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
               onSave={tableState.handleCreateSave}
               onCellChange={tableState.handleCreateCellChange}
               renderInput={renderInput}
+              choiceTitle={createDrawerChoiceTitle}
+              choiceDescription={createDrawerChoiceDescription}
+              importTitle={createDrawerImportTitle}
+              importDescription={createDrawerImportDescription}
+              formTitle={createDrawerFormTitle}
+              formDescription={createDrawerFormDescription}
             />
           )}
         </React.Fragment>
@@ -711,6 +723,12 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
             onSave={tableState.handleCreateSave}
             onCellChange={tableState.handleCreateCellChange}
             renderInput={renderInput}
+            choiceTitle={createDrawerChoiceTitle}
+            choiceDescription={createDrawerChoiceDescription}
+            importTitle={createDrawerImportTitle}
+            importDescription={createDrawerImportDescription}
+            formTitle={createDrawerFormTitle}
+            formDescription={createDrawerFormDescription}
           />
         )}
 

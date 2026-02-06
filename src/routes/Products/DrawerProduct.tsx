@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Product, StockEntry, productsApiService } from "@/api/products";
+import { stocksApiService } from "@/api/stocks";
 import {
   Sheet,
   SheetContent,
@@ -91,6 +92,16 @@ class DateFormatter {
       year: "numeric",
     }).format(date);
   }
+
+  public static toInputValue(dateInput?: string | null): string {
+    if (!dateInput) return "";
+    const date = new Date(dateInput);
+    if (Number.isNaN(date.getTime())) return "";
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
 }
 
 class JobDetailsPresenter {
@@ -158,7 +169,7 @@ class JobDetailsPresenter {
       details.push({
         label: "Dose trattata",
         value: `${StockFormatter.formatQuantity(
-          this.job.productQuantityTreated
+          this.job.productQuantityTreated,
         )} ${this.job.unitOfMeasureProductQuantityTreated}`,
       });
     }
@@ -293,7 +304,7 @@ class StockDataProcessor {
         stock.createdAt ??
           stock.job?.dateOfOpeation ??
           stock.job?.dateOfOperation ??
-          null
+          null,
       ) ?? null;
     return formatted ?? `Mov. ${index + 1}`;
   }
@@ -400,8 +411,16 @@ function DrawerProduct({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [detailView, setDetailView] = useState<"movements" | "chart">(
-    "movements"
+    "movements",
   );
+  const [editingStock, setEditingStock] = useState<StockEntry | null>(null);
+  const [stockEditForm, setStockEditForm] = useState<{
+    ddtDate: string;
+    ddtCode: string;
+    invoiceCode: string;
+    date: string;
+  }>({ ddtDate: "", ddtCode: "", invoiceCode: "", date: "" });
+  const [isUpdatingStock, setIsUpdatingStock] = useState(false);
 
   const {
     product: detailedProduct,
@@ -423,7 +442,7 @@ function DrawerProduct({
 
   const unitAnalyzer = useMemo(
     () => new StockUnitAnalyzer(product?.stocks ?? []),
-    [product]
+    [product],
   );
   const preferredUnit = unitAnalyzer.getPreferredUnit();
   const hasMixedUnits = unitAnalyzer.hasMixedUnits();
@@ -431,12 +450,12 @@ function DrawerProduct({
 
   const processor = useMemo(
     () => (product ? new StockDataProcessor(product.stocks) : null),
-    [product]
+    [product],
   );
 
   const chartData = useMemo(
     () => (processor ? processor.processForChart(preferredUnit) : []),
-    [processor, preferredUnit]
+    [processor, preferredUnit],
   );
   const dateFormatter = useMemo(() => new DateFormatter(), []);
 
@@ -490,6 +509,57 @@ function DrawerProduct({
 
   const handleStockCreated = () => {
     queryClient.invalidateQueries({ queryKey: ["products", "me"] });
+  };
+
+  const openStockEdit = (stock: StockEntry) => {
+    setEditingStock(stock);
+    setStockEditForm({
+      ddtDate: DateFormatter.toInputValue(stock.ddtDate ?? null),
+      ddtCode: stock.ddtCode ?? "",
+      invoiceCode: stock.invoiceCode ?? "",
+      date: DateFormatter.toInputValue(stock.createdAt ?? null),
+    });
+  };
+
+  const closeStockEdit = () => {
+    setEditingStock(null);
+    setIsUpdatingStock(false);
+  };
+
+  const toIsoDate = (yyyyMmDd: string): string | null => {
+    if (!yyyyMmDd || yyyyMmDd.length < 10) return null;
+    return `${yyyyMmDd}T12:00:00.000Z`;
+  };
+
+  const handleSaveStockEdit = async () => {
+    if (!editingStock || !product) return;
+    const companyId = product.warehouse?.company?.id;
+    if (!companyId) {
+      toast.error("Impossibile determinare l'azienda");
+      return;
+    }
+    setIsUpdatingStock(true);
+    try {
+      await stocksApiService.update(editingStock.id, {
+        companyId,
+        ddtCode: stockEditForm.ddtCode?.trim() || null,
+        ddtDate: toIsoDate(stockEditForm.ddtDate) ?? null,
+        invoiceCode: stockEditForm.invoiceCode?.trim() || null,
+        invoiceDate: toIsoDate(stockEditForm.date) ?? null,
+      });
+      toast.success("Movimento aggiornato");
+      queryClient.invalidateQueries({ queryKey: ["products", "me"] });
+      queryClient.invalidateQueries({
+        queryKey: ["products", "detail", productId ?? ""],
+      });
+      closeStockEdit();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Errore nell'aggiornamento",
+      );
+    } finally {
+      setIsUpdatingStock(false);
+    }
   };
 
   if (!product || !processor) {
@@ -550,8 +620,8 @@ function DrawerProduct({
                     totalStock > 50
                       ? "default"
                       : totalStock > 0
-                      ? "secondary"
-                      : "destructive"
+                        ? "secondary"
+                        : "destructive"
                   }
                 >
                   Stock: {formattedTotalStock} {unit}
@@ -649,7 +719,7 @@ function DrawerProduct({
               value={detailView}
               onValueChange={(value) =>
                 setDetailView(
-                  value === "chart" ? "chart" : ("movements" as const)
+                  value === "chart" ? "chart" : ("movements" as const),
                 )
               }
               className="space-y-3"
@@ -683,10 +753,11 @@ function DrawerProduct({
                 {product.stocks.length > 0 ? (
                   <div className="space-y-3">
                     {product.stocks.map((stock) => {
+                      const isEditing = editingStock?.id === stock.id;
                       const presenter = new JobDetailsPresenter(stock.job);
                       const operationDetails = presenter.getDetails();
                       const recordedDate = dateFormatter.format(
-                        stock.createdAt ?? null
+                        stock.createdAt ?? null,
                       );
                       const operationDate = presenter.getOperationDate();
                       return (
@@ -695,90 +766,238 @@ function DrawerProduct({
                           className="border border-gray-200 shadow-none "
                         >
                           <CardContent className="p-4 space-y-3">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex items-start gap-3">
-                                {stock.type === "IN" ? (
-                                  <TrendingUp className="h-5 w-5 text-green-600" />
-                                ) : (
-                                  <TrendingDown className="h-5 w-5 text-red-600" />
-                                )}
-                                <div>
-                                  <p className="font-medium text-sm">
-                                    {stock.type === "IN" ? "Carico" : "Scarico"}
-                                  </p>
-                                  <p className="text-xs text-gray-500">
-                                    {presenter.hasJob()
-                                      ? `Operazione: ${presenter.getOperationName()}`
-                                      : "Operazione non collegata"}
-                                  </p>
-                                  {operationDate && (
-                                    <p className="text-xs text-muted-foreground">
-                                      {operationDate}
-                                    </p>
-                                  )}
-                                  {stock.job?.isVerified && (
-                                    <Badge
-                                      variant="outline"
-                                      className="mt-1 text-xs py-0"
+                            {isEditing ? (
+                              <>
+                                <h4 className="text-sm font-semibold">
+                                  Modifica dati movimento
+                                </h4>
+                                <div className="grid gap-3">
+                                  <div className="grid gap-1.5">
+                                    <Label
+                                      htmlFor={`edit-ddt-date-${stock.id}`}
+                                      className="text-xs"
                                     >
-                                      Verificato
-                                    </Badge>
-                                  )}
+                                      Data DDT
+                                    </Label>
+                                    <Input
+                                      id={`edit-ddt-date-${stock.id}`}
+                                      type="date"
+                                      value={stockEditForm.ddtDate}
+                                      onChange={(e) =>
+                                        setStockEditForm((prev) => ({
+                                          ...prev,
+                                          ddtDate: e.target.value,
+                                        }))
+                                      }
+                                    />
+                                  </div>
+                                  <div className="grid gap-1.5">
+                                    <Label
+                                      htmlFor={`edit-ddt-code-${stock.id}`}
+                                      className="text-xs"
+                                    >
+                                      Codice DDT
+                                    </Label>
+                                    <Input
+                                      id={`edit-ddt-code-${stock.id}`}
+                                      value={stockEditForm.ddtCode}
+                                      onChange={(e) =>
+                                        setStockEditForm((prev) => ({
+                                          ...prev,
+                                          ddtCode: e.target.value,
+                                        }))
+                                      }
+                                      placeholder="Codice DDT"
+                                    />
+                                  </div>
+                                  <div className="grid gap-1.5">
+                                    <Label
+                                      htmlFor={`edit-invoice-code-${stock.id}`}
+                                      className="text-xs"
+                                    >
+                                      Codice fatture
+                                    </Label>
+                                    <Input
+                                      id={`edit-invoice-code-${stock.id}`}
+                                      value={stockEditForm.invoiceCode}
+                                      onChange={(e) =>
+                                        setStockEditForm((prev) => ({
+                                          ...prev,
+                                          invoiceCode: e.target.value,
+                                        }))
+                                      }
+                                      placeholder="Codice fattura"
+                                    />
+                                  </div>
+                                  <div className="grid gap-1.5">
+                                    <Label
+                                      htmlFor={`edit-date-${stock.id}`}
+                                      className="text-xs"
+                                    >
+                                      Data
+                                    </Label>
+                                    <Input
+                                      id={`edit-date-${stock.id}`}
+                                      type="date"
+                                      value={stockEditForm.date}
+                                      onChange={(e) =>
+                                        setStockEditForm((prev) => ({
+                                          ...prev,
+                                          date: e.target.value,
+                                        }))
+                                      }
+                                    />
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="text-right">
-                                <p
-                                  className={`font-bold ${
-                                    stock.type === "IN"
-                                      ? "text-green-600"
-                                      : "text-red-600"
-                                  }`}
-                                >
-                                  {stock.type === "IN" ? "+" : "-"}
-                                  {StockFormatter.formatQuantity(
-                                    Number.isFinite(stock.quantity)
-                                      ? Math.abs(stock.quantity)
-                                      : 0
-                                  )}{" "}
-                                  {stock.unitOfMeasureQuantity}
-                                </p>
-                                {recordedDate && (
-                                  <p className="text-xs text-gray-500">
-                                    Registrato il {recordedDate}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            {presenter.hasJob() &&
-                              operationDetails.length > 0 && (
-                                <Accordion type="single" collapsible>
-                                  <AccordionItem
-                                    value={`job-${stock.id}`}
-                                    className="p-2 rounded-md"
+                                <div className="flex gap-2 pt-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={closeStockEdit}
+                                    disabled={isUpdatingStock}
                                   >
-                                    <AccordionTrigger className="text-sm">
-                                      Dettagli operazione
-                                    </AccordionTrigger>
-                                    <AccordionContent>
-                                      <div className="space-y-2 ">
-                                        {operationDetails.map((detail) => (
-                                          <div
-                                            key={`${stock.id}-${detail.label}`}
-                                            className="text-xs"
-                                          >
-                                            <span className="text-gray-500">
-                                              {detail.label}
-                                            </span>
-                                            <p className="font-medium text-gray-900">
-                                              {detail.value}
-                                            </p>
+                                    Annulla
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    onClick={handleSaveStockEdit}
+                                    disabled={isUpdatingStock}
+                                  >
+                                    {isUpdatingStock
+                                      ? "Salvataggio..."
+                                      : "Salva"}
+                                  </Button>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex items-start gap-3">
+                                    {stock.type === "IN" ? (
+                                      <TrendingUp className="h-5 w-5 text-green-600" />
+                                    ) : (
+                                      <TrendingDown className="h-5 w-5 text-red-600" />
+                                    )}
+                                    <div>
+                                      <p className="font-medium text-sm">
+                                        {stock.type === "IN"
+                                          ? "Carico"
+                                          : "Scarico"}
+                                      </p>
+                                      <p className="text-xs text-gray-500">
+                                        {presenter.hasJob()
+                                          ? `Operazione: ${presenter.getOperationName()}`
+                                          : "Operazione non collegata"}
+                                      </p>
+                                      {operationDate && (
+                                        <p className="text-xs text-muted-foreground">
+                                          {operationDate}
+                                        </p>
+                                      )}
+                                      {stock.job?.isVerified && (
+                                        <Badge
+                                          variant="outline"
+                                          className="mt-1 text-xs py-0"
+                                        >
+                                          Verificato
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p
+                                      className={`font-bold ${
+                                        stock.type === "IN"
+                                          ? "text-green-600"
+                                          : "text-red-600"
+                                      }`}
+                                    >
+                                      {stock.type === "IN" ? "+" : "-"}
+                                      {StockFormatter.formatQuantity(
+                                        Number.isFinite(stock.quantity)
+                                          ? Math.abs(stock.quantity)
+                                          : 0,
+                                      )}{" "}
+                                      {stock.unitOfMeasureQuantity}
+                                    </p>
+                                    {recordedDate && (
+                                      <p className="text-xs text-gray-500">
+                                        Registrato il {recordedDate}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
+                                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-4 gap-y-1 text-xs">
+                                    <span className="text-gray-500">
+                                      Data DDT:
+                                      <span className="ml-1 text-gray-900">
+                                        {dateFormatter.format(
+                                          stock.ddtDate ?? null,
+                                        ) ?? "—"}
+                                      </span>
+                                    </span>
+                                    <span className="text-gray-500">
+                                      Codice DDT:
+                                      <span className="ml-1 text-gray-900">
+                                        {stock.ddtCode ?? "—"}
+                                      </span>
+                                    </span>
+                                    <span className="text-gray-500">
+                                      Codice fatture:
+                                      <span className="ml-1 text-gray-900">
+                                        {stock.invoiceCode ?? "—"}
+                                      </span>
+                                    </span>
+                                    <span className="text-gray-500">
+                                      Data:
+                                      <span className="ml-1 text-gray-900">
+                                        {recordedDate ?? "—"}
+                                      </span>
+                                    </span>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 shrink-0"
+                                    onClick={() => openStockEdit(stock)}
+                                    aria-label="Modifica dati movimento"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                {presenter.hasJob() &&
+                                  operationDetails.length > 0 && (
+                                    <Accordion type="single" collapsible>
+                                      <AccordionItem
+                                        value={`job-${stock.id}`}
+                                        className="p-2 rounded-md"
+                                      >
+                                        <AccordionTrigger className="text-sm">
+                                          Dettagli operazione
+                                        </AccordionTrigger>
+                                        <AccordionContent>
+                                          <div className="space-y-2 ">
+                                            {operationDetails.map((detail) => (
+                                              <div
+                                                key={`${stock.id}-${detail.label}`}
+                                                className="text-xs"
+                                              >
+                                                <span className="text-gray-500">
+                                                  {detail.label}
+                                                </span>
+                                                <p className="font-medium text-gray-900">
+                                                  {detail.value}
+                                                </p>
+                                              </div>
+                                            ))}
                                           </div>
-                                        ))}
-                                      </div>
-                                    </AccordionContent>
-                                  </AccordionItem>
-                                </Accordion>
-                              )}
+                                        </AccordionContent>
+                                      </AccordionItem>
+                                    </Accordion>
+                                  )}
+                              </>
+                            )}
                           </CardContent>
                         </Card>
                       );
@@ -881,7 +1100,7 @@ function DrawerProduct({
                                       </span>
                                       <span className="font-bold text-blue-600 text-base">
                                         {StockFormatter.formatQuantity(
-                                          numValue
+                                          numValue,
                                         )}{" "}
                                         {unit}
                                       </span>

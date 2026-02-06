@@ -18,6 +18,9 @@ import { VisuraCameraleParser } from "@/utils/visuraCameraleParser";
 
 interface ImportCompanyByPdfProps {
   onImportSuccess: (companies: BulkCompanyInput[]) => void;
+  /** When true, render only the form content (no Drawer/Trigger); for use inside create drawer */
+  embedded?: boolean;
+  onCloseParentDrawer?: () => void;
 }
 
 /**
@@ -25,6 +28,8 @@ interface ImportCompanyByPdfProps {
  */
 export function ImportCompanyByPdf({
   onImportSuccess,
+  embedded = false,
+  onCloseParentDrawer,
 }: ImportCompanyByPdfProps): React.ReactElement {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -83,7 +88,7 @@ export function ImportCompanyByPdf({
     } catch (error) {
       console.error("Errore nell'estrazione del testo dal PDF:", error);
       throw new Error(
-        "Impossibile leggere il PDF. Assicurati che sia un file PDF valido."
+        "Impossibile leggere il PDF. Assicurati che sia un file PDF valido.",
       );
     }
   };
@@ -140,11 +145,14 @@ export function ImportCompanyByPdf({
 
       toast.success("Dati estratti con successo dal PDF");
 
-      // Chiudi il dialog e resetta lo stato
-      setIsDrawerOpen(false);
       setImportErrors([]);
       setImportWarnings([]);
       setExtractedText("");
+      if (embedded) {
+        onCloseParentDrawer?.();
+      } else {
+        setIsDrawerOpen(false);
+      }
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Errore sconosciuto";
@@ -179,7 +187,7 @@ export function ImportCompanyByPdf({
   };
 
   const handleFileInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ): void => {
     if (e.target.files && e.target.files[0]) {
       handleFileSelect(e.target.files[0]);
@@ -198,6 +206,125 @@ export function ImportCompanyByPdf({
       setDragActive(false);
     }
   };
+
+  const importContent = (
+    <div className="space-y-4 p-4 overflow-x-hidden">
+      {/* Area Drag & Drop */}
+      <div
+        className={`relative border-2 border-dashed rounded-lg p-8 transition-all duration-200 ${
+          dragActive
+            ? "border-primary bg-primary/5 scale-[1.02]"
+            : "border-gray-300 hover:border-gray-400"
+        } ${isProcessing ? "opacity-50 pointer-events-none" : ""}`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        <input
+          type="file"
+          accept=".pdf,application/pdf"
+          onChange={handleFileInputChange}
+          className="hidden"
+          id="pdf-file-input"
+          disabled={isProcessing}
+        />
+
+        <div className="flex flex-col items-center justify-center text-center">
+          {isProcessing ? (
+            <Spinner size={40} ariaLabel="Elaborazione PDF" className="mb-4" />
+          ) : (
+            <Upload
+              className={`h-12 w-12 mb-4 transition-colors ${
+                dragActive ? "text-primary" : "text-gray-400"
+              }`}
+            />
+          )}
+
+          {!isProcessing && (
+            <>
+              <h3 className="text-lg font-medium mb-2">
+                Trascina qui il PDF della visura camerale
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                oppure clicca per selezionare un file
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  document.getElementById("pdf-file-input")?.click()
+                }
+                disabled={isProcessing}
+              >
+                Seleziona File
+              </Button>
+              <p className="text-xs text-gray-400 mt-4">
+                Formati supportati: PDF
+              </p>
+            </>
+          )}
+
+          {isProcessing && (
+            <p className="text-sm text-gray-600">
+              Elaborazione del PDF in corso...
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Errori */}
+      {importErrors.length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="font-medium mb-2">
+              Errori trovati ({importErrors.length}):
+            </div>
+            <ul className="list-disc list-inside space-y-1 text-xs">
+              {importErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Warnings */}
+      {importWarnings.length > 0 && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="font-medium mb-2">
+              Avvisi ({importWarnings.length}):
+            </div>
+            <ul className="list-disc list-inside space-y-1 text-xs">
+              {importWarnings.map((warning, index) => (
+                <li key={index}>{warning}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Testo estratto (debug - solo per sviluppo) */}
+      {extractedText && import.meta.env.DEV && (
+        <details className="bg-gray-50 p-4 rounded-lg">
+          <summary className="font-medium text-sm mb-2 cursor-pointer">
+            Testo estratto (debug)
+          </summary>
+          <pre className="text-xs text-gray-600 whitespace-pre-wrap max-h-40 overflow-y-auto">
+            {extractedText.substring(0, 1000)}
+            {extractedText.length > 1000 && "..."}
+          </pre>
+        </details>
+      )}
+    </div>
+  );
+
+  if (embedded) {
+    return importContent;
+  }
 
   return (
     <Drawer open={isDrawerOpen} onOpenChange={handleDrawerOpenChange}>
@@ -221,123 +348,7 @@ export function ImportCompanyByPdf({
             verranno estratti automaticamente.
           </DrawerDescription>
         </DrawerHeader>
-
-        <div className="space-y-4 p-4 overflow-x-hidden">
-          {/* Area Drag & Drop */}
-          <div
-            className={`relative border-2 border-dashed rounded-lg p-8 transition-all duration-200 ${
-              dragActive
-                ? "border-primary bg-primary/5 scale-[1.02]"
-                : "border-gray-300 hover:border-gray-400"
-            } ${isProcessing ? "opacity-50 pointer-events-none" : ""}`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-          >
-            <input
-              type="file"
-              accept=".pdf,application/pdf"
-              onChange={handleFileInputChange}
-              className="hidden"
-              id="pdf-file-input"
-              disabled={isProcessing}
-            />
-
-            <div className="flex flex-col items-center justify-center text-center">
-              {isProcessing ? (
-                <Spinner
-                  size={40}
-                  ariaLabel="Elaborazione PDF"
-                  className="mb-4"
-                />
-              ) : (
-                <Upload
-                  className={`h-12 w-12 mb-4 transition-colors ${
-                    dragActive ? "text-primary" : "text-gray-400"
-                  }`}
-                />
-              )}
-
-              {!isProcessing && (
-                <>
-                  <h3 className="text-lg font-medium mb-2">
-                    Trascina qui il PDF della visura camerale
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-4">
-                    oppure clicca per selezionare un file
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      document.getElementById("pdf-file-input")?.click()
-                    }
-                    disabled={isProcessing}
-                  >
-                    Seleziona File
-                  </Button>
-                  <p className="text-xs text-gray-400 mt-4">
-                    Formati supportati: PDF
-                  </p>
-                </>
-              )}
-
-              {isProcessing && (
-                <p className="text-sm text-gray-600">
-                  Elaborazione del PDF in corso...
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Errori */}
-          {importErrors.length > 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="font-medium mb-2">
-                  Errori trovati ({importErrors.length}):
-                </div>
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                  {importErrors.map((error, index) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Warnings */}
-          {importWarnings.length > 0 && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="font-medium mb-2">
-                  Avvisi ({importWarnings.length}):
-                </div>
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                  {importWarnings.map((warning, index) => (
-                    <li key={index}>{warning}</li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Testo estratto (debug - solo per sviluppo) */}
-          {extractedText && import.meta.env.DEV && (
-            <details className="bg-gray-50 p-4 rounded-lg">
-              <summary className="font-medium text-sm mb-2 cursor-pointer">
-                Testo estratto (debug)
-              </summary>
-              <pre className="text-xs text-gray-600 whitespace-pre-wrap max-h-40 overflow-y-auto">
-                {extractedText.substring(0, 1000)}
-                {extractedText.length > 1000 && "..."}
-              </pre>
-            </details>
-          )}
-        </div>
+        {importContent}
       </DrawerContent>
     </Drawer>
   );

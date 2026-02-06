@@ -20,6 +20,10 @@ export type StockEntry = {
   jobId: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+  ddtCode?: string | null;
+  ddtDate?: string | null;
+  invoiceCode?: string | null;
+  invoiceDate?: string | null;
   job: {
     id: string;
     isVerified: boolean;
@@ -309,7 +313,7 @@ export type GetVerifiedPhytosanitaryResponse = {
 
 export async function getProducts(
   companyName?: string,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<GetProductsResponse> {
   const url = new URL(`${baseUrl}/products/me`);
   if (companyName) {
@@ -333,7 +337,7 @@ export async function getProducts(
 
 export async function getProduct(
   productId: string,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<GetProductResponse> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/products/${encodeURIComponent(productId)}`,
@@ -343,7 +347,7 @@ export async function getProduct(
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-    }
+    },
   );
 
   if (!response.ok) {
@@ -357,7 +361,7 @@ export async function getProduct(
 export async function updateProduct(
   productId: string,
   payload: UpdateProductPayload,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<UpdateProductResponse> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/products/${encodeURIComponent(productId)}`,
@@ -368,7 +372,7 @@ export async function updateProduct(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -381,7 +385,7 @@ export async function updateProduct(
 
 export async function importProductsFromDdt(
   files: File[],
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<BulkFromDdtToProductListResponse> {
   if (!Array.isArray(files) || files.length === 0) {
     throw new Error("At least one DDT file is required to import products");
@@ -397,7 +401,7 @@ export async function importProductsFromDdt(
     {
       method: "POST",
       body: formData,
-    }
+    },
   );
 
   if (!response.ok) {
@@ -410,7 +414,7 @@ export async function importProductsFromDdt(
 
 export async function bulkImportProducts(
   payload: BulkImportProductsPayload,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<BulkImportProductsResponse> {
   if (!payload?.companyId) {
     throw new Error("Company identifier is required");
@@ -429,7 +433,7 @@ export async function bulkImportProducts(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -442,7 +446,7 @@ export async function bulkImportProducts(
 
 export async function bulkDeleteProducts(
   payload: BulkDeleteProductsPayload,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<BulkDeleteProductsResponse> {
   if (!payload?.companyId) {
     throw new Error("Company identifier is required");
@@ -461,7 +465,7 @@ export async function bulkDeleteProducts(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -503,7 +507,7 @@ export async function bulkDeleteProducts(
 
 export async function importFromCsvExcel(
   payload: ImportFromCsvExcelPayload,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<ImportFromCsvExcelResponse> {
   if (!payload?.companyId) {
     throw new Error("Company identifier is required");
@@ -526,7 +530,7 @@ export async function importFromCsvExcel(
     {
       method: "POST",
       body: formData,
-    }
+    },
   );
 
   if (!response.ok) {
@@ -539,7 +543,7 @@ export async function importFromCsvExcel(
 
 export async function importFromCsvExcelPreview(
   payload: ImportFromCsvExcelPayload,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<ImportFromCsvExcelPreviewResponse> {
   if (!payload?.companyId) {
     throw new Error("Company identifier is required");
@@ -562,7 +566,7 @@ export async function importFromCsvExcelPreview(
     {
       method: "POST",
       body: formData,
-    }
+    },
   );
 
   if (!response.ok) {
@@ -574,7 +578,7 @@ export async function importFromCsvExcelPreview(
 }
 
 export async function updateAdministrativeStatus(
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<UpdateAdministrativeStatusResponse> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/products/update-administrative-status`,
@@ -584,7 +588,7 @@ export async function updateAdministrativeStatus(
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-    }
+    },
   );
 
   if (!response.ok) {
@@ -597,7 +601,7 @@ export async function updateAdministrativeStatus(
 
 export async function getVerifiedPhytosanitary(
   companyId: string,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<GetVerifiedPhytosanitaryResponse> {
   if (!companyId) {
     throw new Error("Company identifier is required");
@@ -638,37 +642,37 @@ class ProductsApiService {
 
   public async update(
     productId: string,
-    payload: UpdateProductPayload
+    payload: UpdateProductPayload,
   ): Promise<UpdateProductResponse> {
     return await updateProduct(productId, payload, this.baseUrl);
   }
 
   public async importFromDdt(
-    files: File[]
+    files: File[],
   ): Promise<BulkFromDdtToProductListResponse> {
     return await importProductsFromDdt(files, this.baseUrl);
   }
 
   public async bulkImport(
-    payload: BulkImportProductsPayload
+    payload: BulkImportProductsPayload,
   ): Promise<BulkImportProductsResponse> {
     return await bulkImportProducts(payload, this.baseUrl);
   }
 
   public async bulkDelete(
-    payload: BulkDeleteProductsPayload
+    payload: BulkDeleteProductsPayload,
   ): Promise<BulkDeleteProductsResponse> {
     return await bulkDeleteProducts(payload, this.baseUrl);
   }
 
   public async importFromCsvExcel(
-    payload: ImportFromCsvExcelPayload
+    payload: ImportFromCsvExcelPayload,
   ): Promise<ImportFromCsvExcelResponse> {
     return await importFromCsvExcel(payload, this.baseUrl);
   }
 
   public async importFromCsvExcelPreview(
-    payload: ImportFromCsvExcelPayload
+    payload: ImportFromCsvExcelPayload,
   ): Promise<ImportFromCsvExcelPreviewResponse> {
     return await importFromCsvExcelPreview(payload, this.baseUrl);
   }
@@ -678,7 +682,7 @@ class ProductsApiService {
   }
 
   public async getVerifiedPhytosanitary(
-    companyId: string
+    companyId: string,
   ): Promise<GetVerifiedPhytosanitaryResponse> {
     return await getVerifiedPhytosanitary(companyId, this.baseUrl);
   }
@@ -691,7 +695,7 @@ class ProductsApiService {
         headers: {
           Accept: "text/csv",
         },
-      }
+      },
     );
 
     if (!response.ok) {

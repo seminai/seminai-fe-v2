@@ -10,12 +10,9 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SearchableSelect,
+  type SearchableSelectOption,
+} from "@/components/ui/searchable-select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { Upload, AlertCircle, CheckCircle, Download } from "lucide-react";
@@ -41,6 +38,21 @@ type Company = {
   companyName: string;
   fields: AvailableField[];
 };
+
+class CompanySearchOptionsFactory {
+  private readonly companies: Company[];
+
+  constructor(companies: Company[]) {
+    this.companies = companies;
+  }
+
+  public build(): SearchableSelectOption[] {
+    return this.companies.map((company) => ({
+      label: company.companyName,
+      value: company.companyId,
+    }));
+  }
+}
 
 export type ImportedProductionUnit = {
   id: string;
@@ -79,6 +91,9 @@ type ProductionUnitCsvImporterProps = {
   companies: Company[];
   onImportSuccess: (result: ImportResult) => void;
   openSignal?: number | null;
+  /** When true, render only the form content (no Drawer/Trigger); for use inside choice drawer */
+  embedded?: boolean;
+  onCloseParentDrawer?: () => void;
 };
 
 class FieldMatcher {
@@ -295,7 +310,13 @@ type AggregatedUnit = {
 
 export const ProductionUnitCsvImporter: React.FC<
   ProductionUnitCsvImporterProps
-> = ({ companies, onImportSuccess, openSignal }) => {
+> = ({
+  companies,
+  onImportSuccess,
+  openSignal,
+  embedded = false,
+  onCloseParentDrawer,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -314,6 +335,10 @@ export const ProductionUnitCsvImporter: React.FC<
   const selectedCompany = companies.find(
     (c) => c.companyId === selectedCompanyId,
   );
+
+  const companyOptions = React.useMemo(() => {
+    return new CompanySearchOptionsFactory(companies).build();
+  }, [companies]);
 
   /**
    * Gestisce il download del template Excel
@@ -496,6 +521,8 @@ export const ProductionUnitCsvImporter: React.FC<
     setExtractedUnits(null);
     setValidationErrors([]);
     setSelectedCompanyId("");
+    // Non chiamare onCloseParentDrawer qui - dopo l'import vogliamo mostrare l'anteprima,
+    // non tornare alla scelta. onCloseParentDrawer va chiamato solo su "Annulla".
   };
 
   const handleCancel = () => {
@@ -504,6 +531,9 @@ export const ProductionUnitCsvImporter: React.FC<
     setValidationErrors([]);
     setSelectedCompanyId("");
     setShowSupportForm(false);
+    if (embedded) {
+      onCloseParentDrawer?.();
+    }
   };
 
   /**
@@ -521,6 +551,153 @@ export const ProductionUnitCsvImporter: React.FC<
 
   const previewResult = extractedUnits ? buildImportResult() : null;
 
+  const importContent = (
+    <div className="space-y-4 p-4 flex flex-col flex-1">
+      {/* Selezione azienda in evidenza per prima */}
+      <div className="space-y-2">
+        <label className="text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+          Seleziona azienda di destinazione
+        </label>
+        <SearchableSelect
+          value={selectedCompanyId}
+          options={companyOptions}
+          placeholder="Seleziona un'azienda"
+          searchPlaceholder="Cerca azienda..."
+          emptyMessage="Nessuna azienda trovata"
+          onChange={setSelectedCompanyId}
+        />
+      </div>
+
+      {/* Area upload sotto alla selezione azienda */}
+      <div
+        className={`flex-1 transition-opacity duration-200 ${
+          !selectedCompanyId ? "opacity-50 pointer-events-none" : ""
+        }`}
+      >
+        <CsvFieldImporter
+          onFileSelect={handleFileSelect}
+          isProcessing={isLoading}
+        />
+      </div>
+
+      {!selectedCompanyId && (
+        <p className="text-xs text-muted-foreground text-center">
+          Seleziona un'azienda per abilitare l'upload del file
+        </p>
+      )}
+
+      {isLoading && (
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <Spinner size={20} ariaLabel="Elaborazione file" />
+          <span>
+            Estrazione unità produttive in corso... (potrebbe richiedere alcuni
+            secondi)
+          </span>
+        </div>
+      )}
+
+      {/* Validation errors */}
+      {validationErrors.length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="font-medium mb-2">
+              Errori trovati ({validationErrors.length}):
+            </div>
+            <ul className="list-disc list-inside space-y-1 text-xs">
+              {validationErrors.slice(0, 10).map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+              {validationErrors.length > 10 && (
+                <li className="text-muted-foreground">
+                  ... e altri {validationErrors.length - 10} errori
+                </li>
+              )}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Success preview */}
+      {previewResult && validationErrors.length === 0 && (
+        <Alert className="border-green-500 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription>
+            <p className="font-semibold text-green-900 mb-2">
+              File parsato con successo!
+            </p>
+            <div className="space-y-2 text-sm text-green-800">
+              <div className="bg-white p-3 rounded border">
+                <p className="font-medium">
+                  Azienda: {previewResult.companyName}
+                </p>
+                <p className="text-xs mt-1">
+                  • {previewResult.productionUnits.length} unità produttive
+                  trovate
+                </p>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Actions - Show import button when preview is ready */}
+      {previewResult && validationErrors.length === 0 && (
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button variant="outline" onClick={handleCancel}>
+            Annulla
+          </Button>
+          <Button
+            onClick={handleImport}
+            className="bg-agri-green-500 hover:bg-agri-green-600 text-white"
+          >
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Importa nella schermata
+          </Button>
+        </div>
+      )}
+
+      {showSupportForm && (
+        <div className="bg-white p-6 rounded-3xl border border-agri-green-100 text-left shadow-lg shadow-agri-green-50">
+          <h4 className="font-medium text-lg mb-4">Richiedi supporto</h4>
+          <p className="text-sm text-gray-600 mb-4">
+            In caso di problemi con l'importazione del file, compila il form qui
+            sotto per contattare il servizio di supporto.
+          </p>
+          <SupportRequestForm
+            onSuccess={handleSupportRequestSuccess}
+            className="shadow-none border-none bg-transparent p-0"
+          />
+        </div>
+      )}
+
+      {/* Footer: Scarica template a sinistra (testuale), Richiedi supporto a destra - space-between */}
+      <div className="flex justify-between items-center pt-4 mt-auto border-t">
+        <Button
+          type="button"
+          variant="link"
+          size="sm"
+          onClick={handleDownloadTemplate}
+          className="gap-2 p-0 h-auto font-normal"
+        >
+          <Download className="h-4 w-4" />
+          Scarica template
+        </Button>
+        <button
+          type="button"
+          onClick={() => setShowSupportForm(!showSupportForm)}
+          className="text-sm text-black hover:text-black underline transition-colors"
+        >
+          Richiedi supporto
+        </button>
+      </div>
+    </div>
+  );
+
+  if (embedded) {
+    return importContent;
+  }
+
   return (
     <Drawer open={isOpen} onOpenChange={handleDrawerOpenChange}>
       <DrawerTrigger asChild>
@@ -536,160 +713,14 @@ export const ProductionUnitCsvImporter: React.FC<
         <DrawerHeader>
           <DrawerTitle>Estrazione Automatica Unità Produttive</DrawerTitle>
           <DrawerDescription>
-            Il sistema supporta il formato Excel del template AGEA della misura
-            unica. Il formato varia in base alla regione. Seleziona l'azienda e
-            carica un file CSV. Il sistema estrarrà automaticamente i dati delle
-            unità produttive.
+            Il sistema supporta il formato del template AGEA della misura unica,
+            con parcelle e uso del suolo primario e secondario (CSV, XLS, XLSX).
+            Il formato può variare in base alla regione. Seleziona l'azienda e
+            carica un file; i dati delle unità produttive verranno estratti
+            automaticamente.
           </DrawerDescription>
         </DrawerHeader>
-
-        <div className="space-y-4 p-4 flex flex-col flex-1">
-          {/* Selezione azienda in evidenza per prima */}
-          <div className="space-y-2">
-            <label className="text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Seleziona azienda di destinazione
-            </label>
-            <Select
-              value={selectedCompanyId}
-              onValueChange={setSelectedCompanyId}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Seleziona un'azienda" />
-              </SelectTrigger>
-              <SelectContent>
-                {companies.map((company) => (
-                  <SelectItem key={company.companyId} value={company.companyId}>
-                    {company.companyName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Area upload sotto alla selezione azienda */}
-          <div
-            className={`flex-1 transition-opacity duration-200 ${
-              !selectedCompanyId ? "opacity-50 pointer-events-none" : ""
-            }`}
-          >
-            <CsvFieldImporter
-              onFileSelect={handleFileSelect}
-              isProcessing={isLoading}
-            />
-          </div>
-
-          {!selectedCompanyId && (
-            <p className="text-xs text-muted-foreground text-center">
-              Seleziona un'azienda per abilitare l'upload del file
-            </p>
-          )}
-
-          {isLoading && (
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Spinner size={20} ariaLabel="Elaborazione file" />
-              <span>
-                Estrazione unità produttive in corso... (potrebbe richiedere
-                alcuni secondi)
-              </span>
-            </div>
-          )}
-
-          {/* Validation errors */}
-          {validationErrors.length > 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <div className="font-medium mb-2">
-                  Errori trovati ({validationErrors.length}):
-                </div>
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                  {validationErrors.slice(0, 10).map((error, index) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                  {validationErrors.length > 10 && (
-                    <li className="text-muted-foreground">
-                      ... e altri {validationErrors.length - 10} errori
-                    </li>
-                  )}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Success preview */}
-          {previewResult && validationErrors.length === 0 && (
-            <Alert className="border-green-500 bg-green-50">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription>
-                <p className="font-semibold text-green-900 mb-2">
-                  File parsato con successo!
-                </p>
-                <div className="space-y-2 text-sm text-green-800">
-                  <div className="bg-white p-3 rounded border">
-                    <p className="font-medium">
-                      Azienda: {previewResult.companyName}
-                    </p>
-                    <p className="text-xs mt-1">
-                      • {previewResult.productionUnits.length} unità produttive
-                      trovate
-                    </p>
-                  </div>
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Actions - Show import button when preview is ready */}
-          {previewResult && validationErrors.length === 0 && (
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={handleCancel}>
-                Annulla
-              </Button>
-              <Button
-                onClick={handleImport}
-                className="bg-agri-green-500 hover:bg-agri-green-600 text-white"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Importa nella schermata
-              </Button>
-            </div>
-          )}
-
-          {showSupportForm && (
-            <div className="bg-white p-6 rounded-3xl border border-agri-green-100 text-left shadow-lg shadow-agri-green-50">
-              <h4 className="font-medium text-lg mb-4">Richiedi supporto</h4>
-              <p className="text-sm text-gray-600 mb-4">
-                In caso di problemi con l'importazione del file, compila il form
-                qui sotto per contattare il servizio di supporto.
-              </p>
-              <SupportRequestForm
-                onSuccess={handleSupportRequestSuccess}
-                className="shadow-none border-none bg-transparent p-0"
-              />
-            </div>
-          )}
-
-          {/* Footer: Scarica template a sinistra (testuale), Richiedi supporto a destra - space-between */}
-          <div className="flex justify-between items-center pt-4 mt-auto border-t">
-            <Button
-              type="button"
-              variant="link"
-              size="sm"
-              onClick={handleDownloadTemplate}
-              className="gap-2 p-0 h-auto font-normal"
-            >
-              <Download className="h-4 w-4" />
-              Scarica template
-            </Button>
-            <button
-              type="button"
-              onClick={() => setShowSupportForm(!showSupportForm)}
-              className="text-sm text-black hover:text-black underline transition-colors"
-            >
-              Richiedi supporto
-            </button>
-          </div>
-        </div>
+        {importContent}
       </DrawerContent>
     </Drawer>
   );

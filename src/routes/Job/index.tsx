@@ -1238,6 +1238,7 @@ class JobTableRowBuilder {
       productionUnitName: productionUnit.name,
       cropName: productionUnit.cropName,
       cropType: productionUnit.cropType,
+      sauHa: productionUnit.sauHa ?? null,
       fields: fields.length,
       category: job.category,
       quantity: job.quantity,
@@ -1342,6 +1343,10 @@ class JobExportRowFormatter {
 
   public getTreatedSurface(): unknown {
     return this.row.treatedSurface ?? "";
+  }
+
+  public getSauHa(): unknown {
+    return this.row.sauHa ?? "";
   }
 
   public getDoseMin(): unknown {
@@ -1451,6 +1456,10 @@ class JobExportConfigBuilder {
         {
           header: "Superficie (ha)",
           accessor: (row) => new JobExportRowFormatter(row).getTreatedSurface(),
+        },
+        {
+          header: "SAU (ha)",
+          accessor: (row) => new JobExportRowFormatter(row).getSauHa(),
         },
         {
           header: "Dose min",
@@ -1780,16 +1789,21 @@ export default function JobPage() {
 
   // Opzioni unità produttive per le select
   const productionUnitSelectOptions = useMemo(() => {
-    return productionUnits.map((pu) => ({
-      label: `${pu.productionUnit.name} (${pu.productionUnit.cropName})`,
-      value: pu.productionUnit.name, // Usa il nome come value per il filtro
-      id: pu.productionUnit.id, // Mantiene l'ID per la logica interna
-      name: pu.productionUnit.name,
-      cropName: pu.productionUnit.cropName,
-      cropType: pu.productionUnit.cropType,
-      companyId: pu.companyId,
-      companyName: pu.companyName,
-    }));
+    return productionUnits.map((pu) => {
+      const sauHa =
+        pu.fields?.reduce((sum, f) => sum + (f.sauHa ?? 0), 0) ?? undefined;
+      return {
+        label: `${pu.productionUnit.name} (${pu.productionUnit.cropName})`,
+        value: pu.productionUnit.name, // Usa il nome come value per il filtro
+        id: pu.productionUnit.id, // Mantiene l'ID per la logica interna
+        name: pu.productionUnit.name,
+        cropName: pu.productionUnit.cropName,
+        cropType: pu.productionUnit.cropType,
+        sauHa,
+        companyId: pu.companyId,
+        companyName: pu.companyName,
+      };
+    });
   }, [productionUnits]);
 
   // Map per lookup veloce delle unità produttive per nome e per value
@@ -2328,6 +2342,7 @@ export default function JobPage() {
             productionUnitName: "",
             cropName: "",
             cropType: "",
+            sauHa: undefined,
             ...preservedProductData,
           };
         }
@@ -2340,6 +2355,7 @@ export default function JobPage() {
             productionUnitName: selectedPu.name,
             cropName: selectedPu.cropName,
             cropType: selectedPu.cropType,
+            sauHa: selectedPu.sauHa,
             _companyId: selectedPu.companyId,
             companyName: selectedPu.companyName,
             _selectedCompanyForPU: selectedPu.companyId,
@@ -2353,6 +2369,7 @@ export default function JobPage() {
           productionUnitName: stringValue,
           cropName: "",
           cropType: "",
+          sauHa: undefined,
           ...preservedProductData,
         };
       },
@@ -2403,6 +2420,7 @@ export default function JobPage() {
             productionUnitName: "",
             cropName: "",
             cropType: "",
+            sauHa: undefined,
           };
         }
 
@@ -2421,6 +2439,7 @@ export default function JobPage() {
             productionUnitName: "",
             cropName: "",
             cropType: "",
+            sauHa: undefined,
           };
         }
 
@@ -2444,6 +2463,20 @@ export default function JobPage() {
       title: "Superficie Trattata (ha)",
       type: "number",
       width: "180px",
+      readOnly: true,
+      render: (value) => {
+        const numValue = Number(value);
+        if (isNaN(numValue) || numValue === 0) {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        return <span>{numValue.toFixed(2)}</span>;
+      },
+    },
+    {
+      id: "sauHa",
+      title: "SAU (ha)",
+      type: "number",
+      width: "120px",
       readOnly: true,
       render: (value) => {
         const numValue = Number(value);
@@ -3500,6 +3533,7 @@ export default function JobPage() {
       productionUnitName: "",
       cropName: "",
       cropType: "",
+      sauHa: undefined,
       _companyId: "",
       companyName: "",
       productRegistrationNumber: "",

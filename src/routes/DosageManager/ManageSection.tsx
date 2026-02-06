@@ -144,7 +144,7 @@ class OrchestratorCategoryPriorityList {
   public static move(
     list: string[],
     index: number,
-    direction: "up" | "down"
+    direction: "up" | "down",
   ): string[] {
     const next = [...list];
     const targetIndex = direction === "up" ? index - 1 : index + 1;
@@ -230,7 +230,7 @@ export function ManageSection({
       (product) => ({
         ...product,
         _internalId: `product-${Date.now()}-${++productIdCounterRef.current}`,
-      })
+      }),
     );
     setProducts(productsWithIds);
   };
@@ -252,17 +252,18 @@ export function ManageSection({
         description: c.description,
         searchAliases: c.aliases,
       })),
-    [orchestratorDatasets]
+    [orchestratorDatasets],
   );
 
   // Calculate valid date range from selected production units
+  // Allowing +/- 3 months buffer
   const validDateRange = useMemo(() => {
     if (selectedUnitIds.length === 0) {
       return { minDate: undefined, maxDate: undefined };
     }
 
     const selectedUnits = filteredUnits.filter((unit) =>
-      selectedUnitIds.includes(unit.productionUnit.id)
+      selectedUnitIds.includes(unit.productionUnit.id),
     );
 
     if (selectedUnits.length === 0) {
@@ -278,21 +279,31 @@ export function ManageSection({
       return { minDate: undefined, maxDate: undefined };
     }
 
-    const minDate = startDates.reduce((earliest, current) => {
+    const earliestDate = startDates.reduce((earliest, current) => {
       return current < earliest ? current : earliest;
     }, startDates[0]);
+
+    // Subtract 3 months from the earliest date
+    const minDateObj = new Date(earliestDate);
+    minDateObj.setMonth(minDateObj.getMonth() - 3);
+    const minDate = minDateObj.toISOString().split("T")[0];
 
     // Find the latest endDate (if any)
     const endDates = selectedUnits
       .map((unit) => unit.productionUnit.endDate)
       .filter((date): date is string => Boolean(date));
 
-    const maxDate =
-      endDates.length > 0
-        ? endDates.reduce((latest, current) => {
-            return current > latest ? current : latest;
-          }, endDates[0])
-        : undefined;
+    let maxDate: string | undefined;
+    if (endDates.length > 0) {
+      const latestDate = endDates.reduce((latest, current) => {
+        return current > latest ? current : latest;
+      }, endDates[0]);
+
+      // Add 3 months to the latest date
+      const maxDateObj = new Date(latestDate);
+      maxDateObj.setMonth(maxDateObj.getMonth() + 3);
+      maxDate = maxDateObj.toISOString().split("T")[0];
+    }
 
     return { minDate, maxDate };
   }, [selectedUnitIds, filteredUnits]);
@@ -306,7 +317,7 @@ export function ManageSection({
         groupLabel: t.group,
         searchAliases: t.aliases,
       })),
-    [orchestratorDatasets]
+    [orchestratorDatasets],
   );
 
   const companyOptions = useMemo<MultiSearchableSelectOption[]>(
@@ -315,7 +326,7 @@ export function ManageSection({
         value: company.id,
         label: company.name,
       })),
-    [companies]
+    [companies],
   );
 
   return (
@@ -463,7 +474,7 @@ export function ManageSection({
                 {(!selectedImportMethod ||
                   ImportMethodPolicy.isSelected(
                     selectedImportMethod,
-                    "registry"
+                    "registry",
                   )) && (
                   <Button
                     variant="outline"
@@ -476,7 +487,7 @@ export function ManageSection({
                       !!selectedImportMethod &&
                       !ImportMethodPolicy.isSelected(
                         selectedImportMethod,
-                        "registry"
+                        "registry",
                       )
                     }
                   >
@@ -487,7 +498,7 @@ export function ManageSection({
                 {(!selectedImportMethod ||
                   ImportMethodPolicy.isSelected(
                     selectedImportMethod,
-                    "warehouse"
+                    "warehouse",
                   )) && (
                   <Button
                     variant="outline"
@@ -503,15 +514,15 @@ export function ManageSection({
                       (!!selectedImportMethod &&
                         !ImportMethodPolicy.isSelected(
                           selectedImportMethod,
-                          "warehouse"
+                          "warehouse",
                         ))
                     }
                     title={
                       selectedCompanyIds.length === 0
                         ? "Seleziona almeno un'azienda per importare da magazzino"
                         : selectedCompanyIds.length > 1
-                        ? `Importa prodotti da ${selectedCompanyIds.length} aziende selezionate`
-                        : "Importa prodotti dal magazzino dell'azienda selezionata"
+                          ? `Importa prodotti da ${selectedCompanyIds.length} aziende selezionate`
+                          : "Importa prodotti dal magazzino dell'azienda selezionata"
                     }
                   >
                     {isWarehouseProductsLoading || isImportingFromWarehouse ? (
@@ -539,7 +550,7 @@ export function ManageSection({
                 {(!selectedImportMethod ||
                   ImportMethodPolicy.isSelected(
                     selectedImportMethod,
-                    "notes"
+                    "notes",
                   )) && (
                   <Button
                     variant="outline"
@@ -554,15 +565,15 @@ export function ManageSection({
                       (!!selectedImportMethod &&
                         !ImportMethodPolicy.isSelected(
                           selectedImportMethod,
-                          "notes"
+                          "notes",
                         ))
                     }
                     title={
                       selectedCompanyIds.length === 0
                         ? "Seleziona almeno un'azienda per importare da note"
                         : selectedCompanyIds.length > 1
-                        ? `Importa prodotti da note per ${selectedCompanyIds.length} aziende selezionate`
-                        : "Importa prodotti fitosanitari verificati dall'azienda selezionata"
+                          ? `Importa prodotti da note per ${selectedCompanyIds.length} aziende selezionate`
+                          : "Importa prodotti fitosanitari verificati dall'azienda selezionata"
                     }
                   >
                     {isImportingFromNotes ? (
@@ -586,7 +597,7 @@ export function ManageSection({
                 {(!selectedImportMethod ||
                   ImportMethodPolicy.isSelected(
                     selectedImportMethod,
-                    "csv"
+                    "csv",
                   )) && (
                   <ImportProducts
                     onAddRows={handleAddRowsFromCsv}
@@ -595,7 +606,7 @@ export function ManageSection({
                       !!selectedImportMethod &&
                       !ImportMethodPolicy.isSelected(
                         selectedImportMethod,
-                        "csv"
+                        "csv",
                       )
                     }
                     onSelectImportMethod={() => onSelectImportMethod("csv")}
@@ -604,7 +615,7 @@ export function ManageSection({
                 {(!selectedImportMethod ||
                   ImportMethodPolicy.isSelected(
                     selectedImportMethod,
-                    "ddt"
+                    "ddt",
                   )) && (
                   <ImportProductsFromDdt
                     onAddRows={handleAddRowsFromDdt}
@@ -613,7 +624,7 @@ export function ManageSection({
                       !!selectedImportMethod &&
                       !ImportMethodPolicy.isSelected(
                         selectedImportMethod,
-                        "ddt"
+                        "ddt",
                       )
                     }
                     onSelectImportMethod={() => onSelectImportMethod("ddt")}
@@ -768,9 +779,7 @@ export function ManageSection({
             <Checkbox
               id="loadWarehouse"
               checked={loadWarehouse}
-              onCheckedChange={(checked) =>
-                setLoadWarehouse(checked === true)
-              }
+              onCheckedChange={(checked) => setLoadWarehouse(checked === true)}
               disabled={selectedCompanyIds.length === 0}
               className="mt-0.5"
             />
@@ -828,18 +837,17 @@ export function ManageSection({
                         <p className="text-xs font-medium text-blue-900">
                           Range valido: dal{" "}
                           {new Date(validDateRange.minDate).toLocaleDateString(
-                            "it-IT"
+                            "it-IT",
                           )}
                           {validDateRange.maxDate
                             ? ` al ${new Date(
-                                validDateRange.maxDate
+                                validDateRange.maxDate,
                               ).toLocaleDateString("it-IT")}`
                             : " in poi"}
                         </p>
                         <p className="text-xs text-blue-700 mt-1">
-                          Il periodo deve essere compreso tra la prima data di
-                          inizio e l'ultima data di fine delle unità produttive
-                          selezionate.
+                          Puoi selezionare date fino a 3 mesi prima o dopo il
+                          periodo delle unità produttive selezionate.
                         </p>
                       </div>
                     )}
@@ -871,26 +879,6 @@ export function ManageSection({
                         <p className="text-xs text-neutral-500">
                           Data di inizio del periodo di trattamento
                         </p>
-                        {startAt &&
-                          validDateRange.minDate &&
-                          startAt < validDateRange.minDate && (
-                            <p className="text-xs text-red-600">
-                              La data non può essere prima del{" "}
-                              {new Date(
-                                validDateRange.minDate
-                              ).toLocaleDateString("it-IT")}
-                            </p>
-                          )}
-                        {startAt &&
-                          validDateRange.maxDate &&
-                          startAt > validDateRange.maxDate && (
-                            <p className="text-xs text-red-600">
-                              La data non può essere dopo il{" "}
-                              {new Date(
-                                validDateRange.maxDate
-                              ).toLocaleDateString("it-IT")}
-                            </p>
-                          )}
                       </div>
                       <div className="space-y-2">
                         <Label
@@ -916,26 +904,6 @@ export function ManageSection({
                         <p className="text-xs text-neutral-500">
                           Data di fine del periodo di trattamento
                         </p>
-                        {endAt &&
-                          validDateRange.minDate &&
-                          endAt < validDateRange.minDate && (
-                            <p className="text-xs text-red-600">
-                              La data non può essere prima del{" "}
-                              {new Date(
-                                validDateRange.minDate
-                              ).toLocaleDateString("it-IT")}
-                            </p>
-                          )}
-                        {endAt &&
-                          validDateRange.maxDate &&
-                          endAt > validDateRange.maxDate && (
-                            <p className="text-xs text-red-600">
-                              La data non può essere dopo il{" "}
-                              {new Date(
-                                validDateRange.maxDate
-                              ).toLocaleDateString("it-IT")}
-                            </p>
-                          )}
                         {endAt && startAt && endAt < startAt && (
                           <p className="text-xs text-red-600">
                             La data fine non può essere prima della data inizio
@@ -1079,7 +1047,7 @@ export function ManageSection({
                               placeholder={
                                 orchestratorSettings.intensity
                                   ? `Default da intensità: ${OrchestratorIntensityDefaults.getMaxProductsPerUnit(
-                                      orchestratorSettings.intensity as OrchestratorIntensity
+                                      orchestratorSettings.intensity as OrchestratorIntensity,
                                     )}`
                                   : "Default da intensità: Nessun limite"
                               }
@@ -1088,7 +1056,7 @@ export function ManageSection({
                                 undefined
                                   ? ""
                                   : String(
-                                      orchestratorSettings.maxProductsPerUnit
+                                      orchestratorSettings.maxProductsPerUnit,
                                     )
                               }
                               onChange={(e) => {
@@ -1096,8 +1064,8 @@ export function ManageSection({
                                   OrchestratorSettingsUpdater.setNumber(
                                     prev,
                                     "maxProductsPerUnit",
-                                    e.target.value
-                                  )
+                                    e.target.value,
+                                  ),
                                 );
                               }}
                               className="bg-white"
@@ -1120,7 +1088,7 @@ export function ManageSection({
                                 undefined
                                   ? ""
                                   : String(
-                                      orchestratorSettings.maxApplicationsPerProductPerUnit
+                                      orchestratorSettings.maxApplicationsPerProductPerUnit,
                                     )
                               }
                               onChange={(e) => {
@@ -1128,8 +1096,8 @@ export function ManageSection({
                                   OrchestratorSettingsUpdater.setNumber(
                                     prev,
                                     "maxApplicationsPerProductPerUnit",
-                                    e.target.value
-                                  )
+                                    e.target.value,
+                                  ),
                                 );
                               }}
                               className="bg-white"
@@ -1153,8 +1121,8 @@ export function ManageSection({
                                   OrchestratorSettingsUpdater.setNumber(
                                     prev,
                                     "maxTotalJobs",
-                                    e.target.value
-                                  )
+                                    e.target.value,
+                                  ),
                                 );
                               }}
                               className="bg-white"
@@ -1214,7 +1182,7 @@ export function ManageSection({
                               {categoryPriority.map((id, index) => {
                                 const cat =
                                   orchestratorDatasets.categories.find(
-                                    (c) => c.id === id
+                                    (c) => c.id === id,
                                   ) ?? null;
                                 const label = cat ? cat.label : id;
                                 return (
@@ -1243,7 +1211,7 @@ export function ManageSection({
                                               OrchestratorCategoryPriorityList.move(
                                                 prev.categoryPriority ?? [],
                                                 index,
-                                                "up"
+                                                "up",
                                               ),
                                           }))
                                         }
@@ -1263,7 +1231,7 @@ export function ManageSection({
                                               OrchestratorCategoryPriorityList.move(
                                                 prev.categoryPriority ?? [],
                                                 index,
-                                                "down"
+                                                "down",
                                               ),
                                           }))
                                         }
@@ -1284,7 +1252,7 @@ export function ManageSection({
                                             categoryPriority:
                                               OrchestratorCategoryPriorityList.remove(
                                                 prev.categoryPriority ?? [],
-                                                id
+                                                id,
                                               ),
                                           }))
                                         }

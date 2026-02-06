@@ -130,7 +130,7 @@ export default function Company(): React.ReactElement {
   const navigate = useNavigate();
   const detailsNavigator = React.useMemo(
     () => new CompanyDetailsNavigator(navigate),
-    [navigate]
+    [navigate],
   );
 
   const {
@@ -269,7 +269,7 @@ export default function Company(): React.ReactElement {
     (row: Record<string, unknown>): void => {
       detailsNavigator.open(row);
     },
-    [detailsNavigator]
+    [detailsNavigator],
   );
 
   return (
@@ -301,6 +301,8 @@ export default function Company(): React.ReactElement {
             onSave={handleSave}
             onOpenDetails={handleOpenDetails}
             exportFileName="aziende"
+            createDrawerImportTitle="Importa file"
+            createDrawerImportDescription="Il formato è la visura camerale PDF."
             newRowDefaults={{
               name: "",
               vatNumber: "",
@@ -320,7 +322,10 @@ export default function Company(): React.ReactElement {
             className="bg-background"
           >
             <div data-editable-table-slot="create-drawer">
-              <ImportCompanyByPdf onImportSuccess={handleImportFromPdf} />
+              <ImportCompanyByPdf
+                embedded
+                onImportSuccess={handleImportFromPdf}
+              />
             </div>
           </EditableTable>
         )}
