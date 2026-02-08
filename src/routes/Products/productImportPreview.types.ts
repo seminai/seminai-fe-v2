@@ -1,4 +1,4 @@
-export type ProductImportSource = "ddt" | "csv" | "excel";
+export type ProductImportSource = "ddt" | "csv" | "excel" | "invoice";
 
 export type ImportPreviewError = {
   row?: number;

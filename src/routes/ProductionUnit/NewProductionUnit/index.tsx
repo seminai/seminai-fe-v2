@@ -979,8 +979,8 @@ export default function NewProductionUnit(): React.ReactElement {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Schermata scelta: Creazione manuale o Importa da file */}
         {creationMode === null && (
-          <div className="flex-1 overflow-auto px-6 pb-6 flex items-center justify-center">
-            <div className="w-full max-w-lg">
+          <div className="flex-1 overflow-auto px-6 pb-6">
+            <div className="py-12">
               <h2 className="text-xl font-semibold text-center mb-2">
                 Come vuoi creare le unità produttive?
               </h2>
@@ -988,7 +988,7 @@ export default function NewProductionUnit(): React.ReactElement {
                 Scegli tra creazione manuale (selezione campi e dati) o
                 importazione da file (CSV/XLS template AGEA).
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
                 <Button
                   variant="outline"
                   size="lg"
@@ -1026,7 +1026,7 @@ export default function NewProductionUnit(): React.ReactElement {
           <div className="flex-1 overflow-auto px-6 pb-6">
             {/* Step 1 - Import da file: solo importer inline */}
             {creationMode === "import" ? (
-              <div className="max-w-4xl mx-auto py-6">
+              <div className="py-6">
                 <h3 className="text-lg font-semibold mb-2">Importa da file</h3>
                 <p className="text-sm text-muted-foreground mb-6">
                   Il sistema supporta il formato del template AGEA della misura

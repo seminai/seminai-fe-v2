@@ -99,6 +99,34 @@ export type GetProductResponse = {
   };
 };
 
+export type CreateProductPayload = {
+  companyId: string;
+  warehouseId: string;
+  name: string;
+  sku: string;
+  category?: string;
+  type?: string;
+  stock?: {
+    quantity: number;
+    unitOfMeasureQuantity: string;
+    price?: number;
+    unitOfMeasurePrice?: string;
+    type?: "IN" | "OUT";
+    ddtCode?: string;
+    invoiceDate?: string;
+    invoiceCode?: string;
+    companySupplierName?: string;
+    vatNumberSupplier?: string;
+  };
+};
+
+export type CreateProductResponse = {
+  status: "success" | string;
+  data?: {
+    product?: Product;
+  };
+};
+
 export type UpdateProductPayload = {
   name?: string;
   description?: string;
@@ -146,6 +174,29 @@ export type BulkFromDdtToProductListResponse = {
     totalEntries?: number;
     results?: BulkFromDdtFileResult[];
     suggestedProducts?: BulkFromDdtSuggestedProduct[];
+  };
+};
+
+export type InvoiceProduct = {
+  productName: string;
+  registrationNumber?: string | null;
+  productCategory?: "PHYTOSANITARY" | "FERTILIZER" | "OTHER" | string | null;
+  quantity: number | null;
+  quantityUnitOfMeasure: string | null;
+  supplierName?: string | null;
+  supplierVat?: string | null;
+  invoiceNumber?: string | null;
+  invoiceDate?: string | null;
+  unitPrice?: number | null;
+  totalPrice?: number | null;
+};
+
+export type InvoiceExtractionResponse = {
+  status: "success" | string;
+  data?: {
+    suggestedProducts: InvoiceProduct[];
+    totalEntries: number;
+    filesProcessed: number;
   };
 };
 
@@ -311,6 +362,37 @@ export type GetVerifiedPhytosanitaryResponse = {
   };
 };
 
+export async function createProduct(
+  payload: CreateProductPayload,
+  baseUrl: string = BASE_URL,
+): Promise<CreateProductResponse> {
+  if (!payload?.companyId) {
+    throw new Error("Company identifier is required");
+  }
+  if (!payload?.name) {
+    throw new Error("Product name is required");
+  }
+
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/products`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Create product failed");
+  }
+
+  return (await response.json()) as CreateProductResponse;
+}
+
 export async function getProducts(
   companyName?: string,
   baseUrl: string = BASE_URL,
@@ -410,6 +492,39 @@ export async function importProductsFromDdt(
   }
 
   return (await response.json()) as BulkFromDdtToProductListResponse;
+}
+
+export async function importProductsFromInvoice(
+  files: File[],
+  baseUrl: string = BASE_URL,
+): Promise<InvoiceExtractionResponse> {
+  if (!Array.isArray(files) || files.length === 0) {
+    throw new Error("At least one invoice file is required");
+  }
+
+  if (files.length > 10) {
+    throw new Error("Maximum 10 files per request");
+  }
+
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append("files", file);
+  });
+
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/products/bulk-from-invoice-to-product-list`,
+    {
+      method: "POST",
+      body: formData,
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Invoice extraction failed");
+  }
+
+  return (await response.json()) as InvoiceExtractionResponse;
 }
 
 export async function bulkImportProducts(
@@ -632,6 +747,12 @@ class ProductsApiService {
     this.baseUrl = baseUrl;
   }
 
+  public async create(
+    payload: CreateProductPayload,
+  ): Promise<CreateProductResponse> {
+    return await createProduct(payload, this.baseUrl);
+  }
+
   public async getAll(companyName?: string): Promise<GetProductsResponse> {
     return await getProducts(companyName, this.baseUrl);
   }
@@ -651,6 +772,12 @@ class ProductsApiService {
     files: File[],
   ): Promise<BulkFromDdtToProductListResponse> {
     return await importProductsFromDdt(files, this.baseUrl);
+  }
+
+  public async importFromInvoice(
+    files: File[],
+  ): Promise<InvoiceExtractionResponse> {
+    return await importProductsFromInvoice(files, this.baseUrl);
   }
 
   public async bulkImport(

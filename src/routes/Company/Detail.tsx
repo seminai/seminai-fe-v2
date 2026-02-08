@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { type Company, type BulkCompanyUpdateInput } from "@/api/companies";
 import { useCompanies } from "@/hooks/useCompanies";
 import {
@@ -43,7 +43,7 @@ class CompanyDetailPageController {
 
   public buildBreadcrumbNodes(
     company?: Company,
-    activeTab?: ActiveTab
+    activeTab?: ActiveTab,
   ): BreadcrumbNode[] {
     const nodes: BreadcrumbNode[] = [{ label: "Aziende", href: "/company" }];
 
@@ -75,7 +75,7 @@ class CompanyDetailPageController {
 
   public handleUpdate(
     updateFn: (payload: BulkCompanyUpdateInput[]) => void,
-    update: BulkCompanyUpdateInput
+    update: BulkCompanyUpdateInput,
   ): void {
     if (!update.id) {
       return;
@@ -89,33 +89,46 @@ export default function CompanyDetailPage(): React.ReactElement {
   const companyId = params.id ?? "";
   const controller = React.useMemo(
     () => new CompanyDetailPageController(companyId),
-    [companyId]
+    [companyId],
   );
 
   const { companies, isLoading, error, updateCompanies, isUpdating, refetch } =
     useCompanies();
 
-  const [activeTab, setActiveTab] = React.useState<ActiveTab>("details");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") as ActiveTab | null;
+  const validTabs: ActiveTab[] = [
+    "details",
+    "users",
+    "warehouses",
+    "files",
+    "machines",
+  ];
+  const activeTab: ActiveTab =
+    tabFromUrl && validTabs.includes(tabFromUrl) ? tabFromUrl : "details";
 
   const company = React.useMemo(
     () => controller.findCompany(companies),
-    [controller, companies]
+    [controller, companies],
   );
   const breadcrumbNodes = React.useMemo(
     () => controller.buildBreadcrumbNodes(company, activeTab),
-    [controller, company, activeTab]
+    [controller, company, activeTab],
   );
 
   const handleUpdate = React.useCallback(
     (update: BulkCompanyUpdateInput): void => {
       controller.handleUpdate(updateCompanies, update);
     },
-    [controller, updateCompanies]
+    [controller, updateCompanies],
   );
 
-  const handleTabChange = React.useCallback((tab: ActiveTab): void => {
-    setActiveTab(tab);
-  }, []);
+  const handleTabChange = React.useCallback(
+    (tab: ActiveTab): void => {
+      setSearchParams(tab === "details" ? {} : { tab }, { replace: true });
+    },
+    [setSearchParams],
+  );
 
   const glassPanelClass = "bg-white p-4 md:p-8";
 

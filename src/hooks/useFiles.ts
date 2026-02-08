@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   type CompanyFile,
   filesApiService,
@@ -13,6 +13,7 @@ interface UseFilesResult {
   refetch: () => Promise<void>;
   uploadFile: (request: UploadFileRequest) => Promise<void>;
   isUploading: boolean;
+  updateFileLocally: (fileId: string, updates: Partial<CompanyFile>) => void;
 }
 
 export function useFiles(companyId: string): UseFilesResult {
@@ -21,6 +22,7 @@ export function useFiles(companyId: string): UseFilesResult {
   const [isError, setIsError] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const hasLoadedOnceRef = useRef(false);
 
   const fetchFiles = useCallback(async () => {
     if (!companyId) {
@@ -28,13 +30,16 @@ export function useFiles(companyId: string): UseFilesResult {
       return;
     }
 
-    setIsLoading(true);
+    if (!hasLoadedOnceRef.current) {
+      setIsLoading(true);
+    }
     setIsError(false);
     setError(null);
 
     try {
       const response = await filesApiService.getCompanyFiles(companyId);
       setFiles(response.data.files);
+      hasLoadedOnceRef.current = true;
     } catch (err) {
       setIsError(true);
       setError(err instanceof Error ? err : new Error("Unknown error"));
@@ -45,6 +50,7 @@ export function useFiles(companyId: string): UseFilesResult {
   }, [companyId]);
 
   useEffect(() => {
+    hasLoadedOnceRef.current = false;
     void fetchFiles();
   }, [fetchFiles]);
 
@@ -60,7 +66,16 @@ export function useFiles(companyId: string): UseFilesResult {
         setIsUploading(false);
       }
     },
-    [fetchFiles]
+    [fetchFiles],
+  );
+
+  const updateFileLocally = useCallback(
+    (fileId: string, updates: Partial<CompanyFile>) => {
+      setFiles((prev) =>
+        prev.map((f) => (f.id === fileId ? { ...f, ...updates } : f)),
+      );
+    },
+    [],
   );
 
   return {
@@ -71,6 +86,6 @@ export function useFiles(companyId: string): UseFilesResult {
     refetch: fetchFiles,
     uploadFile: handleUploadFile,
     isUploading,
+    updateFileLocally,
   };
 }
-

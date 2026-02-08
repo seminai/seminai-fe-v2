@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import type { ComponentProps, ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/organism/Header";
 import { useProducts } from "@/hooks/useProducts";
 import { Product, productsApiService } from "@/api/products";
@@ -16,7 +17,6 @@ import { IoOpenOutline } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import DrawerProduct from "./DrawerProduct";
-import DrawerProductBulkImport from "./DrawerProductBulkImport";
 
 class ProductStockCalculator {
   private readonly stocks: Product["stocks"];
@@ -71,7 +71,7 @@ class ProductSorter {
   constructor(
     products: Product[],
     sortField: SortField,
-    sortDirection: SortDirection
+    sortDirection: SortDirection,
   ) {
     this.products = products;
     this.sortField = sortField;
@@ -91,10 +91,10 @@ class ProductSorter {
           break;
         case "stock": {
           const stockA = new ProductStockCalculator(
-            a.stocks
+            a.stocks,
           ).calculateTotalStock();
           const stockB = new ProductStockCalculator(
-            b.stocks
+            b.stocks,
           ).calculateTotalStock();
           compareResult = stockA - stockB;
           break;
@@ -104,7 +104,7 @@ class ProductSorter {
           break;
         case "company":
           compareResult = a.warehouse.company.name.localeCompare(
-            b.warehouse.company.name
+            b.warehouse.company.name,
           );
           break;
       }
@@ -165,7 +165,7 @@ class ProductTableRowBuilder {
 
 class ProductTableColumnsFactory {
   public static create(
-    onUpdateAdministrativeStatus: () => Promise<void>
+    onUpdateAdministrativeStatus: () => Promise<void>,
   ): EditableColumn[] {
     return [
       {
@@ -201,7 +201,7 @@ class ProductTableColumnsFactory {
           ProductTableColumnsFactory.renderAdministrativeStatus(
             value,
             row,
-            onUpdateAdministrativeStatus
+            onUpdateAdministrativeStatus,
           ),
       },
     ];
@@ -213,7 +213,7 @@ class ProductTableColumnsFactory {
 
   private static renderName(
     _value: unknown,
-    row: Record<string, unknown>
+    row: Record<string, unknown>,
   ): ReactNode {
     const data = ProductTableColumnsFactory.asRow(row);
 
@@ -231,7 +231,7 @@ class ProductTableColumnsFactory {
 
   private static renderStock(
     _value: unknown,
-    row: Record<string, unknown>
+    row: Record<string, unknown>,
   ): ReactNode {
     const data = ProductTableColumnsFactory.asRow(row);
     return (
@@ -243,7 +243,7 @@ class ProductTableColumnsFactory {
 
   private static renderWarehouse(
     _value: unknown,
-    row: Record<string, unknown>
+    row: Record<string, unknown>,
   ): ReactNode {
     const data = ProductTableColumnsFactory.asRow(row);
     return <span>{data.warehouseName}</span>;
@@ -251,7 +251,7 @@ class ProductTableColumnsFactory {
 
   private static renderCompany(
     _value: unknown,
-    row: Record<string, unknown>
+    row: Record<string, unknown>,
   ): ReactNode {
     const data = ProductTableColumnsFactory.asRow(row);
     return <span>{data.companyName}</span>;
@@ -260,10 +260,13 @@ class ProductTableColumnsFactory {
   private static renderAdministrativeStatus(
     _value: unknown,
     row: Record<string, unknown>,
-    onUpdateAdministrativeStatus: () => Promise<void>
+    onUpdateAdministrativeStatus: () => Promise<void>,
   ): ReactNode {
     const data = ProductTableColumnsFactory.asRow(row);
-    if (data.administrativeStatus === null || data.administrativeStatus === undefined) {
+    if (
+      data.administrativeStatus === null ||
+      data.administrativeStatus === undefined
+    ) {
       return (
         <Button
           variant="outline"
@@ -276,36 +279,35 @@ class ProductTableColumnsFactory {
         </Button>
       );
     }
-    
+
     // Mostra "Revocato" con badge rosso di allerta
-    if (data.administrativeStatus === "Revocato" || data.administrativeStatus?.toString().toLowerCase() === "revocato") {
-      return (
-        <Badge variant="destructive">
-          {data.administrativeStatus}
-        </Badge>
-      );
+    if (
+      data.administrativeStatus === "Revocato" ||
+      data.administrativeStatus?.toString().toLowerCase() === "revocato"
+    ) {
+      return <Badge variant="destructive">{data.administrativeStatus}</Badge>;
     }
-    
+
     return <span>{data.administrativeStatus}</span>;
   }
 }
 
 function ProductsPage() {
+  const navigate = useNavigate();
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
-    null
+    null,
   );
   const [selectedProductPreview, setSelectedProductPreview] =
     useState<Product | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { products, isLoading, isError, error, refetch } = useProducts();
-  const [importDrawerOpen, setImportDrawerOpen] = useState(false);
 
   const sortedProducts = useMemo(() => {
     const sorter = new ProductSorter(
       products,
       DEFAULT_SORT_FIELD,
-      DEFAULT_SORT_DIRECTION
+      DEFAULT_SORT_DIRECTION,
     );
     return sorter.sort();
   }, [products]);
@@ -328,7 +330,7 @@ function ProductsPage() {
 
   const tableColumns = useMemo(
     () => ProductTableColumnsFactory.create(handleUpdateAdministrativeStatus),
-    [handleUpdateAdministrativeStatus]
+    [handleUpdateAdministrativeStatus],
   );
 
   const tableRows = useMemo<ProductTableRow[]>(() => {
@@ -351,7 +353,7 @@ function ProductsPage() {
   };
 
   const handleDeleteSelected = async (
-    removed: Array<Record<string, unknown>>
+    removed: Array<Record<string, unknown>>,
   ) => {
     try {
       const productRows = removed as ProductTableRow[];
@@ -446,7 +448,7 @@ function ProductsPage() {
           rows={tableRows}
           isModify={false}
           addButton={true}
-          onAddClick={() => setImportDrawerOpen(true)}
+          onAddClick={() => navigate("/new-product")}
           onDeleteSelected={handleDeleteSelected}
           getRowId={(row) => (row as ProductTableRow).id}
           exportFileName="prodotti"
@@ -477,11 +479,6 @@ function ProductsPage() {
         previewProduct={selectedProductPreview}
         open={drawerOpen}
         onOpenChange={handleDrawerOpenChange}
-      />
-      <DrawerProductBulkImport
-        open={importDrawerOpen}
-        onOpenChange={setImportDrawerOpen}
-        onImportCompleted={refetch}
       />
     </div>
   );
