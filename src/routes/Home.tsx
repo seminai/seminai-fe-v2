@@ -547,7 +547,7 @@ export default class Home extends Component<
                 Operazioni e note di campo
               </h3>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Registra tutte le lavorazioni—aratura, semina, trattamenti—e
+                Registra tutte le lavorazioni aratura, semina, trattamenti e
                 segnala dove trovi problemi direttamente dal campo. Una chat con
                 cui parli dalla piattaforma, da Telegram o da WhatsApp: aggiungi
                 foto e descrizioni e l&apos;assistente AI le trasforma in note
