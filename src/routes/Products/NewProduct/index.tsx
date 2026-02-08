@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate, type NavigateFunction } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/organism/Header";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileUp, PenLine } from "lucide-react";
@@ -24,6 +25,7 @@ class NavigationManager {
 
 export default function NewProduct() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const navigationManager = useMemo(
     () => new NavigationManager(navigate),
     [navigate],
@@ -41,9 +43,10 @@ export default function NewProduct() {
     navigationManager.goBack();
   }, [navigationManager]);
 
-  const handleProductCreated = useCallback(() => {
+  const handleProductCreated = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ["products"] });
     navigationManager.goToProducts();
-  }, [navigationManager]);
+  }, [navigationManager, queryClient]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)] lg:h-screen">

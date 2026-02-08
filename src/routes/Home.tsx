@@ -27,7 +27,7 @@ export default class Home extends Component<
     {
       title: "Per Agricoltori",
       description:
-        "Ottimizza il tuo lavoro quotidiano con strumenti semplici e intuitivi. La nostra piattaforma ti permette di redigere i quaderni di campagna in modo rapido, preciso e conforme alle normative. Riduci il tempo dedicato alla burocrazia e concentrati su ciò che conta davvero: la tua produzione.",
+        "Ottimizza il tuo lavoro quotidiano con strumenti semplici e intuitivi. Registra le operazioni in campo come aratura, semina, lavorazioni. Redigi i quaderni in modo rapido e conforme, segnala problemi con foto e note di campo: tutto in un unico posto, con meno burocrazia e più tempo per la produzione.",
     },
     {
       title: "Per Tecnici Agronomi",
@@ -60,6 +60,7 @@ export default class Home extends Component<
         "Compilazione guidata",
         "Template operazioni ricorrenti",
         "Calcolo automatico delle dosi",
+        "Note di campo CHAT AI per segnalare problemi e operazioni svolte",
         "Eliminazione della carta",
         "Riduzione errori di trascrizione",
       ],
@@ -272,10 +273,11 @@ export default class Home extends Component<
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed">
               Che tu sia in campo, in ufficio o in movimento, la nostra
-              soluzione automatizza i dosaggi, integra tutte le informazioni
-              agronomiche in un’unica fonte dati e ti guida nel pieno rispetto
-              delle normative. Un modo semplice, preciso e immediato per
-              compilare il quaderno di campagna senza stress.
+              soluzione automatizza i dosaggi, integra operazioni come aratura e
+              semina, e ti permette di segnalare problemi con foto e note di
+              campo. Tutte le informazioni agronomiche in un’unica fonte dati,
+              nel pieno rispetto delle normative. Un modo semplice, preciso e
+              immediato per compilare il quaderno senza stress.
             </p>
           </div>
           <div className="md:w-1/2 flex justify-center md:justify-end">
@@ -525,6 +527,40 @@ export default class Home extends Component<
                   className="w-full h-full object-contain"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Feature 5: Operazioni e note di campo */}
+          <div className="flex flex-col md:flex-row items-center gap-12 md:gap-24">
+            <div className="w-full md:w-1/2 order-2 md:order-1 flex justify-center">
+              <div className="relative w-full max-w-md aspect-square bg-emerald-50 rounded-3xl flex items-center justify-center p-12">
+                <OptimizedImage
+                  src="/image/chat_farmer_robot.png"
+                  alt="Operazioni e note di campo"
+                  containerClassName="w-full h-full"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </div>
+            <div className="w-full md:w-1/2 order-1 md:order-2 space-y-6">
+              <h3 className="text-3xl md:text-4xl font-bold text-gray-900">
+                Operazioni e note di campo
+              </h3>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                Registra tutte le lavorazioni—aratura, semina, trattamenti—e
+                segnala dove trovi problemi direttamente dal campo. Una chat con
+                cui parli dalla piattaforma, da Telegram o da WhatsApp: aggiungi
+                foto e descrizioni e l&apos;assistente AI le trasforma in note
+                strutturate per il quaderno, senza dover riscrivere nulla in
+                ufficio.
+              </p>
+              <button
+                type="button"
+                onClick={this.scrollToContactAndSelectTab}
+                className="text-black font-semibold hover:text-black transition-colors underline decoration-2 underline-offset-4"
+              >
+                Prenota gratis
+              </button>
             </div>
           </div>
         </div>
