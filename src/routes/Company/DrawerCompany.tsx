@@ -21,7 +21,7 @@ interface DrawerCompanyContentProps {
   isUpdating?: boolean;
   onUpdateSuccess?: () => void;
   onTabChange?: (
-    tab: "details" | "users" | "warehouses" | "files" | "machines"
+    tab: "details" | "users" | "warehouses" | "files" | "machines",
   ) => void;
   activeTab?: "details" | "users" | "warehouses" | "files" | "machines";
 }
@@ -66,6 +66,7 @@ export function DrawerCompanyContent({
     refetch: refetchCompanyFiles,
     uploadFile: uploadCompanyFile,
     isUploading: isUploadingFile,
+    updateFileLocally: updateCompanyFileLocally,
   } = useFiles(company.id);
 
   // Aggiorna i dati quando la company cambia (dopo un update)
@@ -160,7 +161,7 @@ export function DrawerCompanyContent({
   };
 
   const handleLogoFileSelect = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ): Promise<void> => {
     const file = event.target.files?.[0];
     if (!file) {
@@ -646,6 +647,7 @@ export function DrawerCompanyContent({
           onRetry={refetchCompanyFiles}
           onUpload={uploadCompanyFile}
           isUploading={isUploadingFile}
+          onUpdateFileLocally={updateCompanyFileLocally}
         />
       </TabsContent>
 

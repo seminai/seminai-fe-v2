@@ -14,6 +14,7 @@ import ProductionUnit from "./routes/ProductionUnit";
 import NewProductionUnit from "./routes/ProductionUnit/NewProductionUnit";
 import DosageManager from "./routes/DosageManager";
 import Products from "./routes/Products";
+import NewProduct from "./routes/Products/NewProduct";
 import Job from "./routes/Job";
 import Operations from "./routes/Operations";
 import FieldNotes from "./routes/FieldNotes";
@@ -49,11 +50,24 @@ function App() {
         <Route path="/operations" element={<Operations />} />
         <Route path="/field-notes" element={<FieldNotes />} />
         <Route path="/products" element={<Products />} />
-        <Route path="/create-company-field-production" element={<QuickCreate />} />
+        <Route path="/new-product" element={<NewProduct />} />
+        <Route
+          path="/create-company-field-production"
+          element={<QuickCreate />}
+        />
         <Route path="/new-workspace" element={<NewWorkspace />} />
-        <Route path="/workspace/accept-invitation" element={<AcceptInvitation />} />
-        <Route path="/workspace/settings/rules/:ruleId" element={<EditRule />} />
-        <Route path="/workspace/settings/:section" element={<WorkspaceSettings />} />
+        <Route
+          path="/workspace/accept-invitation"
+          element={<AcceptInvitation />}
+        />
+        <Route
+          path="/workspace/settings/rules/:ruleId"
+          element={<EditRule />}
+        />
+        <Route
+          path="/workspace/settings/:section"
+          element={<WorkspaceSettings />}
+        />
         <Route path="/workspace/settings" element={<WorkspaceSettings />} />
         <Route path="/new-rule" element={<NewRule />} />
       </Route>
