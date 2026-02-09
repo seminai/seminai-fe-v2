@@ -52,7 +52,7 @@ async function safeReadText(response: Response): Promise<string> {
 
 export async function getCompanyFiles(
   companyId: string,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<FilesListResponse> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/files?companyId=${encodeURIComponent(companyId)}`,
@@ -61,7 +61,7 @@ export async function getCompanyFiles(
       headers: {
         Accept: "application/json",
       },
-    }
+    },
   );
 
   if (!response.ok) {
@@ -74,7 +74,7 @@ export async function getCompanyFiles(
 
 export async function getFile(
   fileId: string,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<FileDetailResponse> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/files/${encodeURIComponent(fileId)}`,
@@ -83,7 +83,7 @@ export async function getFile(
       headers: {
         Accept: "application/json",
       },
-    }
+    },
   );
 
   if (!response.ok) {
@@ -96,7 +96,7 @@ export async function getFile(
 
 export async function uploadFile(
   request: UploadFileRequest,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<FileDetailResponse> {
   const formData = new FormData();
   formData.append("file", request.file);
@@ -109,7 +109,7 @@ export async function uploadFile(
     {
       method: "POST",
       body: formData,
-    }
+    },
   );
 
   if (!response.ok) {
@@ -134,7 +134,7 @@ export type BulkDeleteFilesResponse = {
 
 export async function bulkDeleteFiles(
   request: BulkDeleteFilesRequest,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<BulkDeleteFilesResponse> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/files/bulk`,
@@ -145,7 +145,7 @@ export async function bulkDeleteFiles(
         Accept: "application/json",
       },
       body: JSON.stringify(request),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -166,7 +166,7 @@ export type UpdateFileRequest = {
 export async function updateFile(
   fileId: string,
   request: UpdateFileRequest,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<FileDetailResponse> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/files/${encodeURIComponent(fileId)}`,
@@ -177,7 +177,7 @@ export async function updateFile(
         Accept: "application/json",
       },
       body: JSON.stringify(request),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -204,20 +204,20 @@ class FilesApiService {
   }
 
   public async uploadFile(
-    request: UploadFileRequest
+    request: UploadFileRequest,
   ): Promise<FileDetailResponse> {
     return await uploadFile(request, this.baseUrl);
   }
 
   public async bulkDeleteFiles(
-    request: BulkDeleteFilesRequest
+    request: BulkDeleteFilesRequest,
   ): Promise<BulkDeleteFilesResponse> {
     return await bulkDeleteFiles(request, this.baseUrl);
   }
 
   public async updateFile(
     fileId: string,
-    request: UpdateFileRequest
+    request: UpdateFileRequest,
   ): Promise<FileDetailResponse> {
     return await updateFile(fileId, request, this.baseUrl);
   }

@@ -26,12 +26,14 @@ import WorkspaceSettings from "./routes/Workspace/WorkspaceSettings";
 import NewRule from "./routes/Workspace/NewRule";
 import EditRule from "./routes/Workspace/EditRule";
 import AcceptInvitation from "./routes/Workspace/AcceptInvitation";
+import BetaTesterAgreement from "./routes/BetaTesterAgreement";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/diventa-beta-tester" element={<BetaTesterAgreement />} />
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route element={<ProtectedRoute />}>
