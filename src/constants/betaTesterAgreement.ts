@@ -12,17 +12,18 @@ e
 Fornitore e Partner, congiuntamente, le "Parti".
 
 Premesse
-a) Il Fornitore svolge attività professionale nel settore dello sviluppo software e fornisce strumenti digitali e supporto tecnico nell'ambito di prestazioni professionali, avvalendosi della piattaforma software denominata Seminai, che non costituisce un soggetto giuridico autonomo ma uno strumento tecnologico utilizzato nell'ambito delle suddette prestazioni;
-b) Il Partner opera nel settore agricolo / agritech / consulenza tecnica e gestisce o supporta processi di compilazione e gestione del quaderno di campagna e di documentazione correlata;
-c) Le Parti intendono avviare una collaborazione sperimentale finalizzata a testare l'utilizzo degli strumenti software Seminai e a valutare l'efficacia degli stessi come supporto alle attività del Partner, senza che ciò comporti consulenza agronomica o responsabilità decisionali in capo al Fornitore.
+a) Il Fornitore svolge attività professionale autonoma nel settore dello sviluppo software, della consulenza tecnica e del supporto digitale, fornendo prestazioni professionali di natura informatica e tecnologica mediante la piattaforma software denominata Seminai, che non costituisce un soggetto giuridico autonomo ma uno strumento tecnologico utilizzato nell'ambito delle suddette prestazioni;
+b) Le prestazioni oggetto del presente Accordo si configurano come consulenza tecnica specialistica in ambito software, sviluppo di soluzioni digitali e assistenza tecnologica, e non costituiscono in alcun modo consulenza agronomica, fitosanitaria, normativa o professionale abilitata per la quale sarebbero richieste specifiche qualifiche o iscrizioni ad albi professionali;
+c) Il Partner opera nel settore agricolo / agritech / consulenza tecnica e gestisce o supporta processi di compilazione e gestione del quaderno di campagna e di documentazione correlata;
+d) Le Parti intendono avviare una collaborazione sperimentale finalizzata a testare l'utilizzo degli strumenti software Seminai e a valutare l'efficacia degli stessi come supporto tecnologico alle attività del Partner, ferma restando l'autonomia decisionale e la responsabilità esclusiva del Partner per ogni scelta operativa, agronomica o normativa.
 Le premesse costituiscono parte integrante e sostanziale del presente Accordo Commerciale (l'"Accordo").
 
 1. Oggetto della collaborazione
-Il presente Accordo ha ad oggetto l'avvio di una collaborazione in fase di test / beta (la "Collaborazione"), nell'ambito della quale:
-• il Fornitore mette a disposizione del Partner l'accesso agli strumenti software Seminai;
-• il Fornitore fornisce supporto tecnico e assistenza funzionale all'utilizzo degli strumenti;
+Il presente Accordo ha ad oggetto l'erogazione di una prestazione professionale di consulenza tecnica in fase di test / beta (la "Collaborazione"), nell'ambito della quale:
+• il Fornitore, in qualità di professionista autonomo, mette a disposizione del Partner l'accesso agli strumenti software Seminai da lui sviluppati;
+• il Fornitore fornisce consulenza tecnica, supporto tecnologico e assistenza funzionale all'utilizzo degli strumenti software;
 • il Partner utilizza gli strumenti nell'ambito delle proprie attività professionali e fornisce feedback utili al miglioramento della piattaforma.
-Gli strumenti software sono forniti esclusivamente come supporto alle attività operative e non sostituiscono in alcun modo la consulenza agronomica, normativa o professionale abilitata.
+Le prestazioni del Fornitore si configurano come servizi di consulenza tecnica specialistica in ambito informatico e tecnologico, resi in regime di lavoro autonomo, e non sostituiscono in alcun modo la consulenza agronomica, fitosanitaria, normativa o professionale abilitata.
 
 2. Modalità di accesso e utilizzo
 a) Accesso alla piattaforma
@@ -99,21 +100,39 @@ export const PRICING_TABLE_HEADERS: [string, string, string, string, string] = [
 ];
 
 export const PRICING_TABLE_ROWS: [string, string, string, string, string][] = [
-  ["Start", "€ 12,00", "€ 288,00", "€ 144,00", "€ 120,00 (2 mesi gratis)"],
+  ["Start", "€ 12,00", "€ 288,00", "€ 144,00", "€ 120,00 (21 giorni gratis)"],
   [
     "Professional",
     "€ 36,00",
     "€ 864,00",
     "€ 432,00",
-    "€ 360,00 (2 mesi gratis)",
+    "€ 360,00 (21 giorni gratis)",
   ],
-  ["Enterprise", "€ 50,00", "€ 1.200,00", "€ 600,00", "€ 500,00 (2 mesi gratis)"],
+  [
+    "Enterprise",
+    "€ 50,00",
+    "€ 1.200,00",
+    "€ 600,00",
+    "€ 500,00 (21 giorni gratis)",
+  ],
 ];
 
 export const AGREEMENT_PART_2 = `
 Il pagamento può avvenire:
 • con cadenza periodica (es. mensile), applicando lo sconto del 50% sul canone mensile standard;
 • in unica soluzione anticipata, beneficiando di un ulteriore sconto equivalente a 2 mesi gratuiti.
+d) Natura della prestazione e regime fiscale del Fornitore
+Le prestazioni oggetto del presente Accordo si configurano come servizi di consulenza tecnica professionale autonoma, ai sensi dell'art. 2222 c.c., rese senza vincolo di subordinazione e con autonomia organizzativa del Fornitore.
+Il Fornitore opera attualmente in regime fiscale agevolato ai sensi della Legge 190/2014 (regime forfettario), applicabile alle prestazioni professionali autonome, e pertanto:
+• non addebita IVA in fattura;
+• i prezzi indicati nel presente Accordo si intendono finali e comprensivi di ogni onere;
+• le fatture riporteranno la dicitura "Operazione senza applicazione dell'IVA ai sensi dell'art. 1, commi 54-89, L. 190/2014 – Regime forfettario";
+• non opera ritenuta d'acconto ai sensi dell'art. 1, comma 67, L. 190/2014.
+In caso di passaggio del Fornitore a un diverso regime fiscale (es. regime ordinario o altro regime fiscale previsto dalla normativa vigente), il Fornitore comunicherà tempestivamente al Partner la variazione mediante comunicazione scritta (e-mail o PEC) con un preavviso minimo di 30 (trenta) giorni.
+In tale ipotesi:
+• i prezzi indicati nel presente Accordo si intenderanno al netto di IVA e di eventuali ritenute;
+• l'IVA e le ritenute fiscali previste dalla legge saranno addebitate in fattura secondo le aliquote e percentuali vigenti; 
+• il Partner potrà esercitare il diritto di recesso entro 15 (quindici) giorni dalla comunicazione, senza penali né costi aggiuntivi, qualora la variazione comporti un aggravio economico significativo.
 2. "Collaborazione Commerciale di Sponsorizzazione"
 Il Partner ha la facoltà di formalizzare una Collaborazione Commerciale, assumendo un ruolo di promozione del servizio Seminai presso la propria rete di contatti e ricevendo un compenso economico (percentuale o quota fissa sulle vendite generate).
 I termini e le condizioni saranno definiti in un documento contrattuale separato, negoziato individualmente con il Partner. Il presente Accordo non vincola le Parti alla sottoscrizione di tale accordo.
@@ -202,10 +221,7 @@ Il Partner
 [{{CURRENT_DATE}}]`;
 
 /** Format a table as plain text (for email body). */
-function formatTableAsText(
-  headers: string[],
-  rows: string[][]
-): string {
+function formatTableAsText(headers: string[], rows: string[][]): string {
   const lines: string[] = [];
   lines.push(headers.join(" | "));
   lines.push(headers.map(() => "---").join(" | "));
@@ -222,25 +238,30 @@ export type AgreementPlaceholders = {
 
 export function replacePlaceholders(
   text: string,
-  placeholders: AgreementPlaceholders
+  placeholders: AgreementPlaceholders,
 ): string {
   return text
     .replace(/{{CURRENT_DATE}}/g, placeholders.currentDate)
     .replace(/{{PARTNER_NAME}}/g, placeholders.partnerName)
-    .replace(/{{REGISTERED_OFFICE_ADDRESS}}/g, placeholders.registeredOfficeAddress)
+    .replace(
+      /{{REGISTERED_OFFICE_ADDRESS}}/g,
+      placeholders.registeredOfficeAddress,
+    )
     .replace(/{{VAT_NUMBER}}/g, placeholders.vatNumber);
 }
 
 /** Build full agreement as a single string (for email). */
-export function buildAgreementFullText(placeholders: AgreementPlaceholders): string {
+export function buildAgreementFullText(
+  placeholders: AgreementPlaceholders,
+): string {
   const p1 = replacePlaceholders(AGREEMENT_PART_1, placeholders);
   const plansText = formatTableAsText(
     [...PLANS_TABLE_HEADERS],
-    PLANS_TABLE_ROWS.map((r) => [...r])
+    PLANS_TABLE_ROWS.map((r) => [...r]),
   );
   const pricingText = formatTableAsText(
     [...PRICING_TABLE_HEADERS],
-    PRICING_TABLE_ROWS.map((r) => [...r])
+    PRICING_TABLE_ROWS.map((r) => [...r]),
   );
   const p2 = replacePlaceholders(AGREEMENT_PART_2, placeholders);
   return `${p1}\n\n${plansText}\n\n${PRICING_TABLE_TITLE}\n\n${pricingText}${p2}`;
