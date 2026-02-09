@@ -12,6 +12,7 @@ export type ContactEmailRequest = {
   name: string;
   email: string;
   body: string;
+  files?: File[]; // Optional file attachments
 };
 
 export type ContactEmailResponse = {
@@ -29,22 +30,53 @@ export class EmailApiService {
   public async sendContactEmail(
     payload: ContactEmailRequest
   ): Promise<ContactEmailResponse> {
-    const response = await fetch(`${this.baseUrl}/email/send-email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(payload),
-      credentials: "include",
-    });
+    // If files are provided, send as multipart/form-data, otherwise JSON
+    if (payload.files && payload.files.length > 0) {
+      const formData = new FormData();
+      formData.append("name", payload.name);
+      formData.append("email", payload.email);
+      formData.append("body", payload.body);
+      
+      // Append each file with the key "files" (backend expects files=[])
+      payload.files.forEach((file) => {
+        formData.append("files", file);
+      });
 
-    if (!response.ok) {
-      const errorText = await safeReadText(response);
-      throw new Error(errorText || "Unable to send the email request.");
+      const response = await fetch(`${this.baseUrl}/email/send-email`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          // Do NOT set Content-Type: browser will set it with boundary for multipart/form-data
+        },
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorText = await safeReadText(response);
+        throw new Error(errorText || "Unable to send the email request.");
+      }
+
+      return (await response.json()) as ContactEmailResponse;
+    } else {
+      // No files: send as JSON (backward compatible)
+      const response = await fetch(`${this.baseUrl}/email/send-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorText = await safeReadText(response);
+        throw new Error(errorText || "Unable to send the email request.");
+      }
+
+      return (await response.json()) as ContactEmailResponse;
     }
-
-    return (await response.json()) as ContactEmailResponse;
   }
 }
 
