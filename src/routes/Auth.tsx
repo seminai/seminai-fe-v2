@@ -360,6 +360,9 @@ export default function Auth() {
                   <form onSubmit={handleRegisterSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700">
+                          Nome <span className="text-red-500">*</span>
+                        </label>
                         <Input
                           placeholder="Nome"
                           value={name}
@@ -369,6 +372,9 @@ export default function Auth() {
                         />
                       </div>
                       <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700">
+                          Cognome <span className="text-red-500">*</span>
+                        </label>
                         <Input
                           placeholder="Cognome"
                           value={surname}
@@ -379,6 +385,9 @@ export default function Auth() {
                       </div>
                     </div>
                     <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">
+                        Email <span className="text-red-500">*</span>
+                      </label>
                       <Input
                         type="email"
                         placeholder="nome@esempio.com"
@@ -389,6 +398,9 @@ export default function Auth() {
                       />
                     </div>
                     <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">
+                        Password <span className="text-red-500">*</span>
+                      </label>
                       <Input
                         type="password"
                         placeholder="password"
@@ -399,6 +411,9 @@ export default function Auth() {
                       />
                     </div>
                     <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">
+                        Codice Fiscale <span className="text-red-500">*</span>
+                      </label>
                       <Input
                         placeholder="Codice Fiscale"
                         value={fiscalCode}
@@ -408,6 +423,9 @@ export default function Auth() {
                       />
                     </div>
                     <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">
+                        Telefono <span className="text-red-500">*</span>
+                      </label>
                       <Input
                         placeholder="Telefono"
                         value={phoneNumber}
@@ -417,6 +435,9 @@ export default function Auth() {
                       />
                     </div>
                     <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">
+                        Indirizzo <span className="text-red-500">*</span>
+                      </label>
                       <Input
                         placeholder="Indirizzo"
                         value={address}

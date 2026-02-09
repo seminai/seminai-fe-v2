@@ -19,6 +19,7 @@ import {
 type AgreementFormState = {
   firstName: string;
   lastName: string;
+  email: string;
   vatNumber: string;
   birthDate: string;
   registeredOfficeAddress: string;
@@ -28,6 +29,7 @@ type AgreementFormState = {
 const INITIAL_FORM_STATE: AgreementFormState = {
   firstName: "",
   lastName: "",
+  email: "",
   vatNumber: "",
   birthDate: "",
   registeredOfficeAddress: "",
@@ -52,6 +54,7 @@ function isStep1Complete(formState: AgreementFormState): boolean {
   return (
     Boolean(formState.firstName.trim()) &&
     Boolean(formState.lastName.trim()) &&
+    Boolean(formState.email.trim()) &&
     Boolean(formState.vatNumber.trim()) &&
     Boolean(formState.birthDate) &&
     Boolean(formState.registeredOfficeAddress.trim())
@@ -349,6 +352,7 @@ export default function BetaTesterAgreement() {
     const {
       firstName,
       lastName,
+      email,
       vatNumber,
       birthDate,
       registeredOfficeAddress,
@@ -357,6 +361,7 @@ export default function BetaTesterAgreement() {
     if (
       !firstName.trim() ||
       !lastName.trim() ||
+      !email.trim() ||
       !vatNumber.trim() ||
       !birthDate ||
       !registeredOfficeAddress.trim()
@@ -394,6 +399,7 @@ export default function BetaTesterAgreement() {
 
 Dati partner:
 - Nome e cognome: ${firstName.trim()} ${lastName.trim()}
+- Email: ${email.trim()}
 - Partita IVA / C.F.: ${vatNumber.trim()}
 - Data di nascita: ${formattedBirthDate}
 - Sede legale: ${registeredOfficeAddress.trim()}
@@ -407,7 +413,7 @@ Il PDF firmato è allegato a questa email.`;
       // Send email with PDF attachment
       await emailApiService.sendContactEmail({
         name: `${firstName.trim()} ${lastName.trim()}`,
-        email: "beta-tester@seminai.tech",
+        email: email.trim(),
         body: emailBody,
         files: [pdfFile],
       });
@@ -470,6 +476,18 @@ Il PDF firmato è allegato a questa email.`;
                 />
               </label>
             </div>
+
+            <label className="space-y-2 block">
+              <span className="text-gray-700 font-medium">Email *</span>
+              <input
+                type="email"
+                className="w-full rounded-2xl border border-gray-200 p-3 focus:outline-none focus:ring-2 focus:ring-agri-green-500"
+                placeholder="mario.rossi@example.com"
+                value={formState.email}
+                onChange={handleChange("email")}
+                required
+              />
+            </label>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <label className="space-y-2">
