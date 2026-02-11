@@ -12,6 +12,20 @@ export const MAX_VISIBLE_COLUMNS = 7;
 export const COLUMN_VISIBILITY_STORAGE_PREFIX = "editable-table-columns-";
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Global Company Filter Constants
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const GLOBAL_COMPANY_FILTER_STORAGE_KEY =
+  "editable-table-global-company-filter";
+export const GLOBAL_COMPANY_FILTER_COLUMN_ID = "companyName";
+export const GLOBAL_COMPANY_FILTER_ROUTES = [
+  "/job",
+  "/fields",
+  "/products",
+  "/operations",
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Date Format Constants
 // ─────────────────────────────────────────────────────────────────────────────
 

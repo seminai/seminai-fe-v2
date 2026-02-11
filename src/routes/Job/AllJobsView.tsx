@@ -34,7 +34,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 import HistoryPanel from "./HistoryPanel";
-import ConformityCheckerPanel, { type ConformityCheckerPanelRef } from "./ConformityCheckerPanel";
+import ConformityCheckerPanel, {
+  type ConformityCheckerPanelRef,
+} from "./ConformityCheckerPanel";
 import ChatHistoryDrawer from "./ChatHistoryDrawer";
 
 type EditableTableRowData = Record<string, unknown>;
@@ -80,7 +82,7 @@ interface AllJobsViewProps {
   onProductClick: (
     name: string,
     registration?: string,
-    showToast?: boolean
+    showToast?: boolean,
   ) => void;
   showSelectionSummary?: boolean;
   exportConfig?: CustomExportConfig;
@@ -149,7 +151,7 @@ export function JobIdMultiSelect({
     if (selectedLabels.length === 1) {
       const opt = selectedLabels[0];
       return `Operazione ${opt.jobId} • ${new Date(
-        opt.createdAt
+        opt.createdAt,
       ).toLocaleDateString("it-IT")}`;
     }
     return `${selectedLabels.length} selezioni`;
@@ -207,14 +209,14 @@ export function JobIdMultiSelect({
                       "w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-md text-sm",
                       isSelected
                         ? "bg-slate-100 text-slate-900"
-                        : "hover:bg-slate-50 text-slate-700"
+                        : "hover:bg-slate-50 text-slate-700",
                     )}
                     onClick={() => toggleValue(option.value)}
                   >
                     <Check
                       className={cn(
                         "h-4 w-4",
-                        isSelected ? "opacity-100" : "opacity-0"
+                        isSelected ? "opacity-100" : "opacity-0",
                       )}
                     />
                     <div className="flex items-center gap-2 text-slate-800">
@@ -354,7 +356,10 @@ export function AllJobsView({
                   getRowClassName={getRowClassName}
                 >
                   {!isRightSidebarOpen && (
-                    <div className="flex items-center gap-1" data-table-slot="right">
+                    <div
+                      className="flex items-center gap-1"
+                      data-table-slot="right"
+                    >
                       <Button
                         variant="ghost"
                         size="sm"
@@ -393,7 +398,7 @@ export function AllJobsView({
             onMouseDown={onResizeStart}
             className={cn(
               "w-1 flex-shrink-0 cursor-col-resize bg-slate-200 hover:bg-slate-300 transition-colors relative group ",
-              isResizing && "bg-slate-400"
+              isResizing && "bg-slate-400",
             )}
             style={{ userSelect: "none" }}
           >
@@ -500,9 +505,10 @@ export function AllJobsView({
               {rightSidebarMode === "conformity" && (
                 <>
                   <div className="flex items-center gap-2">
-
                     <Button
-                      onClick={() => conformityCheckerRef.current?.handleVerify()}
+                      onClick={() =>
+                        conformityCheckerRef.current?.handleVerify()
+                      }
                       disabled={conformityCheckerRef.current?.isVerifyDisabled}
                       size="sm"
                       variant="outline"

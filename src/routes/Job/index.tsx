@@ -1148,6 +1148,13 @@ class JobProductsFormatter {
   }
 }
 
+/** Genera un jobId casuale di 6 cifre per nuove operazioni quando non esistono job */
+function generateRandomJobId(): string {
+  const min = 100000;
+  const max = 999999;
+  return String(Math.floor(Math.random() * (max - min + 1)) + min);
+}
+
 class JobIdFormatter {
   public static format(jobId: string | null | undefined): string {
     if (!jobId) {
@@ -2343,6 +2350,7 @@ export default function JobPage() {
             cropName: "",
             cropType: "",
             sauHa: undefined,
+            treatedSurface: undefined,
             ...preservedProductData,
           };
         }
@@ -2356,6 +2364,7 @@ export default function JobPage() {
             cropName: selectedPu.cropName,
             cropType: selectedPu.cropType,
             sauHa: selectedPu.sauHa,
+            treatedSurface: selectedPu.sauHa,
             _companyId: selectedPu.companyId,
             companyName: selectedPu.companyName,
             _selectedCompanyForPU: selectedPu.companyId,
@@ -2370,6 +2379,7 @@ export default function JobPage() {
           cropName: "",
           cropType: "",
           sauHa: undefined,
+          treatedSurface: undefined,
           ...preservedProductData,
         };
       },
@@ -2460,16 +2470,31 @@ export default function JobPage() {
     },
     {
       id: "treatedSurface",
-      title: "Superficie Trattata (ha)",
+      title: "Superficie da trattare (ha)",
       type: "number",
       width: "180px",
-      readOnly: true,
-      render: (value) => {
+      readOnly: false,
+      onValueChange: ({ value, rowData }) => {
         const numValue = Number(value);
-        if (isNaN(numValue) || numValue === 0) {
+        return {
+          treatedSurface:
+            !isNaN(numValue) && numValue > 0 ? numValue : undefined,
+        };
+      },
+      render: (value, row) => {
+        const effectiveSurface = Number(value ?? row.sauHa ?? 0);
+        if (isNaN(effectiveSurface) || effectiveSurface === 0) {
           return <span className="text-muted-foreground">-</span>;
         }
-        return <span>{numValue.toFixed(2)}</span>;
+        return (
+          <span
+            title={
+              value == null || value === "" ? "Uguale alla SAU" : undefined
+            }
+          >
+            {effectiveSurface.toFixed(2)}
+          </span>
+        );
       },
     },
     {
@@ -2640,11 +2665,11 @@ export default function JobPage() {
       readOnly: true,
       render: (_, row) => {
         const quantity = Number(row.quantity ?? 0);
-        const treatedSurface = Number(row.treatedSurface ?? 0);
-        if (treatedSurface === 0 || quantity === 0) {
+        const effectiveSurface = Number(row.treatedSurface ?? row.sauHa ?? 0);
+        if (effectiveSurface === 0 || quantity === 0) {
           return <span className="text-muted-foreground">-</span>;
         }
-        const quantityPerHa = quantity / treatedSurface;
+        const quantityPerHa = quantity / effectiveSurface;
         return <span>{quantityPerHa.toFixed(4)}</span>;
       },
     },
@@ -2998,16 +3023,16 @@ export default function JobPage() {
     },
     {
       id: "treatedSurface",
-      title: "Superficie (ha)",
+      title: "Superficie da trattare (ha)",
       type: "number",
-      width: "100px",
+      width: "130px",
       readOnly: true,
-      render: (value) => {
-        const numValue = Number(value);
-        if (isNaN(numValue) || numValue === 0) {
+      render: (value, row) => {
+        const effectiveSurface = Number(value ?? row.sauHa ?? 0);
+        if (isNaN(effectiveSurface) || effectiveSurface === 0) {
           return <span className="text-muted-foreground">-</span>;
         }
-        return <span>{numValue.toFixed(2)}</span>;
+        return <span>{effectiveSurface.toFixed(2)}</span>;
       },
     },
     {
@@ -3018,13 +3043,13 @@ export default function JobPage() {
       readOnly: true,
       render: (_value, row) => {
         const quantity = Number(row.quantity ?? 0);
-        const treatedSurface = Number(row.treatedSurface ?? 0);
-        if (treatedSurface === 0 || quantity === 0) {
+        const effectiveSurface = Number(row.treatedSurface ?? row.sauHa ?? 0);
+        if (effectiveSurface === 0 || quantity === 0) {
           return (
             <span className="font-mono text-sm text-muted-foreground">-</span>
           );
         }
-        const quantityPerHa = quantity / treatedSurface;
+        const quantityPerHa = quantity / effectiveSurface;
         return (
           <span className="font-mono text-sm">{quantityPerHa.toFixed(4)}</span>
         );
@@ -3234,13 +3259,16 @@ export default function JobPage() {
 
       // 1. Processa le nuove righe create
       if (payload.created.length > 0) {
-        // Determina il jobId in base alla vista corrente
-        const currentJobId =
+        // Determina il jobId in base alla vista corrente.
+        // Se non ci sono job esistenti, genera un jobId casuale di 6 cifre
+        // (altrimenti si perde il riferimento al gruppo creato)
+        const existingJobId =
           viewMode === "all"
             ? selectedAllJobIds.length > 0
               ? selectedAllJobIds[0]
               : undefined
             : (selectedGroupCode ?? undefined);
+        const currentJobId = existingJobId ?? generateRandomJobId();
 
         const createPayloads = payload.created
           .filter((row) => {
@@ -3261,6 +3289,10 @@ export default function JobPage() {
                 : new Date(row.dateOfOpeation as string)
               : new Date();
 
+            const rowTreatedSurface = row.treatedSurface as number | undefined;
+            const rowSauHa = row.sauHa as number | undefined;
+            const effectiveSurface = rowTreatedSurface ?? rowSauHa;
+
             return {
               jobId: currentJobId,
               productionUnitId: row._productionUnitId as string,
@@ -3269,6 +3301,10 @@ export default function JobPage() {
               quantity: Number(row.quantity) || 0,
               unitOfMeasureQuantity:
                 (row.unitOfMeasureQuantity as string) || "L",
+              treatedSurface:
+                effectiveSurface != null && effectiveSurface > 0
+                  ? effectiveSurface
+                  : undefined,
               stocks: [
                 {
                   product: {

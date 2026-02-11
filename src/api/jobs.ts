@@ -195,6 +195,7 @@ export type CreateJobPayload = {
   unitOfMeasureQuantity: string;
   stocks: CreateJobProductStock[];
   jobId?: string; // Optional: if provided, the job will be added to an existing job group
+  treatedSurface?: number; // Superficie da trattare in ha (default: SAU dell'unità produttiva)
 };
 
 export type CreateProductAndJobResponse = {
