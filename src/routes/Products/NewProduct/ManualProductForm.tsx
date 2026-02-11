@@ -28,6 +28,7 @@ const PRODUCT_CATEGORIES = [
 
 interface ManualProductFormProps {
   onProductCreated?: () => void;
+  preselectedCompanyId?: string;
 }
 
 export interface StockFormData {
@@ -112,8 +113,9 @@ const INITIAL_STOCK_DATA: StockFormData = {
 
 export default function ManualProductForm({
   onProductCreated,
+  preselectedCompanyId,
 }: ManualProductFormProps) {
-  const [companyId, setCompanyId] = useState("");
+  const [companyId, setCompanyId] = useState(preselectedCompanyId || "");
   const [warehouseId, setWarehouseId] = useState("");
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
@@ -213,9 +215,10 @@ export default function ManualProductForm({
           {/* Azienda e Magazzino */}
           <section className="space-y-4">
             <h4 className="text-base font-semibold border-b pb-2">
-              Azienda e Magazzino
+              {preselectedCompanyId ? "Magazzino" : "Azienda e Magazzino"}
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {!preselectedCompanyId && (
               <div className="space-y-2">
                 <Label>Seleziona azienda *</Label>
                 <SearchableSelect
@@ -230,6 +233,7 @@ export default function ManualProductForm({
                   onChange={handleCompanyChange}
                 />
               </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Seleziona magazzino *</Label>

@@ -141,6 +141,8 @@ type SingleProductionUnitFormProps = {
     areaHa: number,
   ) => void;
   isCreating: boolean;
+  /** When true, the bottom footer bar (Aggiungi + Crea) is hidden in list view */
+  hideFooter?: boolean;
 };
 
 export const SingleProductionUnitForm: React.FC<
@@ -167,6 +169,7 @@ export const SingleProductionUnitForm: React.FC<
   onMoveField,
   onRemoveFieldFromUnit,
   isCreating,
+  hideFooter = false,
 }) => {
   const formStateFactory = useMemo(
     () => new ProductionUnitFormStateFactory(allocatedFields, productionUnits),
@@ -627,35 +630,37 @@ export const SingleProductionUnitForm: React.FC<
           </Card>
         </div>
 
-        <div className="flex-shrink-0 border-t bg-white p-4 flex justify-between items-center gap-4">
-          <Button variant="outline" onClick={handleAddAnother} size="lg">
-            <Plus className="mr-2 h-4 w-4" />
-            Aggiungi un'altra unità produttiva
-          </Button>
-          <Button
-            onClick={handleProceedToConfirmation}
-            size="lg"
-            disabled={productionUnits.length === 0 || isCreating}
-            className="min-w-64 bg-green-600 hover:bg-green-700"
-          >
-            {isCreating ? (
-              <>
-                <Spinner
-                  size={16}
-                  ariaLabel="Creazione in corso"
-                  className="mr-2"
-                />
-                Creazione in corso...
-              </>
-            ) : (
-              <>
-                Crea {productionUnits.length} Unità{" "}
-                {productionUnits.length === 1 ? "Produttiva" : "Produttive"}
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </>
-            )}
-          </Button>
-        </div>
+        {!hideFooter && (
+          <div className="flex-shrink-0 border-t bg-white p-4 flex justify-between items-center gap-4">
+            <Button variant="outline" onClick={handleAddAnother} size="lg">
+              <Plus className="mr-2 h-4 w-4" />
+              Aggiungi un'altra unità produttiva
+            </Button>
+            <Button
+              onClick={handleProceedToConfirmation}
+              size="lg"
+              disabled={productionUnits.length === 0 || isCreating}
+              className="min-w-64 bg-green-600 hover:bg-green-700"
+            >
+              {isCreating ? (
+                <>
+                  <Spinner
+                    size={16}
+                    ariaLabel="Creazione in corso"
+                    className="mr-2"
+                  />
+                  Creazione in corso...
+                </>
+              ) : (
+                <>
+                  Crea {productionUnits.length} Unità{" "}
+                  {productionUnits.length === 1 ? "Produttiva" : "Produttive"}
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </div>
+        )}
 
         {splitDialogUnit && (
           <SplitProductionUnitDialog
