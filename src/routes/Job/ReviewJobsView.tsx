@@ -20,7 +20,9 @@ import {
 } from "@/components/organism/JobSelectedDetails";
 import HistoryPanel from "./HistoryPanel";
 import JobGroupCard from "./JobGroupCard";
-import ConformityCheckerPanel, { type ConformityCheckerPanelRef } from "./ConformityCheckerPanel";
+import ConformityCheckerPanel, {
+  type ConformityCheckerPanelRef,
+} from "./ConformityCheckerPanel";
 import ChatHistoryDrawer from "./ChatHistoryDrawer";
 import { type RightSidebarMode } from "./AllJobsView";
 import {

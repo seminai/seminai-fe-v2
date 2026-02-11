@@ -39,6 +39,7 @@ interface ProductionUnitOption {
   companyName: string;
   value: string;
   label: string;
+  sauHa?: number;
 }
 
 interface ProductOption {
@@ -82,6 +83,7 @@ export function CreateMultipleJobsDrawer({
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [quantity, setQuantity] = useState<string>("");
   const [unitOfMeasure, setUnitOfMeasure] = useState<string>("L");
+  const [treatedSurface, setTreatedSurface] = useState<string>("");
 
   // Reset quando si chiude la drawer
   useEffect(() => {
@@ -93,6 +95,7 @@ export function CreateMultipleJobsDrawer({
       setDatePickerOpen(false);
       setQuantity("");
       setUnitOfMeasure("L");
+      setTreatedSurface("");
     }
   }, [open]);
 
@@ -124,6 +127,20 @@ export function CreateMultipleJobsDrawer({
     return productionUnits.filter((pu) => selectedUnitIds.includes(pu.id));
   }, [productionUnits, selectedUnitIds]);
 
+  // Inizializza treatedSurface con la SAU della prima unità selezionata
+  useEffect(() => {
+    if (selectedUnits.length > 0) {
+      const firstUnitSau = selectedUnits[0].sauHa;
+      setTreatedSurface(
+        firstUnitSau != null && firstUnitSau > 0
+          ? String(firstUnitSau)
+          : "",
+      );
+    } else {
+      setTreatedSurface("");
+    }
+  }, [selectedUnits]);
+
   const selectedProducts = useMemo(() => {
     return products.filter((p) => selectedProductIds.includes(p.registrationNumber));
   }, [products, selectedProductIds]);
@@ -134,6 +151,11 @@ export function CreateMultipleJobsDrawer({
 
   // Calcola il numero di job che verranno creati
   const totalJobs = selectedUnitIds.length * selectedProductIds.length;
+
+  const effectiveTreatedSurface =
+    treatedSurface && parseFloat(treatedSurface) > 0
+      ? parseFloat(treatedSurface)
+      : selectedUnits[0]?.sauHa;
 
   const canSave =
     selectedCompanyId &&
@@ -160,6 +182,10 @@ export function CreateMultipleJobsDrawer({
           _companyId: unit.companyId,
           companyName: unit.companyName,
           _selectedCompanyForPU: unit.companyId,
+
+          // Superficie: inizialmente uguale alla SAU, modificabile dall'utente
+          sauHa: unit.sauHa,
+          treatedSurface: effectiveTreatedSurface ?? unit.sauHa,
 
           // Prodotto
           productRegistrationNumber: product.registrationNumber,
@@ -312,6 +338,37 @@ export function CreateMultipleJobsDrawer({
               </PopoverContent>
             </Popover>
           </div>
+
+          {/* Superficie da trattare (ha) */}
+          {selectedUnits.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-muted-foreground">
+                Superficie da trattare (ha)
+                {selectedUnits[0].sauHa != null && selectedUnits[0].sauHa > 0 ? (
+                  <span className="text-muted-foreground font-normal ml-1">
+                    (SAU: {selectedUnits[0].sauHa} ha)
+                  </span>
+                ) : null}
+              </Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={treatedSurface}
+                onChange={(e) => setTreatedSurface(e.target.value)}
+                placeholder={
+                  selectedUnits[0]?.sauHa != null
+                    ? String(selectedUnits[0].sauHa)
+                    : "0.00"
+                }
+                className="h-11 sm:h-10"
+              />
+              <p className="text-xs text-muted-foreground">
+                Inizialmente uguale alla SAU. Puoi ridurre per trattamenti
+                localizzati o aumentare se necessario.
+              </p>
+            </div>
+          )}
 
           {/* Quantità */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4">

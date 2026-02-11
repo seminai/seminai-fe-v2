@@ -331,6 +331,7 @@ export default function FileImportSection({
   );
 
   const hasExtractedProducts = extractedProducts.length > 0;
+  const isExcelImport = importSource === "excel";
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -430,18 +431,22 @@ export default function FileImportSection({
       <div className="flex-1 min-h-0 flex">
         {hasExtractedProducts ? (
           <>
-            {/* Desktop: split 50/50 */}
+            {/* Desktop: per Excel solo tabella, per altri split 50/50 */}
             <div className="hidden lg:flex flex-1 min-h-0">
-              {/* Sinistra: anteprima file */}
-              <div className="w-1/2 border-r flex flex-col min-h-0">
-                <FilePreviewPanel
-                  fileUrl={uploadedFile?.url ?? null}
-                  fileName={uploadedFile?.name ?? null}
-                  mimeType={uploadedFile?.metadata.mimeType ?? null}
-                />
-              </div>
-              {/* Destra: prodotti estratti */}
-              <div className="w-1/2 flex flex-col min-h-0">
+              {!isExcelImport && (
+                <div className="w-1/2 border-r flex flex-col min-h-0">
+                  <FilePreviewPanel
+                    fileUrl={uploadedFile?.url ?? null}
+                    fileName={uploadedFile?.name ?? null}
+                    mimeType={uploadedFile?.metadata.mimeType ?? null}
+                  />
+                </div>
+              )}
+              <div
+                className={
+                  isExcelImport ? "w-full flex flex-col min-h-0" : "w-1/2 flex flex-col min-h-0"
+                }
+              >
                 <ImportedProductsPanel
                   products={extractedProducts}
                   previewErrors={previewErrors}
@@ -453,7 +458,7 @@ export default function FileImportSection({
               </div>
             </div>
 
-            {/* Mobile: tabella a tutta pagina + bottone anteprima */}
+            {/* Mobile: tabella a tutta pagina + bottone anteprima (non per Excel) */}
             <div className="flex lg:hidden flex-1 flex-col overflow-y-auto">
               <ImportedProductsPanel
                 products={extractedProducts}
@@ -463,7 +468,7 @@ export default function FileImportSection({
                 importSource={importSource}
                 onImportCompleted={onImportCompleted}
                 mobilePreviewButton={
-                  uploadedFile ? (
+                  !isExcelImport && uploadedFile ? (
                     <Button
                       variant="outline"
                       size="sm"
@@ -478,7 +483,8 @@ export default function FileImportSection({
               />
             </div>
 
-            {/* Sheet anteprima file per mobile */}
+            {/* Sheet anteprima file per mobile (solo per CSV/DDT/fattura) */}
+            {!isExcelImport && (
             <Sheet open={mobilePreviewOpen} onOpenChange={setMobilePreviewOpen}>
               <SheetContent side="bottom" className="h-[85vh] p-0">
                 <SheetHeader className="px-4 py-3 border-b">
@@ -495,6 +501,7 @@ export default function FileImportSection({
                 </div>
               </SheetContent>
             </Sheet>
+            )}
           </>
         ) : (
           <div className="flex-1 flex items-start justify-center overflow-auto">

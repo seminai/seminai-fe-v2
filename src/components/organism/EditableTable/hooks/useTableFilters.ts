@@ -7,7 +7,12 @@ import {
   InternalRow,
   TableFilterRule,
 } from "../types";
-import { SYSTEM_DATE_COLUMNS } from "../constants";
+import {
+  SYSTEM_DATE_COLUMNS,
+  GLOBAL_COMPANY_FILTER_STORAGE_KEY,
+  GLOBAL_COMPANY_FILTER_COLUMN_ID,
+  GLOBAL_COMPANY_FILTER_ROUTES,
+} from "../constants";
 import {
   generateTempId,
   getColumnById,
@@ -43,11 +48,23 @@ export interface UseTableFiltersReturn {
   handleColumnFilterOpenChange: (columnId: string, open: boolean) => void;
   handleColumnFilterSearchChange: (columnId: string, query: string) => void;
   handleColumnFilterValueToggle: (columnId: string, value: string) => void;
-  handleColumnFilterDateRangeChange: (columnId: string, range: DateRange | undefined) => void;
-  handleColumnFilterDateChange: (columnId: string, date: Date | undefined) => void;
+  handleColumnFilterDateRangeChange: (
+    columnId: string,
+    range: DateRange | undefined,
+  ) => void;
+  handleColumnFilterDateChange: (
+    columnId: string,
+    date: Date | undefined,
+  ) => void;
   handleColumnFilterClear: (columnId: string) => void;
-  getFilteredRows: (rows: InternalRow[], columns: EditableColumn[]) => InternalRow[];
-  formatFilterLabel: (filter: TableFilterRule, columns: EditableColumn[]) => string;
+  getFilteredRows: (
+    rows: InternalRow[],
+    columns: EditableColumn[],
+  ) => InternalRow[];
+  formatFilterLabel: (
+    filter: TableFilterRule,
+    columns: EditableColumn[],
+  ) => string;
   getAvailableSystemColumns: (rows: InternalRow[]) => EditableColumn[];
   resetColumnFilters: () => void;
 }
@@ -62,26 +79,81 @@ function createEmptyFilterDraft(): FilterDraft {
 }
 
 function createInitialSystemRanges(): Record<string, DateRange | undefined> {
-  return SYSTEM_DATE_COLUMNS.reduce((acc, column) => {
-    acc[column.id] = undefined;
-    return acc;
-  }, {} as Record<string, DateRange | undefined>);
+  return SYSTEM_DATE_COLUMNS.reduce(
+    (acc, column) => {
+      acc[column.id] = undefined;
+      return acc;
+    },
+    {} as Record<string, DateRange | undefined>,
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Global Company Filter – localStorage helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function isGlobalCompanyFilterRoute(): boolean {
+  const pathname = window.location.pathname;
+  return GLOBAL_COMPANY_FILTER_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(route + "/"),
+  );
+}
+
+function loadGlobalCompanyFilter(): Set<string> {
+  try {
+    const stored = localStorage.getItem(GLOBAL_COMPANY_FILTER_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as string[];
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return new Set(parsed);
+      }
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+  return new Set<string>();
+}
+
+function saveGlobalCompanyFilter(values: Set<string>): void {
+  try {
+    if (values.size === 0) {
+      localStorage.removeItem(GLOBAL_COMPANY_FILTER_STORAGE_KEY);
+    } else {
+      localStorage.setItem(
+        GLOBAL_COMPANY_FILTER_STORAGE_KEY,
+        JSON.stringify([...values]),
+      );
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function buildInitialColumnFilterValues(): Record<string, Set<string>> {
+  if (!isGlobalCompanyFilterRoute()) return {};
+  const saved = loadGlobalCompanyFilter();
+  if (saved.size === 0) return {};
+  return { [GLOBAL_COMPANY_FILTER_COLUMN_ID]: saved };
 }
 
 export function useTableFilters(): UseTableFiltersReturn {
   // Panel filter state
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<TableFilterRule[]>([]);
-  const [filterDraft, setFilterDraft] = useState<FilterDraft>(createEmptyFilterDraft());
-  const [systemDateRanges, setSystemDateRanges] = useState<Record<string, DateRange | undefined>>(
-    createInitialSystemRanges()
+  const [filterDraft, setFilterDraft] = useState<FilterDraft>(
+    createEmptyFilterDraft(),
   );
+  const [systemDateRanges, setSystemDateRanges] = useState<
+    Record<string, DateRange | undefined>
+  >(createInitialSystemRanges());
 
-  // Column filter state
-  const [columnFilterOpen, setColumnFilterOpen] = useState<string | undefined>(undefined);
+  // Column filter state – initialised with persisted global company filter
+  const [columnFilterOpen, setColumnFilterOpen] = useState<string | undefined>(
+    undefined,
+  );
   const [columnFilterSelectedValues, setColumnFilterSelectedValues] = useState<
     Record<string, Set<string>>
-  >({});
+  >(buildInitialColumnFilterValues);
   const [columnFilterSearchQueries, setColumnFilterSearchQueries] = useState<
     Record<string, string>
   >({});
@@ -126,7 +198,7 @@ export function useTableFilters(): UseTableFiltersReturn {
         return nextDraft;
       });
     },
-    []
+    [],
   );
 
   const addFilter = useCallback(() => {
@@ -179,7 +251,9 @@ export function useTableFilters(): UseTableFiltersReturn {
       }));
 
       setActiveFilters((prev) => {
-        const withoutCurrentColumn = prev.filter((f) => f.columnId !== columnId);
+        const withoutCurrentColumn = prev.filter(
+          (f) => f.columnId !== columnId,
+        );
         if (range?.from && range?.to) {
           const newFilter: TableFilterRule = {
             id: generateTempId(),
@@ -193,40 +267,61 @@ export function useTableFilters(): UseTableFiltersReturn {
         return withoutCurrentColumn;
       });
     },
-    []
+    [],
   );
 
   // Column filter methods
-  const handleColumnFilterOpenChange = useCallback((columnId: string, open: boolean) => {
-    setColumnFilterOpen(open ? columnId : undefined);
-    if (open) {
-      setColumnFilterSearchQueries((prev) => ({ ...prev, [columnId]: "" }));
-    }
-  }, []);
-
-  const handleColumnFilterSearchChange = useCallback((columnId: string, query: string) => {
-    setColumnFilterSearchQueries((prev) => ({ ...prev, [columnId]: query }));
-  }, []);
-
-  const handleColumnFilterValueToggle = useCallback((columnId: string, value: string) => {
-    setColumnFilterSelectedValues((prev) => {
-      const currentSet = prev[columnId] || new Set<string>();
-      const newSet = new Set(currentSet);
-      if (newSet.has(value)) {
-        newSet.delete(value);
-      } else {
-        newSet.add(value);
+  const handleColumnFilterOpenChange = useCallback(
+    (columnId: string, open: boolean) => {
+      setColumnFilterOpen(open ? columnId : undefined);
+      if (open) {
+        setColumnFilterSearchQueries((prev) => ({ ...prev, [columnId]: "" }));
       }
-      return { ...prev, [columnId]: newSet };
-    });
-  }, []);
+    },
+    [],
+  );
+
+  const handleColumnFilterSearchChange = useCallback(
+    (columnId: string, query: string) => {
+      setColumnFilterSearchQueries((prev) => ({ ...prev, [columnId]: query }));
+    },
+    [],
+  );
+
+  const handleColumnFilterValueToggle = useCallback(
+    (columnId: string, value: string) => {
+      setColumnFilterSelectedValues((prev) => {
+        const currentSet = prev[columnId] || new Set<string>();
+        const newSet = new Set(currentSet);
+        if (newSet.has(value)) {
+          newSet.delete(value);
+        } else {
+          newSet.add(value);
+        }
+
+        // Persist global company filter to localStorage
+        if (
+          columnId === GLOBAL_COMPANY_FILTER_COLUMN_ID &&
+          isGlobalCompanyFilterRoute()
+        ) {
+          saveGlobalCompanyFilter(newSet);
+        }
+
+        return { ...prev, [columnId]: newSet };
+      });
+    },
+    [],
+  );
 
   const handleColumnFilterDateRangeChange = useCallback(
     (columnId: string, range: DateRange | undefined) => {
       setColumnFilterDateRanges((prev) => ({ ...prev, [columnId]: range }));
-      setColumnFilterSelectedDates((prev) => ({ ...prev, [columnId]: undefined }));
+      setColumnFilterSelectedDates((prev) => ({
+        ...prev,
+        [columnId]: undefined,
+      }));
     },
-    []
+    [],
   );
 
   const handleColumnFilterDateChange = useCallback(
@@ -234,7 +329,7 @@ export function useTableFilters(): UseTableFiltersReturn {
       setColumnFilterSelectedDates((prev) => ({ ...prev, [columnId]: date }));
       setColumnFilterDateRanges((prev) => ({ ...prev, [columnId]: undefined }));
     },
-    []
+    [],
   );
 
   const handleColumnFilterClear = useCallback((columnId: string) => {
@@ -258,11 +353,25 @@ export function useTableFilters(): UseTableFiltersReturn {
       delete next[columnId];
       return next;
     });
+
+    // Clear global company filter from localStorage
+    if (
+      columnId === GLOBAL_COMPANY_FILTER_COLUMN_ID &&
+      isGlobalCompanyFilterRoute()
+    ) {
+      saveGlobalCompanyFilter(new Set());
+    }
   }, []);
 
   const resetColumnFilters = useCallback(() => {
     setColumnFilterOpen(undefined);
-    setColumnFilterSelectedValues({});
+    // Preserve the global company filter across resets
+    setColumnFilterSelectedValues(() => {
+      if (!isGlobalCompanyFilterRoute()) return {};
+      const saved = loadGlobalCompanyFilter();
+      if (saved.size === 0) return {};
+      return { [GLOBAL_COMPANY_FILTER_COLUMN_ID]: saved };
+    });
     setColumnFilterSearchQueries({});
     setColumnFilterDateRanges({});
     setColumnFilterSelectedDates({});
@@ -301,7 +410,9 @@ export function useTableFilters(): UseTableFiltersReturn {
       // Apply column filters
       filtered = filtered.filter((row) => {
         // Check value filters
-        for (const [columnId, selectedValues] of Object.entries(columnFilterSelectedValues)) {
+        for (const [columnId, selectedValues] of Object.entries(
+          columnFilterSelectedValues,
+        )) {
           const column = getColumnById(columnId, columns, rows);
           if (column?.type === "date") continue;
           if (selectedValues.size === 0) continue;
@@ -310,7 +421,11 @@ export function useTableFilters(): UseTableFiltersReturn {
           if (columnId === "productRegistrationNumber") {
             const productName = row.data["productName"];
             const productRegNumber = row.data["productRegistrationNumber"];
-            if (productName && String(productName).trim() && String(productName).trim() !== "-") {
+            if (
+              productName &&
+              String(productName).trim() &&
+              String(productName).trim() !== "-"
+            ) {
               cellValue = String(productName).trim();
             } else if (
               productRegNumber &&
@@ -331,7 +446,9 @@ export function useTableFilters(): UseTableFiltersReturn {
         }
 
         // Check date range filters
-        for (const [columnId, dateRange] of Object.entries(columnFilterDateRanges)) {
+        for (const [columnId, dateRange] of Object.entries(
+          columnFilterDateRanges,
+        )) {
           if (!dateRange) continue;
           const cellDate = toDateObject(row.data[columnId]);
           if (!cellDate) return false;
@@ -339,7 +456,9 @@ export function useTableFilters(): UseTableFiltersReturn {
         }
 
         // Check single date filters
-        for (const [columnId, selectedDate] of Object.entries(columnFilterSelectedDates)) {
+        for (const [columnId, selectedDate] of Object.entries(
+          columnFilterSelectedDates,
+        )) {
           if (!selectedDate) continue;
           const cellDate = toDateObject(row.data[columnId]);
           if (!cellDate) return false;
@@ -347,12 +466,12 @@ export function useTableFilters(): UseTableFiltersReturn {
           const cellDateOnly = new Date(
             cellDate.getFullYear(),
             cellDate.getMonth(),
-            cellDate.getDate()
+            cellDate.getDate(),
           );
           const selectedDateOnly = new Date(
             selectedDate.getFullYear(),
             selectedDate.getMonth(),
-            selectedDate.getDate()
+            selectedDate.getDate(),
           );
           if (cellDateOnly.getTime() !== selectedDateOnly.getTime()) {
             return false;
@@ -364,7 +483,12 @@ export function useTableFilters(): UseTableFiltersReturn {
 
       return filtered;
     },
-    [activeFilters, columnFilterSelectedValues, columnFilterDateRanges, columnFilterSelectedDates]
+    [
+      activeFilters,
+      columnFilterSelectedValues,
+      columnFilterDateRanges,
+      columnFilterSelectedDates,
+    ],
   );
 
   const formatFilterLabel = useCallback(
@@ -372,22 +496,22 @@ export function useTableFilters(): UseTableFiltersReturn {
       const column = getColumnById(filter.columnId, columns, []);
       const columnLabel = column?.title ?? filter.columnId;
       const operatorLabel =
-        getOperatorsForColumn(column).find((op) => op.value === filter.operator)?.label ??
-        filter.operator;
+        getOperatorsForColumn(column).find((op) => op.value === filter.operator)
+          ?.label ?? filter.operator;
 
       if (filter.secondaryValue) {
         return `${columnLabel} ${operatorLabel} ${filter.value} - ${filter.secondaryValue}`;
       }
       return `${columnLabel} ${operatorLabel} ${filter.value}`;
     },
-    []
+    [],
   );
 
   const getAvailableSystemColumns = useCallback(
     (rows: InternalRow[]): EditableColumn[] => {
       return getAvailableSystemDateColumns(rows);
     },
-    []
+    [],
   );
 
   return {
