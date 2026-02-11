@@ -345,10 +345,12 @@ export function useCreateRule() {
     mutationFn: ({
       workspaceId,
       payload,
+      pdfFile,
     }: {
       workspaceId: string;
       payload: CreateRuleRequest;
-    }) => createRule(workspaceId, payload),
+      pdfFile?: File;
+    }) => createRule(workspaceId, payload, pdfFile),
     onSuccess: (rule, { workspaceId }) => {
       // Set detail cache
       queryClient.setQueryData(workspaceKeys.rule(rule.id), rule);
@@ -372,10 +374,12 @@ export function useUpdateRule() {
     mutationFn: ({
       ruleId,
       payload,
+      pdfFile,
     }: {
       ruleId: string;
       payload: UpdateRuleRequest;
-    }) => updateRule(ruleId, payload),
+      pdfFile?: File;
+    }) => updateRule(ruleId, payload, pdfFile),
     onSuccess: (rule) => {
       // Update detail cache
       queryClient.setQueryData(workspaceKeys.rule(rule.id), rule);

@@ -106,6 +106,7 @@ export type Rule = {
   validFrom: string | null;
   validUntil: string | null;
   version: string | null;
+  pdfUrl: string | null;
   isPublic: boolean;
   isTemplate: boolean;
   createdById: string;

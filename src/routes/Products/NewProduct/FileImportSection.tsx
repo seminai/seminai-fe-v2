@@ -32,6 +32,11 @@ import ImportedProductsPanel from "./ImportedProductsPanel";
 
 interface FileImportSectionProps {
   onImportCompleted?: () => void;
+  preselectedCompanyId?: string;
+  /** Hides the import button inside ImportedProductsPanel */
+  hideImportButton?: boolean;
+  /** Ref to store the import trigger function for external invocation */
+  importTriggerRef?: React.MutableRefObject<(() => Promise<void>) | null>;
 }
 
 class CsvExcelPreviewMapper {
@@ -96,9 +101,12 @@ class InvoicePreviewMapper {
 
 export default function FileImportSection({
   onImportCompleted,
+  preselectedCompanyId,
+  hideImportButton,
+  importTriggerRef,
 }: FileImportSectionProps) {
   const [activeTab, setActiveTab] = useState<"csv" | "ddt" | "invoice">("csv");
-  const [companyId, setCompanyId] = useState("");
+  const [companyId, setCompanyId] = useState(preselectedCompanyId || "");
   const [warehouseId, setWarehouseId] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -379,6 +387,7 @@ export default function FileImportSection({
 
         {/* Riga selezione azienda e magazzino */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {!preselectedCompanyId && (
           <div className="space-y-1">
             <Label className="text-xs">Azienda *</Label>
             <SearchableSelect
@@ -398,6 +407,7 @@ export default function FileImportSection({
               </p>
             )}
           </div>
+          )}
 
           <div className="space-y-1">
             <Label className="text-xs">Magazzino (opzionale)</Label>
@@ -454,6 +464,8 @@ export default function FileImportSection({
                   warehouseId={warehouseId || warehouses[0]?.id || undefined}
                   importSource={importSource}
                   onImportCompleted={onImportCompleted}
+                  hideFooter={hideImportButton}
+                  importTriggerRef={importTriggerRef}
                 />
               </div>
             </div>
@@ -467,6 +479,7 @@ export default function FileImportSection({
                 warehouseId={warehouseId || warehouses[0]?.id || undefined}
                 importSource={importSource}
                 onImportCompleted={onImportCompleted}
+                hideFooter={hideImportButton}
                 mobilePreviewButton={
                   !isExcelImport && uploadedFile ? (
                     <Button

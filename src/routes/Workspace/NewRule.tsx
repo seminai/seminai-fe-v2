@@ -1,8 +1,9 @@
+import { useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileUp, X, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +66,8 @@ export default function NewRule() {
   const navigate = useNavigate();
   const { currentWorkspace } = useWorkspaceContext();
   const { mutateAsync: createRule, isPending: isCreating } = useCreateRule();
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -103,6 +106,7 @@ export default function NewRule() {
       await createRule({
         workspaceId: currentWorkspace.id,
         payload,
+        pdfFile: pdfFile ?? undefined,
       });
 
       toast.success("Regola creata con successo!");
@@ -324,6 +328,67 @@ export default function NewRule() {
                   </FormItem>
                 )}
               />
+
+              {/* PDF Upload */}
+              <div className="space-y-2">
+                <label className="text-base font-medium">Documento PDF</label>
+                <p className="text-sm text-muted-foreground">
+                  Carica un file PDF associato alla regola (max 50 MB)
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 50 * 1024 * 1024) {
+                        toast.error("Il file supera il limite di 50 MB");
+                        return;
+                      }
+                      if (file.type !== "application/pdf") {
+                        toast.error("Seleziona un file PDF valido");
+                        return;
+                      }
+                      setPdfFile(file);
+                    }
+                  }}
+                />
+                {pdfFile ? (
+                  <div className="flex items-center gap-3 p-3 rounded-lg border bg-neutral-50">
+                    <FileText className="w-5 h-5 text-red-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{pdfFile.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={() => {
+                        setPdfFile(null);
+                        if (fileInputRef.current) fileInputRef.current.value = "";
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-20 border-dashed"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <FileUp className="w-5 h-5 mr-2" />
+                    Seleziona PDF
+                  </Button>
+                )}
+              </div>
 
               <FormField
                 control={form.control}

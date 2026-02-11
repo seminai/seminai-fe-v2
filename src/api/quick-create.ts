@@ -3,88 +3,144 @@ import { authenticatedHttpClient } from "./http";
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 /**
- * Represents the extracted company data from CSV
+ * Field allocation within a production unit
  */
-export interface ExtractedCompany {
+export interface ExtractedFieldAllocation {
+  fieldName: string;
+  sezione: string | null;
+  foglio: string | null;
+  particella: string | null;
+  subalterno: string | null;
+  areaHa: number;
+}
+
+/**
+ * Production unit cycle
+ */
+export interface ProductionUnitCycle {
+  cycleIndex: number;
+  cropName: string | null;
+  cropType: string | null;
+  cropCode: string | null;
+  variety: string | null;
+  occupazione: string | null;
+  destinazione: string | null;
+  protectionStructure: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  floweringDate: string | null;
+  harvestingDate: string | null;
+}
+
+/**
+ * Extracted field data from /onboarding/extract
+ */
+export interface ExtractedField {
   name: string;
-  vatNumber: string | null;
-  fiscalCode: string | null;
-  cuaa: string | null;
   nation: string | null;
   region: string | null;
   city: string | null;
   address: string | null;
   cap: string | null;
-}
-
-/**
- * Represents the extracted field data from CSV
- */
-export interface ExtractedField {
-  name: string;
-  municipality: string | null;
-  province: string | null;
-  cadastralSheet: string | null;
-  cadastralParcel: string | null;
-  cadastralPortion: string | null;
-  cadastralQuality: string | null;
-  surface: number | null;
+  foglio: string | null;
+  particella: string | null;
+  subalterno: string | null;
+  sezione: string | null;
+  superficieCatastaleMq: number | null;
+  gisHa: number | null;
+  sauHa: number | null;
+  variazioneMq: number | null;
+  uso: string | null;
+  qualita: string | null;
+  soilType: string | null;
+  ph: number | null;
+  nitrogen: number | null;
+  phosphorus: number | null;
+  potassium: number | null;
+  calcium: number | null;
+  magnesium: number | null;
   latitude: number | null;
   longitude: number | null;
+  inizioConduzione: string | null;
+  fineConduzione: string | null;
 }
 
 /**
- * Represents the extracted production unit data from CSV
+ * Extracted production unit data from /onboarding/extract
  */
 export interface ExtractedProductionUnit {
-  cropCode: string | null;
-  cropDescription: string | null;
-  varietyCode: string | null;
-  varietyDescription: string | null;
-  surface: number | null;
-  fieldName: string | null;
+  name: string;
+  cropName: string | null;
+  cropType: string | null;
+  variety: string | null;
+  protocoll: string | null;
+  protectionStructure: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  floweringDate: string | null;
+  harvestingDate: string | null;
+  occupazione: string | null;
+  destinazioneDiUso: string | null;
+  areaHa: number;
+  cycles: ProductionUnitCycle[];
+  fieldAllocations: ExtractedFieldAllocation[];
 }
 
 /**
- * Represents the summary of extracted data
+ * Response from POST /onboarding/extract
  */
-export interface ExtractionSummary {
-  fieldsCount: number;
-  productionUnitsCount: number;
-}
-
-/**
- * Response from the extract-from-csv endpoint
- */
-export interface ExtractFromCsvResponse {
+export interface ExtractFromFileResponse {
   status: "success";
   data: {
-    company: ExtractedCompany;
     fields: ExtractedField[];
     productionUnits: ExtractedProductionUnit[];
-    summary: ExtractionSummary;
+    fieldCount: number;
+    productionUnitCount: number;
   };
 }
 
 /**
- * Input for creating company with data
+ * Input for POST /onboarding/bulk-create
  */
-export interface CreateWithDataInput {
-  companyId?: string;
-  company: ExtractedCompany;
+export interface BulkCreateInput {
+  companyId: string;
   fields: ExtractedField[];
   productionUnits: ExtractedProductionUnit[];
 }
 
 /**
- * Response from the create-with-data endpoint
+ * Response from POST /onboarding/bulk-create
  */
-export interface CreateWithDataResponse {
+export interface BulkCreateResponse {
   status: "success";
   data: {
-    company: { id: string } & ExtractedCompany;
-    fields: Array<{ id: string } & ExtractedField>;
-    productionUnits: Array<{ id: string } & ExtractedProductionUnit>;
+    fields: Array<{
+      id: string;
+      companyId: string;
+      name: string;
+      foglio: string | null;
+      particella: string | null;
+      superficieCatastaleMq: number | null;
+      sauHa: number | null;
+      region: string | null;
+      city: string | null;
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    productionUnits: Array<{
+      id: string;
+      cycleId: string;
+      name: string;
+      cropName: string | null;
+      cropType: string | null;
+      variety: string | null;
+      areaHa: number;
+      startDate: string | null;
+      endDate: string | null;
+      createdAt: string;
+    }>;
+    fieldCount: number;
+    productionUnitCount: number;
   };
 }
 
@@ -100,44 +156,42 @@ async function safeReadText(response: Response): Promise<string> {
 }
 
 /**
- * Extracts company, fields and production units data from a CSV/Excel file
+ * Extracts fields and production units from an uploaded file
+ * POST /onboarding/extract
  */
-export async function extractFromCsv(
+export async function extractFromFile(
   file: File,
-  companyId?: string,
-  baseUrl: string = BASE_URL
-): Promise<ExtractFromCsvResponse> {
+  baseUrl: string = BASE_URL,
+): Promise<ExtractFromFileResponse> {
   const formData = new FormData();
   formData.append("file", file);
-  if (companyId) {
-    formData.append("companyId", companyId);
-  }
 
   const response = await authenticatedHttpClient.request(
-    `${baseUrl}/companies/extract-from-csv`,
+    `${baseUrl}/onboarding/extract`,
     {
       method: "POST",
       body: formData,
-    }
+    },
   );
 
   if (!response.ok) {
     const errorText = await safeReadText(response);
-    throw new Error(errorText || "Failed to extract data from CSV");
+    throw new Error(errorText || "Failed to extract data from file");
   }
 
-  return (await response.json()) as ExtractFromCsvResponse;
+  return (await response.json()) as ExtractFromFileResponse;
 }
 
 /**
- * Creates a company with its associated fields and production units
+ * Bulk creates fields and production units for a company
+ * POST /onboarding/bulk-create
  */
-export async function createWithData(
-  input: CreateWithDataInput,
-  baseUrl: string = BASE_URL
-): Promise<CreateWithDataResponse> {
+export async function bulkCreate(
+  input: BulkCreateInput,
+  baseUrl: string = BASE_URL,
+): Promise<BulkCreateResponse> {
   const response = await authenticatedHttpClient.request(
-    `${baseUrl}/companies/create-with-data`,
+    `${baseUrl}/onboarding/bulk-create`,
     {
       method: "POST",
       headers: {
@@ -145,15 +199,15 @@ export async function createWithData(
         Accept: "application/json",
       },
       body: JSON.stringify(input),
-    }
+    },
   );
 
   if (!response.ok) {
     const errorText = await safeReadText(response);
-    throw new Error(errorText || "Failed to create company with data");
+    throw new Error(errorText || "Failed to bulk create data");
   }
 
-  return (await response.json()) as CreateWithDataResponse;
+  return (await response.json()) as BulkCreateResponse;
 }
 
 /**
@@ -166,19 +220,17 @@ export class QuickCreateApiService {
     this.baseUrl = baseUrl;
   }
 
-  public async extractFromCsv(
+  public async extractFromFile(
     file: File,
-    companyId?: string
-  ): Promise<ExtractFromCsvResponse> {
-    return extractFromCsv(file, companyId, this.baseUrl);
+  ): Promise<ExtractFromFileResponse> {
+    return extractFromFile(file, this.baseUrl);
   }
 
-  public async createWithData(
-    input: CreateWithDataInput
-  ): Promise<CreateWithDataResponse> {
-    return createWithData(input, this.baseUrl);
+  public async bulkCreate(
+    input: BulkCreateInput,
+  ): Promise<BulkCreateResponse> {
+    return bulkCreate(input, this.baseUrl);
   }
 }
 
 export const quickCreateApiService = new QuickCreateApiService();
-

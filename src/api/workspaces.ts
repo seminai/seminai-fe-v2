@@ -365,15 +365,39 @@ export async function getRule(
 export async function createRule(
   workspaceId: string,
   payload: CreateRuleRequest,
+  pdfFile?: File,
   baseUrl: string = BASE_URL
 ): Promise<Rule> {
-  const response = await authenticatedHttpClient.request(
-    `${baseUrl}/workspaces/${workspaceId}/rules`,
-    {
+  let requestInit: RequestInit;
+
+  if (pdfFile) {
+    const formData = new FormData();
+    formData.append("name", payload.name);
+    formData.append("category", payload.category);
+    formData.append("content", JSON.stringify(payload.content));
+    if (payload.slug) formData.append("slug", payload.slug);
+    if (payload.description) formData.append("description", payload.description);
+    if (payload.sourceUrl) formData.append("sourceUrl", payload.sourceUrl);
+    if (payload.sourceDocument) formData.append("sourceDocument", payload.sourceDocument);
+    if (payload.region) formData.append("region", payload.region);
+    if (payload.validFrom) formData.append("validFrom", payload.validFrom);
+    if (payload.validUntil) formData.append("validUntil", payload.validUntil);
+    if (payload.version) formData.append("version", payload.version);
+    if (payload.isPublic !== undefined) formData.append("isPublic", String(payload.isPublic));
+    if (payload.isTemplate !== undefined) formData.append("isTemplate", String(payload.isTemplate));
+    formData.append("pdfFile", pdfFile);
+    requestInit = { method: "POST", body: formData };
+  } else {
+    requestInit = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    }
+    };
+  }
+
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/workspaces/${workspaceId}/rules`,
+    requestInit
   );
 
   if (!response.ok) {
@@ -388,15 +412,40 @@ export async function createRule(
 export async function updateRule(
   ruleId: string,
   payload: UpdateRuleRequest,
+  pdfFile?: File,
   baseUrl: string = BASE_URL
 ): Promise<Rule> {
-  const response = await authenticatedHttpClient.request(
-    `${baseUrl}/rules/${ruleId}`,
-    {
+  let requestInit: RequestInit;
+
+  if (pdfFile) {
+    const formData = new FormData();
+    if (payload.name) formData.append("name", payload.name);
+    if (payload.category) formData.append("category", payload.category);
+    if (payload.content) formData.append("content", JSON.stringify(payload.content));
+    if (payload.slug) formData.append("slug", payload.slug);
+    if (payload.description) formData.append("description", payload.description);
+    if (payload.sourceUrl) formData.append("sourceUrl", payload.sourceUrl);
+    if (payload.sourceDocument) formData.append("sourceDocument", payload.sourceDocument);
+    if (payload.region) formData.append("region", payload.region);
+    if (payload.validFrom) formData.append("validFrom", payload.validFrom);
+    if (payload.validUntil) formData.append("validUntil", payload.validUntil);
+    if (payload.version) formData.append("version", payload.version);
+    if (payload.isPublic !== undefined) formData.append("isPublic", String(payload.isPublic));
+    if (payload.isTemplate !== undefined) formData.append("isTemplate", String(payload.isTemplate));
+    if (payload.status) formData.append("status", payload.status);
+    formData.append("pdfFile", pdfFile);
+    requestInit = { method: "PUT", body: formData };
+  } else {
+    requestInit = {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    }
+    };
+  }
+
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/rules/${ruleId}`,
+    requestInit
   );
 
   if (!response.ok) {
