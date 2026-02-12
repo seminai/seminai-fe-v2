@@ -100,20 +100,20 @@ export const PRICING_TABLE_HEADERS: [string, string, string, string, string] = [
 ];
 
 export const PRICING_TABLE_ROWS: [string, string, string, string, string][] = [
-  ["Start", "€ 12,00", "€ 288,00", "€ 144,00", "€ 120,00 (21 giorni gratis)"],
+  ["Start", "€ 12,00", "€ 288,00", "€ 144,00", "€ 120,00 (due mesi gratis)"],
   [
     "Professional",
     "€ 36,00",
     "€ 864,00",
     "€ 432,00",
-    "€ 360,00 (21 giorni gratis)",
+    "€ 360,00 (due mesi gratis)",
   ],
   [
     "Enterprise",
     "€ 50,00",
     "€ 1.200,00",
     "€ 600,00",
-    "€ 500,00 (21 giorni gratis)",
+    "€ 500,00 (due mesi  gratis)",
   ],
 ];
 
