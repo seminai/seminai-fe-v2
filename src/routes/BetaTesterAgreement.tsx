@@ -280,7 +280,7 @@ export default function BetaTesterAgreement() {
       margin: { left: margin },
       tableWidth: pageWidth - margin * 2,
       styles: { fontSize: 8 },
-      headStyles: { fillColor: [240, 240, 240] },
+      headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
     });
     cursorY =
       (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable
@@ -302,7 +302,7 @@ export default function BetaTesterAgreement() {
       margin: { left: margin },
       tableWidth: pageWidth - margin * 2,
       styles: { fontSize: 8 },
-      headStyles: { fillColor: [240, 240, 240] },
+      headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
     });
     cursorY =
       (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable
