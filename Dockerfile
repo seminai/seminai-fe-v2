@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Definisci l'argomento di build per l'URL API (default verso il backend in Cloud Run)
 ARG VITE_API_URL="https://seminai-be-v2-661301438659.europe-west1.run.app"
-ARG VITE_REGISTRATION_CODE="benvenutodaclariceefrancescoteamseminai2025"
+ARG VITE_REGISTRATION_CODE="benvenutodaclariceefrancescoteamseminai2026"
 ARG COMMIT_SHA
 
 # Imposta la variabile d'ambiente per il build di Vite
