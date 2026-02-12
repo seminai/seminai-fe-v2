@@ -1,4 +1,5 @@
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { jsPDF } from "jspdf";
@@ -146,14 +147,13 @@ function AgreementPreviewContent({ text }: { text: string }) {
 }
 
 export default function BetaTesterAgreement() {
+  const navigate = useNavigate();
   const [formState, setFormState] =
     useState<AgreementFormState>(INITIAL_FORM_STATE);
   const [step, setStep] = useState<1 | 2>(1);
   const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signedAt] = useState(() => new Date());
-  const [pdfBlobData, setPdfBlobData] = useState<{ blob: Blob; fileName: string } | null>(null);
 
   const agreementPlaceholders = useMemo(
     () => buildPlaceholders(formState, signedAt),
@@ -177,19 +177,7 @@ export default function BetaTesterAgreement() {
         [key]: event.target.value,
       }));
       setErrorMessage("");
-      setSuccessMessage("");
-      setPdfBlobData(null);
     };
-
-  const handleDownloadPdf = () => {
-    if (!pdfBlobData) return;
-    const downloadUrl = URL.createObjectURL(pdfBlobData.blob);
-    const link = document.createElement("a");
-    link.href = downloadUrl;
-    link.download = pdfBlobData.fileName;
-    link.click();
-    URL.revokeObjectURL(downloadUrl);
-  };
 
   function buildPdfBlob(): { blob: Blob; fileName: string } {
     const doc = new jsPDF({
@@ -389,7 +377,6 @@ export default function BetaTesterAgreement() {
 
     setIsSubmitting(true);
     setErrorMessage("");
-    setSuccessMessage("");
 
     const formattedBirthDate = format(new Date(birthDate), "dd/MM/yyyy", {
       locale: it,
@@ -423,12 +410,14 @@ Il PDF firmato è allegato a questa email.`;
         files: [pdfFile],
       });
 
-      // Save PDF blob for later download (after success)
-      setPdfBlobData({ blob, fileName });
+      // Convert blob to array for router state serialization
+      const arrayBuffer = await blob.arrayBuffer();
+      const pdfBytes = Array.from(new Uint8Array(arrayBuffer));
 
-      setSuccessMessage("Accordo inviato correttamente! Ora puoi scaricare la tua copia del PDF.");
-      setFormState(INITIAL_FORM_STATE);
-      setStep(1);
+      navigate("/diventa-beta-tester/successo", {
+        state: { pdfBlob: pdfBytes, pdfFileName: fileName },
+        replace: true,
+      });
     } catch (err) {
       setErrorMessage(
         err instanceof Error ? err.message : "Errore durante l'invio. Riprova.",
@@ -560,8 +549,6 @@ Il PDF firmato è allegato a questa email.`;
                   className="text-sm text-agri-green-600 font-medium hover:underline"
                   onClick={() => {
                     setStep(1);
-                    setPdfBlobData(null);
-                    setSuccessMessage("");
                     setErrorMessage("");
                   }}
                 >
@@ -647,26 +634,11 @@ Il PDF firmato è allegato a questa email.`;
                     signatureDataUrl,
                   }));
                   setErrorMessage("");
-                  setSuccessMessage("");
                 }}
               />
 
               {errorMessage && (
                 <p className="text-sm text-red-500">{errorMessage}</p>
-              )}
-              {successMessage && (
-                <div className="space-y-3">
-                  <p className="text-sm text-green-700">{successMessage}</p>
-                  {pdfBlobData && (
-                    <button
-                      type="button"
-                      onClick={handleDownloadPdf}
-                      className="w-full py-3 px-6 rounded-2xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
-                    >
-                      📄 Scarica copia PDF
-                    </button>
-                  )}
-                </div>
               )}
 
               <button

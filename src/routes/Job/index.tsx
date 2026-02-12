@@ -2474,7 +2474,7 @@ export default function JobPage() {
       type: "number",
       width: "180px",
       readOnly: false,
-      onValueChange: ({ value, rowData }) => {
+      onValueChange: ({ value }) => {
         const numValue = Number(value);
         return {
           treatedSurface:

@@ -366,7 +366,7 @@ export function useTableFilters(): UseTableFiltersReturn {
   const resetColumnFilters = useCallback(() => {
     setColumnFilterOpen(undefined);
     // Preserve the global company filter across resets
-    setColumnFilterSelectedValues(() => {
+    setColumnFilterSelectedValues((): Record<string, Set<string>> => {
       if (!isGlobalCompanyFilterRoute()) return {};
       const saved = loadGlobalCompanyFilter();
       if (saved.size === 0) return {};
