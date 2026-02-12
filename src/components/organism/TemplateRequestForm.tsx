@@ -82,7 +82,7 @@ export function TemplateRequestForm({
     setIsSubmitting(true);
     setErrorMessage("");
 
-    const message = `RICHIESTA TEMPLATE AGEA - MISURA UNICA\n\nNome: ${trimmedName}\nEmail: ${trimmedEmail}\nRegione: ${trimmedRegion}\n\nL'utente ha richiesto il template Excel nel formato AGEA della misura unica per la regione ${trimmedRegion}.`;
+    const message = `RICHIESTA TEMPLATE FASCICOLO AZIENDALE (modello AGEA della misura unica) \n\nNome: ${trimmedName}\nEmail: ${trimmedEmail}\nRegione: ${trimmedRegion}\n\nL'utente ha richiesto il template Excel nel formato AGEA della misura unica per la regione ${trimmedRegion}.`;
 
     try {
       const response = await emailApiService.sendContactEmail({
@@ -97,7 +97,7 @@ export function TemplateRequestForm({
       setIsSubmitting(false);
       setSuccessMessage(
         response.message ??
-          "Richiesta inviata correttamente. Ti invieremo il template via email."
+          "Richiesta inviata correttamente. Ti invieremo il template via email.",
       );
 
       if (onSuccess) {
@@ -106,7 +106,7 @@ export function TemplateRequestForm({
     } catch {
       setIsSubmitting(false);
       setErrorMessage(
-        "Si è verificato un errore durante l'invio della richiesta."
+        "Si è verificato un errore durante l'invio della richiesta.",
       );
     }
   };

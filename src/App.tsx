@@ -27,6 +27,7 @@ import NewRule from "./routes/Workspace/NewRule";
 import EditRule from "./routes/Workspace/EditRule";
 import AcceptInvitation from "./routes/Workspace/AcceptInvitation";
 import BetaTesterAgreement from "./routes/BetaTesterAgreement";
+import BetaTesterAgreementSuccess from "./routes/BetaTesterAgreementSuccess";
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/diventa-beta-tester" element={<BetaTesterAgreement />} />
+      <Route path="/diventa-beta-tester/successo" element={<BetaTesterAgreementSuccess />} />
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route element={<ProtectedRoute />}>
