@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
 import { useLogin, useRegister, useMe, useWakeUp } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,6 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { ContactRequestForm } from "@/components/organism/ContactRequestForm";
+import { BetaTesterAgreementCheckbox } from "@/components/organism/BetaTesterAgreementCheckbox";
+import { emailApiService } from "@/api/email";
+import { buildBetaTesterPdfBlob } from "@/utils/buildBetaTesterPdf";
 import {
   Dialog,
   DialogContent,
@@ -112,6 +117,7 @@ export default function Auth() {
   const [fiscalCode, setFiscalCode] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
+  const [betaTermsAccepted, setBetaTermsAccepted] = useState(false);
   const [isRegistrationDisabled, setIsRegistrationDisabled] = useState(true);
   const [unlockCode, setUnlockCode] = useState("");
 
@@ -141,6 +147,10 @@ export default function Auth() {
 
   async function handleRegisterSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!betaTermsAccepted) {
+      toast.error("Devi accettare i termini commerciali per i Beta Tester.");
+      return;
+    }
     try {
       const result = await registerMutation.mutateAsync({
         email,
@@ -152,6 +162,16 @@ export default function Auth() {
         address,
       });
       toast.success(result.data.message || "Registrazione completata");
+
+      // Generate PDF agreement and send it via email (fire-and-forget)
+      sendBetaTesterAgreementEmail({
+        name: name.trim(),
+        surname: surname.trim(),
+        email: email.trim(),
+        fiscalCode: fiscalCode.trim(),
+        address: address.trim(),
+      });
+
       // Cambia al tab login e precompila l'email
       setActiveTab("login");
       setLoginEmail(email);
@@ -175,6 +195,65 @@ export default function Auth() {
     setIsRegistrationDisabled(false);
     setUnlockCode("");
     toast.success("Registrazione sbloccata con successo");
+  }
+
+  /** Generate the beta-tester agreement PDF and send it to get.seminai via email. */
+  async function sendBetaTesterAgreementEmail(data: {
+    name: string;
+    surname: string;
+    email: string;
+    fiscalCode: string;
+    address: string;
+  }) {
+    try {
+      const now = new Date();
+      const timestampFormatted = format(now, "dd/MM/yyyy HH:mm:ss", {
+        locale: it,
+      });
+      const fullName = `${data.name} ${data.surname}`;
+
+      const { blob, fileName } = buildBetaTesterPdfBlob({
+        placeholders: {
+          currentDate: format(now, "dd/MM/yyyy", { locale: it }),
+          partnerName: fullName,
+          registeredOfficeAddress:
+            data.address || "__________indirizzo completo___________",
+          vatNumber: data.fiscalCode || "______________________",
+        },
+        checkboxAcceptance: {
+          timestamp: timestampFormatted,
+          email: data.email,
+          fullName,
+        },
+        fileNameHint: `${data.name}_${data.surname}`,
+      });
+
+      const pdfFile = new File([blob], fileName, {
+        type: "application/pdf",
+      });
+
+      const emailBody = `Nuovo accordo Beta Tester accettato in fase di registrazione.
+
+Dati partner:
+- Nome e cognome: ${fullName}
+- Email: ${data.email}
+- Partita IVA / C.F.: ${data.fiscalCode}
+- Indirizzo: ${data.address}
+- Data e ora accettazione: ${timestampFormatted}
+
+Modalita: accettazione tramite checkbox in fase di registrazione.
+Il PDF dell'accordo e' allegato a questa email.`;
+
+      await emailApiService.sendContactEmail({
+        name: fullName,
+        email: data.email,
+        body: emailBody,
+        files: [pdfFile],
+      });
+    } catch (err) {
+      // Non-blocking: log but don't interrupt the registration flow
+      console.error("Failed to send beta tester agreement email:", err);
+    }
   }
 
   return (
@@ -446,9 +525,22 @@ export default function Auth() {
                         className="h-11"
                       />
                     </div>
+
+                    <BetaTesterAgreementCheckbox
+                      checked={betaTermsAccepted}
+                      onCheckedChange={setBetaTermsAccepted}
+                      formData={{
+                        name,
+                        surname,
+                        email,
+                        fiscalCode,
+                        address,
+                      }}
+                    />
+
                     <Button
                       type="submit"
-                      disabled={registerMutation.isPending}
+                      disabled={registerMutation.isPending || !betaTermsAccepted}
                       className="w-full h-11 bg-agri-green-600 hover:bg-agri-green-700"
                     >
                       {registerMutation.isPending
