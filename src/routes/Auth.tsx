@@ -175,6 +175,17 @@ export default function Auth() {
       // Cambia al tab login e precompila l'email
       setActiveTab("login");
       setLoginEmail(email);
+
+      // Svuota i campi del form di registrazione
+      setName("");
+      setSurname("");
+      setEmail("");
+      setPassword("");
+      setFiscalCode("");
+      setPhoneNumber("");
+      setAddress("");
+      setBetaTermsAccepted(false);
+
       toast.info("Ora puoi eseguire login. L'email è già inserita, inserisci solo la password.");
     } catch (error: unknown) {
       const message =
