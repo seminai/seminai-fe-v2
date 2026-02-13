@@ -397,7 +397,7 @@ export async function createRule(
 
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/workspaces/${workspaceId}/rules`,
-    requestInit
+    requestInit as Parameters<typeof authenticatedHttpClient.request>[1],
   );
 
   if (!response.ok) {
@@ -445,7 +445,7 @@ export async function updateRule(
 
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/rules/${ruleId}`,
-    requestInit
+    requestInit as Parameters<typeof authenticatedHttpClient.request>[1],
   );
 
   if (!response.ok) {

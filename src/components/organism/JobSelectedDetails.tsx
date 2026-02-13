@@ -17,6 +17,8 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
+  BookOpen,
+  ExternalLink,
 } from "lucide-react";
 import {
   Tooltip,
@@ -75,6 +77,28 @@ export interface AlertNotes {
   principio_attivo?: string | null;
   dose_minima_hl_job?: number | null;
   dose_massima_hl_job?: number | null;
+  /** Disciplinare rules info: can be null or empty array */
+  disciplinare_info?: DisciplinareInfoItem[] | null;
+}
+
+export interface DisciplinareInfoSource {
+  ruleId?: string;
+  ruleName?: string;
+  chunkText?: string;
+  pdfFileUrl?: string;
+}
+
+export interface DisciplinareInfoItem {
+  dosaggi?: unknown[] | null;
+  sources?: DisciplinareInfoSource[];
+  avversita?: string[];
+  sostanza_attiva?: string;
+  n_max_interventi_sa?: number;
+  gruppo_sostanze_attive?: string[];
+  limitazioni_uso_e_note?: string | null;
+  n_max_interventi_gruppo?: number | null;
+  n_max_interventi_sa_scope?: string | null;
+  n_max_interventi_gruppo_scope?: string | null;
 }
 
 export interface JobRow {
@@ -647,6 +671,105 @@ export function JobSelectedDetails({
                             <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
                               {row.note}
                             </p>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    )}
+
+                    {/* Disciplinari */}
+                    {Array.isArray(row.alertNotes?.disciplinare_info) &&
+                    row.alertNotes.disciplinare_info.length > 0 && (
+                      <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="disciplinari" className="border-0">
+                          <AccordionTrigger className="py-2 hover:no-underline">
+                            <div className="flex items-center gap-1.5 w-full">
+                              <BookOpen className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                              <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                                Disciplinari
+                              </span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-2 pb-0">
+                            <div className="space-y-4">
+                              {row.alertNotes.disciplinare_info.map(
+                                (info, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="rounded-lg border border-slate-200 bg-slate-50/50 p-3 space-y-2"
+                                  >
+                                    {info.sostanza_attiva && (
+                                      <div className="flex items-start gap-1.5">
+                                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">
+                                          Sostanza attiva:
+                                        </span>
+                                        <span className="text-sm font-medium text-slate-700">
+                                          {info.sostanza_attiva}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {info.n_max_interventi_sa != null && (
+                                      <div className="flex items-start gap-1.5">
+                                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">
+                                          Max interventi:
+                                        </span>
+                                        <span className="text-sm text-slate-700">
+                                          {info.n_max_interventi_sa}
+                                          {info.n_max_interventi_sa_scope && (
+                                            <span className="text-slate-500 text-xs">
+                                              {" "}
+                                              / {info.n_max_interventi_sa_scope}
+                                            </span>
+                                          )}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {info.limitazioni_uso_e_note && (
+                                      <div className="flex items-start gap-1.5">
+                                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">
+                                          Limitazioni:
+                                        </span>
+                                        <p className="text-xs text-slate-600 leading-relaxed">
+                                          {info.limitazioni_uso_e_note}
+                                        </p>
+                                      </div>
+                                    )}
+                                    {Array.isArray(info.sources) &&
+                                    info.sources.length > 0 && (
+                                      <div className="space-y-1.5 pt-1">
+                                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                                          Fonti
+                                        </span>
+                                        <div className="space-y-1">
+                                          {info.sources.map((source, sIdx) => (
+                                            <div
+                                              key={sIdx}
+                                              className="flex items-start gap-1.5 text-xs"
+                                            >
+                                              {source.pdfFileUrl ? (
+                                                <a
+                                                  href={source.pdfFileUrl}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="inline-flex items-center gap-1 text-indigo-600 hover:underline"
+                                                >
+                                                  <ExternalLink className="h-3 w-3 shrink-0" />
+                                                  {source.ruleName ??
+                                                    "PDF documento"}
+                                                </a>
+                                              ) : (
+                                                <span className="text-slate-700">
+                                                  {source.ruleName ?? "-"}
+                                                </span>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ),
+                              )}
+                            </div>
                           </AccordionContent>
                         </AccordionItem>
                       </Accordion>

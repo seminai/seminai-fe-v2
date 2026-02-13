@@ -118,7 +118,7 @@ function adaptExtractedPUsToInputs(
 function convertPUInputsToExtracted(
   inputs: ProductionUnitInput[],
   originalPUsMap: Map<string, ExtractedProductionUnit>,
-  fieldsData: ExtractedField[],
+  _fieldsData: ExtractedField[],
 ): ExtractedProductionUnit[] {
   return inputs.map((input) => {
     const original = originalPUsMap.get(input.id);
