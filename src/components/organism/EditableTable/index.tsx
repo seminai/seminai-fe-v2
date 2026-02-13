@@ -331,6 +331,20 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
     }, [bulkEdit, selection.selectedIds, columns, tableState.setRows]);
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Row Click Handling (select row and open details sidebar)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const handleRowClick = useCallback(
+      (row: InternalRow) => {
+        if (!onDetailsButtonClick) return;
+        const isSelected = Boolean(selection.selected[row.id]);
+        selection.toggleRowSelection(row.id, !isSelected);
+        onDetailsButtonClick();
+      },
+      [onDetailsButtonClick, selection],
+    );
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Filter Panel Config
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -653,6 +667,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
               onToggleRowSelection={selection.toggleRowSelection}
               onCellChange={tableState.handleCellChange}
               onOpenDetails={tableState.openDetails}
+              onRowClick={handleRowClick}
               onSort={sort.handleSort}
               onColumnFilterOpenChange={filters.handleColumnFilterOpenChange}
               onColumnFilterSearchChange={
