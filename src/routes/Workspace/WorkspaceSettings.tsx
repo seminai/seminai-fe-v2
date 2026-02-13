@@ -1240,6 +1240,19 @@ function RulesSettingsTab() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-1">
                     <h4 className="font-medium">{rule.name}</h4>
+                    {rule.pdfUrl && (
+                      <a
+                        href={rule.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700"
+                        title="Visualizza PDF"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        PDF
+                      </a>
+                    )}
                     <Badge
                       variant="secondary"
                       className={cn("text-xs", statusVariants[rule.status])}

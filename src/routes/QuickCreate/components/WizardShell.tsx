@@ -1,0 +1,67 @@
+import * as React from "react";
+import { PageHeader } from "@/components/organism/Header";
+import { Spinner } from "@/components/ui/spinner";
+import StepperIndicator from "./StepperIndicator";
+import WizardFooter from "./WizardFooter";
+import type { QuickCreateStep } from "../types";
+
+interface WizardShellProps {
+  currentStep: QuickCreateStep;
+  isProcessing: boolean;
+  loadingMessage?: string;
+  onBack: () => void;
+  onNext: () => void;
+  onSkip?: () => void;
+  isNextDisabled: boolean;
+  children: React.ReactNode;
+}
+
+export default function WizardShell({
+  currentStep,
+  isProcessing,
+  loadingMessage = "Elaborazione in corso...",
+  onBack,
+  onNext,
+  onSkip,
+  isNextDisabled,
+  children,
+}: WizardShellProps): React.ReactElement {
+  return (
+    <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-screen">
+      <div className="flex-shrink-0">
+        <PageHeader title="Creazione Rapida" />
+      </div>
+
+      <div className="flex-1 overflow-auto">
+        {isProcessing ? (
+          <div className="flex items-center justify-center h-full p-6">
+            <div className="flex flex-col items-center gap-6">
+              <Spinner size={80} speed="normal" />
+              <p className="text-lg text-neutral-600 font-medium">
+                {loadingMessage}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col min-h-full p-6">
+            {currentStep !== "company" && currentStep !== "completion" && (
+              <StepperIndicator currentStep={currentStep} />
+            )}
+            {children}
+          </div>
+        )}
+      </div>
+
+      <div className="flex-shrink-0">
+        <WizardFooter
+          currentStep={currentStep}
+          onBack={onBack}
+          onNext={onNext}
+          onSkip={onSkip}
+          isNextDisabled={isNextDisabled}
+          isLoading={isProcessing}
+        />
+      </div>
+    </div>
+  );
+}

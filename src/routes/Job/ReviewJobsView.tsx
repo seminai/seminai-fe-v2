@@ -315,6 +315,10 @@ export function ReviewJobsView({
                 customExportConfig={exportConfig}
                 exportFileName="operazioni_revisione"
                 getRowClassName={getRowClassName}
+                onDetailsButtonClick={() => {
+                  onRightSidebarModeChange("details");
+                  onMobileHistoryChange(true);
+                }}
               />
             </div>
           )}
@@ -647,6 +651,10 @@ export function ReviewJobsView({
                     customExportConfig={exportConfig}
                     exportFileName="operazioni_revisione"
                     getRowClassName={getRowClassName}
+                    onDetailsButtonClick={() => {
+                      onRightSidebarModeChange("details");
+                      onToggleRightSidebar(true);
+                    }}
                   >
                     {selectedGroupSummary && !isRightSidebarOpen && (
                       <div
@@ -656,7 +664,10 @@ export function ReviewJobsView({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onToggleRightSidebar(true)}
+                          onClick={() => {
+                            onRightSidebarModeChange("details");
+                            onToggleRightSidebar(true);
+                          }}
                           className="text-black hover:text-gray-700 cursor-pointer focus-visible:ring-0 focus-visible:outline-none"
                           title="Apri pannello dettagli"
                         >

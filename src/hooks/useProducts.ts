@@ -28,7 +28,7 @@ export function useProducts(companyName?: string) {
   const query = useQuery({
     queryKey: manager.getQueryKey(),
     queryFn: async () => await manager.fetchProducts(),
-    staleTime: 1000 * 60 * 5, // 5 minuti
+    staleTime: 0,
   });
 
   return {

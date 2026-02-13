@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
@@ -29,6 +29,10 @@ interface ImportedProductsPanelProps {
   importSource: ProductImportSource;
   onImportCompleted?: () => void;
   mobilePreviewButton?: React.ReactNode;
+  /** When true, hides the bottom footer with the import button */
+  hideFooter?: boolean;
+  /** When set, the import function is stored in this ref so it can be triggered externally */
+  importTriggerRef?: React.MutableRefObject<(() => Promise<void>) | null>;
 }
 
 export default function ImportedProductsPanel({
@@ -39,6 +43,8 @@ export default function ImportedProductsPanel({
   importSource,
   onImportCompleted,
   mobilePreviewButton,
+  hideFooter,
+  importTriggerRef,
 }: ImportedProductsPanelProps) {
   const tableRef = useRef<EditableTableRef>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -119,6 +125,13 @@ export default function ImportedProductsPanel({
     }
   }, [tableRows, companyId, warehouseId, onImportCompleted]);
 
+  // Expose import function via ref for external triggering (no cleanup to avoid null gaps)
+  useEffect(() => {
+    if (importTriggerRef) {
+      importTriggerRef.current = handleConfirmImport;
+    }
+  }, [importTriggerRef, handleConfirmImport]);
+
   const sourceLabel = useMemo(() => {
     switch (importSource) {
       case "ddt":
@@ -194,24 +207,26 @@ export default function ImportedProductsPanel({
         />
       </div>
 
-      <div className="flex-shrink-0 border-t bg-white p-4 flex justify-end">
-        <Button
-          onClick={handleConfirmImport}
-          disabled={isImporting || tableRows.length === 0}
-          className="gap-2 bg-agri-green-600 text-white hover:bg-agri-green-700"
-        >
-          {isImporting ? (
-            <>
-              <Spinner size={18} /> Importazione...
-            </>
-          ) : (
-            <>
-              <Upload className="h-4 w-4" />
-              Importa {tableRows.length} prodotto/i
-            </>
-          )}
-        </Button>
-      </div>
+      {!hideFooter && (
+        <div className="flex-shrink-0 border-t bg-white p-4 flex justify-end">
+          <Button
+            onClick={handleConfirmImport}
+            disabled={isImporting || tableRows.length === 0}
+            className="gap-2 bg-agri-green-600 text-white hover:bg-agri-green-700"
+          >
+            {isImporting ? (
+              <>
+                <Spinner size={18} /> Importazione...
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4" />
+                Importa {tableRows.length} prodotto/i
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

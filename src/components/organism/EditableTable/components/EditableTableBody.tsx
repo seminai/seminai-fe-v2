@@ -42,6 +42,8 @@ export interface EditableTableBodyProps {
     value: unknown
   ) => void;
   onOpenDetails: (row: InternalRow) => void;
+  /** Called when row is clicked (excluding checkbox and action buttons). Used to select row and open details panel. */
+  onRowClick?: (row: InternalRow) => void;
   onSort: (columnId: string, direction?: "asc" | "desc") => void;
   onColumnFilterOpenChange: (columnId: string, open: boolean) => void;
   onColumnFilterSearchChange: (columnId: string, query: string) => void;
@@ -91,6 +93,7 @@ export function EditableTableBody({
   onToggleRowSelection,
   onCellChange,
   onOpenDetails,
+  onRowClick,
   onSort,
   onColumnFilterOpenChange,
   onColumnFilterSearchChange,
@@ -225,14 +228,29 @@ export function EditableTableBody({
 
           const customRowClassName = getRowClassName?.(row.data);
 
+          const handleRowClickIfApplicable = (e: React.MouseEvent) => {
+            if (!onRowClick) return;
+            const target = e.target as HTMLElement;
+            if (
+              target.closest(
+                'button, [role="checkbox"], input, select, textarea, a[href]',
+              )
+            ) {
+              return;
+            }
+            onRowClick(row);
+          };
+
           return (
             <TableRow
               key={row.id}
               className={cn(
                 "group bg-white transition-colors hover:bg-agri-green-50 border-agri-green-100",
+                onRowClick && "cursor-pointer",
                 rowHasRequiredMissing && "bg-red-50/30",
                 customRowClassName
               )}
+              onClick={handleRowClickIfApplicable}
             >
               <td
                 data-slot="table-cell"

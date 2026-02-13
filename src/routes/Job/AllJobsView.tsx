@@ -348,7 +348,10 @@ export function AllJobsView({
                   onBulkVerifySelected={onBulkVerifySelected}
                   bulkVerifyButtonLabel="Verifica"
                   isBulkVerifyLoading={isBulkVerifying}
-                  onDetailsButtonClick={() => onToggleRightSidebar(true)}
+                  onDetailsButtonClick={() => {
+                    onRightSidebarModeChange("details");
+                    onToggleRightSidebar(true);
+                  }}
                   getRowId={(row) => row.id as string}
                   onSelectionChange={onSelectionChange}
                   customExportConfig={exportConfig}
@@ -363,7 +366,10 @@ export function AllJobsView({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onToggleRightSidebar(true)}
+                        onClick={() => {
+                          onRightSidebarModeChange("details");
+                          onToggleRightSidebar(true);
+                        }}
                         className="text-black hover:text-gray-700 cursor-pointer focus-visible:ring-0 focus-visible:outline-none"
                         title="Apri pannello dettagli"
                       >
