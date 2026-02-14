@@ -50,7 +50,7 @@ export class FitosanitariProductSearch extends React.PureComponent<
     try {
       const records = await getAuthorizedFitosanitariRecords();
       const sortedRecords = [...records].sort((a, b) =>
-        a.productName.localeCompare(b.productName)
+        a.productName.localeCompare(b.productName),
       );
       const registryMap = new Map<string, FitosanitariDatasetRecord>();
       const options: SearchableSelectOption[] = sortedRecords.map((record) => {
@@ -58,6 +58,7 @@ export class FitosanitariProductSearch extends React.PureComponent<
         return {
           value: record.registrationNumber,
           label: `${record.productName} • ${record.registrationNumber}`,
+          searchText: (record.activeIngredients ?? "").trim() || undefined,
         };
       });
 
@@ -105,18 +106,23 @@ export class FitosanitariProductSearch extends React.PureComponent<
             obbligatori.
           </p>
         </div>
-        <SearchableSelect
-          value={this.state.selectedValue}
-          options={this.state.options}
-          placeholder="Seleziona prodotto"
-          searchPlaceholder="Cerca per nome o numero"
-          emptyMessage="Nessun prodotto trovato"
-          noneOptionLabel="Pulisci selezione"
-          loading={this.state.loading}
-          loadingMessage="Caricamento registro..."
-          onChange={this.handleSelection}
-          maxVisibleOptions={200}
-        />
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-neutral-700">
+            Prodotto
+          </label>
+          <SearchableSelect
+            value={this.state.selectedValue}
+            options={this.state.options}
+            placeholder="Seleziona prodotto"
+            searchPlaceholder="Cerca per nome, numero o principio attivo"
+            emptyMessage="Nessun prodotto trovato"
+            noneOptionLabel="Pulisci selezione"
+            loading={this.state.loading}
+            loadingMessage="Caricamento registro..."
+            onChange={this.handleSelection}
+            maxVisibleOptions={200}
+          />
+        </div>
         {this.state.errorMessage && (
           <p className="text-xs text-red-500">{this.state.errorMessage}</p>
         )}

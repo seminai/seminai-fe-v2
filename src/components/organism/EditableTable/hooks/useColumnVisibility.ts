@@ -5,6 +5,8 @@ import {
   COLUMN_VISIBILITY_STORAGE_PREFIX,
 } from "../constants";
 import { generateTableId } from "../utils";
+import { useUserId } from "@/contexts/UserIdContext";
+import { getScopedStorageItem, setScopedStorageItem } from "@/utils/storageKeys";
 
 export interface UseColumnVisibilityReturn {
   visibleColumnIds: string[];
@@ -21,13 +23,14 @@ function getStorageKey(tableId: string | undefined, columns: EditableColumn[]): 
 
 function loadVisibleColumnsFromStorage(
   tableId: string | undefined,
-  columns: EditableColumn[]
+  columns: EditableColumn[],
+  userId: string
 ): string[] {
   const storageKey = getStorageKey(tableId, columns);
   const columnIds = columns.map((c) => c.id);
 
   try {
-    const stored = localStorage.getItem(storageKey);
+    const stored = getScopedStorageItem(storageKey, userId);
     if (stored) {
       const parsed = JSON.parse(stored) as string[];
       const validIds = parsed.filter((id) => columnIds.includes(id));
@@ -45,11 +48,12 @@ function loadVisibleColumnsFromStorage(
 function saveVisibleColumnsToStorage(
   tableId: string | undefined,
   columns: EditableColumn[],
-  visibleIds: string[]
+  visibleIds: string[],
+  userId: string
 ): void {
   const storageKey = getStorageKey(tableId, columns);
   try {
-    localStorage.setItem(storageKey, JSON.stringify(visibleIds));
+    setScopedStorageItem(storageKey, userId, JSON.stringify(visibleIds));
   } catch {
     // Ignore localStorage errors
   }
@@ -59,15 +63,16 @@ export function useColumnVisibility(
   columns: EditableColumn[],
   tableId?: string
 ): UseColumnVisibilityReturn {
+  const userId = useUserId();
   const [visibleColumnIds, setVisibleColumnIds] = useState<string[]>(() =>
-    loadVisibleColumnsFromStorage(tableId, columns)
+    loadVisibleColumnsFromStorage(tableId, columns, userId)
   );
 
   // Reload visibility when tableId or columns change
   useEffect(() => {
-    const newVisibleIds = loadVisibleColumnsFromStorage(tableId, columns);
+    const newVisibleIds = loadVisibleColumnsFromStorage(tableId, columns, userId);
     setVisibleColumnIds(newVisibleIds);
-  }, [tableId, columns]);
+  }, [tableId, columns, userId]);
 
   const visibleColumns = useMemo(() => {
     return visibleColumnIds
@@ -93,24 +98,24 @@ export function useColumnVisibility(
           }
         }
 
-        saveVisibleColumnsToStorage(tableId, columns, newVisibleIds);
+        saveVisibleColumnsToStorage(tableId, columns, newVisibleIds, userId);
         return newVisibleIds;
       });
     },
-    [tableId, columns]
+    [tableId, columns, userId]
   );
 
   const handleShowAllColumns = useCallback(() => {
     const allColumnIds = columns.map((c) => c.id);
-    saveVisibleColumnsToStorage(tableId, columns, allColumnIds);
+    saveVisibleColumnsToStorage(tableId, columns, allColumnIds, userId);
     setVisibleColumnIds(allColumnIds);
-  }, [tableId, columns]);
+  }, [tableId, columns, userId]);
 
   const handleShowDefaultColumns = useCallback(() => {
     const defaultColumnIds = columns.slice(0, MAX_VISIBLE_COLUMNS).map((c) => c.id);
-    saveVisibleColumnsToStorage(tableId, columns, defaultColumnIds);
+    saveVisibleColumnsToStorage(tableId, columns, defaultColumnIds, userId);
     setVisibleColumnIds(defaultColumnIds);
-  }, [tableId, columns]);
+  }, [tableId, columns, userId]);
 
   return {
     visibleColumnIds,

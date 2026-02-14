@@ -6,6 +6,9 @@ export interface HttpRequestOptions extends RequestInit {
   headers?: HttpHeaders;
 }
 
+/** Flag per evitare cascata: solo la prima 401/461 esegue logout + redirect. */
+let isRedirectingToAuth = false;
+
 /**
  * HTTP client che applica automaticamente i cookie di sessione
  * e forza il logout in caso di risposta non autorizzata.
@@ -37,15 +40,19 @@ export class AuthenticatedHttpClient {
       headers,
     });
 
-    if (response.status === 401) {
-      // Non chiamare logout() automaticamente se siamo già sulla pagina di login
-      // Questo previene loop infiniti di chiamate quando l'utente non è autenticato
-      const isOnAuthPage = typeof window !== "undefined" && 
-                          (window.location.pathname === "/auth" || 
-                           window.location.pathname.startsWith("/auth/"));
-      
-      if (!isOnAuthPage) {
+    const isUnauthorized =
+      response.status === 401 || response.status === 461;
+
+    if (isUnauthorized) {
+      const isOnAuthPage =
+        typeof window !== "undefined" &&
+        (window.location.pathname === "/auth" ||
+          window.location.pathname.startsWith("/auth/"));
+
+      if (!isOnAuthPage && !isRedirectingToAuth) {
+        isRedirectingToAuth = true;
         await authService.logout();
+        window.location.replace("/auth?reason=session_expired");
       }
       throw new Error("Unauthorized");
     }

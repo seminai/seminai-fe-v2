@@ -6,6 +6,7 @@ import { UserRole } from "@/api/auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
+import { UserIdProvider } from "@/contexts/UserIdContext";
 
 class ProtectedLayoutSkeletonRenderer {
   private readonly navigationItemsCount = 6;
@@ -117,10 +118,12 @@ export default function ProtectedRoute() {
   }
 
   return (
-    <WorkspaceProvider>
-      <ProtectedLayout>
-        <Outlet />
-      </ProtectedLayout>
-    </WorkspaceProvider>
+    <UserIdProvider userId={data.id}>
+      <WorkspaceProvider>
+        <ProtectedLayout>
+          <Outlet />
+        </ProtectedLayout>
+      </WorkspaceProvider>
+    </UserIdProvider>
   );
 }

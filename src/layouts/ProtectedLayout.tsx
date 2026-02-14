@@ -56,6 +56,8 @@ import { useMe } from "@/hooks/useAuth";
 import { UserRole } from "@/api/auth";
 import { WorkspaceSwitcher } from "@/components/organism/WorkspaceSwitcher";
 import { MobileHeader } from "@/components/organism/MobileHeader";
+import { useUserId } from "@/contexts/UserIdContext";
+import { getScopedStorageItem, setScopedStorageItem } from "@/utils/storageKeys";
 
 type ProtectedLayoutProps = {
   children: React.ReactNode;
@@ -619,26 +621,39 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const { productionUnits } = useProductionUnit();
   const queryClient = useQueryClient();
   const { data: meData } = useMe();
+  const userId = useUserId();
   const userRole = meData?.role;
 
   // Gestione stato sidebar con localStorage
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
-    const stored = localStorage.getItem(SIDEBAR_STATE_KEY);
-    return stored ? JSON.parse(stored) : false;
+    try {
+      const stored = getScopedStorageItem(SIDEBAR_STATE_KEY, userId);
+      return stored ? (JSON.parse(stored) as boolean) : false;
+    } catch {
+      return false;
+    }
   });
 
   // Gestione stato menu "Gestisci" con localStorage
   const [manageMenuOpen, setManageMenuOpen] = useState<boolean>(() => {
-    const stored = localStorage.getItem(MANAGE_MENU_STATE_KEY);
-    return stored ? JSON.parse(stored) : true; // aperto di default
+    try {
+      const stored = getScopedStorageItem(MANAGE_MENU_STATE_KEY, userId);
+      return stored ? (JSON.parse(stored) as boolean) : true; // aperto di default
+    } catch {
+      return true;
+    }
   });
   useEffect(() => {
-    localStorage.setItem(SIDEBAR_STATE_KEY, JSON.stringify(sidebarOpen));
-  }, [sidebarOpen]);
+    setScopedStorageItem(SIDEBAR_STATE_KEY, userId, JSON.stringify(sidebarOpen));
+  }, [sidebarOpen, userId]);
 
   useEffect(() => {
-    localStorage.setItem(MANAGE_MENU_STATE_KEY, JSON.stringify(manageMenuOpen));
-  }, [manageMenuOpen]);
+    setScopedStorageItem(
+      MANAGE_MENU_STATE_KEY,
+      userId,
+      JSON.stringify(manageMenuOpen)
+    );
+  }, [manageMenuOpen, userId]);
 
   const handleSidebarToggle = useCallback(() => {
     setSidebarOpen((prev) => !prev);

@@ -522,8 +522,8 @@ export const ConformityCheckerPanel = forwardRef<
               />
             )}
 
-            <ScrollArea className="flex-1 min-h-0">
-              <div className="p-4 space-y-4">
+            <ScrollArea className="flex-1 min-h-0 min-w-0">
+              <div className="p-4 space-y-4 min-w-0 w-full max-w-full">
                 {agentMessages.length === 0 && !isAgentLoading && (
                   <JobVerificationEmptyState />
                 )}
@@ -661,33 +661,33 @@ export const ConformityCheckerPanel = forwardRef<
         <div className="flex-shrink-0 border-t border-slate-200 bg-white">
           <div className="p-4 space-y-3">
             {/* Toggle per pensiero profondo vs chat rapida */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
+              <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
                 <Checkbox
                   id="deep-thinking"
                   checked={deepThinking}
                   onCheckedChange={(checked) =>
                     setDeepThinking(checked === true)
                   }
-                  className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                  className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 shrink-0"
                 />
                 <Label
                   htmlFor="deep-thinking"
-                  className="text-xs text-slate-600 cursor-pointer"
+                  className="text-xs text-slate-600 cursor-pointer truncate min-w-0"
                 >
                   Pensiero profondo
                 </Label>
                 {!deepThinking && (
                   <Badge
                     variant="outline"
-                    className="text-[10px] text-amber-600 border-amber-300"
+                    className="text-[10px] text-amber-600 border-amber-300 shrink-0"
                   >
                     Chat rapida
                   </Badge>
                 )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Badge variant="outline" className="text-[10px]">
+                <Badge variant="outline" className="text-[10px] whitespace-nowrap">
                   {selectedJobsCount > 0
                     ? `${selectedJobsCount} operazioni selezionate`
                     : "Seleziona operazioni per dialogare"}
@@ -697,7 +697,7 @@ export const ConformityCheckerPanel = forwardRef<
                     onClick={cancelRequest}
                     size="sm"
                     variant="outline"
-                    className="text-red-600 border-red-200 hover:bg-red-50"
+                    className="text-red-600 border-red-200 hover:bg-red-50 shrink-0"
                   >
                     <StopCircle className="h-4 w-4 mr-1" />
                     Stop
@@ -850,7 +850,12 @@ function JobVerificationMessageBubble({
     message.content || (isUser ? "" : "Sto elaborando la risposta...");
 
   return (
-    <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
+    <div
+      className={cn(
+        "flex min-w-0",
+        isUser ? "justify-end" : "justify-start",
+      )}
+    >
       <div
         className={cn(
           "min-w-0 max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm",
@@ -940,6 +945,34 @@ function JobVerificationMessageBubble({
                   </blockquote>
                 ),
                 hr: () => <hr className="my-3 border-slate-200" />,
+                table: ({ children }) => (
+                  <div className="my-3 w-full min-w-0 overflow-x-auto">
+                    <table className="w-max min-w-full border-collapse text-left text-sm text-slate-800">
+                      {children}
+                    </table>
+                  </div>
+                ),
+                thead: ({ children }) => (
+                  <thead className="border-b border-slate-200 bg-slate-50/80">
+                    {children}
+                  </thead>
+                ),
+                tbody: ({ children }) => <tbody>{children}</tbody>,
+                tr: ({ children }) => (
+                  <tr className="border-b border-slate-100 last:border-b-0">
+                    {children}
+                  </tr>
+                ),
+                th: ({ children }) => (
+                  <th className="whitespace-nowrap px-2 py-1.5 font-semibold text-slate-700 first:pl-0 last:pr-0">
+                    {children}
+                  </th>
+                ),
+                td: ({ children }) => (
+                  <td className="whitespace-nowrap px-2 py-1.5 first:pl-0 last:pr-0">
+                    {children}
+                  </td>
+                ),
               }}
             >
               {content}

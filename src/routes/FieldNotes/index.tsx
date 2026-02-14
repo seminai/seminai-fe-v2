@@ -15,9 +15,14 @@ import { useCompanies } from "@/hooks/useCompanies";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { Badge } from "@/components/ui/badge";
 import { MapPin } from "lucide-react";
+import { useUserId } from "@/contexts/UserIdContext";
+import { getScopedStorageItem, setScopedStorageItem } from "@/utils/storageKeys";
+
+const FIELD_NOTES_RIGHT_SIDEBAR_WIDTH_KEY = "fieldNotesRightSidebarWidth";
 
 export default function FieldNotesPage() {
   const queryClient = useQueryClient();
+  const userId = useUserId();
 
   // State per sidebar
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
@@ -546,8 +551,9 @@ export default function FieldNotesPage() {
         document.removeEventListener("mouseup", handleMouseUp);
 
         // Salva width in localStorage
-        localStorage.setItem(
-          "fieldNotesRightSidebarWidth",
+        setScopedStorageItem(
+          FIELD_NOTES_RIGHT_SIDEBAR_WIDTH_KEY,
+          userId,
           String(rightSidebarWidth)
         );
       };
@@ -555,7 +561,7 @@ export default function FieldNotesPage() {
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [rightSidebarWidth]
+    [rightSidebarWidth, userId]
   );
 
   // Callback quando una field note viene salvata dalla chat
@@ -651,14 +657,21 @@ export default function FieldNotesPage() {
 
   // Load sidebar width from localStorage
   useEffect(() => {
-    const savedWidth = localStorage.getItem("fieldNotesRightSidebarWidth");
-    if (savedWidth) {
-      const width = parseInt(savedWidth, 10);
-      if (!isNaN(width)) {
-        setRightSidebarWidth(width);
+    try {
+      const savedWidth = getScopedStorageItem(
+        FIELD_NOTES_RIGHT_SIDEBAR_WIDTH_KEY,
+        userId
+      );
+      if (savedWidth) {
+        const width = parseInt(savedWidth, 10);
+        if (!isNaN(width)) {
+          setRightSidebarWidth(width);
+        }
       }
+    } catch {
+      // Ignore localStorage errors
     }
-  }, []);
+  }, [userId]);
 
   return (
     <div className="flex flex-col flex-1 min-h-0 h-[calc(100svh-56px-96px)] md:h-svh overflow-hidden">

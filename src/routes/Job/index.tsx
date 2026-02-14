@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useJobGroupsSummary, useJobGroupDetail } from "@/hooks/useJobGroups";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -12,6 +13,7 @@ import {
 } from "@/api/userOnCompany";
 import { PageHeader } from "@/components/organism/Header";
 import { userSettingsIndexDBManager } from "@/utils/userSettingsIndexDBManager";
+import { useUserId } from "@/contexts/UserIdContext";
 import {
   type EditableColumn,
   type CustomExportConfig,
@@ -70,6 +72,7 @@ import {
   HistoryEntryFormatter,
   ModificationEntryDetails,
 } from "./HistoryEntryDetails";
+import { generateRandomJobId } from "./utils";
 
 // Component to display job history in a Sheet
 interface JobHistorySheetProps {
@@ -1148,13 +1151,6 @@ class JobProductsFormatter {
   }
 }
 
-/** Genera un jobId casuale di 6 cifre per nuove operazioni quando non esistono job */
-function generateRandomJobId(): string {
-  const min = 100000;
-  const max = 999999;
-  return String(Math.floor(Math.random() * (max - min + 1)) + min);
-}
-
 class JobIdFormatter {
   public static format(jobId: string | null | undefined): string {
     if (!jobId) {
@@ -1533,6 +1529,8 @@ class JobBulkVerifier {
 type ViewMode = "all" | "review";
 
 export default function JobPage() {
+  const navigate = useNavigate();
+  const userId = useUserId();
   const [viewMode, setViewMode] = useState<ViewMode>("all");
   const [isBulkVerifying, setIsBulkVerifying] = useState<boolean>(false);
   const [historySheetOpen, setHistorySheetOpen] = useState<boolean>(false);
@@ -1584,7 +1582,7 @@ export default function JobPage() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        await userSettingsIndexDBManager.init();
+        await userSettingsIndexDBManager.init(userId);
         const savedWidth = await userSettingsIndexDBManager.getSetting<number>(
           "job",
           "historyPanelWidth",
@@ -1619,7 +1617,7 @@ export default function JobPage() {
     };
 
     loadSettings();
-  }, []);
+  }, [userId]);
 
   // Salva le impostazioni in IndexedDB quando cambiano (con debounce)
   useEffect(() => {
@@ -3630,7 +3628,14 @@ export default function JobPage() {
       isRightSidebarOpen={isRightSidebarOpen}
       onToggleRightSidebar={setIsRightSidebarOpen}
       showAddButton={true}
-      onAddClick={() => setIsMultipleJobsDrawerOpen(true)}
+      onAddClick={() =>
+        navigate("/job/new-job-manual", {
+          state: {
+            jobId:
+              selectedAllJobIds.length > 0 ? selectedAllJobIds[0] : undefined,
+          },
+        })
+      }
       newRowDefaults={newRowDefaults}
       jobGroupId={
         selectedAllJobIds.length > 0 ? selectedAllJobIds[0] : undefined

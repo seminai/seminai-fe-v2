@@ -5,7 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
-import { MapPin, Pencil, Check, X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { MapPin, Pencil, Check, X, FileText, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CompanyFilesPanel } from "./CompanyFilesPanel";
 import { CompanyMachinesPanel } from "./CompanyMachinesPanel";
@@ -14,6 +29,9 @@ import { toast } from "sonner";
 import { useFiles } from "@/hooks/useFiles";
 import { filesApiService } from "@/api/files";
 import { CompanyUsersPanel } from "./CompanyUsersPanel";
+import { useWorkspaceContext } from "@/contexts/WorkspaceContext";
+import { useWorkspaces, useCompanyRules, useCreateWorkspace } from "@/hooks/useWorkspaces";
+import { AddDisciplinareWizard } from "./AddDisciplinareWizard";
 
 interface DrawerCompanyContentProps {
   company: Company;
@@ -57,6 +75,16 @@ export function DrawerCompanyContent({
   });
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const logoFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [openAddDisciplinare, setOpenAddDisciplinare] = useState(false);
+  const [openCreateWorkspace, setOpenCreateWorkspace] = useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState("");
+
+  const { currentWorkspace, selectWorkspace } = useWorkspaceContext();
+  const { data: workspaces = [] } = useWorkspaces();
+  const { mutateAsync: createWorkspace, isPending: isCreatingWorkspace } =
+    useCreateWorkspace();
+  const { data: companyRules = [], isLoading: isLoadingCompanyRules } =
+    useCompanyRules(company.id);
 
   const {
     files: companyFiles,
@@ -597,6 +625,70 @@ export function DrawerCompanyContent({
     );
   };
 
+  const handleCreateWorkspaceSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = newWorkspaceName.trim();
+    if (!name || name.length < 2) {
+      toast.error("Inserisci un nome per il workspace (almeno 2 caratteri)");
+      return;
+    }
+    createWorkspace({ name })
+      .then(({ workspace }) => {
+        selectWorkspace(workspace.id);
+        setOpenCreateWorkspace(false);
+        setNewWorkspaceName("");
+        toast.success("Workspace creato");
+      })
+      .catch((err) => {
+        toast.error(
+          err instanceof Error ? err.message : "Errore durante la creazione del workspace"
+        );
+      });
+  };
+
+  const renderRegoleAssegnate = (): React.ReactNode => {
+    return (
+      <div className="border-b border-gray-100 pb-6">
+        <h3 className="text-sm font-medium text-black mb-3">Regole assegnate</h3>
+        <p className="text-xs text-gray-500 mb-3">
+          Regole e disciplinari associati a questa azienda. Aggiungi un disciplinare
+          per creare un workspace e una regola da assegnare.
+        </p>
+        <Button
+          variant="outline"
+          className="w-full justify-start gap-2 bg-white border-agri-green-200 hover:bg-agri-green-50 text-black rounded-lg transition-all mb-4"
+          onClick={() => setOpenAddDisciplinare(true)}
+        >
+          <Plus className="h-4 w-4" />
+          Aggiungi un disciplinare
+        </Button>
+        {isLoadingCompanyRules ? (
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Spinner size={18} ariaLabel="Caricamento regole" />
+            <span>Caricamento regole…</span>
+          </div>
+        ) : companyRules.length === 0 ? (
+          <p className="text-sm text-gray-500">Nessuna regola assegnata.</p>
+        ) : (
+          <ul className="space-y-2">
+            {companyRules.map(({ rule }) => (
+              <li
+                key={rule.id}
+                className="flex items-center gap-2 text-sm text-gray-900 py-1.5 px-2 rounded-lg bg-gray-50 border border-gray-100"
+              >
+                <FileText className="h-4 w-4 text-gray-500 shrink-0" />
+                <span>{rule.name}</span>
+                {rule.region && (
+                  <span className="text-xs text-gray-500 ml-auto">{rule.region}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  };
+
   const renderActions = (): React.ReactNode => {
     return (
       <div className="pt-4">
@@ -617,12 +709,112 @@ export function DrawerCompanyContent({
 
   return (
     <div className="space-y-6">
+      <AddDisciplinareWizard
+        open={openAddDisciplinare}
+        onOpenChange={setOpenAddDisciplinare}
+        companyId={company.id}
+        companyName={company.name}
+        initialWorkspace={currentWorkspace}
+      />
       <TabsContent value="details" className="mt-0">
         <div className="space-y-6">
           {renderGeneralInfo()}
           {renderFiscalInfo()}
           {renderAddressInfo()}
           {renderContactInfo()}
+          {currentWorkspace ? (
+            renderRegoleAssegnate()
+          ) : (
+            <div className="border-b border-gray-100 pb-6">
+              <h3 className="text-sm font-medium text-black mb-2">Regole e disciplinari</h3>
+              <p className="text-xs text-gray-500 mb-3">
+                Scegli un workspace per visualizzare le regole assegnate a questa azienda,
+                selezionarne una o crearne una nuova.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+                <div className="flex-1 space-y-1.5">
+                  <label className="text-xs font-medium text-gray-600">Workspace</label>
+                  <Select
+                    value=""
+                    onValueChange={(id) => selectWorkspace(id)}
+                  >
+                    <SelectTrigger className="h-10 bg-white border-gray-200">
+                      <SelectValue placeholder="Seleziona un workspace..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {workspaces.map((ws) => (
+                        <SelectItem key={ws.id} value={ws.id}>
+                          {ws.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="default"
+                  className="shrink-0 h-10 gap-1.5 border-agri-green-200 hover:bg-agri-green-50 text-black"
+                  onClick={() => setOpenCreateWorkspace(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Aggiungi workspace
+                </Button>
+              </div>
+              {workspaces.length === 0 && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Nessun workspace disponibile. Creane uno per gestire i disciplinari.
+                </p>
+              )}
+            </div>
+          )}
+
+          <Dialog open={openCreateWorkspace} onOpenChange={setOpenCreateWorkspace}>
+            <DialogContent className="sm:max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Nuovo workspace</DialogTitle>
+                <DialogDescription>
+                  Inserisci un nome per il workspace. Potrai poi aggiungere regole e
+                  disciplinari e assegnarli a questa azienda.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateWorkspaceSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Nome workspace</label>
+                  <Input
+                    value={newWorkspaceName}
+                    onChange={(e) => setNewWorkspaceName(e.target.value)}
+                    placeholder="es. Disciplinari 2025"
+                    className="h-10"
+                    disabled={isCreatingWorkspace}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setOpenCreateWorkspace(false);
+                      setNewWorkspaceName("");
+                    }}
+                    disabled={isCreatingWorkspace}
+                  >
+                    Annulla
+                  </Button>
+                  <Button type="submit" disabled={isCreatingWorkspace}>
+                    {isCreatingWorkspace ? (
+                      <>
+                        <Spinner className="w-4 h-4 mr-2" />
+                        Creazione...
+                      </>
+                    ) : (
+                      "Crea"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
           {renderActions()}
         </div>
       </TabsContent>
