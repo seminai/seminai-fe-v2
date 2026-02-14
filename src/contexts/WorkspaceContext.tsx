@@ -10,6 +10,12 @@ import {
 import type { Workspace } from "@/types/workspace";
 import { useWorkspaces, useWorkspace } from "@/hooks/useWorkspaces";
 import { WorkspaceThemeController } from "@/contexts/workspaceTheme";
+import { useUserId } from "@/contexts/UserIdContext";
+import {
+  getScopedStorageItem,
+  removeScopedStorageItem,
+  setScopedStorageItem,
+} from "@/utils/storageKeys";
 
 const WORKSPACE_STORAGE_KEY = "seminai_current_workspace_id";
 
@@ -37,11 +43,16 @@ type WorkspaceProviderProps = {
 };
 
 export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
+  const userId = useUserId();
   const { data: workspaces = [], isLoading } = useWorkspaces();
   const [currentWorkspaceId, setCurrentWorkspaceId] = useState<string | null>(
     () => {
-      const stored = localStorage.getItem(WORKSPACE_STORAGE_KEY);
-      return stored ?? null;
+      try {
+        const stored = getScopedStorageItem(WORKSPACE_STORAGE_KEY, userId);
+        return stored ?? null;
+      } catch {
+        return null;
+      }
     }
   );
 
@@ -61,12 +72,16 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
 
   // Persist selection to localStorage
   useEffect(() => {
-    if (currentWorkspaceId) {
-      localStorage.setItem(WORKSPACE_STORAGE_KEY, currentWorkspaceId);
-    } else {
-      localStorage.removeItem(WORKSPACE_STORAGE_KEY);
+    try {
+      if (currentWorkspaceId) {
+        setScopedStorageItem(WORKSPACE_STORAGE_KEY, userId, currentWorkspaceId);
+      } else {
+        removeScopedStorageItem(WORKSPACE_STORAGE_KEY, userId);
+      }
+    } catch {
+      // Ignore localStorage errors
     }
-  }, [currentWorkspaceId]);
+  }, [currentWorkspaceId, userId]);
 
   // Apply theme variables to document root
   // Recreate controller when workspace or its colors change

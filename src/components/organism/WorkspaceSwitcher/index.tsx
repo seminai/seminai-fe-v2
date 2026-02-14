@@ -179,36 +179,31 @@ export function WorkspaceSwitcher({ collapsed = false }: WorkspaceSwitcherProps)
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {/* Default Seminai environment */}
-        <WorkspaceItem
-          workspace={null}
-          isSelected={!currentWorkspace}
-          onSelect={exitWorkspace}
-          isDefault
-        />
+        {/* 1. Workspace in uso - sempre primo, evidenziato */}
+        <DropdownMenuLabel className="text-xs text-muted-foreground font-normal px-2 pt-1">
+          Workspace in uso
+        </DropdownMenuLabel>
+        <div className="flex items-center gap-3 py-2.5 px-3 cursor-default rounded-sm bg-accent/30">
+          <WorkspaceAvatar workspace={currentWorkspace} size="sm" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">
+              {currentWorkspace ? currentWorkspace.name : "Seminai"}
+            </p>
+            {!currentWorkspace && (
+              <p className="text-xs text-muted-foreground">Ambiente predefinito</p>
+            )}
+            {currentWorkspace?.description && (
+              <p className="text-xs text-muted-foreground truncate">
+                {currentWorkspace.description}
+              </p>
+            )}
+          </div>
+          <Check className="h-4 w-4 text-primary shrink-0" />
+        </div>
 
-        {/* User workspaces */}
-        {!isLoading && workspaces.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-              I tuoi workspace
-            </DropdownMenuLabel>
-            {workspaces.map((ws) => (
-              <WorkspaceItem
-                key={ws.id}
-                workspace={ws}
-                isSelected={currentWorkspace?.id === ws.id}
-                onSelect={() => selectWorkspace(ws.id)}
-              />
-            ))}
-          </>
-        )}
-
-        {/* Workspace settings - only visible when a workspace is selected */}
+        {/* 2. Impostazioni - visibili quando c'è un workspace selezionato */}
         {currentWorkspace && (
           <>
-            <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleWorkspaceSettings}
               className="flex items-center gap-2 cursor-pointer"
@@ -223,6 +218,31 @@ export function WorkspaceSwitcher({ collapsed = false }: WorkspaceSwitcherProps)
                 </p>
               </div>
             </DropdownMenuItem>
+          </>
+        )}
+
+        {/* 3. I workspace disponibili - per cambiare, con quello selezionato evidente */}
+        {!isLoading && (workspaces.length > 0 || currentWorkspace) && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+              I tuoi workspace
+            </DropdownMenuLabel>
+            {/* Default Seminai - mostrato in lista se non è già in uso, o sempre per permettere il cambio */}
+            <WorkspaceItem
+              workspace={null}
+              isSelected={!currentWorkspace}
+              onSelect={exitWorkspace}
+              isDefault
+            />
+            {workspaces.map((ws) => (
+              <WorkspaceItem
+                key={ws.id}
+                workspace={ws}
+                isSelected={currentWorkspace?.id === ws.id}
+                onSelect={() => selectWorkspace(ws.id)}
+              />
+            ))}
           </>
         )}
 

@@ -10,7 +10,7 @@ import {
   type JobRow,
 } from "@/components/organism/JobSelectedDetails";
 import { type JobHistoryEntry, type JobWithRelations } from "@/api/jobs";
-import { useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   Popover,
   PopoverContent,
@@ -282,6 +282,16 @@ export function AllJobsView({
     error instanceof Error ? error.message : "Errore sconosciuto";
   const conformityCheckerRef = useRef<ConformityCheckerPanelRef>(null);
   const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false);
+  const [conformityPanelReady, setConformityPanelReady] = useState(false);
+
+  // Re-render when panel is mounted (in details with jobGroupId) so button disabled state updates
+  useEffect(() => {
+    if (jobGroupId) {
+      const t = setTimeout(() => setConformityPanelReady(true), 0);
+      return () => clearTimeout(t);
+    }
+    setConformityPanelReady(false);
+  }, [jobGroupId]);
 
   // Carica una chat dallo storico nel pannello conformità
   const handleSelectChatFromHistory = (chatId: string) => {
@@ -451,6 +461,25 @@ export function AllJobsView({
                     >
                       <Brain className="h-4 w-4 text-slate-500" />
                     </Button>
+                    {jobGroupId && (
+                      <Button
+                        onClick={async () => {
+                          await conformityCheckerRef.current?.handleVerify();
+                          onRightSidebarModeChange("conformity");
+                        }}
+                        disabled={
+                          !conformityPanelReady ||
+                          !conformityCheckerRef.current ||
+                          conformityCheckerRef.current?.isVerifyDisabled
+                        }
+                        size="sm"
+                        variant="outline"
+                        className="h-7"
+                      >
+                        <Check className="h-3 w-3 mr-1.5" />
+                        Verifica conformità automatica
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -510,20 +539,9 @@ export function AllJobsView({
               )}
               {rightSidebarMode === "conformity" && (
                 <>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() =>
-                        conformityCheckerRef.current?.handleVerify()
-                      }
-                      disabled={conformityCheckerRef.current?.isVerifyDisabled}
-                      size="sm"
-                      variant="outline"
-                      className="h-7"
-                    >
-                      <Check className="h-3 w-3 mr-1.5" />
-                      Verifica conformità automatica
-                    </Button>
-                  </div>
+                  <span className="text-sm font-medium text-slate-700">
+                    Chat
+                  </span>
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
@@ -556,7 +574,7 @@ export function AllJobsView({
                 </>
               )}
             </div>
-            <div className="flex-1 overflow-hidden bg-slate-50">
+            <div className="flex-1 overflow-hidden bg-slate-50 relative">
               {rightSidebarMode === "details" &&
                 (selectedRows.length > 0 ? (
                   <JobSelectedDetails
@@ -584,8 +602,24 @@ export function AllJobsView({
                     Nessuno storico disponibile per la selezione corrente
                   </div>
                 ))}
-              {rightSidebarMode === "conformity" &&
-                (jobGroupId ? (
+              {rightSidebarMode === "conformity" && !jobGroupId && (
+                <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm p-4 text-center">
+                  <MessageSquare className="h-8 w-8 mb-2 opacity-50" />
+                  <p>
+                    Seleziona un gruppo di operazioni per verificare la
+                    conformità
+                  </p>
+                </div>
+              )}
+              {jobGroupId && (
+                <div
+                  className={cn(
+                    "flex flex-col overflow-hidden",
+                    rightSidebarMode === "conformity"
+                      ? "h-full"
+                      : "absolute inset-0 opacity-0 pointer-events-none w-0 h-0 overflow-hidden",
+                  )}
+                >
                   <ConformityCheckerPanel
                     ref={conformityCheckerRef}
                     jobGroupId={jobGroupId}
@@ -593,15 +627,8 @@ export function AllJobsView({
                     onConfirmSuccess={onConformityConfirmSuccess}
                     onClose={() => onRightSidebarModeChange("details")}
                   />
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm p-4 text-center">
-                    <MessageSquare className="h-8 w-8 mb-2 opacity-50" />
-                    <p>
-                      Seleziona un gruppo di operazioni per verificare la
-                      conformità
-                    </p>
-                  </div>
-                ))}
+                </div>
+              )}
             </div>
           </div>
         </>

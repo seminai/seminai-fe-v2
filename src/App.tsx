@@ -35,7 +35,10 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/diventa-beta-tester" element={<BetaTesterAgreement />} />
-      <Route path="/diventa-beta-tester/successo" element={<BetaTesterAgreementSuccess />} />
+      <Route
+        path="/diventa-beta-tester/successo"
+        element={<BetaTesterAgreementSuccess />}
+      />
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route element={<ProtectedRoute />}>

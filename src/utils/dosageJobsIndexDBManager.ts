@@ -18,18 +18,35 @@ export interface DosageJob {
 }
 
 class DosageJobsIndexDBManager {
-  private dbName = "SeminaiDosageJobs";
+  private readonly baseDbName = "SeminaiDosageJobs";
+  private dbName = this.baseDbName;
   private version = 1;
   private storeName = "dosageJobs";
   private db: IDBDatabase | null = null;
   private useLocalStorage = false;
-  private localStorageKey = "SeminaiDosageJobs";
+  private readonly baseLocalStorageKey = "SeminaiDosageJobs";
+  private localStorageKey = this.baseLocalStorageKey;
+  private currentUserId: string | null = null;
   private readonly MAX_JOBS = 50;
+
+  private configureForUser(userId: string): void {
+    if (this.currentUserId === userId) {
+      return;
+    }
+
+    this.close();
+    this.currentUserId = userId;
+    this.dbName = `${this.baseDbName}_${userId}`;
+    this.localStorageKey = `${this.baseLocalStorageKey}_${userId}`;
+    this.useLocalStorage = false;
+  }
 
   /**
    * Initialize the IndexedDB connection
    */
-  async init(): Promise<void> {
+  async init(userId: string): Promise<void> {
+    this.configureForUser(userId);
+
     // Check if IndexedDB is available
     if (typeof indexedDB === "undefined" || indexedDB === null) {
       this.useLocalStorage = true;
@@ -98,6 +115,10 @@ class DosageJobsIndexDBManager {
    * Ensure DB is initialized and connection is valid
    */
   private async ensureDB(): Promise<IDBDatabase | null> {
+    if (!this.currentUserId) {
+      throw new Error("DosageJobsIndexDBManager not initialized with userId");
+    }
+
     // If using localStorage, return null
     if (this.useLocalStorage) {
       return null;
@@ -115,7 +136,7 @@ class DosageJobsIndexDBManager {
     }
 
     // Initialize or reinitialize the database
-    await this.init();
+    await this.init(this.currentUserId);
 
     // If initialization failed and we're using localStorage, return null
     if (this.useLocalStorage || !this.db) {

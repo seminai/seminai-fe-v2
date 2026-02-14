@@ -69,6 +69,8 @@ import {
   OrchestratorLabels,
 } from "./orchestrator";
 import { ImportMethodPolicy, type ImportMethod } from "./importMethod";
+import { dosageJobStateSynchronizer } from "./jobStateSynchronizer";
+import { useUserId } from "@/contexts/UserIdContext";
 class DosageJobDetailsManager {
   public async load(job: DosageJob): Promise<DosageJob> {
     if (job.state === "completed" && job.result) {
@@ -870,6 +872,7 @@ function LiveLogEventCard({ event }: { event: DosageLogEvent }): ReactElement {
 }
 
 export default function DosageManager() {
+  const userId = useUserId();
   const queryClient = useQueryClient();
   const { state: sidebarState, isMobile } = useSidebar();
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([]);
@@ -1096,18 +1099,38 @@ export default function DosageManager() {
       placeholder: "Inserisci numero registrazione",
     },
     {
-      id: "quantity",
-      title: "Quantità",
-      type: "number",
-      required: true,
-      placeholder: "0",
-    },
-    {
       id: "quantityUnitOfMeasure",
       title: "Unità",
       type: "text",
       required: true,
       placeholder: "kg, L, ecc.",
+    },
+    {
+      id: "totalAreaHa",
+      title: "Superficie totale (ha)",
+      type: "number",
+      required: false,
+      readOnly: true,
+      render: () => null,
+    },
+    {
+      id: "quantityPerHectare",
+      title: "Quantità per ettaro",
+      type: "number",
+      required: false,
+      placeholder: "0",
+      onValueChange: (args) => {
+        const area = Number(args.rowData.totalAreaHa) || 0;
+        const qtyPerHa = Number(args.value) || 0;
+        return { quantity: area * qtyPerHa };
+      },
+    },
+    {
+      id: "quantity",
+      title: "Quantità",
+      type: "number",
+      required: true,
+      placeholder: "0",
     },
     {
       id: "supplierName",
@@ -1299,6 +1322,8 @@ export default function DosageManager() {
       registrationNumber: product.registrationNumber,
       quantity: product.quantity,
       quantityUnitOfMeasure: product.quantityUnitOfMeasure,
+      totalAreaHa: undefined as number | undefined,
+      quantityPerHectare: undefined as number | undefined,
       supplierName: product.supplierName || "",
       supplierVat: product.supplierVat || "",
       loadWarehouse: product.loadWarehouse,
@@ -1430,9 +1455,16 @@ export default function DosageManager() {
 
   // Load jobs from API on mount - solo una volta
   useEffect(() => {
-    void fetchJobsFromApi();
+    void (async () => {
+      try {
+        await dosageJobStateSynchronizer.initialize(userId);
+      } catch (error) {
+        console.error("Failed to initialize dosage jobs storage", error);
+      }
+      await fetchJobsFromApi();
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Solo al mount, non quando fetchJobsFromApi cambia
+  }, [userId]); // Solo al mount per utente, non quando fetchJobsFromApi cambia
 
   // Poll active jobs
   useEffect(() => {
@@ -1569,6 +1601,19 @@ export default function DosageManager() {
       return row;
     });
   }, [filteredUnits, treatedAreaHaMap]);
+
+  const totalAreaHa = useMemo(() => {
+    return productionUnitTableRows
+      .filter((row) => selectedUnitIds.includes(row.id as string))
+      .reduce(
+        (sum, row) =>
+          sum +
+          (Number((row as { treatedAreaHa?: number }).treatedAreaHa) ||
+            Number((row as { areaHa?: number }).areaHa) ||
+            0),
+        0,
+      );
+  }, [productionUnitTableRows, selectedUnitIds]);
 
   const handleUnitSelectionChange = useCallback(
     (rows: Array<Record<string, unknown>>) => {
@@ -2413,6 +2458,7 @@ export default function DosageManager() {
             setSelectedCompanyIds={setSelectedCompanyIds}
             selectedUnitIds={selectedUnitIds}
             setSelectedUnitIds={setSelectedUnitIds}
+            totalAreaHa={totalAreaHa}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             loadingUnits={loadingUnits}
