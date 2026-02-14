@@ -120,12 +120,13 @@ export default function CompanyStep({
             <Button
               type="button"
               variant="outline"
-              size="icon"
-              className="h-10 w-10 shrink-0"
+              size="default"
+              className="h-10 shrink-0 gap-2"
               onClick={handleToggleCreateForm}
-              title="Crea nuova azienda"
+              title="Aggiungi nuova azienda"
             >
               <IoAddCircleOutline className="w-5 h-5" />
+              Aggiungi nuova azienda
             </Button>
           </div>
 

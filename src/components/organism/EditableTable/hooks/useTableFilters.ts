@@ -25,6 +25,12 @@ import {
   getAvailableSystemDateColumns,
   isSystemDateColumn,
 } from "../utils";
+import { useUserId } from "@/contexts/UserIdContext";
+import {
+  getScopedStorageItem,
+  removeScopedStorageItem,
+  setScopedStorageItem,
+} from "@/utils/storageKeys";
 
 export interface UseTableFiltersReturn {
   // Panel filter state
@@ -99,9 +105,9 @@ function isGlobalCompanyFilterRoute(): boolean {
   );
 }
 
-function loadGlobalCompanyFilter(): Set<string> {
+function loadGlobalCompanyFilter(userId: string): Set<string> {
   try {
-    const stored = localStorage.getItem(GLOBAL_COMPANY_FILTER_STORAGE_KEY);
+    const stored = getScopedStorageItem(GLOBAL_COMPANY_FILTER_STORAGE_KEY, userId);
     if (stored) {
       const parsed = JSON.parse(stored) as string[];
       if (Array.isArray(parsed) && parsed.length > 0) {
@@ -114,13 +120,14 @@ function loadGlobalCompanyFilter(): Set<string> {
   return new Set<string>();
 }
 
-function saveGlobalCompanyFilter(values: Set<string>): void {
+function saveGlobalCompanyFilter(values: Set<string>, userId: string): void {
   try {
     if (values.size === 0) {
-      localStorage.removeItem(GLOBAL_COMPANY_FILTER_STORAGE_KEY);
+      removeScopedStorageItem(GLOBAL_COMPANY_FILTER_STORAGE_KEY, userId);
     } else {
-      localStorage.setItem(
+      setScopedStorageItem(
         GLOBAL_COMPANY_FILTER_STORAGE_KEY,
+        userId,
         JSON.stringify([...values]),
       );
     }
@@ -129,14 +136,17 @@ function saveGlobalCompanyFilter(values: Set<string>): void {
   }
 }
 
-function buildInitialColumnFilterValues(): Record<string, Set<string>> {
+function buildInitialColumnFilterValues(
+  userId: string,
+): Record<string, Set<string>> {
   if (!isGlobalCompanyFilterRoute()) return {};
-  const saved = loadGlobalCompanyFilter();
+  const saved = loadGlobalCompanyFilter(userId);
   if (saved.size === 0) return {};
   return { [GLOBAL_COMPANY_FILTER_COLUMN_ID]: saved };
 }
 
 export function useTableFilters(): UseTableFiltersReturn {
+  const userId = useUserId();
   // Panel filter state
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<TableFilterRule[]>([]);
@@ -153,7 +163,7 @@ export function useTableFilters(): UseTableFiltersReturn {
   );
   const [columnFilterSelectedValues, setColumnFilterSelectedValues] = useState<
     Record<string, Set<string>>
-  >(buildInitialColumnFilterValues);
+  >(() => buildInitialColumnFilterValues(userId));
   const [columnFilterSearchQueries, setColumnFilterSearchQueries] = useState<
     Record<string, string>
   >({});
@@ -304,13 +314,13 @@ export function useTableFilters(): UseTableFiltersReturn {
           columnId === GLOBAL_COMPANY_FILTER_COLUMN_ID &&
           isGlobalCompanyFilterRoute()
         ) {
-          saveGlobalCompanyFilter(newSet);
+          saveGlobalCompanyFilter(newSet, userId);
         }
 
         return { ...prev, [columnId]: newSet };
       });
     },
-    [],
+    [userId],
   );
 
   const handleColumnFilterDateRangeChange = useCallback(
@@ -359,9 +369,9 @@ export function useTableFilters(): UseTableFiltersReturn {
       columnId === GLOBAL_COMPANY_FILTER_COLUMN_ID &&
       isGlobalCompanyFilterRoute()
     ) {
-      saveGlobalCompanyFilter(new Set());
+      saveGlobalCompanyFilter(new Set(), userId);
     }
-  }, []);
+  }, [userId]);
 
   const resetColumnFilters = useCallback(() => {
     setColumnFilterOpen(undefined);
@@ -369,14 +379,14 @@ export function useTableFilters(): UseTableFiltersReturn {
     setColumnFilterSelectedValues((): Record<string, Set<string>> => {
       if (!isGlobalCompanyFilterRoute())
         return {} as Record<string, Set<string>>;
-      const saved = loadGlobalCompanyFilter();
+      const saved = loadGlobalCompanyFilter(userId);
       if (saved.size === 0) return {} as Record<string, Set<string>>;
       return { [GLOBAL_COMPANY_FILTER_COLUMN_ID]: saved };
     });
     setColumnFilterSearchQueries({});
     setColumnFilterDateRanges({});
     setColumnFilterSelectedDates({});
-  }, []);
+  }, [userId]);
 
   // Filter application
   const getFilteredRows = useCallback(

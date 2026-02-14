@@ -77,6 +77,7 @@ interface ManageSectionProps {
   setSelectedCompanyIds: Dispatch<SetStateAction<string[]>>;
   selectedUnitIds: string[];
   setSelectedUnitIds: Dispatch<SetStateAction<string[]>>;
+  totalAreaHa: number;
   searchQuery: string;
   setSearchQuery: Dispatch<SetStateAction<string>>;
   loadingUnits: boolean;
@@ -175,6 +176,7 @@ export function ManageSection({
   setSelectedCompanyIds,
   selectedUnitIds,
   setSelectedUnitIds,
+  totalAreaHa,
   searchQuery,
   setSearchQuery,
   loadingUnits,
@@ -664,6 +666,15 @@ export function ManageSection({
               isModify={true}
               addButton={true}
               createMode="drawer"
+              newRowDefaults={{
+                totalAreaHa,
+                quantityPerHectare: "",
+              }}
+              formDescription={
+                totalAreaHa === 0
+                  ? "Seleziona le unità produttive sopra per calcolare automaticamente la quantità da quantità per ettaro."
+                  : undefined
+              }
               onSave={handleSaveProducts}
               onDeleteSelected={handleDeleteProducts}
               onSelectionChange={handleProductSelectionChange}

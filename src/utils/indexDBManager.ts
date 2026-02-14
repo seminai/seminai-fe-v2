@@ -43,52 +43,107 @@ export interface ExtractedLabelData {
 }
 
 class IndexDBManager {
-  private dbName = "SeminaiLabelJobs";
+  private readonly baseDbName = "SeminaiLabelJobs";
+  private dbName = this.baseDbName;
   private version = 1;
   private storeName = "jobs";
   private db: IDBDatabase | null = null;
+  private useLocalStorage = false;
+  private readonly baseLocalStorageKey = "SeminaiLabelJobs";
+  private localStorageKey = this.baseLocalStorageKey;
+  private currentUserId: string | null = null;
+
+  private configureForUser(userId: string): void {
+    if (this.currentUserId === userId) {
+      return;
+    }
+
+    this.close();
+    this.currentUserId = userId;
+    this.dbName = `${this.baseDbName}_${userId}`;
+    this.localStorageKey = `${this.baseLocalStorageKey}_${userId}`;
+    this.useLocalStorage = false;
+  }
 
   /**
    * Initialize the IndexedDB connection
    */
-  async init(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.version);
+  async init(userId: string): Promise<void> {
+    this.configureForUser(userId);
 
-      request.onerror = () => {
-        reject(new Error("Failed to open IndexedDB"));
-      };
+    if (typeof indexedDB === "undefined" || indexedDB === null) {
+      this.useLocalStorage = true;
+      return;
+    }
 
-      request.onsuccess = () => {
-        this.db = request.result;
+    return new Promise((resolve) => {
+      try {
+        const request = indexedDB.open(this.dbName, this.version);
+
+        request.onerror = () => {
+          this.useLocalStorage = true;
+          resolve();
+        };
+
+        request.onsuccess = () => {
+          this.db = request.result;
+          this.useLocalStorage = false;
+          resolve();
+        };
+
+        request.onupgradeneeded = (event) => {
+          const db = (event.target as IDBOpenDBRequest).result;
+
+          if (!db.objectStoreNames.contains(this.storeName)) {
+            const objectStore = db.createObjectStore(this.storeName, {
+              keyPath: "id",
+            });
+            objectStore.createIndex("state", "state", { unique: false });
+            objectStore.createIndex("createdAt", "createdAt", { unique: false });
+          }
+        };
+      } catch {
+        this.useLocalStorage = true;
         resolve();
-      };
-
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-
-        if (!db.objectStoreNames.contains(this.storeName)) {
-          const objectStore = db.createObjectStore(this.storeName, {
-            keyPath: "id",
-          });
-          objectStore.createIndex("state", "state", { unique: false });
-          objectStore.createIndex("createdAt", "createdAt", { unique: false });
-        }
-      };
+      }
     });
   }
 
   /**
    * Ensure DB is initialized
    */
-  private async ensureDB(): Promise<IDBDatabase> {
-    if (!this.db) {
-      await this.init();
+  private async ensureDB(): Promise<IDBDatabase | null> {
+    if (!this.currentUserId) {
+      throw new Error("IndexDBManager not initialized with userId");
     }
+
+    if (this.useLocalStorage) {
+      return null;
+    }
+
     if (!this.db) {
-      throw new Error("Database not initialized");
+      await this.init(this.currentUserId);
     }
     return this.db;
+  }
+
+  private getJobsFromLocalStorage(): LabelJob[] {
+    try {
+      const stored = localStorage.getItem(this.localStorageKey);
+      if (!stored) return [];
+      const jobs = JSON.parse(stored) as LabelJob[];
+      return jobs.map((job) => ({
+        ...job,
+        createdAt: new Date(job.createdAt),
+        updatedAt: new Date(job.updatedAt),
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  private saveJobsToLocalStorage(jobs: LabelJob[]): void {
+    localStorage.setItem(this.localStorageKey, JSON.stringify(jobs));
   }
 
   /**
@@ -96,6 +151,19 @@ class IndexDBManager {
    */
   async saveJob(job: LabelJob): Promise<void> {
     const db = await this.ensureDB();
+
+    if (!db || this.useLocalStorage) {
+      const jobs = this.getJobsFromLocalStorage();
+      const existingIndex = jobs.findIndex((j) => j.id === job.id);
+      if (existingIndex >= 0) {
+        jobs[existingIndex] = job;
+      } else {
+        jobs.push(job);
+      }
+      this.saveJobsToLocalStorage(jobs);
+      return;
+    }
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([this.storeName], "readwrite");
       const store = transaction.objectStore(this.storeName);
@@ -111,6 +179,12 @@ class IndexDBManager {
    */
   async getJob(jobId: string): Promise<LabelJob | null> {
     const db = await this.ensureDB();
+
+    if (!db || this.useLocalStorage) {
+      const jobs = this.getJobsFromLocalStorage();
+      return jobs.find((job) => job.id === jobId) || null;
+    }
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([this.storeName], "readonly");
       const store = transaction.objectStore(this.storeName);
@@ -134,6 +208,13 @@ class IndexDBManager {
    */
   async getAllJobs(): Promise<LabelJob[]> {
     const db = await this.ensureDB();
+
+    if (!db || this.useLocalStorage) {
+      const jobs = this.getJobsFromLocalStorage();
+      jobs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      return jobs;
+    }
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([this.storeName], "readonly");
       const store = transaction.objectStore(this.storeName);
@@ -191,6 +272,11 @@ class IndexDBManager {
       updatedAt: new Date(),
     };
 
+    if (!db || this.useLocalStorage) {
+      await this.saveJob(updatedJob);
+      return;
+    }
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([this.storeName], "readwrite");
       const store = transaction.objectStore(this.storeName);
@@ -206,6 +292,13 @@ class IndexDBManager {
    */
   async deleteJob(jobId: string): Promise<void> {
     const db = await this.ensureDB();
+
+    if (!db || this.useLocalStorage) {
+      const jobs = this.getJobsFromLocalStorage().filter((job) => job.id !== jobId);
+      this.saveJobsToLocalStorage(jobs);
+      return;
+    }
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([this.storeName], "readwrite");
       const store = transaction.objectStore(this.storeName);

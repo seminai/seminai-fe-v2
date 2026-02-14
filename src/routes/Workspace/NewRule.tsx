@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,6 +35,7 @@ import {
 import { useCreateRule } from "@/hooks/useWorkspaces";
 import { useWorkspaceContext } from "@/contexts/WorkspaceContext";
 import { RuleCategory, type CreateRuleRequest } from "@/types/workspace";
+import { fetchDisciplinariBdf, type DisciplinareBdfRow } from "@/utils/disciplinariBdf";
 
 const formSchema = z.object({
   name: z.string().min(2, "Il nome deve contenere almeno 2 caratteri"),
@@ -68,6 +69,8 @@ export default function NewRule() {
   const { mutateAsync: createRule, isPending: isCreating } = useCreateRule();
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [disciplinariList, setDisciplinariList] = useState<DisciplinareBdfRow[]>([]);
+  const [disciplinariLoading, setDisciplinariLoading] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -79,6 +82,17 @@ export default function NewRule() {
       isTemplate: false,
     },
   });
+
+  const category = form.watch("category");
+
+  useEffect(() => {
+    if (category !== RuleCategory.DISCIPLINARE) return;
+    setDisciplinariLoading(true);
+    fetchDisciplinariBdf()
+      .then(setDisciplinariList)
+      .catch(() => setDisciplinariList([]))
+      .finally(() => setDisciplinariLoading(false));
+  }, [category]);
 
   const onSubmit = async (values: FormValues) => {
     if (!currentWorkspace) {
@@ -214,6 +228,37 @@ export default function NewRule() {
                   </FormItem>
                 )}
               />
+
+              {category === RuleCategory.DISCIPLINARE && (
+                <div className="space-y-2">
+                  <label className="text-base font-medium">Compila da disciplinare</label>
+                  <Select
+                    disabled={disciplinariLoading}
+                    onValueChange={(value) => {
+                      const idx = parseInt(value, 10);
+                      const row = disciplinariList[idx];
+                      if (row) {
+                        form.setValue("name", row.name);
+                        form.setValue("description", row.name);
+                        form.setValue("region", row.region);
+                        form.setValue("sourceUrl", row.url || "");
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-12 text-base">
+                      <SelectValue placeholder={disciplinariLoading ? "Caricamento..." : "Seleziona un disciplinare..."} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {disciplinariList.map((row, idx) => (
+                        <SelectItem key={`${row.title}-${idx}`} value={String(idx)}>
+                          {row.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">Compila nome, descrizione e regione con i dati del disciplinare selezionato (senza anno).</p>
+                </div>
+              )}
 
               <FormField
                 control={form.control}

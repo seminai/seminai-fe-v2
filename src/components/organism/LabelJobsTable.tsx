@@ -16,6 +16,7 @@ import { ExternalLink, Trash2, RefreshCw } from "lucide-react";
 import { indexDBManager, type LabelJob } from "@/utils/indexDBManager";
 import { toast } from "sonner";
 import { authenticatedHttpClient } from "@/api/http";
+import { useUserId } from "@/contexts/UserIdContext";
 
 interface LabelJobsTableProps {
   onRefresh?: () => void;
@@ -26,6 +27,7 @@ export function LabelJobsTable({
   onRefresh,
   onActiveJobsChange,
 }: LabelJobsTableProps): React.ReactElement {
+  const userId = useUserId();
   const [jobs, setJobs] = useState<LabelJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [pollingJobIds, setPollingJobIds] = useState<Set<string>>(new Set());
@@ -102,7 +104,7 @@ export function LabelJobsTable({
   // Initialize polling for active jobs
   useEffect(() => {
     const initPolling = async (): Promise<void> => {
-      await indexDBManager.init();
+      await indexDBManager.init(userId);
       await loadJobs();
 
       const activeJobs = await indexDBManager.getActiveJobs();
@@ -111,7 +113,7 @@ export function LabelJobsTable({
     };
 
     initPolling();
-  }, [loadJobs]);
+  }, [loadJobs, userId]);
 
   // Polling interval
   useEffect(() => {

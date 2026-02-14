@@ -15,6 +15,10 @@ class DosageJobStateSynchronizer {
     this.api = api;
   }
 
+  public async initialize(userId: string): Promise<void> {
+    await this.storage.init(userId);
+  }
+
   public async reloadAll(): Promise<DosageJob[]> {
     return await this.storage.getAllJobs();
   }

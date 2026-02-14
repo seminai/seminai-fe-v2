@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { JobWithRelations } from "@/api/jobs";
 import {
@@ -84,6 +85,7 @@ function extractResponseMessage(
 }
 
 export function useJobVerificationAgent(threadId: string) {
+  const queryClient = useQueryClient();
   const [messages, setMessages] = useState<JobVerificationMessage[]>([]);
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
   const [currentTasks, setCurrentTasks] = useState<AgentTask[]>([]);
@@ -380,6 +382,8 @@ export function useJobVerificationAgent(threadId: string) {
                 }
                 setIsLoading(false);
                 scrollToBottom();
+                // Refresh chat list so ChatHistoryDrawer shows the new/updated chat
+                void queryClient.invalidateQueries({ queryKey: ["chats"] });
                 break;
               }
 
@@ -423,6 +427,7 @@ export function useJobVerificationAgent(threadId: string) {
       appendMessage,
       getNextMessageId,
       isLoading,
+      queryClient,
       scrollToBottom,
       threadId,
       updateLastAssistant,
@@ -459,6 +464,7 @@ export function useJobVerificationAgent(threadId: string) {
           reasoning: response.reasoning,
           timestamp: new Date(),
         });
+        void queryClient.invalidateQueries({ queryKey: ["chats"] });
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Errore sconosciuto";
@@ -476,7 +482,14 @@ export function useJobVerificationAgent(threadId: string) {
         scrollToBottom();
       }
     },
-    [appendMessage, getNextMessageId, isLoading, scrollToBottom, threadId]
+    [
+      appendMessage,
+      getNextMessageId,
+      isLoading,
+      queryClient,
+      scrollToBottom,
+      threadId,
+    ]
   );
 
   const rejectAction = useCallback(
@@ -511,6 +524,7 @@ export function useJobVerificationAgent(threadId: string) {
           reasoning: response.reasoning,
           timestamp: new Date(),
         });
+        void queryClient.invalidateQueries({ queryKey: ["chats"] });
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Errore sconosciuto";
@@ -528,7 +542,14 @@ export function useJobVerificationAgent(threadId: string) {
         scrollToBottom();
       }
     },
-    [appendMessage, getNextMessageId, isLoading, scrollToBottom, threadId]
+    [
+      appendMessage,
+      getNextMessageId,
+      isLoading,
+      queryClient,
+      scrollToBottom,
+      threadId,
+    ]
   );
 
   const clearThinkingSteps = useCallback(() => {

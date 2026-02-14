@@ -26,6 +26,7 @@ import {
 import { buildColumns } from "@/utils/tableHelpers";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, RefreshCw, Trash2 as Trash2Icon } from "lucide-react";
+import { useUserId } from "@/contexts/UserIdContext";
 
 interface LabelFormItem extends BulkExtractItem {
   id: string;
@@ -253,6 +254,7 @@ const buildLabelJobColumns = (): EditableColumn[] =>
   ]);
 
 export default function NewLabel(): React.ReactElement {
+  const userId = useUserId();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -365,7 +367,7 @@ export default function NewLabel(): React.ReactElement {
   // Initialize IndexedDB and load jobs
   useEffect(() => {
     const initPolling = async (): Promise<void> => {
-      await indexDBManager.init();
+      await indexDBManager.init(userId);
       await loadJobs();
 
       const activeJobs = await indexDBManager.getActiveJobs();
@@ -374,7 +376,7 @@ export default function NewLabel(): React.ReactElement {
     };
 
     initPolling();
-  }, [loadJobs]);
+  }, [loadJobs, userId]);
 
   // Polling interval
   useEffect(() => {

@@ -12,6 +12,7 @@ import {
 } from "@/api/userOnCompany";
 import { PageHeader } from "@/components/organism/Header";
 import { userSettingsIndexDBManager } from "@/utils/userSettingsIndexDBManager";
+import { useUserId } from "@/contexts/UserIdContext";
 import {
   type EditableColumn,
   type CustomExportConfig,
@@ -1533,6 +1534,7 @@ class JobBulkVerifier {
 type ViewMode = "all" | "review";
 
 export default function JobPage() {
+  const userId = useUserId();
   const [viewMode, setViewMode] = useState<ViewMode>("all");
   const [isBulkVerifying, setIsBulkVerifying] = useState<boolean>(false);
   const [historySheetOpen, setHistorySheetOpen] = useState<boolean>(false);
@@ -1584,7 +1586,7 @@ export default function JobPage() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        await userSettingsIndexDBManager.init();
+        await userSettingsIndexDBManager.init(userId);
         const savedWidth = await userSettingsIndexDBManager.getSetting<number>(
           "job",
           "historyPanelWidth",
@@ -1619,7 +1621,7 @@ export default function JobPage() {
     };
 
     loadSettings();
-  }, []);
+  }, [userId]);
 
   // Salva le impostazioni in IndexedDB quando cambiano (con debounce)
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useLogin, useRegister, useMe, useWakeUp } from "@/hooks/useAuth";
@@ -44,11 +44,20 @@ class RegistrationUnlockService {
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const loginMutation = useLogin();
   const registerMutation = useRegister();
 
   const { data: meData, refetch: refetchMe, error: meError } = useMe();
   const { isSuccess: isWakeUpSuccess } = useWakeUp();
+
+  // Messaggio "Sessione scaduta" quando si arriva da redirect 401/461
+  useEffect(() => {
+    if (searchParams.get("reason") === "session_expired") {
+      toast.info("Sessione scaduta. Effettua nuovamente l'accesso.");
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Istanza del servizio di polling per l'autenticazione
   const authPollingServiceRef = useRef<AuthPollingService | null>(null);
