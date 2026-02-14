@@ -16,6 +16,7 @@ import DosageManager from "./routes/DosageManager";
 import Products from "./routes/Products";
 import NewProduct from "./routes/Products/NewProduct";
 import Job from "./routes/Job";
+import NewJobManual from "./routes/Job/NewJobManual";
 import Operations from "./routes/Operations";
 import FieldNotes from "./routes/FieldNotes";
 import QuickCreate from "./routes/QuickCreate";
@@ -54,6 +55,7 @@ function App() {
         <Route path="/new-production-unit" element={<NewProductionUnit />} />
         <Route path="/dosage-manager" element={<DosageManager />} />
         <Route path="/job" element={<Job />} />
+        <Route path="/job/new-job-manual" element={<NewJobManual />} />
         <Route path="/operations" element={<Operations />} />
         <Route path="/field-notes" element={<FieldNotes />} />
         <Route path="/products" element={<Products />} />
