@@ -670,7 +670,7 @@ export function ManageSection({
                 totalAreaHa,
                 quantityPerHectare: "",
               }}
-              formDescription={
+              createDrawerFormDescription={
                 totalAreaHa === 0
                   ? "Seleziona le unità produttive sopra per calcolare automaticamente la quantità da quantità per ettaro."
                   : undefined
