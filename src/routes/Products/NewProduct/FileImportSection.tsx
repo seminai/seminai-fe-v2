@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -37,6 +37,10 @@ interface FileImportSectionProps {
   hideImportButton?: boolean;
   /** Ref to store the import trigger function for external invocation */
   importTriggerRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+  /** Called when loading state changes (extracting file or running import) */
+  onLoadingChange?: (loading: boolean) => void;
+  /** Called when there are extracted products ready to load */
+  onHasProductsToLoadChange?: (has: boolean) => void;
 }
 
 class CsvExcelPreviewMapper {
@@ -104,14 +108,21 @@ export default function FileImportSection({
   preselectedCompanyId,
   hideImportButton,
   importTriggerRef,
+  onLoadingChange,
+  onHasProductsToLoadChange,
 }: FileImportSectionProps) {
   const [activeTab, setActiveTab] = useState<"csv" | "ddt" | "invoice">("csv");
   const [companyId, setCompanyId] = useState(preselectedCompanyId || "");
   const [warehouseId, setWarehouseId] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [panelImporting, setPanelImporting] = useState(false);
 
   // File preview state
   const [uploadedFile, setUploadedFile] = useState<CompanyFile | null>(null);
+
+  useEffect(() => {
+    onLoadingChange?.(isProcessing || panelImporting);
+  }, [isProcessing, panelImporting, onLoadingChange]);
 
   // Extracted products state
   const [extractedProducts, setExtractedProducts] = useState<
@@ -120,6 +131,10 @@ export default function FileImportSection({
   const [previewErrors, setPreviewErrors] = useState<ImportPreviewError[]>([]);
   const [importSource, setImportSource] = useState<ProductImportSource>("csv");
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
+
+  useEffect(() => {
+    onHasProductsToLoadChange?.(extractedProducts.length > 0);
+  }, [extractedProducts.length, onHasProductsToLoadChange]);
 
   const {
     companies,
@@ -466,6 +481,7 @@ export default function FileImportSection({
                   onImportCompleted={onImportCompleted}
                   hideFooter={hideImportButton}
                   importTriggerRef={importTriggerRef}
+                  onImportingChange={setPanelImporting}
                 />
               </div>
             </div>
@@ -480,6 +496,7 @@ export default function FileImportSection({
                 importSource={importSource}
                 onImportCompleted={onImportCompleted}
                 hideFooter={hideImportButton}
+                onImportingChange={setPanelImporting}
                 mobilePreviewButton={
                   !isExcelImport && uploadedFile ? (
                     <Button

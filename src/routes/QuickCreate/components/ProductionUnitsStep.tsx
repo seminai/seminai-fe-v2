@@ -15,7 +15,6 @@ import { useCropVarieties } from "@/routes/ProductionUnit/NewProductionUnit/hook
 import { useCultivarHarvestDates } from "@/routes/ProductionUnit/NewProductionUnit/hooks/useCultivarHarvestDates";
 import { SingleProductionUnitForm } from "@/routes/ProductionUnit/NewProductionUnit/components/SingleProductionUnitForm";
 import { distributeAllocationsProportionally } from "@/routes/ProductionUnit/NewProductionUnit/utils";
-import { toast } from "sonner";
 
 interface ProductionUnitsStepProps {
   fieldsData: ExtractedField[];
@@ -330,10 +329,6 @@ export default function ProductionUnitsStep({
         const withoutOriginal = prev.filter((u) => u.id !== originalUnitId);
         return [...withoutOriginal, ...splitUnits];
       });
-
-      toast.success(
-        `Unità "${originalUnit.name}" frazionata in ${parts.length} parti`,
-      );
     },
     [productionUnits, updateUnits],
   );

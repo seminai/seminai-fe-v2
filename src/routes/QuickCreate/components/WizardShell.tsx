@@ -4,6 +4,7 @@ import { Spinner } from "@/components/ui/spinner";
 import StepperIndicator from "./StepperIndicator";
 import WizardFooter from "./WizardFooter";
 import type { QuickCreateStep } from "../types";
+import type { ProductsStepState } from "./WizardFooter";
 
 interface WizardShellProps {
   currentStep: QuickCreateStep;
@@ -13,6 +14,7 @@ interface WizardShellProps {
   onNext: () => void;
   onSkip?: () => void;
   isNextDisabled: boolean;
+  productsStepState?: ProductsStepState;
   children: React.ReactNode;
 }
 
@@ -24,6 +26,7 @@ export default function WizardShell({
   onNext,
   onSkip,
   isNextDisabled,
+  productsStepState,
   children,
 }: WizardShellProps): React.ReactElement {
   return (
@@ -60,6 +63,7 @@ export default function WizardShell({
           onSkip={onSkip}
           isNextDisabled={isNextDisabled}
           isLoading={isProcessing}
+          productsStepState={productsStepState}
         />
       </div>
     </div>

@@ -3,6 +3,11 @@ import { Button } from "@/components/ui/button";
 import { IoArrowBack, IoArrowForward } from "react-icons/io5";
 import type { QuickCreateStep } from "../types";
 
+export interface ProductsStepState {
+  isProductsLoading: boolean;
+  hasProductsToLoad: boolean;
+}
+
 interface WizardFooterProps {
   currentStep: QuickCreateStep;
   onBack: () => void;
@@ -10,9 +15,18 @@ interface WizardFooterProps {
   onSkip?: () => void;
   isNextDisabled: boolean;
   isLoading: boolean;
+  productsStepState?: ProductsStepState;
 }
 
-function getNextLabel(step: QuickCreateStep): string {
+function getNextLabel(
+  step: QuickCreateStep,
+  productsStepState?: ProductsStepState,
+): string {
+  if (step === "products" && productsStepState) {
+    if (productsStepState.isProductsLoading) return "Caricamento...";
+    if (productsStepState.hasProductsToLoad) return "Carica";
+    return "Procedi senza caricare prodotti";
+  }
   switch (step) {
     case "company":
       return "Avanti";
@@ -21,7 +35,7 @@ function getNextLabel(step: QuickCreateStep): string {
     case "production-units":
       return "Salva e Continua";
     case "products":
-      return "Completa";
+      return "Procedi senza caricare prodotti";
     default:
       return "Avanti";
   }
@@ -43,8 +57,16 @@ export default function WizardFooter({
   onSkip,
   isNextDisabled,
   isLoading,
+  productsStepState,
 }: WizardFooterProps): React.ReactElement | null {
   if (currentStep === "completion") return null;
+
+  const isProductsStep = currentStep === "products";
+  const productsLoading = isProductsStep && productsStepState?.isProductsLoading;
+  const nextDisabled =
+    isNextDisabled ||
+    isLoading ||
+    (isProductsStep && productsStepState?.isProductsLoading);
 
   return (
     <div className="bg-white border-t border-neutral-200 py-4 px-6 shadow-sm">
@@ -63,7 +85,7 @@ export default function WizardFooter({
             <Button
               variant="ghost"
               onClick={onSkip}
-              disabled={isLoading}
+              disabled={isLoading || productsLoading}
               className="text-neutral-500"
             >
               Salta
@@ -71,10 +93,10 @@ export default function WizardFooter({
           )}
           <Button
             onClick={onNext}
-            disabled={isNextDisabled || isLoading}
+            disabled={nextDisabled}
             className="gap-2"
           >
-            {getNextLabel(currentStep)}
+            {getNextLabel(currentStep, productsStepState)}
             {currentStep !== "production-units" && currentStep !== "products" && (
               <IoArrowForward className="w-4 h-4" />
             )}
