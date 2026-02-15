@@ -1175,9 +1175,19 @@ export function JobSelectedDetails({
                         </p>
                       </div>
                     ) : (
-                      <p className="text-xs text-slate-400 italic text-center py-2">
-                        Nessun alert note disponibile
-                      </p>
+                      <div
+                        className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-left"
+                        role="alert"
+                      >
+                        <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                        <p className="text-xs text-amber-800 leading-relaxed">
+                          <span className="font-medium">
+                            Etichetta da controllare.
+                          </span>{" "}
+                          Non sono ancora disponibili dettagli o note per questa
+                          operazione.
+                        </p>
+                      </div>
                     )}
                   </div>
                 )}

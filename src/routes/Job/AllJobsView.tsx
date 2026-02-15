@@ -10,7 +10,7 @@ import {
   type JobRow,
 } from "@/components/organism/JobSelectedDetails";
 import { type JobHistoryEntry, type JobWithRelations } from "@/api/jobs";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import {
   Popover,
   PopoverContent,
@@ -36,6 +36,8 @@ import { cn } from "@/lib/utils";
 import HistoryPanel from "./HistoryPanel";
 import ConformityCheckerPanel, {
   type ConformityCheckerPanelRef,
+  type VerificationStateSnapshot,
+  VerificationStatusBox,
 } from "./ConformityCheckerPanel";
 import ChatHistoryDrawer from "./ChatHistoryDrawer";
 
@@ -283,6 +285,15 @@ export function AllJobsView({
   const conformityCheckerRef = useRef<ConformityCheckerPanelRef>(null);
   const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false);
   const [conformityPanelReady, setConformityPanelReady] = useState(false);
+  const [verificationSnapshot, setVerificationSnapshot] =
+    useState<VerificationStateSnapshot | null>(null);
+
+  const handleVerificationStateChange = useCallback(
+    (snapshot: VerificationStateSnapshot) => {
+      setVerificationSnapshot(snapshot);
+    },
+    [],
+  );
 
   // Re-render when panel is mounted (in details with jobGroupId) so button disabled state updates
   useEffect(() => {
@@ -291,6 +302,11 @@ export function AllJobsView({
       return () => clearTimeout(t);
     }
     setConformityPanelReady(false);
+  }, [jobGroupId]);
+
+  // Azzera lo snapshot quando cambia il gruppo di job
+  useEffect(() => {
+    setVerificationSnapshot(null);
   }, [jobGroupId]);
 
   // Carica una chat dallo storico nel pannello conformità
@@ -465,7 +481,8 @@ export function AllJobsView({
                       <Button
                         onClick={async () => {
                           await conformityCheckerRef.current?.handleVerify();
-                          onRightSidebarModeChange("conformity");
+                          // Resta in Dettagli: lo status live si vede nel box sotto
+                          onRightSidebarModeChange("details");
                         }}
                         disabled={
                           !conformityPanelReady ||
@@ -574,18 +591,34 @@ export function AllJobsView({
                 </>
               )}
             </div>
-            <div className="flex-1 overflow-hidden bg-slate-50 relative">
-              {rightSidebarMode === "details" &&
-                (selectedRows.length > 0 ? (
-                  <JobSelectedDetails
-                    selectedRows={convertToJobRows(selectedRows)}
-                  />
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm p-4">
-                    <Sparkles className="h-8 w-8 mb-2 opacity-50" />
-                    <p>Seleziona una o più operazioni per vedere i dettagli</p>
-                  </div>
-                ))}
+            <div className="flex-1 overflow-hidden bg-slate-50 relative flex flex-col">
+              {rightSidebarMode === "details" && (
+                <>
+                  {verificationSnapshot && (
+                    <div className="flex-shrink-0 p-3 pb-0">
+                      <VerificationStatusBox
+                        snapshot={verificationSnapshot}
+                        onOpenChat={() => {
+                          onRightSidebarModeChange("conformity");
+                          onToggleRightSidebar(true);
+                        }}
+                      />
+                    </div>
+                  )}
+                  {selectedRows.length > 0 ? (
+                    <div className="flex-1 min-h-0 overflow-auto p-3 pt-2">
+                      <JobSelectedDetails
+                        selectedRows={convertToJobRows(selectedRows)}
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm p-4">
+                      <Sparkles className="h-8 w-8 mb-2 opacity-50" />
+                      <p>Seleziona una o più operazioni per vedere i dettagli</p>
+                    </div>
+                  )}
+                </>
+              )}
               {rightSidebarMode === "history" &&
                 (selectedRowsHistory.length > 0 ? (
                   <HistoryPanel
@@ -626,6 +659,7 @@ export function AllJobsView({
                     selectedJobs={selectedJobsForChat}
                     onConfirmSuccess={onConformityConfirmSuccess}
                     onClose={() => onRightSidebarModeChange("details")}
+                    onVerificationStateChange={handleVerificationStateChange}
                   />
                 </div>
               )}
