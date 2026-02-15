@@ -33,6 +33,8 @@ interface ImportedProductsPanelProps {
   hideFooter?: boolean;
   /** When set, the import function is stored in this ref so it can be triggered externally */
   importTriggerRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+  /** Called when importing state changes (for parent to show loading in footer) */
+  onImportingChange?: (isImporting: boolean) => void;
 }
 
 export default function ImportedProductsPanel({
@@ -45,9 +47,14 @@ export default function ImportedProductsPanel({
   mobilePreviewButton,
   hideFooter,
   importTriggerRef,
+  onImportingChange,
 }: ImportedProductsPanelProps) {
   const tableRef = useRef<EditableTableRef>(null);
   const [isImporting, setIsImporting] = useState(false);
+
+  useEffect(() => {
+    onImportingChange?.(isImporting);
+  }, [isImporting, onImportingChange]);
   const [importError, setImportError] = useState<string | null>(null);
   const [tableRows, setTableRows] = useState<ProductImportPreviewRow[]>(() =>
     ProductImportRowBuilder.build(products),
