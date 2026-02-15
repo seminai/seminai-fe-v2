@@ -776,11 +776,11 @@ export const ConformityCheckerPanel = forwardRef<
       {/* Action Buttons - Fixed at bottom */}
       {hasResults && (
         <div className="flex-shrink-0 border-t border-slate-200 bg-white">
-          <div className="p-4 flex items-center gap-2">
+          <div className="p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <Button
               onClick={handleCancel}
               variant="outline"
-              className="flex-1"
+              className="flex-1 min-w-0 w-full sm:w-auto"
               disabled={isConfirming}
             >
               <X className="h-4 w-4 mr-2" />
@@ -788,7 +788,7 @@ export const ConformityCheckerPanel = forwardRef<
             </Button>
             <Button
               onClick={handleConfirm}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="flex-1 min-w-0 w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white"
               disabled={isConfirming}
             >
               {isConfirming ? (

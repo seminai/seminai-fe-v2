@@ -35,6 +35,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Package,
+  Plus,
   ChevronLeft,
   ChevronRight,
   X,
@@ -54,6 +55,7 @@ type EditableTableRowData = Record<string, unknown>;
 
 interface ReviewJobsViewProps {
   isMobile: boolean;
+  onAddClick?: () => void;
   isGroupsSidebarOpen: boolean;
   onToggleGroupsSidebar: (open: boolean) => void;
   groupsSidebarWidth: number;
@@ -106,6 +108,7 @@ interface ReviewJobsViewProps {
 
 export function ReviewJobsView({
   isMobile,
+  onAddClick,
   isGroupsSidebarOpen,
   onToggleGroupsSidebar,
   groupsSidebarWidth,
@@ -261,6 +264,18 @@ export function ReviewJobsView({
             >
               <MessageSquare className="h-4 w-4" />
             </Button>
+            {onAddClick && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onAddClick}
+                className="p-2 h-auto shrink-0"
+                title="Aggiungi operazione"
+                aria-label="Aggiungi operazione"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
           </div>
           {selectedReviewRows.length > 0 && (
             <div className="flex items-center gap-2 mb-3">
@@ -334,24 +349,41 @@ export function ReviewJobsView({
             className="h-[70vh] p-0 flex flex-col border-0"
           >
             <SheetHeader className="flex-shrink-0 p-3 bg-white rounded-t-lg">
-              <div className="flex items-center justify-between">
-                <SheetTitle className="text-base">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <SheetTitle className="text-base min-w-0 truncate">
                   {rightSidebarMode === "details"
                     ? "Dettagli Operazioni"
                     : "Storico Operazione"}
                 </SheetTitle>
-                {rightSidebarMode === "details" &&
-                  selectedReviewRows.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onSelectionChange([])}
-                      className="h-7 w-7 p-0"
-                      title="Pulisci selezione"
-                    >
-                      <Eraser className="h-4 w-4" />
-                    </Button>
-                  )}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {rightSidebarMode === "details" &&
+                    selectedReviewRows.length > 0 && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            onRightSidebarModeChange("conformity");
+                            onMobileHistoryChange(true);
+                          }}
+                          className="h-7 text-xs"
+                          title="Verifica conformità"
+                        >
+                          <ClipboardCheck className="h-3.5 w-3.5 mr-1" />
+                          Verifica
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onSelectionChange([])}
+                          className="h-7 w-7 p-0"
+                          title="Pulisci selezione"
+                        >
+                          <Eraser className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                </div>
               </div>
               <SheetDescription className="sr-only">
                 {rightSidebarMode === "details"
@@ -359,7 +391,7 @@ export function ReviewJobsView({
                   : "Storico dell'operazione selezionata"}
               </SheetDescription>
             </SheetHeader>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-hidden">
               {selectedGroupSummary &&
                 (rightSidebarMode === "details" ? (
                   <JobSelectedDetails
