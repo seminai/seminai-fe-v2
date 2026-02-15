@@ -30,8 +30,23 @@ import { useFiles } from "@/hooks/useFiles";
 import { filesApiService } from "@/api/files";
 import { CompanyUsersPanel } from "./CompanyUsersPanel";
 import { useWorkspaceContext } from "@/contexts/WorkspaceContext";
-import { useWorkspaces, useCompanyRules, useCreateWorkspace } from "@/hooks/useWorkspaces";
+import {
+  useWorkspaces,
+  useCompanyRules,
+  useCreateWorkspace,
+  useRule,
+  useUpdateRule,
+} from "@/hooks/useWorkspaces";
 import { AddDisciplinareWizard } from "./AddDisciplinareWizard";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface DrawerCompanyContentProps {
   company: Company;
@@ -78,6 +93,9 @@ export function DrawerCompanyContent({
   const [openAddDisciplinare, setOpenAddDisciplinare] = useState(false);
   const [openCreateWorkspace, setOpenCreateWorkspace] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
+  const [ruleIdForDrawer, setRuleIdForDrawer] = useState<string | null>(null);
+  const [editRuleName, setEditRuleName] = useState("");
+  const [editRuleDescription, setEditRuleDescription] = useState("");
 
   const { currentWorkspace, selectWorkspace } = useWorkspaceContext();
   const { data: workspaces = [] } = useWorkspaces();
@@ -85,6 +103,11 @@ export function DrawerCompanyContent({
     useCreateWorkspace();
   const { data: companyRules = [], isLoading: isLoadingCompanyRules } =
     useCompanyRules(company.id);
+  const { data: ruleForDrawer, isLoading: isLoadingRuleForDrawer } = useRule(
+    ruleIdForDrawer ?? undefined
+  );
+  const { mutateAsync: updateRuleMutation, isPending: isUpdatingRule } =
+    useUpdateRule();
 
   const {
     files: companyFiles,
@@ -125,6 +148,14 @@ export function DrawerCompanyContent({
       onUpdateSuccess?.();
     }
   }, [isUpdating, isEditing, onUpdateSuccess]);
+
+  // Sincronizza i campi di modifica regola quando si apre il drawer con i dati della regola
+  useEffect(() => {
+    if (ruleForDrawer) {
+      setEditRuleName(ruleForDrawer.name);
+      setEditRuleDescription(ruleForDrawer.description ?? "");
+    }
+  }, [ruleForDrawer]);
 
   // Notifica il tab iniziale al componente padre per il breadcrumb
   useEffect(() => {
@@ -672,15 +703,20 @@ export function DrawerCompanyContent({
         ) : (
           <ul className="space-y-2">
             {companyRules.map(({ rule }) => (
-              <li
-                key={rule.id}
-                className="flex items-center gap-2 text-sm text-gray-900 py-1.5 px-2 rounded-lg bg-gray-50 border border-gray-100"
-              >
-                <FileText className="h-4 w-4 text-gray-500 shrink-0" />
-                <span>{rule.name}</span>
-                {rule.region && (
-                  <span className="text-xs text-gray-500 ml-auto">{rule.region}</span>
-                )}
+              <li key={rule.id}>
+                <button
+                  type="button"
+                  onClick={() => setRuleIdForDrawer(rule.id)}
+                  className="w-full flex items-center gap-2 text-sm text-gray-900 py-1.5 px-2 rounded-lg bg-gray-50 border border-gray-100 hover:bg-agri-green-50 hover:border-agri-green-200 transition-colors text-left cursor-pointer"
+                >
+                  <FileText className="h-4 w-4 text-gray-500 shrink-0" />
+                  <span>{rule.name}</span>
+                  {rule.region && (
+                    <span className="text-xs text-gray-500 ml-auto">
+                      {rule.region}
+                    </span>
+                  )}
+                </button>
               </li>
             ))}
           </ul>
@@ -707,6 +743,24 @@ export function DrawerCompanyContent({
     );
   };
 
+  const handleSaveRule = async () => {
+    if (!ruleIdForDrawer) return;
+    try {
+      await updateRuleMutation({
+        ruleId: ruleIdForDrawer,
+        payload: {
+          name: editRuleName.trim() || undefined,
+          description: editRuleDescription.trim() || undefined,
+        },
+      });
+      toast.success("Regola aggiornata");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Errore durante l'aggiornamento"
+      );
+    }
+  };
+
   return (
     <div className="space-y-6">
       <AddDisciplinareWizard
@@ -716,6 +770,84 @@ export function DrawerCompanyContent({
         companyName={company.name}
         initialWorkspace={currentWorkspace}
       />
+      <Sheet
+        open={!!ruleIdForDrawer}
+        onOpenChange={(open) => !open && setRuleIdForDrawer(null)}
+      >
+        <SheetContent
+          side="right"
+          className="sm:max-w-md flex flex-col"
+        >
+          <SheetHeader className="flex-shrink-0 border-b border-gray-100 pb-4">
+            <SheetTitle className="text-lg">
+              {ruleForDrawer?.name ?? "Dettaglio regola"}
+            </SheetTitle>
+            <SheetDescription>
+              Visualizza e modifica nome e descrizione della regola assegnata.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-auto py-4 space-y-4">
+            {isLoadingRuleForDrawer ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Spinner size={20} ariaLabel="Caricamento regola" />
+                <span>Caricamento…</span>
+              </div>
+            ) : ruleForDrawer ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="rule-name">Nome</Label>
+                  <Input
+                    id="rule-name"
+                    value={editRuleName}
+                    onChange={(e) => setEditRuleName(e.target.value)}
+                    className="bg-white border-gray-200"
+                    placeholder="Nome regola"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rule-description">Descrizione</Label>
+                  <Textarea
+                    id="rule-description"
+                    value={editRuleDescription}
+                    onChange={(e) => setEditRuleDescription(e.target.value)}
+                    className="min-h-[120px] bg-white border-gray-200 resize-y"
+                    placeholder="Descrizione della regola (opzionale)"
+                  />
+                </div>
+                {ruleForDrawer.region && (
+                  <p className="text-xs text-gray-500">
+                    Regione: {ruleForDrawer.region}
+                  </p>
+                )}
+                <Button
+                  onClick={handleSaveRule}
+                  disabled={
+                    isUpdatingRule ||
+                    (editRuleName === ruleForDrawer.name &&
+                      (editRuleDescription || "") ===
+                        (ruleForDrawer.description ?? "")
+                    )
+                  }
+                  className="w-full"
+                >
+                  {isUpdatingRule ? (
+                    <>
+                      <Spinner className="w-4 h-4 mr-2" />
+                      Salvataggio…
+                    </>
+                  ) : (
+                    "Salva modifiche"
+                  )}
+                </Button>
+              </>
+            ) : ruleIdForDrawer && !isLoadingRuleForDrawer ? (
+              <p className="text-sm text-gray-500">
+                Impossibile caricare la regola.
+              </p>
+            ) : null}
+          </div>
+        </SheetContent>
+      </Sheet>
       <TabsContent value="details" className="mt-0">
         <div className="space-y-6">
           {renderGeneralInfo()}
