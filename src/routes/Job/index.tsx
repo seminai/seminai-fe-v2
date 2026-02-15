@@ -3649,10 +3649,20 @@ export default function JobPage() {
     />
   );
 
+  // Handler per aggiunta manuale da mobile (naviga a new-job-manual)
+  const handleMobileAddClick = () => {
+    navigate("/job/new-job-manual", {
+      state: {
+        jobId: selectedGroupSummary?.jobId,
+      },
+    });
+  };
+
   // Renderizza la vista "Da confermare" (review)
   const renderReviewView = () => (
     <ReviewJobsView
       isMobile={isMobile}
+      onAddClick={handleMobileAddClick}
       isGroupsSidebarOpen={isGroupsSidebarOpen}
       onToggleGroupsSidebar={setIsGroupsSidebarOpen}
       groupsSidebarWidth={groupsSidebarWidth}

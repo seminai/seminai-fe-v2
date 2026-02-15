@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
@@ -162,8 +162,13 @@ export function ChatHistoryDrawer({
   const [searchTerm, setSearchTerm] = useState("");
   const [chatToDelete, setChatToDelete] = useState<ChatSummary | null>(null);
 
-  const { chats, isLoading } = useChats("JOB_VERIFICATION_AGENT");
+  const { chats, isLoading, refetch } = useChats("JOB_VERIFICATION_AGENT");
   const { deleteChat, isDeleting } = useDeleteChat();
+
+  // Refetch chat list when drawer opens so the list is up to date and visible
+  useEffect(() => {
+    if (open) refetch();
+  }, [open, refetch]);
 
   // Filtra le chat in base al termine di ricerca
   const filteredChats = useMemo(() => {
@@ -207,7 +212,7 @@ export function ChatHistoryDrawer({
       <Sheet open={open} onOpenChange={handleOpenChange}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-md bg-white flex flex-col h-full p-0"
+          className="w-full sm:max-w-md bg-white flex flex-col h-dvh sm:h-full p-0"
         >
           <SheetHeader className="flex-shrink-0 p-4 border-b border-slate-200">
             <SheetTitle className="flex items-center gap-2 text-lg">
@@ -235,7 +240,7 @@ export function ChatHistoryDrawer({
             </div>
 
             {/* Lista delle chat con scroll */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto">
               <div className="p-3 space-y-1">
                 {isLoading ? (
                   <div className="flex items-center justify-center py-8">
