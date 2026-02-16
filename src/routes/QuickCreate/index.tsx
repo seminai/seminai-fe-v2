@@ -7,14 +7,23 @@ import FieldsStep from "./components/FieldsStep";
 import ProductionUnitsStep from "./components/ProductionUnitsStep";
 import ProductsStep from "./components/ProductsStep";
 import CompletionScreen from "./components/CompletionScreen";
+import type { ProductsStepState } from "./components/WizardFooter";
+
+const INITIAL_PRODUCTS_STEP_STATE: ProductsStepState = {
+  isProductsLoading: false,
+  hasProductsToLoad: false,
+};
 
 export default function QuickCreatePage(): React.ReactElement {
   const navigate = useNavigate();
   const wizard = useQuickCreateWizard();
   const { state, actions } = wizard;
 
-  // Ref to trigger product import from the wizard footer's "Completa" button
+  // Ref to trigger product import/create from the wizard footer's main button
   const productsImportRef = React.useRef<(() => Promise<void>) | null>(null);
+
+  const [productsStepState, setProductsStepState] =
+    React.useState<ProductsStepState>(INITIAL_PRODUCTS_STEP_STATE);
 
   const handleNext = React.useCallback(async () => {
     if (state.currentStep === "company") {
@@ -35,12 +44,12 @@ export default function QuickCreatePage(): React.ReactElement {
     }
 
     if (state.currentStep === "products") {
-      // Trigger the product import via the ref exposed by ImportedProductsPanel.
-      // On success, onImportCompleted → onProductsComplete is called automatically.
+      // Trigger the product import/create via the ref (file import or manual form).
+      // On success, onImportCompleted/onProductCreated → onProductsComplete is called automatically.
       if (productsImportRef.current) {
         await productsImportRef.current();
       } else {
-        // No products to import (user hasn't uploaded a file) — just complete
+        // No trigger (e.g. still on choice screen) — just complete without loading products
         actions.onProductsComplete();
       }
       return;
@@ -74,6 +83,9 @@ export default function QuickCreatePage(): React.ReactElement {
           : undefined
       }
       isNextDisabled={wizard.isActionDisabled}
+      productsStepState={
+        state.currentStep === "products" ? productsStepState : undefined
+      }
     >
       {state.currentStep === "company" && <CompanyStep wizard={wizard} />}
 
@@ -104,6 +116,7 @@ export default function QuickCreatePage(): React.ReactElement {
           companyId={state.selectedCompanyId}
           onComplete={actions.onProductsComplete}
           importTriggerRef={productsImportRef}
+          onProductsStepStateChange={setProductsStepState}
         />
       )}
 

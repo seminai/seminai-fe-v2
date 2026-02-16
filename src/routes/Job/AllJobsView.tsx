@@ -10,7 +10,7 @@ import {
   type JobRow,
 } from "@/components/organism/JobSelectedDetails";
 import { type JobHistoryEntry, type JobWithRelations } from "@/api/jobs";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import {
   Popover,
   PopoverContent,
@@ -36,6 +36,8 @@ import { cn } from "@/lib/utils";
 import HistoryPanel from "./HistoryPanel";
 import ConformityCheckerPanel, {
   type ConformityCheckerPanelRef,
+  type VerificationStateSnapshot,
+  VerificationStatusBox,
 } from "./ConformityCheckerPanel";
 import ChatHistoryDrawer from "./ChatHistoryDrawer";
 
@@ -283,6 +285,15 @@ export function AllJobsView({
   const conformityCheckerRef = useRef<ConformityCheckerPanelRef>(null);
   const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false);
   const [conformityPanelReady, setConformityPanelReady] = useState(false);
+  const [verificationSnapshot, setVerificationSnapshot] =
+    useState<VerificationStateSnapshot | null>(null);
+
+  const handleVerificationStateChange = useCallback(
+    (snapshot: VerificationStateSnapshot) => {
+      setVerificationSnapshot(snapshot);
+    },
+    [],
+  );
 
   // Re-render when panel is mounted (in details with jobGroupId) so button disabled state updates
   useEffect(() => {
@@ -291,6 +302,11 @@ export function AllJobsView({
       return () => clearTimeout(t);
     }
     setConformityPanelReady(false);
+  }, [jobGroupId]);
+
+  // Azzera lo snapshot quando cambia il gruppo di job
+  useEffect(() => {
+    setVerificationSnapshot(null);
   }, [jobGroupId]);
 
   // Carica una chat dallo storico nel pannello conformità
@@ -427,82 +443,84 @@ export function AllJobsView({
             className="flex-shrink-0 overflow-hidden flex flex-col bg-white border-l border-slate-200"
             style={{ width: `${historyPanelWidth}px` }}
           >
-            <div className="flex-shrink-0 p-3 border-b border-slate-200 flex items-center justify-between">
+            <div className="flex-shrink-0 p-3 border-b border-slate-200 flex flex-col gap-2">
               {rightSidebarMode === "details" && (
                 <>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-slate-700">
-                      Dettagli
-                    </span>
-                    {selectedRows.length > 0 && (
-                      <Badge variant="outline" className="text-xs">
-                        {selectedRows.length}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {selectedRows.length > 0 && (
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-sm font-medium text-slate-700 truncate">
+                        Dettagli
+                      </span>
+                      {selectedRows.length > 0 && (
+                        <Badge variant="outline" className="text-xs shrink-0">
+                          {selectedRows.length}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {selectedRows.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={onClearSelection}
+                          className="h-7 w-7 p-0"
+                          title="Pulisci selezione"
+                        >
+                          <Eraser className="h-4 w-4 text-slate-500" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={onClearSelection}
+                        onClick={() => onRightSidebarModeChange("history")}
                         className="h-7 w-7 p-0"
-                        title="Pulisci selezione"
+                        title="Mostra storico"
                       >
-                        <Eraser className="h-4 w-4 text-slate-500" />
+                        <Brain className="h-4 w-4 text-slate-500" />
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onRightSidebarModeChange("history")}
-                      className="h-7 w-7 p-0"
-                      title="Mostra storico"
-                    >
-                      <Brain className="h-4 w-4 text-slate-500" />
-                    </Button>
-                    {jobGroupId && (
                       <Button
-                        onClick={async () => {
-                          await conformityCheckerRef.current?.handleVerify();
-                          onRightSidebarModeChange("conformity");
-                        }}
-                        disabled={
-                          !conformityPanelReady ||
-                          !conformityCheckerRef.current ||
-                          conformityCheckerRef.current?.isVerifyDisabled
-                        }
+                        variant="ghost"
                         size="sm"
-                        variant="outline"
-                        className="h-7"
+                        onClick={() => onRightSidebarModeChange("conformity")}
+                        className="h-7 w-7 p-0"
+                        title="Verifica conformità"
                       >
-                        <Check className="h-3 w-3 mr-1.5" />
-                        Verifica conformità automatica
+                        <MessageSquare className="h-4 w-4 text-slate-500" />
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onRightSidebarModeChange("conformity")}
-                      className="h-7 w-7 p-0"
-                      title="Verifica conformità"
-                    >
-                      <MessageSquare className="h-4 w-4 text-slate-500" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onToggleRightSidebar(false)}
-                      className="h-7 w-7 p-0"
-                      title="Chiudi pannello"
-                    >
-                      <PanelRightClose className="h-4 w-4 text-slate-500" />
-                    </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onToggleRightSidebar(false)}
+                        className="h-7 w-7 p-0"
+                        title="Chiudi pannello"
+                      >
+                        <PanelRightClose className="h-4 w-4 text-slate-500" />
+                      </Button>
+                    </div>
                   </div>
+                  {jobGroupId && (
+                    <Button
+                      onClick={async () => {
+                        await conformityCheckerRef.current?.handleVerify();
+                        onRightSidebarModeChange("details");
+                      }}
+                      disabled={
+                        !conformityPanelReady ||
+                        !conformityCheckerRef.current ||
+                        conformityCheckerRef.current?.isVerifyDisabled
+                      }
+                      size="sm"
+                      variant="outline"
+                      className="h-7 w-full justify-center shrink-0"
+                    >
+                      <Check className="h-3 w-3 mr-1.5" />
+                      Verifica conformità automatica
+                    </Button>
+                  )}
                 </>
               )}
               {rightSidebarMode === "history" && (
-                <>
+                <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-slate-700">
                     Storico
                   </span>
@@ -535,10 +553,10 @@ export function AllJobsView({
                       <PanelRightClose className="h-4 w-4 text-slate-500" />
                     </Button>
                   </div>
-                </>
+                </div>
               )}
               {rightSidebarMode === "conformity" && (
-                <>
+                <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-slate-700">
                     Chat
                   </span>
@@ -571,21 +589,37 @@ export function AllJobsView({
                       <PanelRightClose className="h-4 w-4 text-slate-500" />
                     </Button>
                   </div>
-                </>
+                </div>
               )}
             </div>
-            <div className="flex-1 overflow-hidden bg-slate-50 relative">
-              {rightSidebarMode === "details" &&
-                (selectedRows.length > 0 ? (
-                  <JobSelectedDetails
-                    selectedRows={convertToJobRows(selectedRows)}
-                  />
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm p-4">
-                    <Sparkles className="h-8 w-8 mb-2 opacity-50" />
-                    <p>Seleziona una o più operazioni per vedere i dettagli</p>
-                  </div>
-                ))}
+            <div className="flex-1 overflow-hidden bg-slate-50 relative flex flex-col">
+              {rightSidebarMode === "details" && (
+                <>
+                  {verificationSnapshot && (
+                    <div className="flex-shrink-0 p-3 pb-0">
+                      <VerificationStatusBox
+                        snapshot={verificationSnapshot}
+                        onOpenChat={() => {
+                          onRightSidebarModeChange("conformity");
+                          onToggleRightSidebar(true);
+                        }}
+                      />
+                    </div>
+                  )}
+                  {selectedRows.length > 0 ? (
+                    <div className="flex-1 min-h-0 overflow-auto p-3 pt-2">
+                      <JobSelectedDetails
+                        selectedRows={convertToJobRows(selectedRows)}
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm p-4">
+                      <Sparkles className="h-8 w-8 mb-2 opacity-50" />
+                      <p>Seleziona una o più operazioni per vedere i dettagli</p>
+                    </div>
+                  )}
+                </>
+              )}
               {rightSidebarMode === "history" &&
                 (selectedRowsHistory.length > 0 ? (
                   <HistoryPanel
@@ -614,7 +648,7 @@ export function AllJobsView({
               {jobGroupId && (
                 <div
                   className={cn(
-                    "flex flex-col overflow-hidden",
+                    "flex flex-col overflow-hidden min-h-[200px]",
                     rightSidebarMode === "conformity"
                       ? "h-full"
                       : "absolute inset-0 opacity-0 pointer-events-none w-0 h-0 overflow-hidden",
@@ -626,6 +660,7 @@ export function AllJobsView({
                     selectedJobs={selectedJobsForChat}
                     onConfirmSuccess={onConformityConfirmSuccess}
                     onClose={() => onRightSidebarModeChange("details")}
+                    onVerificationStateChange={handleVerificationStateChange}
                   />
                 </div>
               )}

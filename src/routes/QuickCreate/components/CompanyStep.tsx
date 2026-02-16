@@ -119,7 +119,7 @@ export default function CompanyStep({
             </div>
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               size="default"
               className="h-10 shrink-0 gap-2"
               onClick={handleToggleCreateForm}

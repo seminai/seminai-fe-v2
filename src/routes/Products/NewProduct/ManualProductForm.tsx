@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,12 @@ const PRODUCT_CATEGORIES = [
 interface ManualProductFormProps {
   onProductCreated?: () => void;
   preselectedCompanyId?: string;
+  /** Ref to trigger submit from wizard footer (QuickCreate) */
+  importTriggerRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+  /** Called when submit (create product) is in progress */
+  onLoadingChange?: (loading: boolean) => void;
+  /** Called when form is valid and can submit (has "products to load") */
+  onHasProductsToLoadChange?: (has: boolean) => void;
 }
 
 export interface StockFormData {
@@ -114,6 +120,9 @@ const INITIAL_STOCK_DATA: StockFormData = {
 export default function ManualProductForm({
   onProductCreated,
   preselectedCompanyId,
+  importTriggerRef,
+  onLoadingChange,
+  onHasProductsToLoadChange,
 }: ManualProductFormProps) {
   const [companyId, setCompanyId] = useState(preselectedCompanyId || "");
   const [warehouseId, setWarehouseId] = useState("");
@@ -125,6 +134,20 @@ export default function ManualProductForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { companies, isLoading: isLoadingCompanies } = useCompanies();
+
+  useEffect(() => {
+    onLoadingChange?.(isSubmitting);
+  }, [isSubmitting, onLoadingChange]);
+
+  const canSubmit =
+    !!companyId &&
+    !!warehouseId &&
+    name.trim().length > 0 &&
+    sku.trim().length > 0;
+  useEffect(() => {
+    onHasProductsToLoadChange?.(canSubmit);
+  }, [canSubmit, onHasProductsToLoadChange]);
+
   const { warehouses, isLoading: isLoadingWarehouses } = useCompanyWarehouses(
     companyId || undefined,
   );
@@ -197,6 +220,10 @@ export default function ManualProductForm({
     stockData,
     onProductCreated,
   ]);
+
+  useEffect(() => {
+    if (importTriggerRef) importTriggerRef.current = handleSubmit;
+  }, [importTriggerRef, handleSubmit]);
 
   return (
     <>

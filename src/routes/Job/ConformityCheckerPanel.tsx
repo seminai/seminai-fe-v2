@@ -59,6 +59,17 @@ import {
 import { JobDeepThinkingBars } from "./JobDeepThinkingBars";
 import { chatsApiService } from "@/api/chats";
 
+/** Snapshot dello stato di verifica, per mostrarlo anche nella vista Dettagli */
+export interface VerificationStateSnapshot {
+  state: "idle" | "loading" | "polling" | "results" | "confirming";
+  progress: number;
+  currentPhase: string;
+  socketState: SocketConnectionState;
+  result: ConformityCheckResult | null;
+  error: string | null;
+  recentLogs: Array<{ type: string; message: string; timestamp: Date }>;
+}
+
 interface ConformityCheckerPanelProps {
   jobGroupId: string;
   selectedJobs: JobWithRelations[];
@@ -68,6 +79,8 @@ interface ConformityCheckerPanelProps {
   externalThreadId?: string;
   /** Callback quando il threadId cambia (per sincronizzazione) */
   onThreadIdChange?: (threadId: string) => void;
+  /** Callback per esporre lo stato di verifica (es. per mostrarlo nella vista Dettagli) */
+  onVerificationStateChange?: (snapshot: VerificationStateSnapshot) => void;
 }
 
 export interface ConformityCheckerPanelRef {
@@ -93,7 +106,7 @@ interface LiveLogEntry {
 export const ConformityCheckerPanel = forwardRef<
   ConformityCheckerPanelRef,
   ConformityCheckerPanelProps
->(({ jobGroupId, selectedJobs, onConfirmSuccess, externalThreadId, onThreadIdChange }, ref) => {
+>(({ jobGroupId, selectedJobs, onConfirmSuccess, externalThreadId, onThreadIdChange, onVerificationStateChange }, ref) => {
   const [notes, setNotes] = useState<string>("");
   const [state, setState] = useState<PanelState>("idle");
   const [progress, setProgress] = useState<number>(0);
@@ -155,6 +168,32 @@ export const ConformityCheckerPanel = forwardRef<
       dosageJobSocketService.disconnect();
     };
   }, []);
+
+  // Esponi lo stato di verifica al parent (per vista Dettagli)
+  useEffect(() => {
+    onVerificationStateChange?.({
+      state,
+      progress,
+      currentPhase,
+      socketState,
+      result,
+      error,
+      recentLogs: liveLogs.slice(-5).map((log) => ({
+        type: log.type,
+        message: log.message,
+        timestamp: log.timestamp,
+      })),
+    });
+  }, [
+    state,
+    progress,
+    currentPhase,
+    socketState,
+    result,
+    error,
+    liveLogs,
+    onVerificationStateChange,
+  ]);
 
   const addLog = useCallback((event: DosageLogEvent) => {
     const newLog: LiveLogEntry = {
@@ -557,11 +596,10 @@ export const ConformityCheckerPanel = forwardRef<
           </div>
         )}
 
-        {/* Live Status Section - Durante la verifica */}
+        {/* Live Status Section - Durante la verifica (stesso stile del box in Dettagli) */}
         {isLoading && (
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Header con stato e progresso */}
-            <div className="flex-shrink-0 p-4 border-b border-slate-200 space-y-3">
+            <div className="flex-shrink-0 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Spinner className="h-4 w-4" ariaLabel="Verifica in corso" />
@@ -609,20 +647,37 @@ export const ConformityCheckerPanel = forwardRef<
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Live Logs */}
-            <div className="flex-1 min-h-0 overflow-y-auto bg-slate-900 p-3">
-              <div className="space-y-1 font-mono text-xs">
-                {liveLogs.map((log) => (
-                  <LiveLogItem key={log.id} log={log} />
-                ))}
-                <div ref={logsEndRef} />
-              </div>
-              {liveLogs.length === 0 && (
-                <div className="text-slate-500 text-center py-4">
-                  In attesa di log dal server...
+              {/* Ultimi aggiornamenti (stile leggibile, non terminale) */}
+              {liveLogs.length > 0 && (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-xs font-medium text-slate-500 mb-2">
+                    Ultimi aggiornamenti
+                  </p>
+                  <ul className="space-y-1.5 text-xs text-slate-600 max-h-32 overflow-y-auto">
+                    {liveLogs.slice(-8).map((log) => (
+                      <li
+                        key={log.id}
+                        className="flex items-start gap-2 leading-relaxed"
+                      >
+                        <span className="text-slate-400 shrink-0">
+                          {new Date(log.timestamp).toLocaleTimeString("it-IT", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                          })}
+                        </span>
+                        <span className="min-w-0 break-words">{log.message}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div ref={logsEndRef} />
                 </div>
+              )}
+              {liveLogs.length === 0 && (
+                <p className="text-xs text-slate-500 italic">
+                  In attesa di aggiornamenti dal server...
+                </p>
               )}
             </div>
           </div>
@@ -776,11 +831,11 @@ export const ConformityCheckerPanel = forwardRef<
       {/* Action Buttons - Fixed at bottom */}
       {hasResults && (
         <div className="flex-shrink-0 border-t border-slate-200 bg-white">
-          <div className="p-4 flex items-center gap-2">
+          <div className="p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <Button
               onClick={handleCancel}
               variant="outline"
-              className="flex-1"
+              className="flex-1 min-w-0 w-full sm:w-auto"
               disabled={isConfirming}
             >
               <X className="h-4 w-4 mr-2" />
@@ -788,7 +843,7 @@ export const ConformityCheckerPanel = forwardRef<
             </Button>
             <Button
               onClick={handleConfirm}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="flex-1 min-w-0 w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white"
               disabled={isConfirming}
             >
               {isConfirming ? (
@@ -1103,6 +1158,112 @@ function ConformitySummaryCard({
               {summary.warningCount} avvisi
             </Badge>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Box compatto per mostrare lo stato live della verifica nella vista Dettagli */
+export function VerificationStatusBox({
+  snapshot,
+  onOpenChat,
+}: {
+  snapshot: VerificationStateSnapshot;
+  onOpenChat?: () => void;
+}) {
+  const isLoading = snapshot.state === "loading" || snapshot.state === "polling";
+
+  if (snapshot.state === "idle" && !snapshot.result && !snapshot.error) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+      {isLoading && (
+        <>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Spinner className="h-4 w-4 text-emerald-600" ariaLabel="Verifica in corso" />
+              <span className="text-sm font-medium text-slate-700">
+                Verifica in corso...
+              </span>
+            </div>
+            {snapshot.socketState === "connected" ? (
+              <Badge className="bg-emerald-100 text-emerald-700 text-xs">
+                <Wifi className="h-3 w-3 mr-1" />
+                Live
+              </Badge>
+            ) : snapshot.socketState === "connecting" ? (
+              <Badge className="bg-amber-100 text-amber-700 text-xs">
+                <Spinner className="h-3 w-3 mr-1" ariaLabel="Connessione" />
+                Connessione...
+              </Badge>
+            ) : (
+              <Badge className="bg-slate-100 text-slate-500 text-xs">
+                <WifiOff className="h-3 w-3 mr-1" />
+                Offline
+              </Badge>
+            )}
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500 truncate max-w-[200px]">
+                {snapshot.currentPhase || "Inizializzazione..."}
+              </span>
+              <span className="text-slate-700 font-medium">{snapshot.progress}%</span>
+            </div>
+            <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-emerald-500 h-full transition-all duration-300 ease-out"
+                style={{ width: `${snapshot.progress}%` }}
+              />
+            </div>
+          </div>
+          {snapshot.recentLogs.length > 0 && (
+            <div className="pt-2 border-t border-slate-100">
+              <p className="text-xs text-slate-500 mb-1">Ultimi aggiornamenti</p>
+              <ul className="space-y-0.5 text-xs text-slate-600">
+                {snapshot.recentLogs.slice(-3).map((log, i) => (
+                  <li key={i} className="flex items-center gap-2 truncate">
+                    <span className="text-slate-400 shrink-0">
+                      {new Date(log.timestamp).toLocaleTimeString("it-IT", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                      })}
+                    </span>
+                    <span className="truncate">{log.message}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
+      )}
+
+      {snapshot.result && !isLoading && (
+        <>
+          <ConformitySummaryCard summary={snapshot.result.summary} />
+          {onOpenChat && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onOpenChat}
+              className="w-full text-xs"
+            >
+              <MessageSquare className="h-3 w-3 mr-2" />
+              Vedi dettagli in Chat
+            </Button>
+          )}
+        </>
+      )}
+
+      {snapshot.error && !isLoading && (
+        <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span>{snapshot.error}</span>
         </div>
       )}
     </div>

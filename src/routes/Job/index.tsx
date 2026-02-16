@@ -2025,9 +2025,17 @@ export default function JobPage() {
 
   const allGroupRows = useMemo(() => {
     if (!allSelectedJobs || allSelectedJobs.length === 0) return [];
-    return allSelectedJobs.map((jobWithRelations) =>
+    const rows = allSelectedJobs.map((jobWithRelations) =>
       new JobTableRowBuilder(jobWithRelations).build(),
     );
+    // Show jobs with quantity === 0 at the end
+    return rows.sort((a, b) => {
+      const aZero = Number(a.quantity ?? 0) === 0;
+      const bZero = Number(b.quantity ?? 0) === 0;
+      if (aZero && !bZero) return 1;
+      if (!aZero && bZero) return -1;
+      return 0;
+    });
   }, [allSelectedJobs]);
 
   useEffect(() => {
@@ -2114,12 +2122,19 @@ export default function JobPage() {
     );
   }, [selectedGroupJobs]);
 
-  // Rows per il gruppo selezionato
+  // Rows per il gruppo selezionato (quantity === 0 alla fine)
   const selectedGroupRows = useMemo(() => {
     if (!selectedGroupJobs || selectedGroupJobs.length === 0) return [];
-    return selectedGroupJobs.map((jobWithRelations) =>
+    const rows = selectedGroupJobs.map((jobWithRelations) =>
       new JobTableRowBuilder(jobWithRelations).build(),
     );
+    return rows.sort((a, b) => {
+      const aZero = Number(a.quantity ?? 0) === 0;
+      const bZero = Number(b.quantity ?? 0) === 0;
+      if (aZero && !bZero) return 1;
+      if (!aZero && bZero) return -1;
+      return 0;
+    });
   }, [selectedGroupJobs]);
 
   // Trova tutte le company uniche dalle righe
@@ -3649,10 +3664,20 @@ export default function JobPage() {
     />
   );
 
+  // Handler per aggiunta manuale da mobile (naviga a new-job-manual)
+  const handleMobileAddClick = () => {
+    navigate("/job/new-job-manual", {
+      state: {
+        jobId: selectedGroupSummary?.jobId,
+      },
+    });
+  };
+
   // Renderizza la vista "Da confermare" (review)
   const renderReviewView = () => (
     <ReviewJobsView
       isMobile={isMobile}
+      onAddClick={handleMobileAddClick}
       isGroupsSidebarOpen={isGroupsSidebarOpen}
       onToggleGroupsSidebar={setIsGroupsSidebarOpen}
       groupsSidebarWidth={groupsSidebarWidth}

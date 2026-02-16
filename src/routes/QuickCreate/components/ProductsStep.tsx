@@ -1,27 +1,69 @@
 import * as React from "react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { FileUp, PenLine } from "lucide-react";
 import FileImportSection from "@/routes/Products/NewProduct/FileImportSection";
 import ManualProductForm from "@/routes/Products/NewProduct/ManualProductForm";
+import type { ProductsStepState } from "./WizardFooter";
 
 interface ProductsStepProps {
   companyId: string;
   onComplete: () => void;
   /** Ref to store the import trigger function for external invocation (from wizard footer) */
   importTriggerRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+  /** Called when products step loading/ready state changes (for footer label and disabled) */
+  onProductsStepStateChange?: (state: ProductsStepState) => void;
 }
 
 export default function ProductsStep({
   companyId,
   onComplete,
   importTriggerRef,
+  onProductsStepStateChange,
 }: ProductsStepProps): React.ReactElement {
   const [mode, setMode] = useState<null | "import" | "manual">(null);
+  const [stepState, setStepState] = useState<ProductsStepState>({
+    isProductsLoading: false,
+    hasProductsToLoad: false,
+  });
 
   const handleBackToChoice = useCallback(() => {
     setMode(null);
   }, []);
+
+  const notifyLoading = useCallback(
+    (loading: boolean) => {
+      setStepState((prev) => {
+        const next = { ...prev, isProductsLoading: loading };
+        onProductsStepStateChange?.(next);
+        return next;
+      });
+    },
+    [onProductsStepStateChange],
+  );
+
+  const notifyHasProducts = useCallback(
+    (has: boolean) => {
+      setStepState((prev) => {
+        const next = { ...prev, hasProductsToLoad: has };
+        onProductsStepStateChange?.(next);
+        return next;
+      });
+    },
+    [onProductsStepStateChange],
+  );
+
+  // When on choice screen: no loading, no products to load; clear ref
+  useEffect(() => {
+    if (mode !== null) return;
+    const reset = {
+      isProductsLoading: false,
+      hasProductsToLoad: false,
+    };
+    setStepState(reset);
+    onProductsStepStateChange?.(reset);
+    if (importTriggerRef) importTriggerRef.current = null;
+  }, [mode, onProductsStepStateChange, importTriggerRef]);
 
   if (mode === "import") {
     return (
@@ -41,6 +83,8 @@ export default function ProductsStep({
           onImportCompleted={onComplete}
           hideImportButton={!!importTriggerRef}
           importTriggerRef={importTriggerRef}
+          onLoadingChange={notifyLoading}
+          onHasProductsToLoadChange={notifyHasProducts}
         />
       </div>
     );
@@ -62,6 +106,9 @@ export default function ProductsStep({
         <ManualProductForm
           preselectedCompanyId={companyId}
           onProductCreated={onComplete}
+          importTriggerRef={importTriggerRef}
+          onLoadingChange={notifyLoading}
+          onHasProductsToLoadChange={notifyHasProducts}
         />
       </div>
     );
