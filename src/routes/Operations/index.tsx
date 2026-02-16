@@ -23,6 +23,15 @@ import { Input } from "@/components/ui/input";
 import { JobSelectedDetails } from "@/components/organism/JobSelectedDetails";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Pencil } from "lucide-react";
 
 class JobIdFormatter {
   public static format(jobId: string | null | undefined): string {
@@ -739,6 +748,12 @@ export default function OperationsPage() {
   // Stato per il filtro di ricerca nei dettagli
   const [detailsSearchTerm, setDetailsSearchTerm] = useState<string>("");
 
+  // Bulk edit: drawer con select singole per ogni riga (tutte o selezionate)
+  const [bulkEditDrawerOpen, setBulkEditDrawerOpen] = useState(false);
+  const [bulkEditRows, setBulkEditRows] = useState<
+    Array<Record<string, unknown>>
+  >([]);
+
   // Render per i dettagli nella drawer
   const renderDetails = useCallback(
     (row: Record<string, unknown>): React.ReactNode => {
@@ -959,6 +974,120 @@ export default function OperationsPage() {
     [detailColumns, drawerFormChanges, queryClient, refetch, detailsSearchTerm],
   );
 
+  const openBulkEditAll = useCallback(() => {
+    setBulkEditRows([...rows]);
+    setBulkEditDrawerOpen(true);
+  }, [rows]);
+
+  const openBulkEditSelected = useCallback(() => {
+    if (selectedRows.length === 0) return;
+    setBulkEditRows([...selectedRows]);
+    setBulkEditDrawerOpen(true);
+  }, [selectedRows]);
+
+  const closeBulkEditDrawer = useCallback(() => {
+    setBulkEditDrawerOpen(false);
+    setBulkEditRows([]);
+  }, []);
+
+  const handleBulkEditFieldChange = useCallback(
+    (
+      rowId: string,
+      field: string,
+      value: unknown,
+      columnConfig: EditableColumn,
+    ) => {
+      const row = bulkEditRows.find((r) => (r.id as string) === rowId);
+      if (!row) return;
+      const currentChanges = drawerFormChanges[rowId] || {};
+      const updates = columnConfig.onValueChange?.({
+        value,
+        rowData: { ...row, ...currentChanges, [field]: value },
+        columnId: field,
+      });
+      setDrawerFormChanges((prev) => ({
+        ...prev,
+        [rowId]: {
+          ...(prev[rowId] || {}),
+          [field]: value,
+          ...(updates || {}),
+        },
+      }));
+    },
+    [bulkEditRows, drawerFormChanges],
+  );
+
+  const handleBulkEditSaveAll = useCallback(async () => {
+    const rowIds = bulkEditRows.map((r) => r.id as string);
+    const toSave = rowIds.filter(
+      (id) =>
+        drawerFormChanges[id] && Object.keys(drawerFormChanges[id]).length > 0,
+    );
+    if (toSave.length === 0) {
+      closeBulkEditDrawer();
+      return;
+    }
+    try {
+      for (const rowId of toSave) {
+        const currentChanges = drawerFormChanges[rowId] || {};
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updatePayload: Record<string, any> = {};
+        if ("_isVerifiedBoolean" in currentChanges) {
+          updatePayload.isVerified = currentChanges._isVerifiedBoolean;
+        }
+        if ("_conformityChecked" in currentChanges) {
+          updatePayload.conformityChecked = currentChanges._conformityChecked;
+        }
+        if ("machineId" in currentChanges) {
+          updatePayload.machineId = currentChanges.machineId;
+        }
+        if ("userId" in currentChanges) {
+          updatePayload.userId = currentChanges.userId;
+        }
+        if ("modeOfApplication" in currentChanges) {
+          updatePayload.modeOfApplication = currentChanges.modeOfApplication;
+        }
+        if ("isLocalizedTreatment" in currentChanges) {
+          updatePayload.isLocalizedTreatment =
+            currentChanges.isLocalizedTreatment;
+        }
+        if (Object.keys(updatePayload).length > 0) {
+          await jobsApiService.updateJob(rowId, updatePayload);
+        }
+      }
+      toast.success("Modifiche salvate", {
+        description: `${toSave.length} operazione/i aggiornata/e`,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["verified-jobs"] });
+      await refetch();
+      setDrawerFormChanges((prev) => {
+        const next = { ...prev };
+        toSave.forEach((id) => delete next[id]);
+        return next;
+      });
+      closeBulkEditDrawer();
+    } catch (error) {
+      toast.error("Errore durante il salvataggio", {
+        description:
+          error instanceof Error ? error.message : "Riprova più tardi",
+      });
+    }
+  }, [
+    bulkEditRows,
+    drawerFormChanges,
+    queryClient,
+    refetch,
+    closeBulkEditDrawer,
+  ]);
+
+  const hasBulkEditChanges = useMemo(() => {
+    return bulkEditRows.some((r) => {
+      const id = r.id as string;
+      const changes = drawerFormChanges[id];
+      return changes && Object.keys(changes).length > 0;
+    });
+  }, [bulkEditRows, drawerFormChanges]);
+
   // Gestisce l'eliminazione multipla
   const handleDeleteSelected = async (
     removed: Array<Record<string, unknown>>,
@@ -1049,6 +1178,30 @@ export default function OperationsPage() {
               detailsTitle=""
               className="bg-background"
             >
+              {rows.length > 0 && (
+                <Button
+                  data-table-slot="right"
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2 text-gray-600 hover:text-gray-600 cursor-pointer border border-gray-200 hover:bg-gray-50"
+                  onClick={openBulkEditAll}
+                >
+                  <Pencil className="w-4 h-4" />
+                  Modifica tutte
+                </Button>
+              )}
+              {selectedRows.length > 0 && (
+                <Button
+                  data-table-slot="right"
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2 text-gray-600 hover:text-gray-600 cursor-pointer border border-gray-200 hover:bg-gray-50"
+                  onClick={openBulkEditSelected}
+                >
+                  <Pencil className="w-4 h-4" />
+                  Modifica tutti ({selectedRows.length})
+                </Button>
+              )}
               {selectedRows.length === 0 && (
                 <Button
                   data-table-slot="right"
@@ -1084,6 +1237,165 @@ export default function OperationsPage() {
                 </button>
               </div>
             )}
+
+            <Drawer
+              open={bulkEditDrawerOpen}
+              onOpenChange={(open) => !open && closeBulkEditDrawer()}
+              modal={false}
+              direction="right"
+            >
+              <DrawerContent
+                data-vaul-drawer-direction="right"
+                className="w-[95vw] max-w-[95vw] sm:w-1/2 sm:max-w-[50vw] shadow-2xl rounded-r-none rounded-l-2xl border-l border-neutral-200"
+              >
+                <DrawerHeader className="px-4 sm:px-6">
+                  <DrawerTitle className="text-lg sm:text-xl">
+                    Modifica {bulkEditRows.length} operazioni
+                  </DrawerTitle>
+                  <DrawerDescription className="text-sm">
+                    Modifica i campi per ogni operazione. Le select sono singole
+                    per ogni riga. Salva per applicare le modifiche.
+                  </DrawerDescription>
+                </DrawerHeader>
+                <ScrollArea className="flex-1 overflow-y-auto">
+                  <div className="p-4 sm:p-6 space-y-6">
+                    {bulkEditRows.map((row) => {
+                      const rowId = row.id as string;
+                      const currentChanges = drawerFormChanges[rowId] || {};
+                      const productName =
+                        (row.productName as string) || "Operazione";
+                      const companyName = (row.companyName as string) || "-";
+                      const dateOfOpeation = row.dateOfOpeation as Date | null;
+                      const formattedDate = dateOfOpeation
+                        ? (dateOfOpeation instanceof Date
+                            ? dateOfOpeation
+                            : new Date(dateOfOpeation)
+                          ).toLocaleDateString("it-IT")
+                        : "-";
+                      return (
+                        <div
+                          key={rowId}
+                          className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 space-y-3"
+                        >
+                          <div className="pb-2 border-b border-slate-200">
+                            <h3 className="font-medium text-slate-900">
+                              {productName}
+                            </h3>
+                            <p className="text-sm text-slate-600 mt-0.5">
+                              {companyName} · {formattedDate}
+                            </p>
+                          </div>
+                          <div className="space-y-2">
+                            {detailColumns.map((column) => {
+                              let currentValue: unknown =
+                                currentChanges[column.id] !== undefined
+                                  ? currentChanges[column.id]
+                                  : row[column.id];
+                              if (column.id === "isVerified") {
+                                if (
+                                  "_isVerifiedBoolean" in currentChanges ||
+                                  "_conformityChecked" in currentChanges
+                                ) {
+                                  const checked =
+                                    currentChanges._conformityChecked;
+                                  const verified =
+                                    currentChanges._isVerifiedBoolean;
+                                  if (!checked) {
+                                    currentValue =
+                                      "Conformità non verificata";
+                                  } else {
+                                    currentValue = verified
+                                      ? "Verificato"
+                                      : "Non Verificato";
+                                  }
+                                }
+                              }
+                              const options =
+                                column.getOptions?.(row) ??
+                                column.options ??
+                                [];
+                              return (
+                                <div
+                                  key={column.id}
+                                  className="flex items-center gap-3 py-1"
+                                >
+                                  <label className="text-sm font-medium text-slate-600 min-w-[140px]">
+                                    {column.title}
+                                  </label>
+                                  <div className="flex-1">
+                                    <select
+                                      className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                      value={String(currentValue ?? "")}
+                                      onChange={(e) =>
+                                        handleBulkEditFieldChange(
+                                          rowId,
+                                          column.id,
+                                          e.target.value,
+                                          column,
+                                        )
+                                      }
+                                    >
+                                      <option value="">
+                                        {column.placeholder ?? "Seleziona..."}
+                                      </option>
+                                      {column.noneOptionLabel && (
+                                        <option value="">
+                                          {column.noneOptionLabel}
+                                        </option>
+                                      )}
+                                      {(
+                                        options as Array<
+                                          string | { label: string; value: string }
+                                        >
+                                      ).map((opt) => {
+                                        const optValue =
+                                          typeof opt === "string"
+                                            ? opt
+                                            : opt.value;
+                                        const optLabel =
+                                          typeof opt === "string"
+                                            ? opt
+                                            : opt.label;
+                                        return (
+                                          <option
+                                            key={optValue}
+                                            value={optValue}
+                                          >
+                                            {optLabel}
+                                          </option>
+                                        );
+                                      })}
+                                    </select>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+                <div className="flex justify-end gap-3 p-4 border-t bg-white">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={closeBulkEditDrawer}
+                    className="h-10 px-4"
+                  >
+                    Annulla
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleBulkEditSaveAll}
+                    disabled={!hasBulkEditChanges}
+                    className="h-10 px-5 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    Salva tutto
+                  </Button>
+                </div>
+              </DrawerContent>
+            </Drawer>
           </>
         )}
       </div>

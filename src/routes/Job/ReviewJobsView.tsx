@@ -930,7 +930,7 @@ export function ReviewJobsView({
               {selectedGroupSummary && (
                 <div
                   className={cn(
-                    "flex flex-col overflow-hidden",
+                    "flex flex-col overflow-hidden min-h-[200px]",
                     rightSidebarMode === "conformity"
                       ? "h-full"
                       : "absolute inset-0 opacity-0 pointer-events-none w-0 h-0 overflow-hidden",
