@@ -443,83 +443,84 @@ export function AllJobsView({
             className="flex-shrink-0 overflow-hidden flex flex-col bg-white border-l border-slate-200"
             style={{ width: `${historyPanelWidth}px` }}
           >
-            <div className="flex-shrink-0 p-3 border-b border-slate-200 flex items-center justify-between">
+            <div className="flex-shrink-0 p-3 border-b border-slate-200 flex flex-col gap-2">
               {rightSidebarMode === "details" && (
                 <>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-slate-700">
-                      Dettagli
-                    </span>
-                    {selectedRows.length > 0 && (
-                      <Badge variant="outline" className="text-xs">
-                        {selectedRows.length}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {selectedRows.length > 0 && (
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-sm font-medium text-slate-700 truncate">
+                        Dettagli
+                      </span>
+                      {selectedRows.length > 0 && (
+                        <Badge variant="outline" className="text-xs shrink-0">
+                          {selectedRows.length}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {selectedRows.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={onClearSelection}
+                          className="h-7 w-7 p-0"
+                          title="Pulisci selezione"
+                        >
+                          <Eraser className="h-4 w-4 text-slate-500" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={onClearSelection}
+                        onClick={() => onRightSidebarModeChange("history")}
                         className="h-7 w-7 p-0"
-                        title="Pulisci selezione"
+                        title="Mostra storico"
                       >
-                        <Eraser className="h-4 w-4 text-slate-500" />
+                        <Brain className="h-4 w-4 text-slate-500" />
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onRightSidebarModeChange("history")}
-                      className="h-7 w-7 p-0"
-                      title="Mostra storico"
-                    >
-                      <Brain className="h-4 w-4 text-slate-500" />
-                    </Button>
-                    {jobGroupId && (
                       <Button
-                        onClick={async () => {
-                          await conformityCheckerRef.current?.handleVerify();
-                          // Resta in Dettagli: lo status live si vede nel box sotto
-                          onRightSidebarModeChange("details");
-                        }}
-                        disabled={
-                          !conformityPanelReady ||
-                          !conformityCheckerRef.current ||
-                          conformityCheckerRef.current?.isVerifyDisabled
-                        }
+                        variant="ghost"
                         size="sm"
-                        variant="outline"
-                        className="h-7"
+                        onClick={() => onRightSidebarModeChange("conformity")}
+                        className="h-7 w-7 p-0"
+                        title="Verifica conformità"
                       >
-                        <Check className="h-3 w-3 mr-1.5" />
-                        Verifica conformità automatica
+                        <MessageSquare className="h-4 w-4 text-slate-500" />
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onRightSidebarModeChange("conformity")}
-                      className="h-7 w-7 p-0"
-                      title="Verifica conformità"
-                    >
-                      <MessageSquare className="h-4 w-4 text-slate-500" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onToggleRightSidebar(false)}
-                      className="h-7 w-7 p-0"
-                      title="Chiudi pannello"
-                    >
-                      <PanelRightClose className="h-4 w-4 text-slate-500" />
-                    </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onToggleRightSidebar(false)}
+                        className="h-7 w-7 p-0"
+                        title="Chiudi pannello"
+                      >
+                        <PanelRightClose className="h-4 w-4 text-slate-500" />
+                      </Button>
+                    </div>
                   </div>
+                  {jobGroupId && (
+                    <Button
+                      onClick={async () => {
+                        await conformityCheckerRef.current?.handleVerify();
+                        onRightSidebarModeChange("details");
+                      }}
+                      disabled={
+                        !conformityPanelReady ||
+                        !conformityCheckerRef.current ||
+                        conformityCheckerRef.current?.isVerifyDisabled
+                      }
+                      size="sm"
+                      variant="outline"
+                      className="h-7 w-full justify-center shrink-0"
+                    >
+                      <Check className="h-3 w-3 mr-1.5" />
+                      Verifica conformità automatica
+                    </Button>
+                  )}
                 </>
               )}
               {rightSidebarMode === "history" && (
-                <>
+                <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-slate-700">
                     Storico
                   </span>
@@ -552,10 +553,10 @@ export function AllJobsView({
                       <PanelRightClose className="h-4 w-4 text-slate-500" />
                     </Button>
                   </div>
-                </>
+                </div>
               )}
               {rightSidebarMode === "conformity" && (
-                <>
+                <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-slate-700">
                     Chat
                   </span>
@@ -588,7 +589,7 @@ export function AllJobsView({
                       <PanelRightClose className="h-4 w-4 text-slate-500" />
                     </Button>
                   </div>
-                </>
+                </div>
               )}
             </div>
             <div className="flex-1 overflow-hidden bg-slate-50 relative flex flex-col">
@@ -647,7 +648,7 @@ export function AllJobsView({
               {jobGroupId && (
                 <div
                   className={cn(
-                    "flex flex-col overflow-hidden",
+                    "flex flex-col overflow-hidden min-h-[200px]",
                     rightSidebarMode === "conformity"
                       ? "h-full"
                       : "absolute inset-0 opacity-0 pointer-events-none w-0 h-0 overflow-hidden",

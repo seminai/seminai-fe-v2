@@ -55,7 +55,7 @@ Tale dotazione:
 • deve essere consumata entro il termine massimo di 21 (ventuno) giorni dalla data di sottoscrizione del presente Accordo;
 • non è monetizzabile, cedibile né rimborsabile, anche in caso di mancato utilizzo.
 A fronte della dotazione gratuita, il Partner si impegna a:
-• garantire un minimo di 4 (quattro) ore di feedback sul prodotto, da fornire secondo modalità concordate con il Fornitore (call, questionari, report scritti o altre forme di riscontro);
+• garantire un minimo di 1 (uno) ora di feedback sul prodotto, da fornire secondo modalità concordate con il Fornitore (call, questionari, report scritti o altre forme di riscontro);
 • rendersi disponibile alla registrazione di video testimonianze (review) relative all'esperienza d'uso della piattaforma, che potranno essere diffuse dal Fornitore sui propri canali social e sul sito web www.seminai.tech, previa approvazione del contenuto da parte del Partner.
 b) Opzioni al termine del periodo di prova
 Al termine del periodo di beta testing, il Partner potrà scegliere, in via facoltativa, se formalizzare il rapporto con il Fornitore mediante una delle seguenti opzioni:
