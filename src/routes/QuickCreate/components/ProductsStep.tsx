@@ -22,7 +22,7 @@ export default function ProductsStep({
   onProductsStepStateChange,
 }: ProductsStepProps): React.ReactElement {
   const [mode, setMode] = useState<null | "import" | "manual">(null);
-  const [stepState, setStepState] = useState<ProductsStepState>({
+  const [_stepState, setStepState] = useState<ProductsStepState>({
     isProductsLoading: false,
     hasProductsToLoad: false,
   });

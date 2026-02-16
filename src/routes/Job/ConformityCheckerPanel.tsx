@@ -656,18 +656,8 @@ export const ConformityCheckerPanel = forwardRef<
                   </p>
                   <ul className="space-y-1.5 text-xs text-slate-600 max-h-32 overflow-y-auto">
                     {liveLogs.slice(-8).map((log) => (
-                      <li
-                        key={log.id}
-                        className="flex items-start gap-2 leading-relaxed"
-                      >
-                        <span className="text-slate-400 shrink-0">
-                          {new Date(log.timestamp).toLocaleTimeString("it-IT", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                          })}
-                        </span>
-                        <span className="min-w-0 break-words">{log.message}</span>
+                      <li key={log.id}>
+                        <LiveLogItem log={log} />
                       </li>
                     ))}
                   </ul>
