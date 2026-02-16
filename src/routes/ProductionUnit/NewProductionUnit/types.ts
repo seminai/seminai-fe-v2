@@ -18,6 +18,14 @@ export type FieldAllocation = {
   subalterno?: string | null;
 };
 
+/** Cycle data for display (e.g. from QuickCreate extract) */
+export type ProductionUnitCycleDisplay = {
+  cycleIndex: number;
+  cropName: string | null;
+  cropType: string | null;
+  variety: string | null;
+};
+
 export type ProductionUnitInput = {
   id: string;
   name: string;
@@ -38,6 +46,8 @@ export type ProductionUnitInput = {
   importedCropType?: string | null;
   importedVariety?: string | null;
   importedCompanyId?: string | null;
+  /** Cycles from extract API (coltura/varietà per cycle) */
+  cycles?: ProductionUnitCycleDisplay[];
 };
 
 export type DateRange = {

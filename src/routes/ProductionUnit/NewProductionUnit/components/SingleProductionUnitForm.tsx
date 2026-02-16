@@ -402,6 +402,7 @@ export const SingleProductionUnitForm: React.FC<
                   const cultivarLabel =
                     (unit.cultivarId &&
                       cultivarCatalog?.getCultivarLabel(unit.cultivarId)) ||
+                    unit.importedVariety ||
                     crop?.code;
 
                   return (
@@ -418,7 +419,8 @@ export const SingleProductionUnitForm: React.FC<
                                 {unit.name}
                               </h4>
                               <p className="text-sm text-gray-500">
-                                {crop?.species} • {unitTotalArea.toFixed(2)} Ha
+                                {(crop?.species ?? unit.importedCropName ?? "—")} •{" "}
+                                {unitTotalArea.toFixed(2)} Ha
                               </p>
                             </div>
                           </div>
@@ -469,7 +471,11 @@ export const SingleProductionUnitForm: React.FC<
                               <span className="font-medium text-gray-700 block">
                                 Coltura:
                               </span>
-                              {crop?.species} ({crop?.cropType})
+                              {crop?.species != null
+                                ? `${crop.species}${crop.cropType ? ` (${crop.cropType})` : ""}`
+                                : unit.importedCropName != null
+                                  ? `${unit.importedCropName}${unit.importedCropType ? ` (${unit.importedCropType})` : ""}`
+                                  : "N/A"}
                             </div>
                             <div>
                               <span className="font-medium text-gray-700 block">
@@ -494,6 +500,38 @@ export const SingleProductionUnitForm: React.FC<
                               </div>
                             )}
                           </div>
+                          {unit.cycles && unit.cycles.length > 0 && (
+                            <div>
+                              <span className="font-medium text-gray-700 block mb-2">
+                                Cicli:
+                              </span>
+                              <div className="space-y-2">
+                                {unit.cycles.map((cycle) => (
+                                  <div
+                                    key={cycle.cycleIndex}
+                                    className="bg-gray-50 p-3 rounded border border-gray-200"
+                                  >
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                      <div>
+                                        <span className="font-medium text-gray-600 block text-xs">
+                                          Coltura
+                                        </span>
+                                        {cycle.cropName != null
+                                          ? `${cycle.cropName}${cycle.cropType ? ` (${cycle.cropType})` : ""}`
+                                          : "—"}
+                                      </div>
+                                      <div>
+                                        <span className="font-medium text-gray-600 block text-xs">
+                                          Varietà
+                                        </span>
+                                        {cycle.variety ?? "—"}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           <div>
                             <span className="font-medium text-gray-700 block mb-2">
                               Campi Allocati:

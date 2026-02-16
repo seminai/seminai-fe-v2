@@ -25,66 +25,56 @@ export default class Home extends Component<
 > {
   private readonly audienceHighlights: HighlightCard[] = [
     {
-      title: "Per Agricoltori",
+      title: "crea rischio",
       description:
-        "Ottimizza il tuo lavoro quotidiano con strumenti semplici e intuitivi. Registra le operazioni in campo come aratura, semina, lavorazioni. Redigi i quaderni in modo rapido e conforme, segnala problemi con foto e note di campo: tutto in un unico posto, con meno burocrazia e più tempo per la produzione.",
+        "Sanzioni e contestazioni se qualcosa non torna. Il quaderno è il primo documento che controllano.",
     },
     {
-      title: "Per Tecnici Agronomi",
+      title: "fa perdere tempo",
       description:
-        "Gestisci più aziende contemporaneamente con maggiore efficienza. Grazie alle nostre soluzioni digitali puoi seguire i quaderni di campagna dei tuoi clienti in modo centralizzato, organizzato e trasparente. Offri un servizio più completo, riduci gli errori e aumenta il valore della tua consulenza professionale.",
+        "Ore in compilazione, copia e incolla, ricerche su fascicoli e disciplinari invece che in campo.",
     },
     {
-      title: "Per Associazioni di Categoria e Fornitori di Servizi",
+      title: "genera errori",
       description:
-        "Amplia la tua offerta con un servizio avanzato di consulenza digitale sui quaderni di campagna. Supporta agricoltori, tecnici e imprese con strumenti moderni e affidabili, migliorando la qualità dei servizi offerti e incrementando la soddisfazione dei tuoi associati o clienti.",
+        "Dosi sbagliate, carenze non rispettate, dati incoerenti. Ogni errore può diventare non conformità.",
+    },
+    {
+      title: "aumenta responsabilità legale",
+      description:
+        "Sei tu il responsabile in caso di controllo. Ogni firma sul quaderno conta.",
     },
   ];
 
   private readonly advantagesList: AdvantageSection[] = [
     {
-      title: "Conforme alle normative",
+      title: "Import fascicolo in 30 secondi",
       features: [
-        "Verifica automatica della conformità",
-        "Tracciabilità completa",
-        "Aggiornamenti normativi automatici",
-        "Protezione da sanzioni",
-        "Documentazione pronta per controlli",
-        "Calcolo automatico tempi di carenza",
+        "Carica il CSV.",
+        "Parcelle e unità produttive vengono generate automaticamente.",
+        "Niente creazione manuale campo per campo.",
       ],
     },
     {
-      title: "Riduzione di tempo e costi",
+      title: "Dosaggi conformi senza calcoli manuali",
       features: [
-        "Interfaccia intuitiva",
-        "Compilazione guidata",
-        "Template operazioni ricorrenti",
-        "Calcolo automatico delle dosi",
-        "Note di campo CHAT AI per segnalare problemi e operazioni svolte",
-        "Eliminazione della carta",
-        "Riduzione errori di trascrizione",
+        "Il sistema verifica: dosi massime, tempi di carenza, limiti disciplinari, conformità normativa.",
+        "Prima che tu carichi sul portale.",
       ],
     },
     {
-      title: "White label personalizzato",
+      title: "Stop copia/incolla ripetitivo",
       features: [
-        "Branding completo",
-        "Configurazioni su misura",
-        "Personalizzazione workflow",
-        "Domini dedicati",
-        "Interfaccia brandizzata",
-        "Modulazione funzionalità",
+        "Scrivi in chat da piattaforma o WhatsApp: «Mais, 12 ettari, glifosato 2.3 L/ha».",
+        "Il sistema: struttura l'operazione, controlla conformità, aggiorna unità produttiva.",
+        "Tu approvi.",
       ],
     },
     {
-      title: "Integrabile con sistemi terzi",
+      title: "Dati finalmente allineati",
       features: [
-        "API aperte e documentate",
-        "Import/export dati",
-        "Sincronizzazione con e-commerce",
-        "Integrazione con sistemi meteo",
-        "Connessione con marketplace agricoli",
-        "Interoperabilità con IoT",
+        "Superfici, trattamenti, magazzino.",
+        "Il sistema segnala discrepanze prima del controllo.",
       ],
     },
   ];
@@ -117,7 +107,7 @@ export default class Home extends Component<
               href="#advantages"
               className="hidden md:inline-flex px-5 py-2.5 rounded-full border border-agri-green-600 text-black text-sm font-medium hover:bg-agri-green-50 transition-colors"
             >
-              Scopri i vantaggi
+              Cosa automatizziamo
             </a>
             <Link
               to="/auth"
@@ -156,11 +146,13 @@ export default class Home extends Component<
         <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row items-center justify-between gap-12 py-20">
           <div className="md:w-1/2 space-y-8">
             <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-gray-900">
-              Fare quaderni di campagna non è mai stato così semplice
+              Dal 2027 il quaderno sarà obbligatorio.
+              <br />
+              O automatizzi, o raddoppi le ore.
             </h1>
             <h2 className="text-xl md:text-2xl text-gray-600 leading-relaxed">
-              Il quaderno di campagna digitale personalizzabile che rivoluziona
-              la gestione delle operazioni con l&apos;intelligenza artificiale.
+              Il quaderno ti fa perdere 8 ore a settimana. Noi automatizziamo la
+              parte più pesante.
             </h2>
             <div className="pt-6">
               <button
@@ -168,7 +160,7 @@ export default class Home extends Component<
                 onClick={this.scrollToContactAndSelectTab}
                 className="py-3 px-8 rounded-full bg-agri-green-600 text-white font-medium hover:bg-agri-green-700 transition-colors shadow-lg hover:shadow-xl"
               >
-                Prenota gratis
+                Prenota una demo
               </button>
             </div>
           </div>
@@ -191,9 +183,11 @@ export default class Home extends Component<
       <section id="audience" className="py-20 px-6 md:px-20 bg-agri-green-600">
         <div className="max-w-7xl mx-auto text-center space-y-10">
           <div className="space-y-4">
-            <h2 className="text-4xl font-bold text-white">A chi è dedicato?</h2>
+            <h2 className="text-4xl font-bold text-white">
+              Il 50% dei tecnici dice che il quaderno:
+            </h2>
           </div>
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             {this.audienceHighlights.map((highlight, index) => (
               <div
                 key={highlight.title}
@@ -212,7 +206,7 @@ export default class Home extends Component<
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                       />
                     </svg>
                   )}
@@ -228,7 +222,7 @@ export default class Home extends Component<
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
                   )}
@@ -244,7 +238,23 @@ export default class Home extends Component<
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  )}
+                  {index === 3 && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-black"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2"
                       />
                     </svg>
                   )}
@@ -269,15 +279,12 @@ export default class Home extends Component<
         <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row items-center justify-between gap-12">
           <div className="md:w-1/2 space-y-6">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
-              Niente più calcoli complessi, fogli sparsi o dati incompleti.
+              Seminai automatizza la parte più pesante del tuo lavoro.
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed">
-              Che tu sia in campo, in ufficio o in movimento, la nostra
-              soluzione automatizza i dosaggi, integra operazioni come aratura e
-              semina, e ti permette di segnalare problemi con foto e note di
-              campo. Tutte le informazioni agronomiche in un’unica fonte dati,
-              nel pieno rispetto delle normative. Un modo semplice, preciso e
-              immediato per compilare il quaderno senza stress.
+              Preparazione automatica prima del portale: strutture, dosaggi e
+              conformità pronti quando serve. Continua a usare il portale
+              regionale; Seminai prepara tutto prima.
             </p>
           </div>
           <div className="md:w-1/2 flex justify-center md:justify-end">
@@ -301,7 +308,7 @@ export default class Home extends Component<
       >
         <div className="max-w-7xl mx-auto bg-agri-green-500 rounded-3xl p-12 md:p-20 text-white">
           <h2 className="text-4xl font-bold mb-12">
-            Scopri i vantaggi di Seminai
+            Cosa automatizziamo davvero
           </h2>
 
           {/* Desktop View - Grid */}
@@ -389,7 +396,7 @@ export default class Home extends Component<
               onClick={this.scrollToContactAndSelectTab}
               className="py-4 px-10 rounded-full bg-white text-black font-semibold hover:bg-gray-50 transition-colors shadow-lg hover:shadow-xl"
             >
-              Fissa un incontro gratuito
+              Prenota una demo
             </button>
           </div>
         </div>
@@ -401,13 +408,13 @@ export default class Home extends Component<
     return (
       <section className="py-32 px-6 md:px-20 bg-white">
         <div className="max-w-7xl mx-auto space-y-32">
-          {/* Feature 1: Conforme alle normative */}
+          {/* 1. Import fascicolo in 30 secondi */}
           <div className="flex flex-col md:flex-row items-center gap-12 md:gap-24">
             <div className="w-full md:w-1/2 order-2 md:order-1 flex justify-center">
               <div className="relative w-full max-w-md aspect-square bg-agri-green-50 rounded-3xl flex items-center justify-center p-12">
                 <OptimizedImage
                   src="/image/conforme_alle_normative.png"
-                  alt="Conforme alle normative"
+                  alt="Import fascicolo"
                   containerClassName="w-full h-full"
                   className="w-full h-full object-contain"
                 />
@@ -415,50 +422,46 @@ export default class Home extends Component<
             </div>
             <div className="w-full md:w-1/2 order-1 md:order-2 space-y-6">
               <h3 className="text-3xl md:text-4xl font-bold text-gray-900">
-                Conforme alle normative
+                1. Import fascicolo in 30 secondi
               </h3>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Il sistema verifica automaticamente ogni operazione che
-                registri, assicurandosi che rispetti tutte le normative vigenti.
-                Lavora sereno sapendo che ogni trattamento è tracciato
-                correttamente e la documentazione è sempre pronta per eventuali
-                controlli.
+                Carica il CSV. Parcelle e unità produttive vengono generate
+                automaticamente. Niente creazione manuale campo per campo.
               </p>
               <button
                 type="button"
                 onClick={this.scrollToContactAndSelectTab}
                 className="text-black font-semibold hover:text-black transition-colors underline decoration-2 underline-offset-4"
               >
-                Prenota gratis
+                Prenota una demo
               </button>
             </div>
           </div>
 
-          {/* Feature 2: Riduzione di tempo e costi */}
+          {/* 2. Dosaggi conformi senza calcoli manuali */}
           <div className="flex flex-col md:flex-row items-center gap-12 md:gap-24">
             <div className="w-full md:w-1/2 space-y-6">
               <h3 className="text-3xl md:text-4xl font-bold text-gray-900">
-                Riduzione di tempo e costi
+                2. Dosaggi conformi senza calcoli manuali
               </h3>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Un&apos;interfaccia così intuitiva che chiunque può usarla dal
-                primo giorno. Compila il quaderno in pochi clic grazie alle
-                automazioni intelligenti che calcolano dosi, suggeriscono
-                prodotti e salvano i tuoi trattamenti ricorrenti.
+                Il sistema verifica: dosi massime, tempi di carenza, limiti
+                disciplinari, conformità normativa. Prima che tu carichi sul
+                portale.
               </p>
               <button
                 type="button"
                 onClick={this.scrollToContactAndSelectTab}
                 className="text-black font-semibold hover:text-black transition-colors underline decoration-2 underline-offset-4"
               >
-                Prenota gratis
+                Prenota una demo
               </button>
             </div>
             <div className="w-full md:w-1/2 flex justify-center">
               <div className="relative w-full max-w-md aspect-square bg-blue-50 rounded-3xl flex items-center justify-center p-12">
                 <OptimizedImage
                   src="/image/riduzione_costi_tempo.png"
-                  alt="Riduzione di tempo e costi"
+                  alt="Dosaggi conformi"
                   containerClassName="w-full h-full"
                   className="w-full h-full object-contain"
                 />
@@ -466,13 +469,13 @@ export default class Home extends Component<
             </div>
           </div>
 
-          {/* Feature 3: White label personalizzato */}
+          {/* 3. Stop copia/incolla ripetitivo */}
           <div className="flex flex-col md:flex-row items-center gap-12 md:gap-24">
             <div className="w-full md:w-1/2 order-2 md:order-1 flex justify-center">
-              <div className="relative w-full max-w-md aspect-square bg-purple-50 rounded-3xl flex items-center justify-center p-12">
+              <div className="relative w-full max-w-md aspect-square bg-emerald-50 rounded-3xl flex items-center justify-center p-12">
                 <OptimizedImage
-                  src="/image/white_label.png"
-                  alt="White label personalizzato"
+                  src="/image/chat_farmer_robot.png"
+                  alt="Chat operazioni"
                   containerClassName="w-full h-full"
                   className="w-full h-full object-contain"
                 />
@@ -480,49 +483,46 @@ export default class Home extends Component<
             </div>
             <div className="w-full md:w-1/2 order-1 md:order-2 space-y-6">
               <h3 className="text-3xl md:text-4xl font-bold text-gray-900">
-                White label personalizzato
+                3. Stop copia/incolla ripetitivo
               </h3>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Trasforma la piattaforma nella tua soluzione aziendale con logo,
-                colori e dominio personalizzati. Configura campi, workflow e
-                funzionalità per adattare il sistema esattamente al tuo modo di
-                lavorare.
+                Scrivi in chat da piattaforma o WhatsApp: &quot;Mais, 12 ettari,
+                glifosato 2.3 L/ha&quot;. Il sistema struttura l&apos;operazione,
+                controlla conformità, aggiorna unità produttiva. Tu approvi.
               </p>
               <button
                 type="button"
                 onClick={this.scrollToContactAndSelectTab}
                 className="text-black font-semibold hover:text-black transition-colors underline decoration-2 underline-offset-4"
               >
-                Prenota gratis
+                Prenota una demo
               </button>
             </div>
           </div>
 
-          {/* Feature 4: Integrabile con sistemi terzi */}
+          {/* 4. Dati finalmente allineati */}
           <div className="flex flex-col md:flex-row items-center gap-12 md:gap-24">
             <div className="w-full md:w-1/2 space-y-6">
               <h3 className="text-3xl md:text-4xl font-bold text-gray-900">
-                Integrabile con sistemi terzi
+                4. Dati finalmente allineati
               </h3>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Collega il quaderno ai software che già utilizzi attraverso API
-                aperte e sincronizzazioni automatiche. Unifica tutte le
-                informazioni aziendali in un&apos;unica piattaforma e lascia che
-                i dati fluiscano liberamente tra i sistemi.
+                Superfici, trattamenti, magazzino. Il sistema segnala discrepanze
+                prima del controllo.
               </p>
               <button
                 type="button"
                 onClick={this.scrollToContactAndSelectTab}
                 className="text-black font-semibold hover:text-black transition-colors underline decoration-2 underline-offset-4"
               >
-                Prenota gratis
+                Prenota una demo
               </button>
             </div>
             <div className="w-full md:w-1/2 flex justify-center">
               <div className="relative w-full max-w-md aspect-square bg-orange-50 rounded-3xl flex items-center justify-center p-12">
                 <OptimizedImage
                   src="/image/integrabile.png"
-                  alt="Integrabile con sistemi terzi"
+                  alt="Dati allineati"
                   containerClassName="w-full h-full"
                   className="w-full h-full object-contain"
                 />
@@ -530,36 +530,43 @@ export default class Home extends Component<
             </div>
           </div>
 
-          {/* Feature 5: Operazioni e note di campo */}
+          {/* 5. Il risultato */}
           <div className="flex flex-col md:flex-row items-center gap-12 md:gap-24">
-            <div className="w-full md:w-1/2 order-2 md:order-1 flex justify-center">
-              <div className="relative w-full max-w-md aspect-square bg-emerald-50 rounded-3xl flex items-center justify-center p-12">
-                <OptimizedImage
-                  src="/image/chat_farmer_robot.png"
-                  alt="Operazioni e note di campo"
-                  containerClassName="w-full h-full"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            </div>
-            <div className="w-full md:w-1/2 order-1 md:order-2 space-y-6">
+            <div className="w-full md:w-1/2 space-y-6">
               <h3 className="text-3xl md:text-4xl font-bold text-gray-900">
-                Operazioni e note di campo
+                Il risultato
               </h3>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Registra tutte le lavorazioni aratura, semina, trattamenti e
-                segnala dove trovi problemi direttamente dal campo. Una chat con
-                cui parli dalla piattaforma, da Telegram o da WhatsApp: aggiungi
-                foto e descrizioni e l&apos;assistente AI le trasforma in note
-                strutturate per il quaderno, senza dover riscrivere nulla in
-                ufficio.
+                Meno inserimento manuale. Meno errori arancioni. Meno notti tra
+                ottobre e febbraio. Gestisci più aziende senza raddoppiare le
+                ore.
               </p>
               <button
                 type="button"
                 onClick={this.scrollToContactAndSelectTab}
                 className="text-black font-semibold hover:text-black transition-colors underline decoration-2 underline-offset-4"
               >
-                Prenota gratis
+                Prenota una demo
+              </button>
+            </div>
+          </div>
+
+          {/* 6. Positioning */}
+          <div className="flex flex-col md:flex-row items-center gap-12 md:gap-24">
+            <div className="w-full space-y-6">
+              <h3 className="text-3xl md:text-4xl font-bold text-gray-900">
+                Non è un altro gestionale.
+              </h3>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                È un sistema che compila il quaderno per te. Continua a usare il
+                portale regionale. Seminai prepara tutto prima.
+              </p>
+              <button
+                type="button"
+                onClick={this.scrollToContactAndSelectTab}
+                className="text-black font-semibold hover:text-black transition-colors underline decoration-2 underline-offset-4"
+              >
+                Prenota una demo
               </button>
             </div>
           </div>
@@ -574,11 +581,11 @@ export default class Home extends Component<
         <div className="max-w-3xl mx-auto text-center space-y-12">
           <div className="space-y-4">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900">
-              Organizzo un incontro gratuito
+              Prenota una demo
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Hai bisogno di informazioni o vuoi vedere Seminai in azione?
-              Compila il form qui sotto e ti risponderemo al più presto.
+              Se oggi perdi 8 ore a settimana per azienda, vedi cosa succede
+              quando ne perdi 2.
             </p>
           </div>
 

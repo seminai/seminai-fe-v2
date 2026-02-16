@@ -106,6 +106,12 @@ function adaptExtractedPUsToInputs(
       importedCropType: pu.cropType,
       importedVariety: pu.variety,
       importedCompanyId: companyId,
+      cycles: (pu.cycles ?? []).map((c) => ({
+        cycleIndex: c.cycleIndex,
+        cropName: c.cropName,
+        cropType: c.cropType,
+        variety: c.variety,
+      })),
     };
   });
 }
