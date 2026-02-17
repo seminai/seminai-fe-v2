@@ -33,6 +33,7 @@ export type {
   SearchableValueConfig,
   FilterPanelConfig,
   InternalRow,
+  CustomBodyContext,
 } from "./types";
 
 // Hooks
@@ -182,6 +183,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       createDrawerImportDescription,
       createDrawerFormTitle,
       createDrawerFormDescription,
+      renderCustomBody,
     } = props;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -587,7 +589,11 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
     return (
       <div
         data-slot="table-wrapper"
-        className={cn("relative w-full rounded-lg bg-white", className)}
+        className={cn(
+          "relative w-full rounded-lg bg-white",
+          renderCustomBody && "h-full flex flex-col",
+          className,
+        )}
       >
         <DeleteConfirmationDialog
           open={confirmDialogOpen}
@@ -630,58 +636,70 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
           onSave={tableState.handleSave}
         />
 
-        <div
-          className={cn(
-            "w-full overflow-auto",
-            isFlexLayout ? "flex-1 min-h-0" : "max-h-[calc(100vh-300px)]",
-          )}
-        >
-          <table
-            data-slot="table"
-            className={cn("w-full caption-bottom text-sm relative")}
+        {renderCustomBody ? (
+          renderCustomBody({
+            rows: filteredRows,
+            columns,
+            visibleColumnIds: visibility.visibleColumnIds,
+            isEditMode: tableState.isEditMode,
+            handleCellChange: tableState.handleCellChange,
+          })
+        ) : (
+          <div
+            className={cn(
+              "w-full overflow-auto",
+              isFlexLayout ? "flex-1 min-h-0" : "max-h-[calc(100vh-300px)]",
+            )}
           >
-            <EditableTableBody
-              columns={columns}
-              visibleColumns={visibility.visibleColumns}
-              rows={filteredRows}
-              allRows={tableState.rows}
-              selected={selection.selected}
-              touched={tableState.touched}
-              isModify={isModify}
-              isEditMode={tableState.isEditMode}
-              hasDetails={hasDetails}
-              hasLast={hasLast}
-              lastComponent={lastComponent}
-              allSelected={allSelected}
-              sortColumn={sort.sortColumn}
-              sortDirection={sort.sortDirection}
-              columnFilterOpen={filters.columnFilterOpen}
-              columnFilterSelectedValues={filters.columnFilterSelectedValues}
-              columnFilterSearchQueries={filters.columnFilterSearchQueries}
-              columnFilterDateRanges={filters.columnFilterDateRanges}
-              columnFilterSelectedDates={filters.columnFilterSelectedDates}
-              getRowClassName={getRowClassName}
-              onToggleSelectAll={(value) =>
-                selection.toggleSelectAll(value, filteredRows)
-              }
-              onToggleRowSelection={selection.toggleRowSelection}
-              onCellChange={tableState.handleCellChange}
-              onOpenDetails={tableState.openDetails}
-              onRowClick={handleRowClick}
-              onSort={sort.handleSort}
-              onColumnFilterOpenChange={filters.handleColumnFilterOpenChange}
-              onColumnFilterSearchChange={
-                filters.handleColumnFilterSearchChange
-              }
-              onColumnFilterValueToggle={filters.handleColumnFilterValueToggle}
-              onColumnFilterDateRangeChange={
-                filters.handleColumnFilterDateRangeChange
-              }
-              onColumnFilterDateChange={filters.handleColumnFilterDateChange}
-              onColumnFilterClear={filters.handleColumnFilterClear}
-            />
-          </table>
-        </div>
+            <table
+              data-slot="table"
+              className={cn("w-full caption-bottom text-sm relative")}
+            >
+              <EditableTableBody
+                columns={columns}
+                visibleColumns={visibility.visibleColumns}
+                rows={filteredRows}
+                allRows={tableState.rows}
+                selected={selection.selected}
+                touched={tableState.touched}
+                isModify={isModify}
+                isEditMode={tableState.isEditMode}
+                hasDetails={hasDetails}
+                hasLast={hasLast}
+                lastComponent={lastComponent}
+                allSelected={allSelected}
+                sortColumn={sort.sortColumn}
+                sortDirection={sort.sortDirection}
+                columnFilterOpen={filters.columnFilterOpen}
+                columnFilterSelectedValues={filters.columnFilterSelectedValues}
+                columnFilterSearchQueries={filters.columnFilterSearchQueries}
+                columnFilterDateRanges={filters.columnFilterDateRanges}
+                columnFilterSelectedDates={filters.columnFilterSelectedDates}
+                getRowClassName={getRowClassName}
+                onToggleSelectAll={(value) =>
+                  selection.toggleSelectAll(value, filteredRows)
+                }
+                onToggleRowSelection={selection.toggleRowSelection}
+                onCellChange={tableState.handleCellChange}
+                onOpenDetails={tableState.openDetails}
+                onRowClick={handleRowClick}
+                onSort={sort.handleSort}
+                onColumnFilterOpenChange={filters.handleColumnFilterOpenChange}
+                onColumnFilterSearchChange={
+                  filters.handleColumnFilterSearchChange
+                }
+                onColumnFilterValueToggle={
+                  filters.handleColumnFilterValueToggle
+                }
+                onColumnFilterDateRangeChange={
+                  filters.handleColumnFilterDateRangeChange
+                }
+                onColumnFilterDateChange={filters.handleColumnFilterDateChange}
+                onColumnFilterClear={filters.handleColumnFilterClear}
+              />
+            </table>
+          </div>
+        )}
 
         <DetailsDrawer
           open={tableState.drawerOpen}

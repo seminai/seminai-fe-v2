@@ -60,6 +60,7 @@ import {
 import AllJobsView, {
   JobIdMultiSelect,
   type RightSidebarMode,
+  type DisplayMode,
 } from "./AllJobsView";
 import ReviewJobsView from "./ReviewJobsView";
 import { CreateMultipleJobsDrawer } from "./CreateMultipleJobsDrawer";
@@ -1564,6 +1565,7 @@ export default function JobPage() {
   const [rightSidebarMode, setRightSidebarMode] =
     useState<RightSidebarMode>("details");
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState<boolean>(false);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>("table");
   const [isMultipleJobsDrawerOpen, setIsMultipleJobsDrawerOpen] =
     useState<boolean>(false);
 
@@ -3661,6 +3663,8 @@ export default function JobPage() {
         const quantity = Number(row.quantity ?? 0);
         return quantity === 0 ? "text-gray-400" : undefined;
       }}
+      displayMode={displayMode}
+      onDisplayModeChange={setDisplayMode}
     />
   );
 

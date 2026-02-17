@@ -164,7 +164,7 @@ export default function CompanyStep({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="new-company-vat-number">Partita IVA</Label>
+                  <Label htmlFor="new-company-vat-number">Partita IVA *</Label>
                   <Input
                     id="new-company-vat-number"
                     value={newCompanyVatNumber}

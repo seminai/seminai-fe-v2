@@ -41,7 +41,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { useProductionUnitCycles } from "@/hooks/useProductionUnitCycles";
+import { KanbanTimelineView } from "./KanbanTimelineView";
 
 // Helper function to format dates as DD-MM-YYYY
 const formatDateDDMMYYYY = (dateStr: string | null | undefined): string => {
@@ -1227,6 +1236,9 @@ const buildProductionUnitColumns = (
 };
 
 export default function ProductionUnit(): React.ReactElement {
+  const [activeView, setActiveView] = useState<string>("table");
+  const [timelineDetailUnit, setTimelineDetailUnit] =
+    useState<ProductionUnit | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -1248,6 +1260,11 @@ export default function ProductionUnit(): React.ReactElement {
     }
     return new CompanyDirectory(companies, availableFields);
   }, [companies, availableFields]);
+
+  const companyOptions = useMemo(
+    () => companyDirectory?.getCompanyOptions() ?? [],
+    [companyDirectory]
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -1563,6 +1580,31 @@ export default function ProductionUnit(): React.ReactElement {
       );
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleUpdatePeriod = async (
+    id: string,
+    startDate: string,
+    endDate: string | null
+  ) => {
+    try {
+      await productionUnitApiService.update(id, {
+        startDate: startDate
+          ? new Date(startDate).toISOString()
+          : undefined,
+        endDate: endDate ? new Date(endDate).toISOString() : null,
+      });
+      toast.success("Periodo aggiornato con successo");
+      refetch();
+    } catch (err) {
+      console.error("Errore nell'aggiornamento del periodo:", err);
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Errore nell'aggiornamento del periodo"
+      );
+      throw err;
     }
   };
 
@@ -1943,68 +1985,118 @@ export default function ProductionUnit(): React.ReactElement {
   );
 
   return (
-    <div className="flex flex-col h-full">
-      <PageHeader title="Unità Produttive" className="hidden md:block" />
+    <Tabs
+      value={activeView}
+      onValueChange={setActiveView}
+      className="flex flex-col h-full"
+    >
+      <PageHeader title="Unità Produttive" className="hidden md:block">
+        <TabsList>
+          <TabsTrigger value="table">Tabella</TabsTrigger>
+          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+        </TabsList>
+      </PageHeader>
 
-      {/* Area scrollabile - solo la tabella */}
-      <div className="flex-1 overflow-auto px-6 pb-6">
+      {/* Area contenuto */}
+      <div className="flex-1 overflow-hidden flex flex-col">
         {isLoading ? (
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2 text-sm text-gray-500 px-6 py-4">
             <Spinner size={20} ariaLabel="Caricamento dati" />
             <span>Caricamento dati…</span>
           </div>
         ) : error ? (
-          <div className="text-center py-8 text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-sm font-medium">
-              Nessuna unità produttiva disponibile
-            </p>
-            <p className="text-xs mt-1 text-gray-500">
-              Al momento non ci sono unità produttive da visualizzare
-            </p>
+          <div className="px-6 py-8">
+            <div className="text-center py-8 text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-sm font-medium">
+                Nessuna unità produttiva disponibile
+              </p>
+              <p className="text-xs mt-1 text-gray-500">
+                Al momento non ci sono unità produttive da visualizzare
+              </p>
+            </div>
           </div>
         ) : (
           <>
-            <EditableTable
-              columns={columns}
-              rows={rows}
-              isModify={true}
-              addButton={false}
-              getRowId={(row, index) =>
-                (typeof row.id === "string" && row.id) || index
-              }
-              onSave={handleBulkSave}
-              onDeleteSelected={handleDeleteSelected}
-              showDeleteAction={true}
-              exportFileName="unitaproduttive"
-              detailsRenderer={renderDetails}
-              detailsTitle="Dettagli Unità Produttiva"
-              className="bg-background"
+            <TabsContent
+              value="table"
+              className="flex-1 overflow-auto px-6 pb-6 mt-0"
             >
-              <Button
-                data-table-slot="right"
-                variant="ghost"
-                className="order-last gap-2 cursor-pointer text-gray-600 hover:text-gray-600"
-                asChild
+              <EditableTable
+                columns={columns}
+                rows={rows}
+                isModify={true}
+                addButton={false}
+                getRowId={(row, index) =>
+                  (typeof row.id === "string" && row.id) || index
+                }
+                onSave={handleBulkSave}
+                onDeleteSelected={handleDeleteSelected}
+                showDeleteAction={true}
+                exportFileName="unitaproduttive"
+                detailsRenderer={renderDetails}
+                detailsTitle="Dettagli Unità Produttiva"
+                className="bg-background"
               >
-                <Link to="/new-production-unit">
-                  <Plus className="w-4 h-4" />
-                  Aggiungi
-                </Link>
-              </Button>
-            </EditableTable>
-            {productionUnits.length === 0 && (
-              <div className="mt-4 text-center py-8 text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-sm font-medium">
-                  Nessuna unità produttiva disponibile
-                </p>
-                <p className="text-xs mt-1 text-gray-500">
-                  Al momento non ci sono unità produttive da visualizzare
-                </p>
-              </div>
-            )}
+                <Button
+                  data-table-slot="right"
+                  variant="ghost"
+                  className="order-last gap-2 cursor-pointer text-gray-600 hover:text-gray-600"
+                  asChild
+                >
+                  <Link to="/new-production-unit">
+                    <Plus className="w-4 h-4" />
+                    Aggiungi
+                  </Link>
+                </Button>
+              </EditableTable>
+              {productionUnits.length === 0 && (
+                <div className="mt-4 text-center py-8 text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-sm font-medium">
+                    Nessuna unità produttiva disponibile
+                  </p>
+                  <p className="text-xs mt-1 text-gray-500">
+                    Al momento non ci sono unità produttive da visualizzare
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent
+              value="timeline"
+              className="flex-1 overflow-auto px-6 pb-6 mt-0"
+            >
+              <KanbanTimelineView
+                productionUnits={productionUnits}
+                companyOptions={companyOptions}
+                onUpdatePeriod={handleUpdatePeriod}
+                onRowClick={setTimelineDetailUnit}
+              />
+            </TabsContent>
           </>
         )}
       </div>
+
+      {/* Drawer dettagli dalla timeline */}
+      <Sheet
+        open={timelineDetailUnit !== null}
+        onOpenChange={(open) => {
+          if (!open) setTimelineDetailUnit(null);
+        }}
+      >
+        <SheetContent
+          side="right"
+          className="sm:max-w-2xl w-full overflow-y-auto"
+        >
+          <SheetHeader>
+            <SheetTitle>Dettagli Unità Produttiva</SheetTitle>
+            <SheetDescription>
+              {timelineDetailUnit?.productionUnit.name}
+            </SheetDescription>
+          </SheetHeader>
+          {timelineDetailUnit &&
+            renderDetails({ productionUnit: timelineDetailUnit })}
+        </SheetContent>
+      </Sheet>
 
       {/* Dialog di conferma eliminazione */}
       <AlertDialog
@@ -2031,6 +2123,6 @@ export default function ProductionUnit(): React.ReactElement {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </Tabs>
   );
 }

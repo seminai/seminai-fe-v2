@@ -4,6 +4,7 @@ import {
   EditableTable,
   type EditableColumn,
   type CustomExportConfig,
+  type InternalRow,
 } from "@/components/organism/EditableTable";
 import {
   JobSelectedDetails,
@@ -29,11 +30,14 @@ import {
   Sparkles,
   MessageSquare,
   History,
+  LayoutGrid,
+  Table2,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 import HistoryPanel from "./HistoryPanel";
+import { JobCardsView } from "./JobCardsView";
 import ConformityCheckerPanel, {
   type ConformityCheckerPanelRef,
   type VerificationStateSnapshot,
@@ -56,6 +60,7 @@ interface JobIdOption {
 }
 
 export type RightSidebarMode = "details" | "history" | "conformity";
+export type DisplayMode = "table" | "cards";
 
 interface AllJobsViewProps {
   error: unknown;
@@ -97,6 +102,8 @@ interface AllJobsViewProps {
   onConformityConfirmSuccess?: () => void;
   selectedJobsForChat: JobWithRelations[];
   getRowClassName?: (row: Record<string, unknown>) => string | undefined;
+  displayMode: DisplayMode;
+  onDisplayModeChange: (mode: DisplayMode) => void;
 }
 
 export function JobIdMultiSelect({
@@ -278,6 +285,8 @@ export function AllJobsView({
   onConformityConfirmSuccess,
   selectedJobsForChat,
   getRowClassName,
+  displayMode,
+  onDisplayModeChange,
 }: AllJobsViewProps) {
   const hasError = Boolean(error);
   const errorMessage =
@@ -308,6 +317,39 @@ export function AllJobsView({
   useEffect(() => {
     setVerificationSnapshot(null);
   }, [jobGroupId]);
+
+  // Set of selected row IDs for card view selection tracking
+  const selectedRowIds = useMemo(
+    () => new Set(selectedRows.map((r) => r.id as string)),
+    [selectedRows],
+  );
+
+  // Toggle card selection and auto-open details sidebar
+  const handleCardToggleSelect = useCallback(
+    (row: InternalRow) => {
+      const rowId = row.id;
+      const rowData = row.data;
+      if (selectedRowIds.has(rowId)) {
+        onSelectionChange(
+          selectedRows.filter((r) => (r.id as string) !== rowId),
+        );
+      } else {
+        onSelectionChange([...selectedRows, rowData]);
+        if (!isRightSidebarOpen) {
+          onRightSidebarModeChange("details");
+          onToggleRightSidebar(true);
+        }
+      }
+    },
+    [
+      selectedRowIds,
+      selectedRows,
+      onSelectionChange,
+      isRightSidebarOpen,
+      onRightSidebarModeChange,
+      onToggleRightSidebar,
+    ],
+  );
 
   // Carica una chat dallo storico nel pannello conformità
   const handleSelectChatFromHistory = (chatId: string) => {
@@ -383,7 +425,53 @@ export function AllJobsView({
                   customExportConfig={exportConfig}
                   exportFileName="operazioni"
                   getRowClassName={getRowClassName}
+                  renderCustomBody={
+                    displayMode === "cards"
+                      ? (ctx) => (
+                          <div className="flex-1 min-h-0 overflow-hidden">
+                            <JobCardsView
+                              rows={ctx.rows}
+                              isLoading={isLoading}
+                              selectedRowIds={selectedRowIds}
+                              onToggleSelect={handleCardToggleSelect}
+                              visibleColumnIds={ctx.visibleColumnIds}
+                              columns={ctx.columns}
+                              isEditMode={ctx.isEditMode}
+                              onCellChange={ctx.handleCellChange}
+                            />
+                          </div>
+                        )
+                      : undefined
+                  }
                 >
+                  {/* Display mode toggle */}
+                  <div
+                    className="flex items-center gap-1 border-l border-slate-200 pl-2 ml-1"
+                    data-table-slot="right"
+                  >
+                    <Button
+                      variant={
+                        displayMode === "table" ? "secondary" : "ghost"
+                      }
+                      size="sm"
+                      onClick={() => onDisplayModeChange("table")}
+                      className="h-8 w-8 p-0"
+                      title="Vista tabella"
+                    >
+                      <Table2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={
+                        displayMode === "cards" ? "secondary" : "ghost"
+                      }
+                      size="sm"
+                      onClick={() => onDisplayModeChange("cards")}
+                      className="h-8 w-8 p-0"
+                      title="Vista schede"
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                  </div>
                   {!isRightSidebarOpen && (
                     <div
                       className="flex items-center gap-1"

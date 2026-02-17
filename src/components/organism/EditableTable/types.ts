@@ -124,6 +124,24 @@ export interface EditableTableProps {
   createDrawerFormTitle?: string;
   /** Create drawer: description when showing manual form */
   createDrawerFormDescription?: string;
+  /**
+   * Renders custom content instead of the table body (e.g. card view).
+   * The table header toolbar is always shown; only the scroll area with
+   * the <table> element is replaced by the returned ReactNode.
+   */
+  renderCustomBody?: (context: CustomBodyContext) => React.ReactNode;
+}
+
+export interface CustomBodyContext {
+  rows: InternalRow[];
+  columns: EditableColumn[];
+  visibleColumnIds: string[];
+  isEditMode: boolean;
+  handleCellChange: (
+    row: InternalRow,
+    col: EditableColumn,
+    value: unknown,
+  ) => void;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
