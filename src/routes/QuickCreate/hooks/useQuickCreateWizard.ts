@@ -60,8 +60,6 @@ export function useQuickCreateWizard(): UseQuickCreateWizardReturn {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const companiesHook = useCompanies();
-
   const goNext = useCallback(() => {
     const idx = STEP_ORDER.indexOf(currentStep);
     if (idx < STEP_ORDER.length - 1) {
@@ -69,6 +67,8 @@ export function useQuickCreateWizard(): UseQuickCreateWizardReturn {
       setCurrentStep(STEP_ORDER[idx + 1]);
     }
   }, [currentStep]);
+
+  const companiesHook = useCompanies();
 
   const goBack = useCallback(() => {
     const idx = STEP_ORDER.indexOf(currentStep);

@@ -21,10 +21,6 @@ export default function CompanyStep({
   const [newCompanyVatNumber, setNewCompanyVatNumber] = React.useState("");
   const [newCompanyFiscalCode, setNewCompanyFiscalCode] = React.useState("");
   const [newCompanyCuaa, setNewCompanyCuaa] = React.useState("");
-  // Track fiscal code of newly created company to auto-select after refetch
-  const [pendingFiscalCode, setPendingFiscalCode] = React.useState<
-    string | null
-  >(null);
 
   const companyOptions = React.useMemo(
     () =>
@@ -35,41 +31,47 @@ export default function CompanyStep({
     [companies.companies],
   );
 
-  // Auto-select newly created company after the companies list refetches
-  React.useEffect(() => {
-    if (pendingFiscalCode && companies.companies.length > 0) {
-      const found = companies.companies.find(
-        (c) => c.fiscalCode === pendingFiscalCode,
-      );
-      if (found) {
-        actions.setSelectedCompanyId(found.id);
-        setPendingFiscalCode(null);
-        setShowCreateForm(false);
-        setNewCompanyName("");
-        setNewCompanyVatNumber("");
-        setNewCompanyFiscalCode("");
-        setNewCompanyCuaa("");
-      }
-    }
-  }, [pendingFiscalCode, companies.companies, actions]);
-
   const handleCreateCompany = React.useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
       if (newCompanyName.trim() && newCompanyFiscalCode.trim()) {
+        const name = newCompanyName.trim();
         const fiscalCode = newCompanyFiscalCode.trim();
-        setPendingFiscalCode(fiscalCode);
-        companies.createCompanies([
-          {
-            name: newCompanyName.trim(),
-            fiscalCode,
-            vatNumber: newCompanyVatNumber.trim() || "",
-            cuaa: newCompanyCuaa.trim() || null,
-          },
-        ]);
+
+        try {
+          const response = await companies.createCompaniesAsync([
+            {
+              name,
+              fiscalCode,
+              vatNumber: newCompanyVatNumber.trim() || "",
+              cuaa: newCompanyCuaa.trim() || null,
+            },
+          ]);
+
+          const createdId = response?.data?.companies?.[0]?.id;
+          if (createdId) {
+            actions.setSelectedCompanyId(createdId);
+            actions.goNext();
+            return;
+          }
+
+          const refreshed = await companies.refetch();
+          const created = refreshed.data?.data.companies.find(
+            (company) =>
+              company.fiscalCode === fiscalCode || company.name === name,
+          );
+
+          if (created?.id) {
+            actions.setSelectedCompanyId(created.id);
+            actions.goNext();
+          }
+        } catch {
+          // Error toast is already handled in useCompanies.
+        }
       }
     },
     [
+      actions,
       newCompanyName,
       newCompanyFiscalCode,
       newCompanyVatNumber,

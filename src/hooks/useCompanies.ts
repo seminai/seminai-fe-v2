@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
 import {
   companiesApiService,
   type BulkCompanyInput,
@@ -17,6 +18,8 @@ interface UseCompaniesOptions {
 
 export function useCompanies(options?: UseCompaniesOptions) {
   const queryClient = useQueryClient();
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   // Query per ottenere tutte le companies
   const companiesQuery = useQuery<CompaniesResponse, Error>({
@@ -48,7 +51,7 @@ export function useCompanies(options?: UseCompaniesOptions) {
         toast.success("Aziende create con successo");
       }
 
-      options?.onCreateSuccess?.(response);
+      optionsRef.current?.onCreateSuccess?.(response);
     },
     onError: (error: Error) => {
       console.error("Errore creazione companies:", error);
@@ -128,6 +131,7 @@ export function useCompanies(options?: UseCompaniesOptions) {
 
     // Mutation per creare companies
     createCompanies: createMutation.mutate,
+    createCompaniesAsync: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
 
     // Mutation per aggiornare companies
