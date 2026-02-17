@@ -418,8 +418,11 @@ function DrawerProduct({
     ddtDate: string;
     ddtCode: string;
     invoiceCode: string;
+    invoiceDueDate: string;
+    price: string;
+    unitOfMeasurePrice: string;
     date: string;
-  }>({ ddtDate: "", ddtCode: "", invoiceCode: "", date: "" });
+  }>({ ddtDate: "", ddtCode: "", invoiceCode: "", invoiceDueDate: "", price: "", unitOfMeasurePrice: "EUR", date: "" });
   const [isUpdatingStock, setIsUpdatingStock] = useState(false);
 
   const {
@@ -517,6 +520,9 @@ function DrawerProduct({
       ddtDate: DateFormatter.toInputValue(stock.ddtDate ?? null),
       ddtCode: stock.ddtCode ?? "",
       invoiceCode: stock.invoiceCode ?? "",
+      invoiceDueDate: DateFormatter.toInputValue(stock.invoiceDueDate ?? null),
+      price: stock.price != null ? String(stock.price) : "",
+      unitOfMeasurePrice: stock.unitOfMeasurePrice ?? "EUR",
       date: DateFormatter.toInputValue(stock.createdAt ?? null),
     });
   };
@@ -540,12 +546,16 @@ function DrawerProduct({
     }
     setIsUpdatingStock(true);
     try {
+      const priceValue = Number.parseFloat(stockEditForm.price);
       await stocksApiService.update(editingStock.id, {
         companyId,
         ddtCode: stockEditForm.ddtCode?.trim() || null,
         ddtDate: toIsoDate(stockEditForm.ddtDate) ?? null,
         invoiceCode: stockEditForm.invoiceCode?.trim() || null,
         invoiceDate: toIsoDate(stockEditForm.date) ?? null,
+        invoiceDueDate: toIsoDate(stockEditForm.invoiceDueDate) ?? null,
+        price: Number.isFinite(priceValue) ? priceValue : undefined,
+        unitOfMeasurePrice: stockEditForm.unitOfMeasurePrice?.trim() || undefined,
       });
       toast.success("Movimento aggiornato");
       queryClient.invalidateQueries({ queryKey: ["products", "me"] });
@@ -831,6 +841,67 @@ function DrawerProduct({
                                   </div>
                                   <div className="grid gap-1.5">
                                     <Label
+                                      htmlFor={`edit-invoice-due-date-${stock.id}`}
+                                      className="text-xs"
+                                    >
+                                      Scadenza fattura
+                                    </Label>
+                                    <Input
+                                      id={`edit-invoice-due-date-${stock.id}`}
+                                      type="date"
+                                      value={stockEditForm.invoiceDueDate}
+                                      onChange={(e) =>
+                                        setStockEditForm((prev) => ({
+                                          ...prev,
+                                          invoiceDueDate: e.target.value,
+                                        }))
+                                      }
+                                    />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid gap-1.5">
+                                      <Label
+                                        htmlFor={`edit-price-${stock.id}`}
+                                        className="text-xs"
+                                      >
+                                        {stock.type === "IN" ? "Prezzo acquisto" : "Prezzo vendita"}
+                                      </Label>
+                                      <Input
+                                        id={`edit-price-${stock.id}`}
+                                        type="number"
+                                        step="0.01"
+                                        value={stockEditForm.price}
+                                        onChange={(e) =>
+                                          setStockEditForm((prev) => ({
+                                            ...prev,
+                                            price: e.target.value,
+                                          }))
+                                        }
+                                        placeholder="0.00"
+                                      />
+                                    </div>
+                                    <div className="grid gap-1.5">
+                                      <Label
+                                        htmlFor={`edit-price-unit-${stock.id}`}
+                                        className="text-xs"
+                                      >
+                                        Valuta
+                                      </Label>
+                                      <Input
+                                        id={`edit-price-unit-${stock.id}`}
+                                        value={stockEditForm.unitOfMeasurePrice}
+                                        onChange={(e) =>
+                                          setStockEditForm((prev) => ({
+                                            ...prev,
+                                            unitOfMeasurePrice: e.target.value,
+                                          }))
+                                        }
+                                        placeholder="EUR"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="grid gap-1.5">
+                                    <Label
                                       htmlFor={`edit-date-${stock.id}`}
                                       className="text-xs"
                                     >
@@ -944,9 +1015,25 @@ function DrawerProduct({
                                       </span>
                                     </span>
                                     <span className="text-gray-500">
-                                      Codice fatture:
+                                      Codice fattura:
                                       <span className="ml-1 text-gray-900">
                                         {stock.invoiceCode ?? "—"}
+                                      </span>
+                                    </span>
+                                    <span className="text-gray-500">
+                                      Scadenza fattura:
+                                      <span className="ml-1 text-gray-900">
+                                        {dateFormatter.format(
+                                          stock.invoiceDueDate ?? null,
+                                        ) ?? "—"}
+                                      </span>
+                                    </span>
+                                    <span className="text-gray-500">
+                                      {stock.type === "IN" ? "Prezzo acquisto:" : "Prezzo vendita:"}
+                                      <span className="ml-1 text-gray-900">
+                                        {stock.price != null
+                                          ? `${stock.price.toFixed(2)} ${stock.unitOfMeasurePrice ?? "EUR"}`
+                                          : "—"}
                                       </span>
                                     </span>
                                     <span className="text-gray-500">

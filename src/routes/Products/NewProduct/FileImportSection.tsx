@@ -63,6 +63,7 @@ class CsvExcelPreviewMapper {
       ddtDate: p.stock?.ddtDate ?? undefined,
       invoiceCode: p.stock?.invoiceCode ?? undefined,
       invoiceDate: p.stock?.invoiceDate ?? undefined,
+      invoiceDueDate: p.stock?.invoiceDueDate ?? undefined,
       supplierName: p.stock?.companySupplierName ?? undefined,
       addressSupplier: p.stock?.addressSupplier ?? undefined,
       supplierVat: p.stock?.vatNumberSupplier ?? undefined,
@@ -97,6 +98,7 @@ class InvoicePreviewMapper {
       unitOfMeasurePrice: p.totalPrice != null ? "EUR" : undefined,
       invoiceCode: p.invoiceNumber ?? undefined,
       invoiceDate: p.invoiceDate ?? undefined,
+      invoiceDueDate: p.invoiceDueDate ?? undefined,
       supplierName: p.supplierName ?? undefined,
       supplierVat: p.supplierVat ?? undefined,
     }));

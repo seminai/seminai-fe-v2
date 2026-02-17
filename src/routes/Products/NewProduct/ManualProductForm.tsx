@@ -46,6 +46,7 @@ export interface StockFormData {
   ddtCode: string;
   invoiceDate: string;
   invoiceCode: string;
+  invoiceDueDate: string;
   companySupplierName: string;
   vatNumberSupplier: string;
 }
@@ -94,6 +95,7 @@ class ManualProductFormValidator {
               ddtCode: stockData.ddtCode.trim() || undefined,
               invoiceDate: stockData.invoiceDate || undefined,
               invoiceCode: stockData.invoiceCode.trim() || undefined,
+              invoiceDueDate: stockData.invoiceDueDate || undefined,
               companySupplierName:
                 stockData.companySupplierName.trim() || undefined,
               vatNumberSupplier:
@@ -113,6 +115,7 @@ const INITIAL_STOCK_DATA: StockFormData = {
   ddtCode: "",
   invoiceDate: "",
   invoiceCode: "",
+  invoiceDueDate: "",
   companySupplierName: "",
   vatNumberSupplier: "",
 };

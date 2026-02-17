@@ -495,7 +495,7 @@ export default function LabelDetailPage(): React.ReactElement {
   }, [detail, isFertilizer, fertilizerDosages]);
 
   return (
-    <div className="p-4 md:p-6 h-screen overflow-hidden flex flex-col">
+    <div className="p-4 md:p-6 h-full overflow-hidden flex flex-col">
       <Breadcrumb className="mb-2">
         <BreadcrumbList>
           <BreadcrumbItem>

@@ -19,14 +19,31 @@ import {
 } from "@/components/ui/tooltip";
 
 const MONTHS_IT = [
-  "Gen", "Feb", "Mar", "Apr", "Mag", "Giu",
-  "Lug", "Ago", "Set", "Ott", "Nov", "Dic",
+  "Gen",
+  "Feb",
+  "Mar",
+  "Apr",
+  "Mag",
+  "Giu",
+  "Lug",
+  "Ago",
+  "Set",
+  "Ott",
+  "Nov",
+  "Dic",
 ];
 
 const BAR_COLORS = [
-  "bg-emerald-500", "bg-amber-500", "bg-sky-500", "bg-violet-500",
-  "bg-rose-500", "bg-teal-500", "bg-orange-500", "bg-indigo-500",
-  "bg-lime-500", "bg-cyan-500",
+  "bg-emerald-500",
+  "bg-amber-500",
+  "bg-sky-500",
+  "bg-violet-500",
+  "bg-rose-500",
+  "bg-teal-500",
+  "bg-orange-500",
+  "bg-indigo-500",
+  "bg-lime-500",
+  "bg-cyan-500",
 ];
 
 function hashString(str: string): number {
@@ -45,7 +62,7 @@ function getBarColor(cropName: string): string {
 function getBarPosition(
   startDate: string,
   endDate: string | null,
-  year: number
+  year: number,
 ): { left: number; width: number } {
   const yearStart = new Date(year, 0, 1).getTime();
   const yearEnd = new Date(year + 1, 0, 1).getTime();
@@ -94,7 +111,7 @@ type KanbanTimelineViewProps = {
   onUpdatePeriod: (
     id: string,
     startDate: string,
-    endDate: string | null
+    endDate: string | null,
   ) => Promise<void>;
   onRowClick: (pu: ProductionUnit) => void;
 };
@@ -105,12 +122,17 @@ export function KanbanTimelineView({
   onUpdatePeriod,
   onRowClick,
 }: KanbanTimelineViewProps): React.ReactElement {
-  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState(() =>
+    new Date().getFullYear(),
+  );
   const [selectedCompany, setSelectedCompany] = useState("");
   const [editingUnit, setEditingUnit] = useState<EditingState | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const todayPos = useMemo(() => getTodayPosition(selectedYear), [selectedYear]);
+  const todayPos = useMemo(
+    () => getTodayPosition(selectedYear),
+    [selectedYear],
+  );
 
   const unitsInYear = useMemo(() => {
     const yearStart = new Date(selectedYear, 0, 1);
@@ -143,7 +165,7 @@ export function KanbanTimelineView({
       await onUpdatePeriod(
         editingUnit.id,
         editingUnit.startDate,
-        editingUnit.endDate || null
+        editingUnit.endDate || null,
       );
       setEditingUnit(null);
     } finally {
@@ -266,7 +288,11 @@ function TimelineRow({
   onRowClick,
 }: TimelineRowProps): React.ReactElement {
   const puData = pu.productionUnit;
-  const { left, width } = getBarPosition(puData.startDate, puData.endDate, year);
+  const { left, width } = getBarPosition(
+    puData.startDate,
+    puData.endDate,
+    year,
+  );
   const barColor = getBarColor(puData.cropName || "default");
   const isEditingThis = editingUnit?.id === puData.id;
 
@@ -323,10 +349,14 @@ function TimelineRow({
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs space-y-0.5">
               <p className="font-semibold">{puData.name}</p>
-              <p>{puData.cropName} · {pu.companyName}</p>
+              <p>
+                {puData.cropName} · {pu.companyName}
+              </p>
               <p>
                 {formatDateDDMMYYYY(puData.startDate)} →{" "}
-                {puData.endDate ? formatDateDDMMYYYY(puData.endDate) : "In corso"}
+                {puData.endDate
+                  ? formatDateDDMMYYYY(puData.endDate)
+                  : "In corso"}
               </p>
               {puData.areaHa > 0 && <p>{puData.areaHa} Ha</p>}
             </TooltipContent>
@@ -338,7 +368,9 @@ function TimelineRow({
       <div className="w-10 min-w-10 shrink-0 flex justify-center">
         <Popover
           open={isEditingThis}
-          onOpenChange={(open) => { if (!open) onEditChange(null); }}
+          onOpenChange={(open) => {
+            if (!open) onEditChange(null);
+          }}
         >
           <PopoverTrigger asChild>
             <Button
@@ -364,7 +396,9 @@ function TimelineRow({
                   value={editingUnit?.startDate ?? ""}
                   onChange={(e) =>
                     onEditChange(
-                      editingUnit ? { ...editingUnit, startDate: e.target.value } : null
+                      editingUnit
+                        ? { ...editingUnit, startDate: e.target.value }
+                        : null,
                     )
                   }
                   className="mt-1 h-8 text-sm"
@@ -377,7 +411,9 @@ function TimelineRow({
                   value={editingUnit?.endDate ?? ""}
                   onChange={(e) =>
                     onEditChange(
-                      editingUnit ? { ...editingUnit, endDate: e.target.value } : null
+                      editingUnit
+                        ? { ...editingUnit, endDate: e.target.value }
+                        : null,
                     )
                   }
                   className="mt-1 h-8 text-sm"

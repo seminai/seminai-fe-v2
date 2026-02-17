@@ -91,7 +91,7 @@ export default function ProductStockFields({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Prezzo</Label>
+          <Label>{stockData.type === "IN" ? "Prezzo acquisto" : "Prezzo vendita"}</Label>
           <Input
             type="number"
             min="0"
@@ -140,13 +140,23 @@ export default function ProductStockFields({
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label>Codice fattura</Label>
-        <Input
-          value={stockData.invoiceCode}
-          onChange={(e) => onStockChange("invoiceCode", e.target.value)}
-          placeholder="Es. FATT-001"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Codice fattura</Label>
+          <Input
+            value={stockData.invoiceCode}
+            onChange={(e) => onStockChange("invoiceCode", e.target.value)}
+            placeholder="Es. FATT-001"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Scadenza fattura</Label>
+          <Input
+            type="date"
+            value={stockData.invoiceDueDate}
+            onChange={(e) => onStockChange("invoiceDueDate", e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

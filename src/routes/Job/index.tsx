@@ -3730,7 +3730,7 @@ export default function JobPage() {
   );
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       <PageHeader title="Verifica Operazioni" className="hidden md:block">
         {!isMobile && viewMode === "all" && (
           <div className="flex items-center justify-end gap-4 flex-wrap">

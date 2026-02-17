@@ -24,6 +24,7 @@ export type StockEntry = {
   ddtDate?: string | null;
   invoiceCode?: string | null;
   invoiceDate?: string | null;
+  invoiceDueDate?: string | null;
   job: {
     id: string;
     isVerified: boolean;
@@ -115,6 +116,7 @@ export type CreateProductPayload = {
     ddtCode?: string;
     invoiceDate?: string;
     invoiceCode?: string;
+    invoiceDueDate?: string;
     companySupplierName?: string;
     vatNumberSupplier?: string;
   };
@@ -187,6 +189,7 @@ export type InvoiceProduct = {
   supplierVat?: string | null;
   invoiceNumber?: string | null;
   invoiceDate?: string | null;
+  invoiceDueDate?: string | null;
   unitPrice?: number | null;
   totalPrice?: number | null;
 };
@@ -213,6 +216,7 @@ export type BulkProductStockPayload = {
   vatNumberSupplier?: string;
   invoiceCode?: string;
   invoiceDate?: string;
+  invoiceDueDate?: string;
 };
 
 export type BulkProductPayload = {
@@ -295,6 +299,7 @@ export type ImportFromCsvExcelPreviewProduct = {
     ddtDate?: string | null;
     invoiceCode?: string | null;
     invoiceDate?: string | null;
+    invoiceDueDate?: string | null;
     companySupplierName?: string | null;
     addressSupplier?: string | null;
     vatNumberSupplier?: string | null;

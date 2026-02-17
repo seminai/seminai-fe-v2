@@ -21,6 +21,7 @@ export type ProductImportItem = {
   ddtDate?: string | null;
   invoiceCode?: string | null;
   invoiceDate?: string | null;
+  invoiceDueDate?: string | null;
   supplierName?: string | null;
   supplierVat?: string | null;
   addressSupplier?: string | null;

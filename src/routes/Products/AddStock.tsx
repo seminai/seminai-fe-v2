@@ -39,6 +39,7 @@ interface AddStockState {
   jobId: string;
   ddtCode: string;
   invoiceCode: string;
+  invoiceDueDate: string;
   supplierName: string;
   supplierAddress: string;
   supplierVat: string;
@@ -103,6 +104,7 @@ class AddStock extends Component<AddStockProps, AddStockState> {
     jobId: "",
     ddtCode: "",
     invoiceCode: "",
+    invoiceDueDate: "",
     supplierName: "",
     supplierAddress: "",
     supplierVat: "",
@@ -170,6 +172,12 @@ class AddStock extends Component<AddStockProps, AddStockState> {
     this.setState({ invoiceCode: event.target.value });
   };
 
+  private handleInvoiceDueDateChange = (
+    event: ChangeEvent<HTMLInputElement>
+  ): void => {
+    this.setState({ invoiceDueDate: event.target.value });
+  };
+
   private handleSupplierNameChange = (
     event: ChangeEvent<HTMLInputElement>
   ): void => {
@@ -229,6 +237,9 @@ class AddStock extends Component<AddStockProps, AddStockState> {
       }
       if (this.state.invoiceCode) {
         payload.invoiceCode = this.state.invoiceCode;
+      }
+      if (this.state.invoiceDueDate) {
+        payload.invoiceDueDate = `${this.state.invoiceDueDate}T12:00:00.000Z`;
       }
       if (this.state.supplierName) {
         payload.companySupplierName = this.state.supplierName;
@@ -335,7 +346,9 @@ class AddStock extends Component<AddStockProps, AddStockState> {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="stock-price">Prezzo Unitario</Label>
+                    <Label htmlFor="stock-price">
+                      {this.state.type === "IN" ? "Prezzo acquisto" : "Prezzo vendita"}
+                    </Label>
                     <Input
                       id="stock-price"
                       type="number"
@@ -394,6 +407,16 @@ class AddStock extends Component<AddStockProps, AddStockState> {
                       placeholder="INV-001"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="stock-invoice-due-date">Scadenza Fattura</Label>
+                  <Input
+                    id="stock-invoice-due-date"
+                    type="date"
+                    value={this.state.invoiceDueDate}
+                    onChange={this.handleInvoiceDueDateChange}
+                  />
                 </div>
               </div>
 

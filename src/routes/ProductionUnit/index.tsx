@@ -117,7 +117,7 @@ class CropCatalog {
     this.byCode = new Map(items.map((item) => [item.code, item]));
     this.speciesOptions = this.buildOptions(items.map((item) => item.species));
     this.cropTypeOptions = this.buildOptions(
-      items.map((item) => item.cropType)
+      items.map((item) => item.cropType),
     );
     this.codeToLabel = new Map(
       items.map((item) => [
@@ -126,22 +126,22 @@ class CropCatalog {
           label: `${item.species} • ${item.cropType} (${item.code})`,
           value: item.code,
         },
-      ])
+      ]),
     );
     this.varietyOptions = Array.from(this.codeToLabel.values()).sort((a, b) =>
-      a.label.localeCompare(b.label)
+      a.label.localeCompare(b.label),
     );
   }
 
   private buildOptions(
     values: string[],
-    mapFn?: (value: string) => { label: string; value: string }
+    mapFn?: (value: string) => { label: string; value: string },
   ): Array<{ label: string; value: string }> {
     const unique = Array.from(new Set(values)).sort((a, b) =>
-      a.localeCompare(b)
+      a.localeCompare(b),
     );
     return unique.map((value) =>
-      mapFn ? mapFn(value) : { label: value, value }
+      mapFn ? mapFn(value) : { label: value, value },
     );
   }
 
@@ -171,7 +171,7 @@ class CropCatalog {
 
   public resolve(
     rowData: Record<string, unknown>,
-    overrides: Partial<CropSelection>
+    overrides: Partial<CropSelection>,
   ): CropSelection | null {
     const current: Partial<CropSelection> = {
       species:
@@ -197,13 +197,13 @@ class CropCatalog {
 
     if (request.species) {
       candidates = candidates.filter(
-        (item) => item.species === request.species
+        (item) => item.species === request.species,
       );
     }
 
     if (request.cropType) {
       candidates = candidates.filter(
-        (item) => item.cropType === request.cropType
+        (item) => item.cropType === request.cropType,
       );
     }
 
@@ -213,7 +213,7 @@ class CropCatalog {
 
     if (request.code) {
       const candidateByCode = candidates.find(
-        (item) => item.code === request.code
+        (item) => item.code === request.code,
       );
       if (candidateByCode) {
         return this.toSelection(candidateByCode);
@@ -232,10 +232,10 @@ class CropCatalog {
 
   public buildSelection(
     rowData: Record<string, unknown>,
-    overrides: Partial<CropSelection>
+    overrides: Partial<CropSelection>,
   ): CropSelection {
     const shouldClear = Object.values(overrides).some(
-      (value) => typeof value === "string" && value.length === 0
+      (value) => typeof value === "string" && value.length === 0,
     );
 
     if (shouldClear) {
@@ -253,20 +253,20 @@ class CropCatalog {
         overrides.species !== undefined
           ? String(overrides.species)
           : typeof rowData.cropName === "string"
-          ? rowData.cropName
-          : "",
+            ? rowData.cropName
+            : "",
       cropType:
         overrides.cropType !== undefined
           ? String(overrides.cropType)
           : typeof rowData.cropType === "string"
-          ? rowData.cropType
-          : "",
+            ? rowData.cropType
+            : "",
       code:
         overrides.code !== undefined
           ? String(overrides.code)
           : typeof rowData.variety === "string"
-          ? rowData.variety
-          : "",
+            ? rowData.variety
+            : "",
     };
   }
 }
@@ -282,7 +282,7 @@ class CompanyDirectory {
 
   constructor(companies: Company[], fields: CompanyField[]) {
     this.companyNameById = new Map(
-      companies.map((company) => [company.id, company.name])
+      companies.map((company) => [company.id, company.name]),
     );
     this.companyOptions = companies
       .map((company) => ({
@@ -305,8 +305,8 @@ class CompanyDirectory {
       options.sort((first, second) =>
         first.label.localeCompare(second.label, "it", {
           sensitivity: "base",
-        })
-      )
+        }),
+      ),
     );
   }
 
@@ -319,7 +319,7 @@ class CompanyDirectory {
       sauHa: field.sauHa ?? 0,
       gisHa: field.gisHa,
       areaHaOnField:
-        typeof areaHaValue === "number" ? areaHaValue : field.sauHa ?? 0,
+        typeof areaHaValue === "number" ? areaHaValue : (field.sauHa ?? 0),
     };
   }
 
@@ -335,7 +335,7 @@ class CompanyDirectory {
   }
 
   public getFieldsOptions(
-    companyId: string | undefined
+    companyId: string | undefined,
   ): Array<{ label: string; value: string }> {
     if (!companyId) {
       return [];
@@ -429,14 +429,14 @@ function FieldsAllocationSection({
   // Trova i campi disponibili per la company dell'unità produttiva
   const availableFieldsForCompany = useMemo(() => {
     const companyData = availableCompanies.find(
-      (c) => c.companyId === companyId
+      (c) => c.companyId === companyId,
     );
     if (!companyData) return [];
 
     // Filtra i campi già allocati
     const allocatedFieldIds = new Set(allocations.map((a) => a.fieldId));
     return companyData.fields.filter(
-      (f) => !allocatedFieldIds.has(f.id) && f.areaAvailable > 0
+      (f) => !allocatedFieldIds.has(f.id) && f.areaAvailable > 0,
     );
   }, [availableCompanies, companyId, allocations]);
 
@@ -460,7 +460,7 @@ function FieldsAllocationSection({
         areaAvailable: field.sauHa,
         areaHa: field.areaHaOnField,
         isNew: false,
-      })
+      }),
     );
     setAllocations(initialAllocations);
   }, [currentFields]);
@@ -469,7 +469,7 @@ function FieldsAllocationSection({
     if (!selectedFieldToAdd) return;
 
     const fieldData = availableFieldsForCompany.find(
-      (f) => f.id === selectedFieldToAdd
+      (f) => f.id === selectedFieldToAdd,
     );
     if (!fieldData) return;
 
@@ -502,7 +502,7 @@ function FieldsAllocationSection({
           return { ...a, areaHa: validArea };
         }
         return a;
-      })
+      }),
     );
   };
 
@@ -537,7 +537,7 @@ function FieldsAllocationSection({
       toast.error(
         error instanceof Error
           ? error.message
-          : "Errore nel salvataggio delle allocazioni"
+          : "Errore nel salvataggio delle allocazioni",
       );
     } finally {
       setIsSaving(false);
@@ -647,7 +647,7 @@ function FieldsAllocationSection({
                         onChange={(e) =>
                           handleAreaChange(
                             allocation.id,
-                            parseFloat(e.target.value) || 0
+                            parseFloat(e.target.value) || 0,
                           )
                         }
                         className="w-28 h-8"
@@ -730,7 +730,7 @@ function ProductionUnitCyclesSection({
 }: ProductionUnitCyclesSectionProps): React.ReactElement {
   const [editingCycleId, setEditingCycleId] = useState<string | null>(null);
   const [cycleForm, setCycleForm] = useState<CycleFormState>(
-    buildEmptyCycleFormState()
+    buildEmptyCycleFormState(),
   );
 
   const {
@@ -785,14 +785,14 @@ function ProductionUnitCyclesSection({
       toast.error(
         mutationError instanceof Error
           ? mutationError.message
-          : "Errore nell'aggiornamento del ciclo"
+          : "Errore nell'aggiornamento del ciclo",
       );
     }
   };
 
   const handleDelete = async (cycleId: string) => {
     const confirmed = window.confirm(
-      "Sei sicuro di voler eliminare questo ciclo?"
+      "Sei sicuro di voler eliminare questo ciclo?",
     );
     if (!confirmed) return;
 
@@ -806,7 +806,7 @@ function ProductionUnitCyclesSection({
       toast.error(
         mutationError instanceof Error
           ? mutationError.message
-          : "Errore nell'eliminazione del ciclo"
+          : "Errore nell'eliminazione del ciclo",
       );
     }
   };
@@ -859,7 +859,7 @@ function ProductionUnitCyclesSection({
                   <Badge
                     variant="secondary"
                     className={getStatusStyle(
-                      (cycle as { status?: string }).status
+                      (cycle as { status?: string }).status,
                     )}
                   >
                     {(cycle as { status?: string }).status ?? "N/D"}
@@ -988,7 +988,7 @@ function ProductionUnitCyclesSection({
 
 const buildProductionUnitColumns = (
   catalog: CropCatalog | null,
-  directory: CompanyDirectory | null
+  directory: CompanyDirectory | null,
 ): EditableColumn[] => {
   const speciesOptions = catalog?.getSpeciesOptions() ?? [];
   const cropTypeOptions = catalog?.getCropTypeOptions() ?? [];
@@ -1208,7 +1208,7 @@ const buildProductionUnitColumns = (
           fieldSelection: sanitizedValue,
           fields: fieldInfo
             ? [fieldInfo]
-            : (rowData.fields as FieldInfo[]) ?? [],
+            : ((rowData.fields as FieldInfo[]) ?? []),
         };
       },
     },
@@ -1243,7 +1243,7 @@ export default function ProductionUnit(): React.ReactElement {
   const [isDeleting, setIsDeleting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<ProductionUnitUpdateInput>(
-    {}
+    {},
   );
   const [isSaving, setIsSaving] = useState(false);
   const [cropCatalog, setCropCatalog] = useState<CropCatalog | null>(null);
@@ -1263,7 +1263,7 @@ export default function ProductionUnit(): React.ReactElement {
 
   const companyOptions = useMemo(
     () => companyDirectory?.getCompanyOptions() ?? [],
-    [companyDirectory]
+    [companyDirectory],
   );
 
   useEffect(() => {
@@ -1283,7 +1283,7 @@ export default function ProductionUnit(): React.ReactElement {
         setCatalogError(
           err instanceof Error
             ? err
-            : new Error("Errore nel caricamento delle varietà")
+            : new Error("Errore nel caricamento delle varietà"),
         );
       } finally {
         if (isMounted) {
@@ -1334,9 +1334,8 @@ export default function ProductionUnit(): React.ReactElement {
   const handleDelete = async (id: string) => {
     setIsDeleting(true);
     try {
-      const { productionUnitApiService } = await import(
-        "@/api/production-unit"
-      );
+      const { productionUnitApiService } =
+        await import("@/api/production-unit");
       await productionUnitApiService.delete(id);
       toast.success("Unità produttiva eliminata con successo");
       refetch();
@@ -1346,7 +1345,7 @@ export default function ProductionUnit(): React.ReactElement {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Errore nell'eliminazione dell'unità produttiva"
+          : "Errore nell'eliminazione dell'unità produttiva",
       );
     } finally {
       setIsDeleting(false);
@@ -1384,9 +1383,8 @@ export default function ProductionUnit(): React.ReactElement {
 
     setIsSaving(true);
     try {
-      const { productionUnitApiService } = await import(
-        "@/api/production-unit"
-      );
+      const { productionUnitApiService } =
+        await import("@/api/production-unit");
       await productionUnitApiService.update(editingId, editFormData);
       toast.success("Unità produttiva aggiornata con successo");
       refetch();
@@ -1397,7 +1395,7 @@ export default function ProductionUnit(): React.ReactElement {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Errore nell'aggiornamento dell'unità produttiva"
+          : "Errore nell'aggiornamento dell'unità produttiva",
       );
     } finally {
       setIsSaving(false);
@@ -1423,7 +1421,7 @@ export default function ProductionUnit(): React.ReactElement {
 
       if (!cropCatalog) {
         const shouldClear = Object.values(normalized).some(
-          (value) => value === ""
+          (value) => value === "",
         );
 
         if (shouldClear) {
@@ -1455,7 +1453,7 @@ export default function ProductionUnit(): React.ReactElement {
           cropType: prev.cropType ?? "",
           variety: prev.variety ?? "",
         },
-        normalized
+        normalized,
       );
 
       return {
@@ -1477,9 +1475,8 @@ export default function ProductionUnit(): React.ReactElement {
 
     setIsSaving(true);
     try {
-      const { productionUnitApiService } = await import(
-        "@/api/production-unit"
-      );
+      const { productionUnitApiService } =
+        await import("@/api/production-unit");
 
       // Converti i dati della tabella in formato API
       const productionUnitsToUpdate = payload.updated.map((row) => {
@@ -1523,7 +1520,7 @@ export default function ProductionUnit(): React.ReactElement {
       });
 
       toast.success(
-        `${productionUnitsToUpdate.length} unità produttive aggiornate con successo`
+        `${productionUnitsToUpdate.length} unità produttive aggiornate con successo`,
       );
       refetch();
     } catch (error) {
@@ -1531,7 +1528,7 @@ export default function ProductionUnit(): React.ReactElement {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Errore nell'aggiornamento delle unità produttive"
+          : "Errore nell'aggiornamento delle unità produttive",
       );
     } finally {
       setIsSaving(false);
@@ -1539,7 +1536,7 @@ export default function ProductionUnit(): React.ReactElement {
   };
 
   const handleDeleteSelected = async (
-    removed: Array<Record<string, unknown>>
+    removed: Array<Record<string, unknown>>,
   ) => {
     if (removed.length === 0) {
       return;
@@ -1547,9 +1544,8 @@ export default function ProductionUnit(): React.ReactElement {
 
     setIsDeleting(true);
     try {
-      const { productionUnitApiService } = await import(
-        "@/api/production-unit"
-      );
+      const { productionUnitApiService } =
+        await import("@/api/production-unit");
 
       const ids = removed
         .map((row) => {
@@ -1576,7 +1572,7 @@ export default function ProductionUnit(): React.ReactElement {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Errore nell'eliminazione delle unità produttive"
+          : "Errore nell'eliminazione delle unità produttive",
       );
     } finally {
       setIsDeleting(false);
@@ -1586,13 +1582,11 @@ export default function ProductionUnit(): React.ReactElement {
   const handleUpdatePeriod = async (
     id: string,
     startDate: string,
-    endDate: string | null
+    endDate: string | null,
   ) => {
     try {
       await productionUnitApiService.update(id, {
-        startDate: startDate
-          ? new Date(startDate).toISOString()
-          : undefined,
+        startDate: startDate ? new Date(startDate).toISOString() : undefined,
         endDate: endDate ? new Date(endDate).toISOString() : null,
       });
       toast.success("Periodo aggiornato con successo");
@@ -1602,7 +1596,7 @@ export default function ProductionUnit(): React.ReactElement {
       toast.error(
         err instanceof Error
           ? err.message
-          : "Errore nell'aggiornamento del periodo"
+          : "Errore nell'aggiornamento del periodo",
       );
       throw err;
     }
@@ -1981,7 +1975,7 @@ export default function ProductionUnit(): React.ReactElement {
 
   const columns = useMemo(
     () => buildProductionUnitColumns(cropCatalog, companyDirectory),
-    [cropCatalog, companyDirectory]
+    [cropCatalog, companyDirectory],
   );
 
   return (

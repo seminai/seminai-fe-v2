@@ -451,7 +451,7 @@ export function AllJobsView({
                   >
                     <Button
                       variant={
-                        displayMode === "table" ? "secondary" : "ghost"
+                        displayMode === "table" ? "default" : "ghost"
                       }
                       size="sm"
                       onClick={() => onDisplayModeChange("table")}
@@ -462,7 +462,7 @@ export function AllJobsView({
                     </Button>
                     <Button
                       variant={
-                        displayMode === "cards" ? "secondary" : "ghost"
+                        displayMode === "cards" ? "default" : "ghost"
                       }
                       size="sm"
                       onClick={() => onDisplayModeChange("cards")}

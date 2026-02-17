@@ -315,7 +315,7 @@ export default function NewJobManual() {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       <PageHeader
         title="Nuova operazione manuale"
         className="border-b border-border/50"

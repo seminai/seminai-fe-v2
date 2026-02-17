@@ -23,6 +23,7 @@ export interface ProductImportPreviewRow extends Record<string, unknown> {
   supplierVat?: string;
   addressSupplier?: string;
   invoiceCode?: string;
+  invoiceDueDate?: string;
 }
 
 class ImportPreviewDefaults {
@@ -55,6 +56,7 @@ export class ProductImportRowBuilder {
       supplierVat: item.supplierVat ?? undefined,
       addressSupplier: item.addressSupplier ?? undefined,
       invoiceCode: item.invoiceCode ?? undefined,
+      invoiceDueDate: item.invoiceDueDate ?? undefined,
     }));
   }
 
@@ -80,6 +82,7 @@ export class ProductImportRowBuilder {
         companySupplierName: row.supplierName || undefined,
         addressSupplier: row.addressSupplier || undefined,
         vatNumberSupplier: row.supplierVat || undefined,
+        invoiceDueDate: row.invoiceDueDate || undefined,
       },
     }));
   }
@@ -165,6 +168,38 @@ export class ProductImportColumnsFactory {
           } catch {
             return <span>{String(value)}</span>;
           }
+        },
+      },
+      {
+        id: "invoiceDueDate",
+        title: "Scadenza Fattura",
+        type: "text",
+        width: "130px",
+        render: (value): ReactNode => {
+          if (!value || value === "" || value === null || value === undefined) {
+            return <span className="text-muted-foreground">-</span>;
+          }
+          try {
+            const date = new Date(value as string);
+            if (isNaN(date.getTime())) {
+              return <span>{String(value)}</span>;
+            }
+            return <span>{date.toLocaleDateString("it-IT")}</span>;
+          } catch {
+            return <span>{String(value)}</span>;
+          }
+        },
+      },
+      {
+        id: "price",
+        title: "Prezzo",
+        type: "number",
+        width: "100px",
+        render: (value): ReactNode => {
+          if (value === null || value === undefined || value === "") {
+            return <span className="text-muted-foreground">-</span>;
+          }
+          return <span>{Number(value).toFixed(2)}</span>;
         },
       },
       {

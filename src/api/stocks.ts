@@ -23,6 +23,7 @@ export type CreateStockPayload = {
   ddtDate?: string;
   invoiceCode?: string;
   invoiceDate?: string;
+  invoiceDueDate?: string;
   companySupplierName?: string;
   addressSupplier?: string;
   vatNumberSupplier?: string;
@@ -44,6 +45,7 @@ export type UpdateStockPayload = {
   ddtDate?: string | null;
   invoiceCode?: string | null;
   invoiceDate?: string | null;
+  invoiceDueDate?: string | null;
   companySupplierName?: string | null;
   addressSupplier?: string | null;
   vatNumberSupplier?: string | null;

@@ -1162,10 +1162,10 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset className="overflow-x-hidden">
+      <SidebarInset className="overflow-hidden max-h-svh">
         <MobileHeader />
-        <div className="min-h-svh w-full flex flex-col overflow-x-hidden pb-24 lg:pb-0 md:pt-0 pt-14">
-          <main className="flex-1 w-full">{children}</main>
+        <div className="h-full w-full flex flex-col overflow-hidden pb-24 lg:pb-0 md:pt-0 pt-14">
+          <main className="flex-1 min-h-0 w-full overflow-auto">{children}</main>
           <MobileBottomBar
             items={items}
             isMobile={isMobile}
