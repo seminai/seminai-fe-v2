@@ -118,7 +118,10 @@ export default function FileImportSection({
   const [panelImporting, setPanelImporting] = useState(false);
 
   // File preview state
-  const [uploadedFile, setUploadedFile] = useState<CompanyFile | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<CompanyFile[]>([]);
+  const [selectedPreviewFileId, setSelectedPreviewFileId] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     onLoadingChange?.(isProcessing || panelImporting);
@@ -163,14 +166,16 @@ export default function FileImportSection({
   const handleCompanyChange = useCallback((value: string) => {
     setCompanyId(value);
     setWarehouseId("");
-    setUploadedFile(null);
+    setUploadedFiles([]);
+    setSelectedPreviewFileId(null);
     setExtractedProducts([]);
     setPreviewErrors([]);
   }, []);
 
   const handleTabChange = useCallback((value: string) => {
     setActiveTab(value as "csv" | "ddt" | "invoice");
-    setUploadedFile(null);
+    setUploadedFiles([]);
+    setSelectedPreviewFileId(null);
     setExtractedProducts([]);
     setPreviewErrors([]);
   }, []);
@@ -194,10 +199,19 @@ export default function FileImportSection({
     [companyId],
   );
 
+  const uploadFilesToCompany = useCallback(
+    async (files: File[]): Promise<CompanyFile[]> => {
+      const uploaded = await Promise.all(files.map((file) => uploadFileToCompany(file)));
+      return uploaded.filter((file): file is CompanyFile => file !== null);
+    },
+    [uploadFileToCompany],
+  );
+
   const handleCsvFilesSelected = useCallback(
     async (files: File[]) => {
       if (files.length === 0 || !companyId) {
-        setUploadedFile(null);
+        setUploadedFiles([]);
+        setSelectedPreviewFileId(null);
         setExtractedProducts([]);
         return;
       }
@@ -217,7 +231,13 @@ export default function FileImportSection({
           }),
         ]);
 
-        if (savedFile) setUploadedFile(savedFile);
+        if (savedFile) {
+          setUploadedFiles([savedFile]);
+          setSelectedPreviewFileId(savedFile.id);
+        } else {
+          setUploadedFiles([]);
+          setSelectedPreviewFileId(null);
+        }
 
         const products = new CsvExcelPreviewMapper().map(
           previewResponse.data?.products ?? [],
@@ -250,7 +270,8 @@ export default function FileImportSection({
   const handleDdtFilesSelected = useCallback(
     async (files: File[]) => {
       if (files.length === 0 || !companyId) {
-        setUploadedFile(null);
+        setUploadedFiles([]);
+        setSelectedPreviewFileId(null);
         setExtractedProducts([]);
         return;
       }
@@ -259,13 +280,17 @@ export default function FileImportSection({
       setPreviewErrors([]);
 
       try {
-        // Upload first file for preview + extract products in parallel
-        const [savedFile, ddtResponse] = await Promise.all([
-          uploadFileToCompany(files[0]),
+        // Upload all files for preview + extract products in parallel
+        const [savedFiles, ddtResponse] = await Promise.all([
+          uploadFilesToCompany(files),
           productsApiService.importFromDdt(files),
         ]);
 
-        if (savedFile) setUploadedFile(savedFile);
+        setUploadedFiles(savedFiles);
+        setSelectedPreviewFileId((prev) => {
+          if (prev && savedFiles.some((f) => f.id === prev)) return prev;
+          return savedFiles[0]?.id ?? null;
+        });
 
         if (!ddtResponse.data) {
           throw new Error("Risposta vuota dal servizio DDT");
@@ -302,13 +327,14 @@ export default function FileImportSection({
         setIsProcessing(false);
       }
     },
-    [companyId, uploadFileToCompany],
+    [companyId, uploadFilesToCompany],
   );
 
   const handleInvoiceFilesSelected = useCallback(
     async (files: File[]) => {
       if (files.length === 0 || !companyId) {
-        setUploadedFile(null);
+        setUploadedFiles([]);
+        setSelectedPreviewFileId(null);
         setExtractedProducts([]);
         return;
       }
@@ -317,13 +343,17 @@ export default function FileImportSection({
       setPreviewErrors([]);
 
       try {
-        // Upload first file for preview + extract products in parallel
-        const [savedFile, invoiceResponse] = await Promise.all([
-          uploadFileToCompany(files[0]),
+        // Upload all files for preview + extract products in parallel
+        const [savedFiles, invoiceResponse] = await Promise.all([
+          uploadFilesToCompany(files),
           productsApiService.importFromInvoice(files),
         ]);
 
-        if (savedFile) setUploadedFile(savedFile);
+        setUploadedFiles(savedFiles);
+        setSelectedPreviewFileId((prev) => {
+          if (prev && savedFiles.some((f) => f.id === prev)) return prev;
+          return savedFiles[0]?.id ?? null;
+        });
 
         if (invoiceResponse.status !== "success" || !invoiceResponse.data) {
           throw new Error("Errore nell'estrazione dei dati dalla fattura");
@@ -350,11 +380,19 @@ export default function FileImportSection({
         setIsProcessing(false);
       }
     },
-    [companyId, uploadFileToCompany],
+    [companyId, uploadFilesToCompany],
   );
 
   const hasExtractedProducts = extractedProducts.length > 0;
   const isExcelImport = importSource === "excel";
+  const selectedPreviewFile = useMemo(() => {
+    if (uploadedFiles.length === 0) return null;
+    if (!selectedPreviewFileId) return uploadedFiles[0];
+    return (
+      uploadedFiles.find((file) => file.id === selectedPreviewFileId) ??
+      uploadedFiles[0]
+    );
+  }, [uploadedFiles, selectedPreviewFileId]);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -460,10 +498,29 @@ export default function FileImportSection({
             <div className="hidden lg:flex flex-1 min-h-0">
               {!isExcelImport && (
                 <div className="w-1/2 border-r flex flex-col min-h-0">
+                  {uploadedFiles.length > 1 && (
+                    <div className="px-3 py-2 border-b bg-gray-50 flex items-center gap-2 overflow-x-auto">
+                      {uploadedFiles.map((file) => (
+                        <Button
+                          key={file.id}
+                          variant={
+                            selectedPreviewFile?.id === file.id
+                              ? "default"
+                              : "outline"
+                          }
+                          size="sm"
+                          className="h-7 text-xs whitespace-nowrap"
+                          onClick={() => setSelectedPreviewFileId(file.id)}
+                        >
+                          {file.name}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                   <FilePreviewPanel
-                    fileUrl={uploadedFile?.url ?? null}
-                    fileName={uploadedFile?.name ?? null}
-                    mimeType={uploadedFile?.metadata.mimeType ?? null}
+                    fileUrl={selectedPreviewFile?.url ?? null}
+                    fileName={selectedPreviewFile?.name ?? null}
+                    mimeType={selectedPreviewFile?.metadata.mimeType ?? null}
                   />
                 </div>
               )}
@@ -498,7 +555,7 @@ export default function FileImportSection({
                 hideFooter={hideImportButton}
                 onImportingChange={setPanelImporting}
                 mobilePreviewButton={
-                  !isExcelImport && uploadedFile ? (
+                  !isExcelImport && selectedPreviewFile ? (
                     <Button
                       variant="outline"
                       size="sm"
@@ -519,14 +576,14 @@ export default function FileImportSection({
               <SheetContent side="bottom" className="h-[85vh] p-0">
                 <SheetHeader className="px-4 py-3 border-b">
                   <SheetTitle className="text-sm">
-                    {uploadedFile?.name ?? "Anteprima documento"}
+                    {selectedPreviewFile?.name ?? "Anteprima documento"}
                   </SheetTitle>
                 </SheetHeader>
                 <div className="flex-1 h-[calc(85vh-3.5rem)]">
                   <FilePreviewPanel
-                    fileUrl={uploadedFile?.url ?? null}
+                    fileUrl={selectedPreviewFile?.url ?? null}
                     fileName={null}
-                    mimeType={uploadedFile?.metadata.mimeType ?? null}
+                    mimeType={selectedPreviewFile?.metadata.mimeType ?? null}
                   />
                 </div>
               </SheetContent>
