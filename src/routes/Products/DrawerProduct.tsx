@@ -15,6 +15,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -415,6 +422,9 @@ function DrawerProduct({
   );
   const [editingStock, setEditingStock] = useState<StockEntry | null>(null);
   const [stockEditForm, setStockEditForm] = useState<{
+    quantity: string;
+    unitOfMeasureQuantity: string;
+    type: "IN" | "OUT";
     ddtDate: string;
     ddtCode: string;
     invoiceCode: string;
@@ -422,7 +432,18 @@ function DrawerProduct({
     price: string;
     unitOfMeasurePrice: string;
     date: string;
-  }>({ ddtDate: "", ddtCode: "", invoiceCode: "", invoiceDueDate: "", price: "", unitOfMeasurePrice: "EUR", date: "" });
+  }>({
+    quantity: "",
+    unitOfMeasureQuantity: "",
+    type: "IN",
+    ddtDate: "",
+    ddtCode: "",
+    invoiceCode: "",
+    invoiceDueDate: "",
+    price: "",
+    unitOfMeasurePrice: "EUR",
+    date: "",
+  });
   const [isUpdatingStock, setIsUpdatingStock] = useState(false);
 
   const {
@@ -517,6 +538,9 @@ function DrawerProduct({
   const openStockEdit = (stock: StockEntry) => {
     setEditingStock(stock);
     setStockEditForm({
+      quantity: stock.quantity != null ? String(stock.quantity) : "",
+      unitOfMeasureQuantity: stock.unitOfMeasureQuantity ?? "",
+      type: stock.type ?? "IN",
       ddtDate: DateFormatter.toInputValue(stock.ddtDate ?? null),
       ddtCode: stock.ddtCode ?? "",
       invoiceCode: stock.invoiceCode ?? "",
@@ -547,8 +571,12 @@ function DrawerProduct({
     setIsUpdatingStock(true);
     try {
       const priceValue = Number.parseFloat(stockEditForm.price);
+      const quantityValue = Number.parseFloat(stockEditForm.quantity);
       await stocksApiService.update(editingStock.id, {
         companyId,
+        quantity: Number.isFinite(quantityValue) ? quantityValue : undefined,
+        unitOfMeasureQuantity: stockEditForm.unitOfMeasureQuantity?.trim() || undefined,
+        type: stockEditForm.type,
         ddtCode: stockEditForm.ddtCode?.trim() || null,
         ddtDate: toIsoDate(stockEditForm.ddtDate) ?? null,
         invoiceCode: stockEditForm.invoiceCode?.trim() || null,
@@ -784,6 +812,74 @@ function DrawerProduct({
                                 <div className="grid gap-3">
                                   <div className="grid gap-1.5">
                                     <Label
+                                      htmlFor={`edit-type-${stock.id}`}
+                                      className="text-xs"
+                                    >
+                                      Tipologia movimento
+                                    </Label>
+                                    <Select
+                                      value={stockEditForm.type}
+                                      onValueChange={(value: "IN" | "OUT") =>
+                                        setStockEditForm((prev) => ({
+                                          ...prev,
+                                          type: value,
+                                        }))
+                                      }
+                                    >
+                                      <SelectTrigger id={`edit-type-${stock.id}`}>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="IN">Carico (IN)</SelectItem>
+                                        <SelectItem value="OUT">Scarico (OUT)</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid gap-1.5">
+                                      <Label
+                                        htmlFor={`edit-quantity-${stock.id}`}
+                                        className="text-xs"
+                                      >
+                                        Quantità
+                                      </Label>
+                                      <Input
+                                        id={`edit-quantity-${stock.id}`}
+                                        type="number"
+                                        step="any"
+                                        min="0"
+                                        value={stockEditForm.quantity}
+                                        onChange={(e) =>
+                                          setStockEditForm((prev) => ({
+                                            ...prev,
+                                            quantity: e.target.value,
+                                          }))
+                                        }
+                                        placeholder="0"
+                                      />
+                                    </div>
+                                    <div className="grid gap-1.5">
+                                      <Label
+                                        htmlFor={`edit-uom-${stock.id}`}
+                                        className="text-xs"
+                                      >
+                                        Unità di misura
+                                      </Label>
+                                      <Input
+                                        id={`edit-uom-${stock.id}`}
+                                        value={stockEditForm.unitOfMeasureQuantity}
+                                        onChange={(e) =>
+                                          setStockEditForm((prev) => ({
+                                            ...prev,
+                                            unitOfMeasureQuantity: e.target.value,
+                                          }))
+                                        }
+                                        placeholder="es. kg, L"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="grid gap-1.5">
+                                    <Label
                                       htmlFor={`edit-ddt-date-${stock.id}`}
                                       className="text-xs"
                                     >
@@ -864,7 +960,7 @@ function DrawerProduct({
                                         htmlFor={`edit-price-${stock.id}`}
                                         className="text-xs"
                                       >
-                                        {stock.type === "IN" ? "Prezzo acquisto" : "Prezzo vendita"}
+                                        {stockEditForm.type === "IN" ? "Prezzo acquisto" : "Prezzo vendita"}
                                       </Label>
                                       <Input
                                         id={`edit-price-${stock.id}`}
