@@ -103,6 +103,7 @@ interface AllJobsViewProps {
   getRowClassName?: (row: Record<string, unknown>) => string | undefined;
   displayMode: DisplayMode;
   onDisplayModeChange: (mode: DisplayMode) => void;
+  pendingJobId?: string | null;
 }
 
 export function JobIdMultiSelect({
@@ -110,11 +111,13 @@ export function JobIdMultiSelect({
   value,
   onChange,
   isLoading,
+  pendingJobId,
 }: {
   options: JobIdOption[];
   value: string[];
   onChange: (values: string[]) => void;
   isLoading: boolean;
+  pendingJobId?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -152,6 +155,8 @@ export function JobIdMultiSelect({
     }
   };
 
+  const hasPendingSelected = pendingJobId ? value.includes(pendingJobId) : false;
+
   const triggerLabel = useMemo(() => {
     if (selectedLabels.length === 0) {
       return "Seleziona una o più operazioni";
@@ -174,7 +179,12 @@ export function JobIdMultiSelect({
           className="h-9 min-w-[260px] justify-between bg-white"
           disabled={isLoading}
         >
-          <span className="truncate text-left">{triggerLabel}</span>
+          <span className="truncate text-left flex items-center gap-2">
+            {hasPendingSelected && (
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
+            )}
+            {triggerLabel}
+          </span>
           <ChevronsUpDown className="h-4 w-4 ml-2 opacity-60" />
         </Button>
       </PopoverTrigger>
@@ -209,6 +219,7 @@ export function JobIdMultiSelect({
               )}
               {filteredOptions.map((option) => {
                 const isSelected = value.includes(option.value);
+                const isPending = option.value === pendingJobId;
                 return (
                   <button
                     key={option.value}
@@ -232,10 +243,17 @@ export function JobIdMultiSelect({
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-agri-50 border border-agri-100 text-xs font-medium text-slate-800">
                         {option.jobId}
                       </span>
-                      <span className="text-xs text-slate-600">
-                        creata il{" "}
-                        {new Date(option.createdAt).toLocaleDateString("it-IT")}
-                      </span>
+                      {isPending ? (
+                        <span className="flex items-center gap-1.5 text-xs text-amber-600">
+                          <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                          in elaborazione...
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-600">
+                          creata il{" "}
+                          {new Date(option.createdAt).toLocaleDateString("it-IT")}
+                        </span>
+                      )}
                     </div>
                   </button>
                 );
@@ -286,6 +304,7 @@ export function AllJobsView({
   getRowClassName,
   displayMode,
   onDisplayModeChange,
+  pendingJobId,
 }: AllJobsViewProps) {
   const hasError = Boolean(error);
   const errorMessage =
@@ -384,6 +403,7 @@ export function AllJobsView({
                   value={selectedJobIds}
                   onChange={onJobIdsChange}
                   isLoading={isLoading}
+                  pendingJobId={pendingJobId}
                 />
               </div>
             </div>

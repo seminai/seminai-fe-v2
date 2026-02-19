@@ -26,7 +26,7 @@ export interface UseTableStateReturn {
   handleCellChange: (row: InternalRow, col: EditableColumn, value: unknown) => void;
   toggleEditMode: () => void;
   handleCancel: () => void;
-  handleSave: () => Promise<void>;
+  handleSave: () => Promise<string[] | void>;
   addRows: (rowsData: Array<Record<string, unknown>>) => void;
   addInlineRow: (prefill?: Record<string, unknown>) => void;
   // Create drawer methods
@@ -204,10 +204,36 @@ export function useTableState(
     const created = rows.filter((r) => r.isNew);
     const updated = rows.filter((r) => r.isDirty && !r.isNew);
 
-    const invalid = [...created, ...updated].some(
-      (r) => Object.keys(validateRow(r, columns)).length > 0
-    );
-    if (invalid) return;
+    const changedRows = [...created, ...updated];
+    const allErrorColumnIds = new Set<string>();
+    let invalid = false;
+
+    for (const r of changedRows) {
+      const errors = validateRow(r, columns);
+      const errorKeys = Object.keys(errors);
+      if (errorKeys.length > 0) {
+        invalid = true;
+        for (const key of errorKeys) {
+          allErrorColumnIds.add(key);
+        }
+      }
+    }
+
+    if (invalid) {
+      // Mark all error cells as touched so error indicators show
+      setTouched((prev) => {
+        const next = { ...prev };
+        for (const r of changedRows) {
+          const errors = validateRow(r, columns);
+          const errorKeys = Object.keys(errors);
+          if (errorKeys.length > 0) {
+            next[r.id] = { ...(next[r.id] || {}), ...Object.fromEntries(errorKeys.map((k) => [k, true])) };
+          }
+        }
+        return next;
+      });
+      return Array.from(allErrorColumnIds);
+    }
 
     try {
       await onSave({

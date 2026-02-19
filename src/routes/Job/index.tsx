@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useJobGroupsSummary, useJobGroupDetail } from "@/hooks/useJobGroups";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -45,7 +45,6 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   History,
@@ -1531,7 +1530,15 @@ type ViewMode = "all" | "review";
 
 export default function JobPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const userId = useUserId();
+
+  // Pending job state: riceve il jobId dal DosageManager via location.state
+  const pendingJobIdFromNav =
+    (location.state as { pendingJobId?: string } | null)?.pendingJobId ?? null;
+  const [pendingJobId, setPendingJobId] = useState<string | null>(
+    pendingJobIdFromNav,
+  );
   const [viewMode, setViewMode] = useState<ViewMode>("all");
   const [isBulkVerifying, setIsBulkVerifying] = useState<boolean>(false);
   const [historySheetOpen, setHistorySheetOpen] = useState<boolean>(false);
@@ -1579,6 +1586,13 @@ export default function JobPage() {
       setViewMode("all");
     }
   }, [isMobile]);
+
+  // Pulisci il location.state per evitare stato stale al refresh del browser
+  useEffect(() => {
+    if (pendingJobIdFromNav) {
+      window.history.replaceState({}, document.title);
+    }
+  }, [pendingJobIdFromNav]);
 
   // Carica le impostazioni salvate da IndexedDB all'inizializzazione
   useEffect(() => {
@@ -1979,7 +1993,7 @@ export default function JobPage() {
 
   // Rows per la vista "Tutte" ottenuti dal dettaglio del jobId corrente
   const jobIdOptions = useMemo(() => {
-    return sortedAllJobGroups.map((group) => {
+    const options = sortedAllJobGroups.map((group) => {
       const formattedJobId = JobIdFormatter.format(group.jobId);
       return {
         value: group.jobId,
@@ -1990,18 +2004,74 @@ export default function JobPage() {
         createdAt: group.createdAt,
       };
     });
-  }, [sortedAllJobGroups]);
+    // Add pending job as entry if not yet in the groups
+    if (
+      pendingJobId &&
+      !sortedAllJobGroups.find((g) => g.jobId === pendingJobId)
+    ) {
+      const formattedJobId = JobIdFormatter.format(pendingJobId);
+      options.unshift({
+        value: pendingJobId,
+        label: `Operazione ${formattedJobId} (in elaborazione...)`,
+        jobId: formattedJobId,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    return options;
+  }, [sortedAllJobGroups, pendingJobId]);
 
   useEffect(() => {
+    // Non auto-selezionare se stiamo aspettando un job pending dal DosageManager
+    if (pendingJobId) return;
+
     if (jobIdOptions.length > 0 && selectedAllJobIds.length === 0) {
       // seleziona l'ultima per data (lista già ordinata per createdAt desc)
       setSelectedAllJobIds([jobIdOptions[0].value]);
     }
-  }, [jobIdOptions, selectedAllJobIds.length]);
+  }, [jobIdOptions, selectedAllJobIds.length, pendingJobId]);
+
+  // Auto-seleziona il job pending quando appare nella lista dei gruppi
+  useEffect(() => {
+    if (!pendingJobId) return;
+
+    const found = jobGroupsSummary.find(
+      (group) => group.jobId === pendingJobId,
+    );
+    if (found) {
+      setSelectedAllJobIds([pendingJobId]);
+      setPendingJobId(null);
+    }
+  }, [pendingJobId, jobGroupsSummary]);
+
+  // Polling: ricarica i gruppi finché il job pending non appare
+  useEffect(() => {
+    if (!pendingJobId) return;
+
+    const interval = setInterval(() => {
+      refetchGroupsSummary();
+    }, 3000);
+
+    // Timeout di sicurezza: smetti di fare polling dopo 2 minuti
+    const timeout = setTimeout(() => {
+      setPendingJobId(null);
+      toast.info("Il calcolo sta richiedendo più tempo del previsto", {
+        description: "Ricarica la pagina per verificare lo stato.",
+      });
+    }, 120_000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [pendingJobId, refetchGroupsSummary]);
 
   useEffect(() => {
     const fetchSelectedJobs = async () => {
-      if (selectedAllJobIds.length === 0) {
+      // Filter out pending job ID - it doesn't exist in the backend yet
+      const jobIdsToFetch = selectedAllJobIds.filter(
+        (id) => id !== pendingJobId,
+      );
+      if (jobIdsToFetch.length === 0) {
         setAllSelectedJobs([]);
         return;
       }
@@ -2009,7 +2079,7 @@ export default function JobPage() {
       setErrorSelectedJobs(null);
       try {
         const responses = await Promise.all(
-          selectedAllJobIds.map((jobId) =>
+          jobIdsToFetch.map((jobId) =>
             jobsApiService.getGroupDetail(jobId),
           ),
         );
@@ -2023,7 +2093,7 @@ export default function JobPage() {
     };
 
     fetchSelectedJobs();
-  }, [selectedAllJobIds]);
+  }, [selectedAllJobIds, pendingJobId]);
 
   const allGroupRows = useMemo(() => {
     if (!allSelectedJobs || allSelectedJobs.length === 0) return [];
@@ -2045,7 +2115,8 @@ export default function JobPage() {
   }, [selectedAllJobIds]);
 
   const allViewError = jobGroupsSummaryError ?? errorSelectedJobs;
-  const isLoadingAllView = isLoadingGroupsSummary || isLoadingSelectedJobs;
+  const isLoadingAllView =
+    isLoadingGroupsSummary || isLoadingSelectedJobs;
 
   useEffect(() => {
     if (viewMode === "all") {
@@ -3665,6 +3736,7 @@ export default function JobPage() {
       }}
       displayMode={displayMode}
       onDisplayModeChange={setDisplayMode}
+      pendingJobId={pendingJobId}
     />
   );
 
@@ -3747,16 +3819,24 @@ export default function JobPage() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {selectedAllJobIds.length <= 1 && (
+              {allGroupRows.length === 0 ? (
                 <span className="text-xs font-medium text-slate-600 whitespace-nowrap">
-                  Puoi selezionare una o più operazioni
+                  {allGroupRows.length} dosaggi in attesa. Seleziona altri
+                  dosaggi.
                 </span>
+              ) : (
+                selectedAllJobIds.length <= 1 && (
+                  <span className="text-xs font-medium text-slate-600 whitespace-nowrap">
+                    Puoi selezionare una o più operazioni
+                  </span>
+                )
               )}
               <JobIdMultiSelect
                 options={jobIdOptions}
                 value={selectedAllJobIds}
                 onChange={setSelectedAllJobIds}
                 isLoading={isLoadingAllView}
+                pendingJobId={pendingJobId}
               />
             </div>
           </div>
@@ -3802,6 +3882,7 @@ export default function JobPage() {
         isLoadingProducts={isLoadingFitosanitari}
         onSave={handleSaveMultipleJobs}
       />
+
     </div>
   );
 }

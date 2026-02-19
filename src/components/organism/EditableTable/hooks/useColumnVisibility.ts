@@ -14,6 +14,7 @@ export interface UseColumnVisibilityReturn {
   handleColumnVisibilityChange: (columnId: string, visible: boolean) => void;
   handleShowAllColumns: () => void;
   handleShowDefaultColumns: () => void;
+  ensureColumnsVisible: (columnIds: string[]) => void;
 }
 
 function getStorageKey(tableId: string | undefined, columns: EditableColumn[]): string {
@@ -117,11 +118,27 @@ export function useColumnVisibility(
     setVisibleColumnIds(defaultColumnIds);
   }, [tableId, columns, userId]);
 
+  const ensureColumnsVisible = useCallback(
+    (columnIds: string[]) => {
+      const allColumnIds = columns.map((c) => c.id);
+      const missing = columnIds.filter(
+        (id) => allColumnIds.includes(id) && !visibleColumnIds.includes(id),
+      );
+      if (missing.length === 0) return;
+
+      const newVisibleIds = [...visibleColumnIds, ...missing];
+      saveVisibleColumnsToStorage(tableId, columns, newVisibleIds, userId);
+      setVisibleColumnIds(newVisibleIds);
+    },
+    [visibleColumnIds, columns, tableId, userId],
+  );
+
   return {
     visibleColumnIds,
     visibleColumns,
     handleColumnVisibilityChange,
     handleShowAllColumns,
     handleShowDefaultColumns,
+    ensureColumnsVisible,
   };
 }

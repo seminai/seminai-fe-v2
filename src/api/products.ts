@@ -318,6 +318,16 @@ export type ImportFromCsvExcelPreviewResponse = {
   };
 };
 
+export type AlignProductsPayload = {
+  companyId: string;
+  productIds: string[];
+};
+
+export type AlignProductsResponse = {
+  status: "success" | string;
+  data?: unknown;
+};
+
 export type UpdateAdministrativeStatusResponse = {
   status: "success" | string;
   data: {
@@ -720,6 +730,38 @@ export async function updateAdministrativeStatus(
   return (await response.json()) as UpdateAdministrativeStatusResponse;
 }
 
+export async function alignProducts(
+  payload: AlignProductsPayload,
+  baseUrl: string = BASE_URL,
+): Promise<AlignProductsResponse> {
+  if (!payload?.companyId) {
+    throw new Error("Company identifier is required");
+  }
+
+  if (!Array.isArray(payload.productIds) || payload.productIds.length === 0) {
+    throw new Error("At least two product IDs are required to align");
+  }
+
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/products/align-products`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Align products failed");
+  }
+
+  return (await response.json()) as AlignProductsResponse;
+}
+
 export async function getVerifiedPhytosanitary(
   companyId: string,
   baseUrl: string = BASE_URL,
@@ -812,6 +854,12 @@ class ProductsApiService {
 
   public async updateAdministrativeStatus(): Promise<UpdateAdministrativeStatusResponse> {
     return await updateAdministrativeStatus(this.baseUrl);
+  }
+
+  public async alignProducts(
+    payload: AlignProductsPayload,
+  ): Promise<AlignProductsResponse> {
+    return await alignProducts(payload, this.baseUrl);
   }
 
   public async getVerifiedPhytosanitary(

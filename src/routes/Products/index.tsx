@@ -336,6 +336,7 @@ function ProductsPage() {
   const [selectedProductPreview, setSelectedProductPreview] =
     useState<Product | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isAlignLoading, setIsAlignLoading] = useState(false);
   const [datasetStatusMap, setDatasetStatusMap] =
     useState<Map<string, string> | null>(null);
 
@@ -507,6 +508,44 @@ function ProductsPage() {
     }
   };
 
+  const handleAlignSelected = useCallback(
+    async (selectedRows: Array<Record<string, unknown>>) => {
+      const productRows = selectedRows as ProductTableRow[];
+      if (productRows.length < 2) {
+        toast.error("Seleziona almeno 2 prodotti da unire");
+        return;
+      }
+
+      const companyId = productRows[0]?.product?.warehouse?.company?.id;
+      if (!companyId) {
+        toast.error("Company ID non trovato");
+        return;
+      }
+
+      setIsAlignLoading(true);
+      try {
+        await productsApiService.alignProducts({
+          companyId,
+          productIds: productRows.map((row) => row.product.id),
+        });
+
+        toast.success("Prodotti uniti", {
+          description: `${productRows.length} prodotti uniti con successo`,
+        });
+        await refetch();
+      } catch (error) {
+        toast.error("Errore durante l'unione", {
+          description:
+            error instanceof Error ? error.message : "Riprova più tardi",
+        });
+        console.error("Error aligning products:", error);
+      } finally {
+        setIsAlignLoading(false);
+      }
+    },
+    [refetch],
+  );
+
   if (isLoading) {
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -562,6 +601,9 @@ function ProductsPage() {
           onAddClick={() => navigate("/new-product")}
           onSave={handleSave}
           onDeleteSelected={handleDeleteSelected}
+          onAlignSelected={handleAlignSelected}
+          alignButtonLabel="Unisci"
+          isAlignLoading={isAlignLoading}
           getRowId={(row) => (row as ProductTableRow).id}
           exportFileName="prodotti"
           lastComponent={(row) => {

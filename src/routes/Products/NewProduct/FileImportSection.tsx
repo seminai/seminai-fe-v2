@@ -9,7 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { FileDown, Eye, Info } from "lucide-react";
+import { ArrowLeft, FileDown, FileText, Eye, Info, Receipt, Table } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useCompanies } from "@/hooks/useCompanies";
@@ -113,6 +113,10 @@ export default function FileImportSection({
   onLoadingChange,
   onHasProductsToLoadChange,
 }: FileImportSectionProps) {
+  /** When null, show big buttons to choose CSV/Excel, DDT PDF or Fattura PDF */
+  const [selectedImportType, setSelectedImportType] = useState<
+    null | "csv" | "ddt" | "invoice"
+  >(null);
   const [activeTab, setActiveTab] = useState<"csv" | "ddt" | "invoice">("csv");
   const [companyId, setCompanyId] = useState(preselectedCompanyId || "");
   const [warehouseId, setWarehouseId] = useState("");
@@ -175,7 +179,29 @@ export default function FileImportSection({
   }, []);
 
   const handleTabChange = useCallback((value: string) => {
-    setActiveTab(value as "csv" | "ddt" | "invoice");
+    const tab = value as "csv" | "ddt" | "invoice";
+    setActiveTab(tab);
+    setSelectedImportType(tab);
+    setUploadedFiles([]);
+    setSelectedPreviewFileId(null);
+    setExtractedProducts([]);
+    setPreviewErrors([]);
+  }, []);
+
+  const handleSelectImportType = useCallback(
+    (type: "csv" | "ddt" | "invoice") => {
+      setSelectedImportType(type);
+      setActiveTab(type);
+      setUploadedFiles([]);
+      setSelectedPreviewFileId(null);
+      setExtractedProducts([]);
+      setPreviewErrors([]);
+    },
+    [],
+  );
+
+  const handleBackToTypeChoice = useCallback(() => {
+    setSelectedImportType(null);
     setUploadedFiles([]);
     setSelectedPreviewFileId(null);
     setExtractedProducts([]);
@@ -396,12 +422,77 @@ export default function FileImportSection({
     );
   }, [uploadedFiles, selectedPreviewFileId]);
 
+  // Step 1: big buttons to choose CSV/Excel, DDT PDF or Fattura PDF
+  if (selectedImportType === null) {
+    return (
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-auto px-6 pb-6">
+          <div className="py-12">
+            <h2 className="text-xl font-semibold text-center mb-2">
+              Che tipo di file vuoi importare?
+            </h2>
+            <p className="text-sm text-muted-foreground text-center mb-8">
+              Scegli CSV/Excel per elenchi prodotti, DDT PDF per documenti di trasporto o Fattura PDF per fatture.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-auto py-6 flex flex-col gap-2 border-2 hover:border-agri-green-500 hover:bg-agri-green-50 hover:text-foreground"
+                onClick={() => handleSelectImportType("csv")}
+              >
+                <Table className="h-10 w-10 text-agri-green-600" />
+                <span className="font-medium">CSV / Excel</span>
+                <span className="text-xs text-muted-foreground font-normal">
+                  Elenco prodotti da foglio di calcolo
+                </span>
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-auto py-6 flex flex-col gap-2 border-2 hover:border-agri-green-500 hover:bg-agri-green-50 hover:text-foreground"
+                onClick={() => handleSelectImportType("ddt")}
+              >
+                <FileText className="h-10 w-10 text-agri-green-600" />
+                <span className="font-medium">DDT PDF</span>
+                <span className="text-xs text-muted-foreground font-normal">
+                  Documenti di trasporto in PDF
+                </span>
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-auto py-6 flex flex-col gap-2 border-2 hover:border-agri-green-500 hover:bg-agri-green-50 hover:text-foreground"
+                onClick={() => handleSelectImportType("invoice")}
+              >
+                <Receipt className="h-10 w-10 text-agri-green-600" />
+                <span className="font-medium">Fattura PDF</span>
+                <span className="text-xs text-muted-foreground font-normal">
+                  Fatture in PDF o XML
+                </span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Header: toggle tipo file + selezione azienda/magazzino */}
       <div className="flex-shrink-0 px-6 py-4 border-b bg-white space-y-4">
-        {/* Riga toggle tipo file */}
-        <div className="flex items-center gap-3">
+        {/* Riga toggle tipo file + torna alla scelta */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBackToTypeChoice}
+            className="text-muted-foreground"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Torna alla scelta
+          </Button>
           <Tabs
             value={activeTab}
             onValueChange={handleTabChange}

@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { IoDownloadOutline } from "react-icons/io5";
-import { CheckCircle2, Loader2, Plus, PanelRightOpen } from "lucide-react";
+import { CheckCircle2, Loader2, Merge, Plus, PanelRightOpen } from "lucide-react";
 import { EditableColumn } from "../types";
 import { MAX_VISIBLE_COLUMNS } from "../constants";
 import { EditableTableColumnVisibilityDropdown } from "../EditableTableColumnVisibilityDropdown";
@@ -28,6 +28,9 @@ export interface EditableTableHeaderProps {
   isBulkVerifyLoading?: boolean;
   bulkVerifyButtonLabel?: string;
   onBulkVerifySelected?: (selectedRows: Array<Record<string, unknown>>) => void;
+  onAlignSelected?: (selectedRows: Array<Record<string, unknown>>) => void;
+  alignButtonLabel?: string;
+  isAlignLoading?: boolean;
   onDetailsButtonClick?: () => void;
   selectionPayload: Array<Record<string, unknown>>;
   leftActions: React.ReactNode[];
@@ -61,6 +64,9 @@ export function EditableTableHeader({
   isBulkVerifyLoading,
   bulkVerifyButtonLabel,
   onBulkVerifySelected,
+  onAlignSelected,
+  alignButtonLabel,
+  isAlignLoading,
   onDetailsButtonClick,
   selectionPayload,
   leftActions,
@@ -82,6 +88,9 @@ export function EditableTableHeader({
   const shouldRenderBulkVerifyButton =
     anySelected && !showEditActions && Boolean(onBulkVerifySelected);
   const bulkVerifyLabel = bulkVerifyButtonLabel ?? "Verify selected";
+  const shouldRenderAlignButton =
+    anySelected && !showEditActions && Boolean(onAlignSelected);
+  const alignLabel = alignButtonLabel ?? "Unisci";
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3  bg-white rounded-t-lg z-10 sticky top-0 left-0 right-0">
@@ -220,6 +229,23 @@ export function EditableTableHeader({
               <CheckCircle2 className="h-4 w-4 sm:mr-2" />
             )}
             <span className="hidden sm:inline">{bulkVerifyLabel}</span>
+          </Button>
+        )}
+        {shouldRenderAlignButton && (
+          <Button
+            onClick={() => onAlignSelected?.(selectionPayload)}
+            className={cn("border border-gray-200 text-black hover:bg-gray-50")}
+            variant="ghost"
+            size="sm"
+            aria-label={alignLabel}
+            disabled={isAlignLoading}
+          >
+            {isAlignLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin sm:mr-2" />
+            ) : (
+              <Merge className="h-4 w-4 sm:mr-2" />
+            )}
+            <span className="hidden sm:inline">{alignLabel}</span>
           </Button>
         )}
         {anySelected && !showEditActions && isModify && (

@@ -170,6 +170,9 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       onBulkVerifySelected,
       bulkVerifyButtonLabel,
       isBulkVerifyLoading,
+      onAlignSelected,
+      alignButtonLabel,
+      isAlignLoading,
       onDetailsButtonClick,
       className,
       children,
@@ -323,6 +326,13 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
     // ─────────────────────────────────────────────────────────────────────────
     // Bulk Edit Handling
     // ─────────────────────────────────────────────────────────────────────────
+
+    const handleSaveWithErrorVisibility = useCallback(async () => {
+      const errorColumnIds = await tableState.handleSave();
+      if (errorColumnIds && errorColumnIds.length > 0) {
+        visibility.ensureColumnsVisible(errorColumnIds);
+      }
+    }, [tableState, visibility]);
 
     const handleApplyBulkEdit = useCallback(() => {
       bulkEdit.applyBulkEdit(
@@ -521,7 +531,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
             onCellChange={tableState.handleCellChange}
             onAddClick={handleAddButtonClick}
             onCancel={tableState.handleCancel}
-            onSave={tableState.handleSave}
+            onSave={handleSaveWithErrorVisibility}
           />
           <EditableTableFiltersPanel
             open={filters.filterDrawerOpen}
@@ -620,6 +630,9 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
           isBulkVerifyLoading={isBulkVerifyLoading}
           bulkVerifyButtonLabel={bulkVerifyButtonLabel}
           onBulkVerifySelected={onBulkVerifySelected}
+          onAlignSelected={onAlignSelected}
+          alignButtonLabel={alignButtonLabel}
+          isAlignLoading={isAlignLoading}
           onDetailsButtonClick={onDetailsButtonClick}
           selectionPayload={selectionPayload}
           leftActions={leftActions}
@@ -635,7 +648,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
           onOpenBulkEdit={bulkEdit.openBulkEditDrawer}
           onRequestDelete={handleRequestDelete}
           onCancel={tableState.handleCancel}
-          onSave={tableState.handleSave}
+          onSave={handleSaveWithErrorVisibility}
         />
 
         {renderCustomBody ? (
