@@ -143,6 +143,34 @@ export async function bulkUpdateCompanies(
   return data as BulkCompaniesResponse;
 }
 
+export type BulkDeleteCompaniesRequest = {
+  companyIds: string[];
+};
+
+export async function bulkDeleteCompanies(
+  request: BulkDeleteCompaniesRequest,
+  baseUrl: string = BASE_URL
+): Promise<{ status: "success" }> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/companies/bulk/all`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(request),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to delete companies");
+  }
+
+  return (await response.json()) as { status: "success" };
+}
+
 class CompaniesApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -163,6 +191,12 @@ class CompaniesApiService {
     request: BulkCompaniesUpdateRequest
   ): Promise<BulkCompaniesResponse> {
     return await bulkUpdateCompanies(request, this.baseUrl);
+  }
+
+  public async bulkDelete(
+    request: BulkDeleteCompaniesRequest
+  ): Promise<{ status: "success" }> {
+    return await bulkDeleteCompanies(request, this.baseUrl);
   }
 }
 

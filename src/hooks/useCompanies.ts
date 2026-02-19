@@ -60,6 +60,27 @@ export function useCompanies(options?: UseCompaniesOptions) {
     },
   });
 
+  // Mutation per eliminare companies in bulk
+  const deleteMutation = useMutation({
+    mutationFn: async (companyIds: string[]) => {
+      return await companiesApiService.bulkDelete({ companyIds });
+    },
+    onSuccess: async (_response, companyIds) => {
+      await queryClient.invalidateQueries({ queryKey: ["companies"] });
+      await companiesQuery.refetch();
+      const count = companyIds.length;
+      toast.success(
+        `${count} aziend${count === 1 ? "a eliminata" : "e eliminate"} con successo`
+      );
+    },
+    onError: async (error: Error) => {
+      console.error("Errore eliminazione companies:", error);
+      toast.error(`Errore durante l'eliminazione: ${error.message}`);
+      await queryClient.invalidateQueries({ queryKey: ["companies"] });
+      await companiesQuery.refetch();
+    },
+  });
+
   // Mutation per aggiornare companies in bulk
   const updateMutation = useMutation({
     mutationFn: async (companies: BulkCompanyUpdateInput[]) => {
@@ -137,6 +158,10 @@ export function useCompanies(options?: UseCompaniesOptions) {
     // Mutation per aggiornare companies
     updateCompanies: updateMutation.mutate,
     isUpdating: updateMutation.isPending,
+
+    // Mutation per eliminare companies in bulk
+    deleteCompanies: deleteMutation.mutate,
+    isDeleting: deleteMutation.isPending,
 
     // Utility per refetch
     refetch: companiesQuery.refetch,

@@ -120,7 +120,7 @@ export default function FieldNotesPage() {
             },
             [FieldNoteStatus.PROCESSED]: {
               label: "Processata",
-              className: "bg-emerald-100 text-emerald-700",
+              className: "bg-amber-100 text-amber-700",
             },
             [FieldNoteStatus.FAILED]: {
               label: "Fallita",
@@ -128,7 +128,7 @@ export default function FieldNotesPage() {
             },
             [FieldNoteStatus.MANUALLY_REVIEWED]: {
               label: "Revisionata",
-              className: "bg-amber-100 text-amber-700",
+              className: "bg-emerald-100 text-emerald-700",
             },
           };
           const config = statusConfig[value as string] || {

@@ -128,7 +128,7 @@ export const ConformityCheckerPanel = forwardRef<
   const [internalThreadId, setInternalThreadId] = useState(generateThreadId);
   const threadId = externalThreadId || internalThreadId;
 
-  const [deepThinking, setDeepThinking] = useState<boolean>(true);
+  const [deepThinking, setDeepThinking] = useState<boolean>(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const audioRecorderRef = useRef<AudioRecorderService | null>(null);

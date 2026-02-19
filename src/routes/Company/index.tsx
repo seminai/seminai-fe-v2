@@ -139,6 +139,7 @@ export default function Company(): React.ReactElement {
     error,
     createCompanies,
     updateCompanies,
+    deleteCompanies,
     isUpdating,
   } = useCompanies();
 
@@ -272,6 +273,17 @@ export default function Company(): React.ReactElement {
     [detailsNavigator],
   );
 
+  const handleDeleteSelected = React.useCallback(
+    (removed: Array<Record<string, unknown>>): void => {
+      const companyIds = removed
+        .map((r) => (typeof r.id === "string" ? r.id : r.id != null ? String(r.id) : null))
+        .filter((id): id is string => id != null);
+      if (companyIds.length === 0) return;
+      deleteCompanies(companyIds);
+    },
+    [deleteCompanies],
+  );
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Aziende" className="hidden md:block" />
@@ -300,6 +312,8 @@ export default function Company(): React.ReactElement {
             }
             onSave={handleSave}
             onOpenDetails={handleOpenDetails}
+            onDeleteSelected={handleDeleteSelected}
+            deleteConfirmRequiredText="delete"
             exportFileName="aziende"
             createDrawerImportTitle="Importa file"
             createDrawerImportDescription="Il formato è la visura camerale PDF."

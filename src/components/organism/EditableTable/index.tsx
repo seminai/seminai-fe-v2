@@ -162,6 +162,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       getRowId = (_row, index) => index,
       onSave,
       onDeleteSelected,
+      deleteConfirmRequiredText,
       newRowDefaults = {},
       detailsRenderer,
       detailsTitle,
@@ -601,6 +602,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
           targetLabel={selection.getDeletionTargetLabel()}
           onConfirm={handleDelete}
           onCancel={() => setConfirmDialogOpen(false)}
+          confirmRequiredText={deleteConfirmRequiredText}
         />
 
         <EditableTableHeader

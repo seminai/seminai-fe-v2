@@ -19,18 +19,14 @@ import {
   ChevronUp,
   BookOpen,
   ExternalLink,
+  Warehouse,
+  Stethoscope,
 } from "lucide-react";
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
 
 export interface AlertNotes {
@@ -290,6 +286,19 @@ export function JobSelectedDetails({
   const [expandedFasceColture, setExpandedFasceColture] = useState<Set<string>>(
     new Set(),
   );
+  const [expandedDose, setExpandedDose] = useState<Set<string>>(new Set());
+  const [expandedModalita, setExpandedModalita] = useState<Set<string>>(
+    new Set(),
+  );
+  const [expandedMagazzino, setExpandedMagazzino] = useState<Set<string>>(
+    new Set(),
+  );
+  const [expandedMalattie, setExpandedMalattie] = useState<Set<string>>(
+    new Set(),
+  );
+  const [expandedDisciplinari, setExpandedDisciplinari] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Funzione per verificare se un testo corrisponde al termine di ricerca
   const matchesSearch = (text: string | null | undefined): boolean => {
@@ -368,6 +377,9 @@ export function JobSelectedDetails({
               epocaImpiego !== null && matchesSearch(epocaImpiego);
             const showEpocaImpiegoLLM =
               epocaImpiegoLLM !== null && matchesSearch(epocaImpiegoLLM);
+            const hasWarehouseAlert =
+              formatter.shouldShowDdtMissingAlert() ||
+              row.alertNotes?.ddt_date_after_treatment === true;
 
             return (
               <div
@@ -408,398 +420,519 @@ export function JobSelectedDetails({
                   {matchesSearch(row.productName) && (
                     <div className="flex items-start gap-1.5">
                       <Package className="h-3.5 w-3.5 text-slate-500 mt-0.5 shrink-0" />
-                      <span className="text-sm font-medium text-slate-700">
-                        {row.productName}
-                      </span>
+                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                        <span className="text-sm font-medium text-slate-700">
+                          {row.productName}
+                        </span>
+                        {row.alertNotes?.principio_attivo &&
+                          matchesSearch(row.alertNotes.principio_attivo) && (
+                            <span className="text-xs text-slate-600">
+                              <span className="font-medium uppercase tracking-wide text-slate-500">
+                                Principio attivo:
+                              </span>{" "}
+                              {row.alertNotes.principio_attivo}
+                            </span>
+                          )}
+                      </div>
                     </div>
                   )}
-                  {row.alertNotes?.principio_attivo &&
-                    matchesSearch(row.alertNotes.principio_attivo) && (
-                      <div className="flex items-start gap-1.5">
-                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                          Principio Attivo:{" "}
+                  <div className="text-xs text-slate-600">
+                    <span className="font-mono">
+                      {row.quantity} {row.unitOfMeasureQuantity}
+                    </span>
+                    {(row.treatedSurface != null || row.sauHa != null) && (
+                      <>
+                        {" "}
+                        per{" "}
+                        <span className="font-mono">
+                          {Number(row.treatedSurface ?? row.sauHa ?? 0).toLocaleString(
+                            "it-IT",
+                          )}{" "}
+                          ha
                         </span>
-                        <span className="text-sm text-slate-700 font-medium">
-                          {row.alertNotes.principio_attivo}
-                        </span>
-                      </div>
+                      </>
                     )}
-                  <div className="text-xs text-slate-600 font-mono">
-                    {row.quantity} {row.unitOfMeasureQuantity}
                   </div>
                 </div>
 
                 {hasAlertNotes && (
                   <div className="border-t border-slate-200 pt-4 space-y-3">
-                    {/* Dose e Acqua Max */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                          <Droplet className="h-3 w-3" />
+                    {/* Note AI in evidenza */}
+                    {row.note && matchesSearch(row.note) && (
+                      <div className="space-y-1.5 rounded-lg border border-purple-100 bg-purple-50/50 p-3">
+                        <div className="flex items-center gap-1.5">
+                          <Bot className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                          <span className="text-xs font-medium text-purple-700 uppercase tracking-wide">
+                            Note AI
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
+                          {row.note}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Toggle Dose */}
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          setExpandedDose((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(row.id)) {
+                              next.delete(row.id);
+                            } else {
+                              next.add(row.id);
+                            }
+                            return next;
+                          });
+                        }}
+                        className="w-full text-left flex items-center gap-1 hover:opacity-80 transition-opacity"
+                      >
+                        <Droplet className="h-3 w-3 text-slate-600 shrink-0" />
+                        <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
                           Dose
                         </span>
-                        {formatter.getDoseRange() &&
-                        matchesSearch(formatter.getDoseRange()) ? (
-                          <p className="text-sm text-slate-700 font-medium">
-                            {formatter.getDoseRange()}
-                          </p>
+                        {expandedDose.has(row.id) ? (
+                          <ChevronUp className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
                         ) : (
-                          <p className="text-xs text-slate-400 italic">
-                            non presente
-                          </p>
+                          <ChevronDown className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
                         )}
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                          <Droplet className="h-3 w-3 text-slate-500" />
-                          Acqua Max
-                        </span>
-                        {formatter.getAcquaMax() &&
-                        matchesSearch(formatter.getAcquaMax()) ? (
-                          <p className="text-sm text-slate-700">
-                            {formatter.getAcquaMax()}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-slate-400 italic">
-                            non presente
-                          </p>
-                        )}
-                      </div>
+                      </button>
+                      {expandedDose.has(row.id) && (
+                        <div className="space-y-3 pl-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                                Dose
+                              </span>
+                              {formatter.getDoseRange() &&
+                              matchesSearch(formatter.getDoseRange()) ? (
+                                <p className="text-sm text-slate-700 font-medium">
+                                  {formatter.getDoseRange()}
+                                </p>
+                              ) : (
+                                <p className="text-xs text-slate-400 italic">
+                                  non presente
+                                </p>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                                Acqua Max
+                              </span>
+                              {formatter.getAcquaMax() &&
+                              matchesSearch(formatter.getAcquaMax()) ? (
+                                <p className="text-sm text-slate-700">
+                                  {formatter.getAcquaMax()}
+                                </p>
+                              ) : (
+                                <p className="text-xs text-slate-400 italic">
+                                  non presente
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {(row.alertNotes?.waterHlJob !== null &&
+                            row.alertNotes?.waterHlJob !== undefined) ||
+                          (row.alertNotes?.acquaMaxJob !== null &&
+                            row.alertNotes?.acquaMaxJob !== undefined) ? (
+                            <div className="grid grid-cols-2 gap-4">
+                              {row.alertNotes?.waterHlJob !== null &&
+                              row.alertNotes?.waterHlJob !== undefined ? (
+                                <div className="space-y-1">
+                                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                                    Acqua (hl) Job
+                                  </span>
+                                  <p className="text-sm text-slate-700 font-medium">
+                                    {row.alertNotes.waterHlJob} hl
+                                  </p>
+                                </div>
+                              ) : null}
+                              {row.alertNotes?.acquaMaxJob !== null &&
+                              row.alertNotes?.acquaMaxJob !== undefined ? (
+                                <div className="space-y-1">
+                                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                                    Acqua Max Job
+                                  </span>
+                                  <p className="text-sm text-slate-700">
+                                    {row.alertNotes.acquaMaxJob}{" "}
+                                    {row.alertNotes.acquaMaxJob_um ?? "L"}
+                                  </p>
+                                </div>
+                              ) : null}
+                            </div>
+                          ) : null}
+
+                          <div className="space-y-3">
+                            {showEpocaImpiego ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-3 w-3 text-green-600" />
+                                  <span className="text-xs font-medium text-green-600 uppercase tracking-wide">
+                                    Epoca impiego etichetta:
+                                  </span>
+                                </div>
+                                <p className="text-sm text-slate-700 pl-5">
+                                  {epocaImpiego}
+                                </p>
+                              </div>
+                            ) : !showEpocaImpiegoLLM ? (
+                              <p className="text-xs text-slate-400 italic">
+                                non presente
+                              </p>
+                            ) : null}
+                            {showEpocaImpiegoLLM ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-3 w-3 text-blue-600" />
+                                  <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">
+                                    Epoca di impiego suggerita da AI:
+                                  </span>
+                                </div>
+                                <p className="text-sm text-slate-700 pl-5">
+                                  {epocaImpiegoLLM}
+                                </p>
+                              </div>
+                            ) : null}
+                          </div>
+
+                          <div className="space-y-1">
+                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                              Max Applicazioni
+                            </span>
+                            {formatter.getMaxApplications() &&
+                            matchesSearch(formatter.getMaxApplications()) ? (
+                              <p className="text-sm text-slate-700">
+                                {formatter.getMaxApplications()}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-slate-400 italic">
+                                non presente
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Acqua per Job */}
-                    {(row.alertNotes?.waterHlJob !== null &&
-                      row.alertNotes?.waterHlJob !== undefined) ||
-                    (row.alertNotes?.acquaMaxJob !== null &&
-                      row.alertNotes?.acquaMaxJob !== undefined) ? (
-                      <div className="grid grid-cols-2 gap-4">
-                        {row.alertNotes?.waterHlJob !== null &&
-                        row.alertNotes?.waterHlJob !== undefined ? (
-                          <div className="space-y-1">
-                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                              <Droplet className="h-3 w-3" />
-                              Acqua (hl) Job
-                            </span>
-                            <p className="text-sm text-slate-700 font-medium">
-                              {row.alertNotes.waterHlJob} hl
-                            </p>
-                          </div>
-                        ) : null}
-                        {row.alertNotes?.acquaMaxJob !== null &&
-                        row.alertNotes?.acquaMaxJob !== undefined ? (
-                          <div className="space-y-1">
-                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                              <Droplet className="h-3 w-3 text-slate-500" />
-                              Acqua Max Job
-                            </span>
-                            <p className="text-sm text-slate-700">
-                              {row.alertNotes.acquaMaxJob}{" "}
-                              {row.alertNotes.acquaMaxJob_um ?? "L"}
-                            </p>
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : null}
-
-                    {/* Epoca Impiego */}
-                    <div className="space-y-3">
-                      {showEpocaImpiego ? (
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-3 w-3 text-green-600" />
-                            <span className="text-xs font-medium text-green-600 uppercase tracking-wide">
-                              Epoca impiego etichetta:
-                            </span>
-                          </div>
-                          <p className="text-sm text-slate-700 pl-5">
-                            {epocaImpiego}
-                          </p>
-                        </div>
-                      ) : !showEpocaImpiegoLLM ? (
-                        <p className="text-xs text-slate-400 italic">
-                          non presente
-                        </p>
-                      ) : null}
-                      {showEpocaImpiegoLLM ? (
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-3 w-3 text-blue-600" />
-                            <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">
-                              Epoca di impiego suggerita da AI:
-                            </span>
-                          </div>
-                          <p className="text-sm text-slate-700 pl-5">
-                            {epocaImpiegoLLM}
-                          </p>
-                        </div>
-                      ) : null}
-                    </div>
-
-                    {/* Max Applicazioni e Modalità */}
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                          Max Applicazioni
-                        </span>
-                        {formatter.getMaxApplications() &&
-                        matchesSearch(formatter.getMaxApplications()) ? (
-                          <p className="text-sm text-slate-700">
-                            {formatter.getMaxApplications()}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-slate-400 italic">
-                            non presente
-                          </p>
-                        )}
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                    {/* Toggle Modalità */}
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          setExpandedModalita((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(row.id)) {
+                              next.delete(row.id);
+                            } else {
+                              next.add(row.id);
+                            }
+                            return next;
+                          });
+                        }}
+                        className="w-full text-left flex items-center gap-1 hover:opacity-80 transition-opacity"
+                      >
+                        <Sprout className="h-3 w-3 text-slate-600 shrink-0" />
+                        <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
                           Modalità
                         </span>
-                        {formatter.getModalitaApplicazione() &&
-                        matchesSearch(formatter.getModalitaApplicazione()) ? (
-                          <p className="text-sm text-slate-700">
-                            {formatter.getModalitaApplicazione()}
-                          </p>
+                        {expandedModalita.has(row.id) ? (
+                          <ChevronUp className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
                         ) : (
-                          <p className="text-xs text-slate-400 italic">
-                            non presente
-                          </p>
+                          <ChevronDown className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
                         )}
-                      </div>
-                    </div>
-
-                    {/* Stock - Disponibilità e Fabbisogno trattamenti */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                          Stato disponibilità
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="h-3 w-3 cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent className="bg-slate-900 text-white border border-slate-700 shadow-lg">
-                              Indica se lo stock in magazzino è sufficiente per
-                              tutti i trattamenti previsti con {row.productName}
-                              . Se manca quantità, viene mostrata quella da
-                              integrare.
-                            </TooltipContent>
-                          </Tooltip>
-                        </span>
-                        {formatter.getStockOut() &&
-                        matchesSearch(formatter.getStockOut()) ? (
-                          <p className="text-sm text-amber-700 font-medium">
-                            Quantità da integrare: {formatter.getStockOut()}
-                          </p>
-                        ) : (
-                          <p className="text-sm text-emerald-600 font-medium">
-                            Stock sufficiente
-                          </p>
-                        )}
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
-                          Fabbisogno trattamenti
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="h-3 w-3 cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent className="bg-slate-900 text-white border border-slate-700 shadow-lg">
-                              Quantità totale necessaria per tutti i trattamenti
-                              pianificati con {row.productName}
-                              (non lo stock in magazzino).
-                            </TooltipContent>
-                          </Tooltip>
-                        </span>
-                        {formatter.getTotalStockRequired() &&
-                        matchesSearch(formatter.getTotalStockRequired()) ? (
-                          <p className="text-sm text-slate-700 font-medium">
-                            {formatter.getTotalStockRequired()}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-slate-400 italic">
-                            non presente
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Data DDT: no alert when both date and code are present */}
-                    {formatter.shouldShowDdtMissingAlert() && (
-                      <div className="flex items-start gap-1.5 p-2 border border-red-200 rounded">
-                        <FileX className="h-3.5 w-3.5 text-red-600 mt-0.5 shrink-0" />
-                        <div className="flex-1">
-                          <span className="text-xs font-medium text-red-700 block mb-0.5">
-                            Data DDT Mancante
-                          </span>
-                          <p className="text-xs text-red-600 leading-relaxed">
-                            Manca la data del DDT caricata per questo stock
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Data DDT After Treatment */}
-                    {row.alertNotes?.ddt_date_after_treatment === true && (
-                      <div className="flex items-start gap-1.5 p-2 border border-red-200 rounded">
-                        <FileX className="h-3.5 w-3.5 text-red-600 mt-0.5 shrink-0" />
-                        <div className="flex-1">
-                          <span className="text-xs font-medium text-red-700 block mb-0.5">
-                            Data DDT Dopo Trattamento
-                          </span>
-                          <p className="text-xs text-red-600 leading-relaxed">
-                            La data del DDT è successiva alla data del
-                            trattamento
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Note AI */}
-                    {row.note && matchesSearch(row.note) && (
-                      <Accordion type="single" collapsible className="w-full">
-                        <AccordionItem value="note-ai" className="border-0">
-                          <AccordionTrigger className="py-2 hover:no-underline">
-                            <div className="flex items-center gap-1.5 w-full">
-                              <Bot className="h-3.5 w-3.5 text-purple-600 shrink-0" />
-                              <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
-                                Note AI
-                              </span>
-                            </div>
-                          </AccordionTrigger>
-                          <AccordionContent className="pt-2 pb-0">
-                            <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
-                              {row.note}
+                      </button>
+                      {expandedModalita.has(row.id) && (
+                        <div className="space-y-1 pl-4">
+                          {formatter.getModalitaApplicazione() &&
+                          matchesSearch(formatter.getModalitaApplicazione()) ? (
+                            <p className="text-sm text-slate-700">
+                              {formatter.getModalitaApplicazione()}
                             </p>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
-                    )}
+                          ) : (
+                            <p className="text-xs text-slate-400 italic">
+                              non presente
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Toggle Magazzino */}
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          setExpandedMagazzino((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(row.id)) {
+                              next.delete(row.id);
+                            } else {
+                              next.add(row.id);
+                            }
+                            return next;
+                          });
+                        }}
+                        className="w-full text-left flex items-center gap-1 hover:opacity-80 transition-opacity"
+                      >
+                        <Warehouse className="h-3 w-3 text-slate-600 shrink-0" />
+                        <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                          Magazzino
+                        </span>
+                        {hasWarehouseAlert && (
+                          <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
+                        )}
+                        {expandedMagazzino.has(row.id) ? (
+                          <ChevronUp className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
+                        ) : (
+                          <ChevronDown className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
+                        )}
+                      </button>
+                      {expandedMagazzino.has(row.id) && (
+                        <div className="space-y-3 pl-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                                Stato disponibilità
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-3 w-3 cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-slate-900 text-white border border-slate-700 shadow-lg">
+                                    Indica se lo stock in magazzino è sufficiente
+                                    per tutti i trattamenti previsti con{" "}
+                                    {row.productName}. Se manca quantità, viene
+                                    mostrata quella da integrare.
+                                  </TooltipContent>
+                                </Tooltip>
+                              </span>
+                              {formatter.getStockOut() &&
+                              matchesSearch(formatter.getStockOut()) ? (
+                                <p className="text-sm text-amber-700 font-medium">
+                                  Quantità da integrare: {formatter.getStockOut()}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-emerald-600 font-medium">
+                                  Stock sufficiente
+                                </p>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                                Fabbisogno trattamenti
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-3 w-3 cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-slate-900 text-white border border-slate-700 shadow-lg">
+                                    Quantità totale necessaria per tutti i
+                                    trattamenti pianificati con {row.productName}
+                                    (non lo stock in magazzino).
+                                  </TooltipContent>
+                                </Tooltip>
+                              </span>
+                              {formatter.getTotalStockRequired() &&
+                              matchesSearch(formatter.getTotalStockRequired()) ? (
+                                <p className="text-sm text-slate-700 font-medium">
+                                  {formatter.getTotalStockRequired()}
+                                </p>
+                              ) : (
+                                <p className="text-xs text-slate-400 italic">
+                                  non presente
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {formatter.shouldShowDdtMissingAlert() && (
+                            <div className="flex items-start gap-1.5 p-2 border border-red-200 rounded">
+                              <FileX className="h-3.5 w-3.5 text-red-600 mt-0.5 shrink-0" />
+                              <div className="flex-1">
+                                <span className="text-xs font-medium text-red-700 block mb-0.5">
+                                  Data DDT Mancante
+                                </span>
+                                <p className="text-xs text-red-600 leading-relaxed">
+                                  Manca la data del DDT caricata per questo
+                                  stock
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {row.alertNotes?.ddt_date_after_treatment === true && (
+                            <div className="flex items-start gap-1.5 p-2 border border-red-200 rounded">
+                              <FileX className="h-3.5 w-3.5 text-red-600 mt-0.5 shrink-0" />
+                              <div className="flex-1">
+                                <span className="text-xs font-medium text-red-700 block mb-0.5">
+                                  Data DDT Dopo Trattamento
+                                </span>
+                                <p className="text-xs text-red-600 leading-relaxed">
+                                  La data del DDT è successiva alla data del
+                                  trattamento
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Disciplinari */}
                     {Array.isArray(row.alertNotes?.disciplinare_info) &&
                     row.alertNotes.disciplinare_info.length > 0 && (
-                      <Accordion type="single" collapsible className="w-full">
-                        <AccordionItem value="disciplinari" className="border-0">
-                          <AccordionTrigger className="py-2 hover:no-underline">
-                            <div className="flex items-center gap-1.5 w-full">
-                              <BookOpen className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
-                              <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
-                                Disciplinari
-                              </span>
-                            </div>
-                          </AccordionTrigger>
-                          <AccordionContent className="pt-2 pb-0">
-                            <div className="space-y-4">
-                              {row.alertNotes.disciplinare_info.map(
-                                (info, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="rounded-lg border border-slate-200 bg-slate-50/50 p-3 space-y-2"
-                                  >
-                                    {info.sostanza_attiva && (
-                                      <div className="flex items-start gap-1.5">
-                                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">
-                                          Sostanza attiva:
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => {
+                            setExpandedDisciplinari((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(row.id)) {
+                                next.delete(row.id);
+                              } else {
+                                next.add(row.id);
+                              }
+                              return next;
+                            });
+                          }}
+                          className="w-full text-left flex items-center gap-1 hover:opacity-80 transition-opacity"
+                        >
+                          <BookOpen className="h-3 w-3 text-indigo-600 shrink-0" />
+                          <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                            Disciplinari
+                          </span>
+                          {expandedDisciplinari.has(row.id) ? (
+                            <ChevronUp className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
+                          ) : (
+                            <ChevronDown className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
+                          )}
+                        </button>
+                        {expandedDisciplinari.has(row.id) && (
+                          <div className="space-y-4 pl-4">
+                            {row.alertNotes.disciplinare_info.map((info, idx) => (
+                              <div
+                                key={idx}
+                                className="rounded-lg border border-slate-200 bg-slate-50/50 p-3 space-y-2"
+                              >
+                                {info.sostanza_attiva && (
+                                  <div className="flex items-start gap-1.5">
+                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">
+                                      Sostanza attiva:
+                                    </span>
+                                    <span className="text-sm font-medium text-slate-700">
+                                      {info.sostanza_attiva}
+                                    </span>
+                                  </div>
+                                )}
+                                {info.n_max_interventi_sa != null && (
+                                  <div className="flex items-start gap-1.5">
+                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">
+                                      Max interventi:
+                                    </span>
+                                    <span className="text-sm text-slate-700">
+                                      {info.n_max_interventi_sa}
+                                      {info.n_max_interventi_sa_scope && (
+                                        <span className="text-slate-500 text-xs">
+                                          {" "}
+                                          / {info.n_max_interventi_sa_scope}
                                         </span>
-                                        <span className="text-sm font-medium text-slate-700">
-                                          {info.sostanza_attiva}
-                                        </span>
-                                      </div>
-                                    )}
-                                    {info.n_max_interventi_sa != null && (
-                                      <div className="flex items-start gap-1.5">
-                                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">
-                                          Max interventi:
-                                        </span>
-                                        <span className="text-sm text-slate-700">
-                                          {info.n_max_interventi_sa}
-                                          {info.n_max_interventi_sa_scope && (
-                                            <span className="text-slate-500 text-xs">
-                                              {" "}
-                                              / {info.n_max_interventi_sa_scope}
+                                      )}
+                                    </span>
+                                  </div>
+                                )}
+                                {info.limitazioni_uso_e_note && (
+                                  <div className="flex items-start gap-1.5">
+                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">
+                                      Limitazioni:
+                                    </span>
+                                    <p className="text-xs text-slate-600 leading-relaxed">
+                                      {info.limitazioni_uso_e_note}
+                                    </p>
+                                  </div>
+                                )}
+                                {Array.isArray(info.sources) &&
+                                info.sources.length > 0 && (
+                                  <div className="space-y-1.5 pt-1">
+                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                                      Fonti
+                                    </span>
+                                    <div className="space-y-1">
+                                      {info.sources.map((source, sIdx) => (
+                                        <div
+                                          key={sIdx}
+                                          className="flex items-start gap-1.5 text-xs"
+                                        >
+                                          {source.pdfFileUrl ? (
+                                            <a
+                                              href={source.pdfFileUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="inline-flex items-center gap-1 text-indigo-600 hover:underline"
+                                            >
+                                              <ExternalLink className="h-3 w-3 shrink-0" />
+                                              {source.ruleName ?? "PDF documento"}
+                                            </a>
+                                          ) : (
+                                            <span className="text-slate-700">
+                                              {source.ruleName ?? "-"}
                                             </span>
                                           )}
-                                        </span>
-                                      </div>
-                                    )}
-                                    {info.limitazioni_uso_e_note && (
-                                      <div className="flex items-start gap-1.5">
-                                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">
-                                          Limitazioni:
-                                        </span>
-                                        <p className="text-xs text-slate-600 leading-relaxed">
-                                          {info.limitazioni_uso_e_note}
-                                        </p>
-                                      </div>
-                                    )}
-                                    {Array.isArray(info.sources) &&
-                                    info.sources.length > 0 && (
-                                      <div className="space-y-1.5 pt-1">
-                                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                                          Fonti
-                                        </span>
-                                        <div className="space-y-1">
-                                          {info.sources.map((source, sIdx) => (
-                                            <div
-                                              key={sIdx}
-                                              className="flex items-start gap-1.5 text-xs"
-                                            >
-                                              {source.pdfFileUrl ? (
-                                                <a
-                                                  href={source.pdfFileUrl}
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  className="inline-flex items-center gap-1 text-indigo-600 hover:underline"
-                                                >
-                                                  <ExternalLink className="h-3 w-3 shrink-0" />
-                                                  {source.ruleName ??
-                                                    "PDF documento"}
-                                                </a>
-                                              ) : (
-                                                <span className="text-slate-700">
-                                                  {source.ruleName ?? "-"}
-                                                </span>
-                                              )}
-                                            </div>
-                                          ))}
                                         </div>
-                                      </div>
-                                    )}
+                                      ))}
+                                    </div>
                                   </div>
-                                ),
-                              )}
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     )}
 
-                    {/* Malattie */}
+                    {/* Toggle Malattie */}
                     <div className="space-y-2">
-                      <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                        Malattie
-                      </span>
-                      {formatter.getMalattie().length > 0 &&
-                      formatter.getMalattie().some((m) => matchesSearch(m)) ? (
-                        <div className="flex flex-wrap gap-1.5">
-                          {formatter
-                            .getMalattie()
-                            .filter((m) => matchesSearch(m))
-                            .map((malattia, idx) => (
-                              <Badge
-                                key={idx}
-                                className="bg-orange-50 text-orange-700 border-0 text-xs"
-                              >
-                                {malattia}
-                              </Badge>
-                            ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-slate-400 italic">
-                          non presente
-                        </p>
-                      )}
+                      <button
+                        onClick={() => {
+                          setExpandedMalattie((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(row.id)) {
+                              next.delete(row.id);
+                            } else {
+                              next.add(row.id);
+                            }
+                            return next;
+                          });
+                        }}
+                        className="w-full text-left flex items-center gap-1 hover:opacity-80 transition-opacity"
+                      >
+                        <Stethoscope className="h-3 w-3 text-slate-600 shrink-0" />
+                        <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                          Malattie
+                        </span>
+                        {expandedMalattie.has(row.id) ? (
+                          <ChevronUp className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
+                        ) : (
+                          <ChevronDown className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
+                        )}
+                      </button>
+                      {expandedMalattie.has(row.id) &&
+                        (formatter.getMalattie().length > 0 &&
+                        formatter.getMalattie().some((m) => matchesSearch(m)) ? (
+                          <div className="flex flex-wrap gap-1.5 pl-4">
+                            {formatter
+                              .getMalattie()
+                              .filter((m) => matchesSearch(m))
+                              .map((malattia, idx) => (
+                                <Badge
+                                  key={idx}
+                                  className="bg-orange-50 text-orange-700 border-0 text-xs"
+                                >
+                                  {malattia}
+                                </Badge>
+                              ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-slate-400 italic pl-4">
+                            non presente
+                          </p>
+                        ))}
                     </div>
 
                     {/* Fasce di rispetto e deriva */}

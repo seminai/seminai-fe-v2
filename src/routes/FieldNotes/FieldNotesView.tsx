@@ -299,7 +299,7 @@ export function FieldNotesView({
                         title="Apri chat AI"
                       >
                         <MessageSquare className="h-4 w-4 sm:mr-2" />
-                        <span className="hidden sm:inline">Chat AI</span>
+                        <span className="hidden sm:inline">Chat</span>
                       </Button>
                     )}
                   </EditableTable>
