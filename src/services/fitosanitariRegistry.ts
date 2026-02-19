@@ -69,6 +69,20 @@ class FitosanitariRegistry {
     return null;
   }
 
+  public async getAdministrativeStatusMap(): Promise<Map<string, string>> {
+    const dataset = await this.getRecords();
+    const map = new Map<string, string>();
+    for (const record of dataset) {
+      if (record.productName && record.administrativeStatus) {
+        map.set(
+          record.productName.toLowerCase(),
+          record.administrativeStatus,
+        );
+      }
+    }
+    return map;
+  }
+
   public async getAuthorizedRecords(): Promise<FitosanitariDatasetRecord[]> {
     const dataset = await this.getRecords();
     return dataset.filter((record) => {
@@ -146,4 +160,10 @@ export async function getAuthorizedFitosanitariRecords(): Promise<
   FitosanitariDatasetRecord[]
 > {
   return registryInstance.getAuthorizedRecords();
+}
+
+export async function getAdministrativeStatusMap(): Promise<
+  Map<string, string>
+> {
+  return registryInstance.getAdministrativeStatusMap();
 }

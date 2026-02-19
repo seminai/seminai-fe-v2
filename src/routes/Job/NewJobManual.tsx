@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -32,6 +32,8 @@ import {
 import { MultiSearchableSelect } from "@/routes/DosageManager/MultiSearchableSelect";
 import { jobsApiService } from "@/api/jobs";
 import type { CreateJobPayload } from "@/api/jobs";
+import { useProducts } from "@/hooks/useProducts";
+import type { StockEntry } from "@/api/products";
 import { generateRandomJobId } from "./utils";
 
 interface ProductionUnitOption {
@@ -53,12 +55,32 @@ interface CompanyOption {
   companyName: string;
 }
 
-interface ProductFormRow {
-  registrationNumber: string;
+interface UnifiedProduct {
+  key: string;
+  source: "registry" | "warehouse";
   productName: string;
+  registrationNumber: string;
+  sku?: string;
+  availableStock?: number;
+  stockUnit?: string;
+}
+
+interface ProductFormRow {
+  key: string;
+  productName: string;
+  registrationNumber: string;
+  source: "registry" | "warehouse";
   qtyPerHa: string;
   totalQty: string;
   unitOfMeasure: string;
+  availableStock?: number;
+  stockUnit?: string;
+}
+
+function calculateNetStock(stocks: StockEntry[]): number {
+  return stocks.reduce((total, stock) => {
+    return stock.type === "IN" ? total + stock.quantity : total - stock.quantity;
+  }, 0);
 }
 
 const UNIT_MEASURE_OPTIONS = ["L", "KG", "ML", "G"];
@@ -82,7 +104,7 @@ export default function NewJobManual() {
 
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
-  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [selectedProductKeys, setSelectedProductKeys] = useState<string[]>([]);
   const [dateOfOperation, setDateOfOperation] = useState<Date>(() => new Date());
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [percentToTreat, setPercentToTreat] = useState<string>("100");
@@ -147,15 +169,69 @@ export default function NewJobManual() {
     [filteredUnits],
   );
 
-  const productsForSelect = useMemo(
-    () =>
-      fitosanitariProducts.map((p) => ({
-        value: p.registrationNumber,
-        label: p.productName,
-        description: p.activeIngredients,
-      })),
-    [fitosanitariProducts],
+  const selectedCompanyName = useMemo(() => {
+    return companySelectOptions.find((c) => c.companyId === selectedCompanyId)
+      ?.companyName;
+  }, [companySelectOptions, selectedCompanyId]);
+
+  const { products: warehouseProducts, isLoading: isLoadingWarehouse } =
+    useProducts(selectedCompanyName);
+
+  const companyWarehouseProducts = useMemo(
+    () => (selectedCompanyName ? warehouseProducts : []),
+    [selectedCompanyName, warehouseProducts],
   );
+
+  const unifiedProducts = useMemo((): UnifiedProduct[] => {
+    const registryItems: UnifiedProduct[] = fitosanitariProducts.map((p) => ({
+      key: `reg:${p.registrationNumber}`,
+      source: "registry" as const,
+      productName: p.productName,
+      registrationNumber: p.registrationNumber,
+    }));
+
+    const warehouseItems: UnifiedProduct[] = companyWarehouseProducts.map((p) => {
+      const netStock = calculateNetStock(p.stocks);
+      const stockUnit = p.stocks[0]?.unitOfMeasureQuantity ?? "";
+      return {
+        key: `wh:${p.id}`,
+        source: "warehouse" as const,
+        productName: p.name,
+        registrationNumber: p.sku || "",
+        sku: p.sku,
+        availableStock: netStock > 0 ? netStock : 0,
+        stockUnit,
+      };
+    });
+
+    return [...registryItems, ...warehouseItems];
+  }, [fitosanitariProducts, companyWarehouseProducts]);
+
+  const productsForSelect = useMemo(() => {
+    const registryOptions = fitosanitariProducts.map((p) => ({
+      value: `reg:${p.registrationNumber}`,
+      label: p.productName,
+      description: p.activeIngredients,
+      groupLabel: "Registro ministeriale",
+    }));
+
+    const warehouseOptions = companyWarehouseProducts.map((p) => {
+      const netStock = calculateNetStock(p.stocks);
+      const stockUnit = p.stocks[0]?.unitOfMeasureQuantity ?? "";
+      const stockLabel =
+        netStock > 0
+          ? `Disponibile: ${netStock} ${stockUnit}`
+          : "Esaurito";
+      return {
+        value: `wh:${p.id}`,
+        label: p.name,
+        description: stockLabel,
+        groupLabel: "Magazzino aziendale",
+      };
+    });
+
+    return [...warehouseOptions, ...registryOptions];
+  }, [fitosanitariProducts, companyWarehouseProducts]);
 
   const selectedUnits = useMemo(
     () =>
@@ -190,40 +266,60 @@ export default function NewJobManual() {
 
   const selectedProducts = useMemo(
     () =>
-      fitosanitariProducts.filter((p) =>
-        selectedProductIds.includes(p.registrationNumber),
-      ),
-    [fitosanitariProducts, selectedProductIds],
+      unifiedProducts.filter((p) => selectedProductKeys.includes(p.key)),
+    [unifiedProducts, selectedProductKeys],
   );
+
+  const unifiedProductsRef = useRef(unifiedProducts);
+  unifiedProductsRef.current = unifiedProducts;
 
   useEffect(() => {
     setProductRows((prev) => {
+      const keySet = new Set(selectedProductKeys);
+      const prevKeySet = new Set(Object.keys(prev));
+
+      const hasNewKeys = selectedProductKeys.some((k) => !prevKeySet.has(k));
+      const hasRemovedKeys = [...prevKeySet].some((k) => !keySet.has(k));
+
+      if (!hasNewKeys && !hasRemovedKeys) return prev;
+
       const next = { ...prev };
-      selectedProducts.forEach((p) => {
-        if (!next[p.registrationNumber]) {
-          next[p.registrationNumber] = {
-            registrationNumber: p.registrationNumber,
-            productName: p.productName,
-            qtyPerHa: "",
-            totalQty: "",
-            unitOfMeasure: "L",
-          };
+      const products = unifiedProductsRef.current;
+
+      selectedProductKeys.forEach((key) => {
+        if (!next[key]) {
+          const product = products.find((p) => p.key === key);
+          if (product) {
+            next[key] = {
+              key: product.key,
+              productName: product.productName,
+              registrationNumber: product.registrationNumber,
+              source: product.source,
+              qtyPerHa: "",
+              totalQty: "",
+              unitOfMeasure: product.stockUnit || "L",
+              availableStock: product.availableStock,
+              stockUnit: product.stockUnit,
+            };
+          }
         }
       });
-      Object.keys(next).forEach((regNum) => {
-        if (!selectedProductIds.includes(regNum)) delete next[regNum];
+
+      Object.keys(next).forEach((key) => {
+        if (!keySet.has(key)) delete next[key];
       });
+
       return next;
     });
-  }, [selectedProductIds, selectedProducts]);
+  }, [selectedProductKeys]);
 
   const updateProductRow = (
-    registrationNumber: string,
+    key: string,
     field: keyof ProductFormRow,
     value: string,
   ) => {
     setProductRows((prev) => {
-      const row = prev[registrationNumber];
+      const row = prev[key];
       if (!row) return prev;
       const next = { ...row, [field]: value };
       if (field === "qtyPerHa" && sauTrattataEffective > 0) {
@@ -234,14 +330,14 @@ export default function NewJobManual() {
         const tot = parseFloat(value);
         if (Number.isFinite(tot)) next.qtyPerHa = String(tot / sauTrattataEffective);
       }
-      return { ...prev, [registrationNumber]: next };
+      return { ...prev, [key]: next };
     });
   };
 
   const canSave =
     selectedCompanyId &&
     selectedUnitIds.length > 0 &&
-    selectedProductIds.length > 0 &&
+    selectedProductKeys.length > 0 &&
     dateOfOperation &&
     sauTrattataEffective > 0 &&
     Object.values(productRows).every(
@@ -266,7 +362,7 @@ export default function NewJobManual() {
         const unitTreatedSurface = sauTrattataEffective * unitShare;
 
         selectedProducts.forEach((product) => {
-          const row = productRows[product.registrationNumber];
+          const row = productRows[product.key];
           if (!row) return;
           const totalQty = parseFloat(row.totalQty) || 0;
           const quantityForUnit = totalQty * unitShare;
@@ -286,6 +382,7 @@ export default function NewJobManual() {
                   category: "PESTICIDE",
                   type: "Fitosanitario",
                   registrationNumber: product.registrationNumber,
+                  ...(product.sku ? { sku: product.sku } : {}),
                 },
                 quantity: -quantityForUnit,
                 unitOfMeasureQuantity: row.unitOfMeasure,
@@ -342,6 +439,7 @@ export default function NewJobManual() {
             onValueChange={(v) => {
               setSelectedCompanyId(v);
               setSelectedUnitIds([]);
+              setSelectedProductKeys([]);
             }}
           >
             <SelectTrigger className="h-11">
@@ -440,19 +538,19 @@ export default function NewJobManual() {
           <Label className="text-sm font-semibold text-muted-foreground">
             Prodotti <span className="text-red-500">*</span>
           </Label>
-          {isLoadingProducts ? (
+          {isLoadingProducts || (selectedCompanyId && isLoadingWarehouse) ? (
             <div className="text-sm text-muted-foreground flex items-center gap-2 border border-dashed rounded-md p-3">
               <Loader2 className="h-4 w-4 animate-spin" />
               Caricamento prodotti...
             </div>
           ) : (
             <MultiSearchableSelect
-              value={selectedProductIds}
+              value={selectedProductKeys}
               options={productsForSelect}
               placeholder="Seleziona uno o più prodotti..."
               searchPlaceholder="Cerca prodotto..."
               emptyMessage="Nessun prodotto trovato"
-              onChange={setSelectedProductIds}
+              onChange={setSelectedProductKeys}
             />
           )}
         </div>
@@ -468,6 +566,7 @@ export default function NewJobManual() {
                 <thead>
                   <tr className="bg-muted/50 border-b border-border">
                     <th className="text-left font-medium p-3">Prodotto</th>
+                    <th className="text-left font-medium p-3">Disponibile</th>
                     <th className="text-left font-medium p-3">Qta per ettaro</th>
                     <th className="text-left font-medium p-3">Unità</th>
                     <th className="text-left font-medium p-3">Qta totale prodotto</th>
@@ -475,11 +574,28 @@ export default function NewJobManual() {
                 </thead>
                 <tbody>
                   {selectedProducts.map((p) => {
-                    const row = productRows[p.registrationNumber];
+                    const row = productRows[p.key];
                     if (!row) return null;
                     return (
-                      <tr key={p.registrationNumber} className="border-b border-border last:border-0">
-                        <td className="p-3 font-medium">{p.productName}</td>
+                      <tr key={p.key} className="border-b border-border last:border-0">
+                        <td className="p-3">
+                          <div className="font-medium">{p.productName}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {p.source === "warehouse" ? "Magazzino" : "Registro"}
+                          </div>
+                        </td>
+                        <td className="p-3 align-middle">
+                          {p.source === "warehouse" && p.availableStock != null ? (
+                            <span className={cn(
+                              "font-mono text-sm",
+                              p.availableStock > 0 ? "text-green-600" : "text-red-500",
+                            )}>
+                              {p.availableStock.toFixed(2)} {p.stockUnit}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </td>
                         <td className="p-3">
                           <Input
                             type="number"
@@ -488,7 +604,7 @@ export default function NewJobManual() {
                             value={row.qtyPerHa}
                             onChange={(e) =>
                               updateProductRow(
-                                p.registrationNumber,
+                                p.key,
                                 "qtyPerHa",
                                 e.target.value,
                               )
@@ -502,7 +618,7 @@ export default function NewJobManual() {
                             value={row.unitOfMeasure}
                             onValueChange={(v) =>
                               updateProductRow(
-                                p.registrationNumber,
+                                p.key,
                                 "unitOfMeasure",
                                 v,
                               )
@@ -528,7 +644,7 @@ export default function NewJobManual() {
                             value={row.totalQty}
                             onChange={(e) =>
                               updateProductRow(
-                                p.registrationNumber,
+                                p.key,
                                 "totalQty",
                                 e.target.value,
                               )

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import type { ComponentProps, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/organism/Header";
@@ -17,6 +17,7 @@ import { IoOpenOutline } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import DrawerProduct from "./DrawerProduct";
+import { getAdministrativeStatusMap } from "@/services/fitosanitariRegistry";
 
 class ProductStockCalculator {
   private readonly stocks: Product["stocks"];
@@ -133,9 +134,24 @@ interface ProductTableRow extends Record<string, unknown> {
 
 class ProductTableRowBuilder {
   private readonly products: Product[];
+  private readonly statusMap: Map<string, string> | null;
 
-  constructor(products: Product[]) {
+  constructor(
+    products: Product[],
+    statusMap: Map<string, string> | null = null,
+  ) {
     this.products = products;
+    this.statusMap = statusMap;
+  }
+
+  private resolveAdministrativeStatus(product: Product): string | null {
+    if (this.statusMap) {
+      const datasetStatus = this.statusMap.get(product.name.toLowerCase());
+      if (datasetStatus) {
+        return datasetStatus;
+      }
+    }
+    return product.administrativeStatus ?? null;
   }
 
   public build(): ProductTableRow[] {
@@ -156,7 +172,7 @@ class ProductTableRowBuilder {
         warehouseName: product.warehouse.name,
         companyName: product.warehouse.company.name,
         movementsCount: product.stocks.length,
-        administrativeStatus: product.administrativeStatus ?? null,
+        administrativeStatus: this.resolveAdministrativeStatus(product),
         product,
       };
     });
@@ -300,12 +316,12 @@ class ProductTableColumnsFactory {
       );
     }
 
-    // Mostra "Revocato" con badge rosso di allerta
-    if (
-      data.administrativeStatus === "Revocato" ||
-      data.administrativeStatus?.toString().toLowerCase() === "revocato"
-    ) {
+    const status = data.administrativeStatus.toLowerCase();
+    if (status === "revocato" || status.startsWith("revocato")) {
       return <Badge variant="destructive">{data.administrativeStatus}</Badge>;
+    }
+    if (status === "scaduto" || status.startsWith("scaduto")) {
+      return <Badge variant="secondary">{data.administrativeStatus}</Badge>;
     }
 
     return <span>{data.administrativeStatus}</span>;
@@ -320,8 +336,18 @@ function ProductsPage() {
   const [selectedProductPreview, setSelectedProductPreview] =
     useState<Product | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [datasetStatusMap, setDatasetStatusMap] =
+    useState<Map<string, string> | null>(null);
 
   const { products, isLoading, isError, error, refetch } = useProducts();
+
+  useEffect(() => {
+    getAdministrativeStatusMap()
+      .then(setDatasetStatusMap)
+      .catch((err) =>
+        console.error("Error loading fitosanitari status map:", err),
+      );
+  }, []);
 
   const sortedProducts = useMemo(() => {
     const sorter = new ProductSorter(
@@ -354,9 +380,9 @@ function ProductsPage() {
   );
 
   const tableRows = useMemo<ProductTableRow[]>(() => {
-    const builder = new ProductTableRowBuilder(sortedProducts);
+    const builder = new ProductTableRowBuilder(sortedProducts, datasetStatusMap);
     return builder.build();
-  }, [sortedProducts]);
+  }, [sortedProducts, datasetStatusMap]);
 
   const handleProductClick = (product: Product) => {
     setSelectedProductId(product.id);

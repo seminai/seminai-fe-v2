@@ -219,7 +219,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
     }, [tableState.rows, columns, filters, sort]);
 
     const exportFn = useTableExport(
-      columns,
+      visibility.visibleColumns,
       filteredRows,
       exportFileName,
       customExportConfig,

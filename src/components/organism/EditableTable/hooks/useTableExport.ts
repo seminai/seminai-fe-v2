@@ -17,6 +17,17 @@ export function useTableExport(
   exportFileName?: string,
   customExportConfig?: CustomExportConfig
 ): UseTableExportReturn {
+  const appendExportDateColumn = useCallback(
+    (headers: string[], data: Array<Array<unknown>>) => {
+      const exportDate = format(new Date(), "dd/MM/yyyy", { locale: it });
+      return {
+        headers: [...headers, "Data"],
+        data: data.map((row) => [...row, exportDate]),
+      };
+    },
+    []
+  );
+
   const downloadCsv = useCallback(
     (content: string) => {
       const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
@@ -33,15 +44,14 @@ export function useTableExport(
   );
 
   const handleExportCsv = useCallback(() => {
-    if (columns.length === 0) return;
-
     if (customExportConfig && customExportConfig.columns.length > 0) {
-      const headers = customExportConfig.columns.map((col) => col.header);
+      const baseHeaders = customExportConfig.columns.map((col) => col.header);
       const data = filteredRows.map((row) =>
         customExportConfig.columns.map((col) => formatExportValue(col.accessor(row.data)))
       );
+      const { headers, data: dataWithDate } = appendExportDateColumn(baseHeaders, data);
 
-      const csvContent = Papa.unparse({ fields: headers, data });
+      const csvContent = Papa.unparse({ fields: headers, data: dataWithDate });
       downloadCsv(csvContent);
       return;
     }
@@ -59,7 +69,7 @@ export function useTableExport(
       (filteredRows[0].data.unitOfMeasureQuantity !== undefined ||
         filteredRows[0].data.quantityUnitOfMeasure !== undefined);
 
-    const headers = columns
+    const baseHeaders = columns
       .map((column, index) => {
         if (index === umColumnIndex && quantityColumnIndex !== -1) {
           return null;
@@ -115,18 +125,17 @@ export function useTableExport(
         .filter((cell): cell is string => cell !== null);
     });
 
-    const csvContent = Papa.unparse({ fields: headers, data });
+    const { headers, data: dataWithDate } = appendExportDateColumn(baseHeaders, data);
+    const csvContent = Papa.unparse({ fields: headers, data: dataWithDate });
     downloadCsv(csvContent);
-  }, [columns, filteredRows, customExportConfig, downloadCsv]);
+  }, [columns, filteredRows, customExportConfig, appendExportDateColumn, downloadCsv]);
 
   const handleExportExcel = useCallback(() => {
-    if (columns.length === 0) return;
-
-    let headers: string[];
-    let data: unknown[][];
+    let baseHeaders: string[];
+    let data: Array<Array<unknown>>;
 
     if (customExportConfig && customExportConfig.columns.length > 0) {
-      headers = customExportConfig.columns.map((col) => col.header);
+      baseHeaders = customExportConfig.columns.map((col) => col.header);
       data = filteredRows.map((row) =>
         customExportConfig.columns.map((col) => formatExportValue(col.accessor(row.data)))
       );
@@ -144,7 +153,7 @@ export function useTableExport(
         (filteredRows[0].data.unitOfMeasureQuantity !== undefined ||
           filteredRows[0].data.quantityUnitOfMeasure !== undefined);
 
-      headers = columns
+      baseHeaders = columns
         .map((column, index) => {
           if (index === umColumnIndex && quantityColumnIndex !== -1) {
             return null;
@@ -201,14 +210,15 @@ export function useTableExport(
       });
     }
 
-    const worksheetData = [headers, ...data];
+    const { headers, data: dataWithDate } = appendExportDateColumn(baseHeaders, data);
+    const worksheetData = [headers, ...dataWithDate];
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
 
     const columnWidths = headers.map((header, colIndex) => {
       const maxLength = Math.max(
         header.length,
-        ...data.map((row) => String(row[colIndex] || "").length)
+        ...dataWithDate.map((row) => String(row[colIndex] || "").length)
       );
       return { wch: Math.min(maxLength + 2, 50) };
     });
@@ -217,7 +227,7 @@ export function useTableExport(
     XLSX.utils.book_append_sheet(workbook, worksheet, "Dati");
     const filename = generateExportFileName(exportFileName, "xlsx");
     XLSX.writeFile(workbook, filename);
-  }, [columns, filteredRows, customExportConfig, exportFileName]);
+  }, [columns, filteredRows, customExportConfig, appendExportDateColumn, exportFileName]);
 
   return {
     handleExportCsv,
