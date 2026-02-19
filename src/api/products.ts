@@ -220,6 +220,7 @@ export type BulkProductStockPayload = {
 };
 
 export type BulkProductPayload = {
+  id?: string;
   name: string;
   sku?: string;
   barcode?: string;

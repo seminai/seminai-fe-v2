@@ -172,31 +172,43 @@ class ProductTableColumnsFactory {
         id: "name",
         title: "Nome Prodotto",
         width: "280px",
+        type: "text",
         render: ProductTableColumnsFactory.renderName,
+      },
+      {
+        id: "sku",
+        title: "SKU",
+        width: "140px",
+        type: "text",
+        render: ProductTableColumnsFactory.renderSku,
       },
       {
         id: "stockTotal",
         title: "Stock",
         width: "200px",
         type: "number",
+        readOnly: true,
         render: ProductTableColumnsFactory.renderStock,
       },
       {
         id: "warehouseName",
         title: "Magazzino",
         width: "220px",
+        readOnly: true,
         render: ProductTableColumnsFactory.renderWarehouse,
       },
       {
         id: "companyName",
         title: "Azienda",
         width: "220px",
+        readOnly: true,
         render: ProductTableColumnsFactory.renderCompany,
       },
       {
         id: "administrativeStatus",
         title: "Stato amministrativo",
         width: "220px",
+        readOnly: true,
         render: (value, row) =>
           ProductTableColumnsFactory.renderAdministrativeStatus(
             value,
@@ -227,6 +239,14 @@ class ProductTableColumnsFactory {
         ) : null}
       </div>
     );
+  }
+
+  private static renderSku(
+    _value: unknown,
+    row: Record<string, unknown>,
+  ): ReactNode {
+    const data = ProductTableColumnsFactory.asRow(row);
+    return <span>{data.sku}</span>;
   }
 
   private static renderStock(
@@ -352,6 +372,71 @@ function ProductsPage() {
     }
   };
 
+  const handleSave = useCallback(
+    async (payload: {
+      created: Array<Record<string, unknown>>;
+      updated: Array<Record<string, unknown>>;
+    }) => {
+      const allRows = [...payload.created, ...payload.updated];
+      if (allRows.length === 0) return;
+
+      try {
+        // Group by companyId + warehouseId (from product on each row)
+        const groups = new Map<
+          string,
+          { companyId: string; warehouseId: string; rows: Record<string, unknown>[] }
+        >();
+        for (const row of allRows) {
+          const product = (row as ProductTableRow).product;
+          if (!product?.warehouse?.company?.id) continue;
+          const companyId = product.warehouse.company.id;
+          const warehouseId = product.warehouseId;
+          const key = `${companyId}|${warehouseId}`;
+          if (!groups.has(key)) {
+            groups.set(key, { companyId, warehouseId, rows: [] });
+          }
+          groups.get(key)!.rows.push(row);
+        }
+
+        let totalCreated = 0;
+        let totalUpdated = 0;
+        for (const { companyId, warehouseId, rows } of groups.values()) {
+          const products = rows.map((row) => {
+            const r = row as ProductTableRow;
+            return {
+              ...(r.product?.id && { id: r.product.id }),
+              name: String(r.name ?? ""),
+              sku: String(r.sku ?? ""),
+              ...(r.description && { description: String(r.description) }),
+            };
+          });
+          const result = await productsApiService.bulkImport({
+            companyId,
+            warehouseId,
+            products,
+          });
+          totalCreated += result.data?.productsCreated ?? 0;
+          totalUpdated += result.data?.productsUpdated ?? 0;
+        }
+
+        toast.success("Prodotti aggiornati", {
+          description:
+            totalCreated > 0 || totalUpdated > 0
+              ? `Creati: ${totalCreated}, aggiornati: ${totalUpdated}`
+              : "Modifiche applicate",
+        });
+        await refetch();
+      } catch (error) {
+        toast.error("Errore durante il salvataggio", {
+          description:
+            error instanceof Error ? error.message : "Riprova più tardi",
+        });
+        console.error("Error saving products in bulk:", error);
+      }
+    },
+    [refetch],
+  );
+
   const handleDeleteSelected = async (
     removed: Array<Record<string, unknown>>,
   ) => {
@@ -446,9 +531,10 @@ function ProductsPage() {
         <EditableTable
           columns={tableColumns}
           rows={tableRows}
-          isModify={false}
+          isModify={true}
           addButton={true}
           onAddClick={() => navigate("/new-product")}
+          onSave={handleSave}
           onDeleteSelected={handleDeleteSelected}
           getRowId={(row) => (row as ProductTableRow).id}
           exportFileName="prodotti"
