@@ -75,9 +75,12 @@ class DdtPreviewMapper {
   public map(entries: BulkFromDdtEntry[]): ProductImportItem[] {
     return entries.map((e) => ({
       name: e.productName,
+      productNameExtracted: e.productNameExtracted ?? undefined,
       registrationNumber: e.registrationNumber ?? undefined,
       quantity: e.quantity,
       unitOfMeasureQuantity: e.quantityUnitOfMeasure || "kg",
+      quantityConverted: e.quantityConverted ?? undefined,
+      unitMeasureConverted: e.unitMeasureConverted ?? undefined,
       supplierName: e.supplierName ?? undefined,
       supplierVat: e.supplierVat ?? undefined,
       ddtDate: e.ddtDate ?? undefined,
@@ -90,10 +93,13 @@ class InvoicePreviewMapper {
   public map(products: InvoiceProduct[]): ProductImportItem[] {
     return products.map((p) => ({
       name: p.productName,
+      productNameExtracted: p.productNameExtracted ?? undefined,
       registrationNumber: p.registrationNumber ?? undefined,
       category: p.productCategory ?? undefined,
       quantity: p.quantity ?? 0,
       unitOfMeasureQuantity: p.quantityUnitOfMeasure || "NR",
+      quantityConverted: p.quantityConverted ?? undefined,
+      unitMeasureConverted: p.unitMeasureConverted ?? undefined,
       price: p.unitPrice ?? undefined,
       unitOfMeasurePrice: p.totalPrice != null ? "EUR" : undefined,
       invoiceCode: p.invoiceNumber ?? undefined,
@@ -333,9 +339,12 @@ export default function FileImportSection({
           ddtResponse.data.suggestedProducts.forEach((p) => {
             allEntries.push({
               productName: p.productName,
+              productNameExtracted: p.productNameExtracted ?? undefined,
               registrationNumber: p.registrationNumber ?? undefined,
               quantity: p.quantity,
               quantityUnitOfMeasure: p.quantityUnitOfMeasure,
+              quantityConverted: p.quantityConverted ?? undefined,
+              unitMeasureConverted: p.unitMeasureConverted ?? undefined,
               supplierName: p.supplierName ?? undefined,
               supplierVat: p.supplierVat ?? undefined,
               ddtDate: p.ddtDate ?? undefined,
@@ -480,8 +489,8 @@ export default function FileImportSection({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Header: toggle tipo file + selezione azienda/magazzino */}
-      <div className="flex-shrink-0 px-6 py-4 border-b bg-white space-y-4">
+      {/* Header: toggle tipo file + selezione azienda/magazzino — nascosto quando ci sono prodotti estratti */}
+      <div className={`flex-shrink-0 px-6 py-4 border-b bg-white space-y-4${hasExtractedProducts ? " hidden" : ""}`}>
         {/* Riga toggle tipo file + torna alla scelta */}
         <div className="flex items-center gap-3 flex-wrap">
           <Button

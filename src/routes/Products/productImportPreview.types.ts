@@ -7,6 +7,7 @@ export type ImportPreviewError = {
 
 export type ProductImportItem = {
   name: string;
+  productNameExtracted?: string | null;
   sku?: string | null;
   barcode?: string | null;
   category?: string | null;
@@ -15,6 +16,8 @@ export type ProductImportItem = {
   registrationNumber?: string | null;
   quantity: number;
   unitOfMeasureQuantity: string;
+  quantityConverted?: number | null;
+  unitMeasureConverted?: string | null;
   price?: number | null;
   unitOfMeasurePrice?: string | null;
   ddtCode?: string | null;

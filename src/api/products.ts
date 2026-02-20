@@ -142,10 +142,13 @@ export type UpdateProductResponse = {
 
 export type BulkFromDdtEntry = {
   productName: string;
+  productNameExtracted?: string | null;
   registrationNumber?: string;
   productCategory?: string;
   quantity: number;
   quantityUnitOfMeasure: string;
+  quantityConverted?: number | null;
+  unitMeasureConverted?: string | null;
   supplierName?: string;
   supplierVat?: string;
   ddtDate?: string;
@@ -159,10 +162,14 @@ export type BulkFromDdtFileResult = {
 
 export type BulkFromDdtSuggestedProduct = {
   productName: string;
+  productNameExtracted?: string | null;
   registrationNumber?: string | null;
   productCategory?: string | null;
+  administrativeStatus?: string | null;
   quantity: number;
   quantityUnitOfMeasure: string;
+  quantityConverted?: number | null;
+  unitMeasureConverted?: string | null;
   supplierName?: string | null;
   supplierVat?: string | null;
   ddtDate?: string | null;
@@ -181,10 +188,14 @@ export type BulkFromDdtToProductListResponse = {
 
 export type InvoiceProduct = {
   productName: string;
+  productNameExtracted?: string | null;
   registrationNumber?: string | null;
   productCategory?: "PHYTOSANITARY" | "FERTILIZER" | "OTHER" | string | null;
+  administrativeStatus?: string | null;
   quantity: number | null;
   quantityUnitOfMeasure: string | null;
+  quantityConverted?: number | null;
+  unitMeasureConverted?: string | null;
   supplierName?: string | null;
   supplierVat?: string | null;
   invoiceNumber?: string | null;
@@ -217,6 +228,9 @@ export type BulkProductStockPayload = {
   invoiceCode?: string;
   invoiceDate?: string;
   invoiceDueDate?: string;
+  productNameAsOnDocument?: string;
+  quantityConverted?: number;
+  unitMeasureConverted?: string;
 };
 
 export type BulkProductPayload = {
