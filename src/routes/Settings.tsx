@@ -68,7 +68,28 @@ import {
   XCircle,
   Loader2,
   RefreshCw,
+  BarChart3,
+  Table2,
+  TrendingUp,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Legend,
+} from "recharts";
 
 const currencyFormatter = new Intl.NumberFormat("it-IT", {
   style: "currency",
@@ -159,6 +180,32 @@ class TokenUsageViewModel {
     return formatDateTime(this.usage.createdAt);
   }
 
+  /** Date key (YYYY-MM-DD) for filtering and grouping */
+  public get dateKey(): string {
+    const d = new Date(this.usage.createdAt);
+    if (Number.isNaN(d.getTime())) return "";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  public get costClientNumber(): number {
+    return this.usage.costClient;
+  }
+
+  public get totalTokensNumber(): number {
+    return this.usage.totalTokens;
+  }
+
+  public get promptTokensNumber(): number {
+    return this.usage.promptTokens;
+  }
+
+  public get completionTokensNumber(): number {
+    return this.usage.completionTokens;
+  }
+
   public get reference(): string {
     return (
       this.usage.jobId || this.usage.jobGroupId || this.usage.companyId || "—"
@@ -192,6 +239,8 @@ type TokenUsageFilters = {
   jobType: string;
   model: string;
   companyId: string;
+  dateFrom: string;
+  dateTo: string;
 };
 
 class TokenUsageFilterEngine {
@@ -206,10 +255,13 @@ class TokenUsageFilterEngine {
   }
 
   private matches(row: TokenUsageViewModel): boolean {
-    const { text, jobType, model, companyId } = this.filters;
+    const { text, jobType, model, companyId, dateFrom, dateTo } = this.filters;
     if (jobType && row.jobType !== jobType) return false;
     if (model && row.model !== model) return false;
     if (companyId && row.metadataCompanyId !== companyId) return false;
+    const key = row.dateKey;
+    if (dateFrom && key < dateFrom) return false;
+    if (dateTo && key > dateTo) return false;
 
     if (text.trim().length === 0) return true;
     const query = text.toLowerCase();
@@ -228,6 +280,8 @@ const DEFAULT_FILTERS: TokenUsageFilters = {
   jobType: "",
   model: "",
   companyId: "",
+  dateFrom: "",
+  dateTo: "",
 };
 
 export default function Settings() {
@@ -235,7 +289,6 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const {
     usages,
-    totals,
     isLoading: isLoadingTokenCosts,
     isError: isTokenCostsError,
     error: tokenCostsError,
@@ -245,12 +298,12 @@ export default function Settings() {
   const qdcApiKey = data?.data.qdcApiKey ?? null;
   const ifarmingApiKey = data?.data.ifarmingApiKey ?? null;
   const [editable, setEditable] = React.useState<EditableUserState | null>(
-    userData ? createEditableUserState(userData) : null
+    userData ? createEditableUserState(userData) : null,
   );
 
   const [editingQdc, setEditingQdc] = React.useState(qdcApiKey === null);
   const [editingIfarming, setEditingIfarming] = React.useState(
-    ifarmingApiKey === null
+    ifarmingApiKey === null,
   );
   const [qdcValue, setQdcValue] = React.useState("");
   const [ifarmingValue, setIfarmingValue] = React.useState("");
@@ -287,31 +340,6 @@ export default function Settings() {
     return usages.map((usage) => new TokenUsageViewModel(usage));
   }, [usages]);
 
-  const tokenCostSummary = React.useMemo(
-    () =>
-      totals
-        ? [
-            {
-              label: "Costo totale (cliente)",
-              value: formatCurrency(totals.totalCostClient),
-            },
-            {
-              label: "Token prompt",
-              value: formatInteger(totals.totalPromptTokens),
-            },
-            {
-              label: "Token completion",
-              value: formatInteger(totals.totalCompletionTokens),
-            },
-            {
-              label: "Token totali",
-              value: formatInteger(totals.totalTokens),
-            },
-          ]
-        : [],
-    [totals]
-  );
-
   const [filters, setFilters] =
     React.useState<TokenUsageFilters>(DEFAULT_FILTERS);
 
@@ -320,8 +348,10 @@ export default function Settings() {
     const models = Array.from(new Set(usageRows.map((row) => row.model)));
     const companies = Array.from(
       new Set(
-        usageRows.map((row) => row.metadataCompanyId).filter((id) => id !== "—")
-      )
+        usageRows
+          .map((row) => row.metadataCompanyId)
+          .filter((id) => id !== "—"),
+      ),
     );
     return { jobTypes, models, companies };
   }, [usageRows]);
@@ -331,7 +361,110 @@ export default function Settings() {
     return engine.apply(usageRows);
   }, [filters, usageRows]);
 
+  const filteredTotals = React.useMemo(() => {
+    let totalCostClient = 0;
+    let totalPromptTokens = 0;
+    let totalCompletionTokens = 0;
+    let totalTokens = 0;
+    for (const row of filteredUsageRows) {
+      totalCostClient += row.costClientNumber;
+      totalPromptTokens += row.promptTokensNumber;
+      totalCompletionTokens += row.completionTokensNumber;
+      totalTokens += row.totalTokensNumber;
+    }
+    return {
+      totalCostClient,
+      totalPromptTokens,
+      totalCompletionTokens,
+      totalTokens,
+    };
+  }, [filteredUsageRows]);
+
+  const tokenCostSummary = React.useMemo(
+    () =>
+      usageRows.length > 0
+        ? [
+            {
+              label: "Costo totale (cliente)",
+              value: formatCurrency(filteredTotals.totalCostClient),
+            },
+            {
+              label: "Token prompt",
+              value: formatInteger(filteredTotals.totalPromptTokens),
+            },
+            {
+              label: "Token completion",
+              value: formatInteger(filteredTotals.totalCompletionTokens),
+            },
+            {
+              label: "Token totali",
+              value: formatInteger(filteredTotals.totalTokens),
+            },
+          ]
+        : [],
+    [usageRows.length, filteredTotals],
+  );
+
+  const modelsInChart = React.useMemo(
+    () => Array.from(new Set(filteredUsageRows.map((r) => r.model))).sort(),
+    [filteredUsageRows]
+  );
+
+  type DayModelRow = {
+    dateKey: string;
+    dateLabel: string;
+    [model: string]: string | number;
+  };
+
+  const dailyConsumptionByModel = React.useMemo((): DayModelRow[] => {
+    const byDay = new Map<string, Map<string, number>>();
+    for (const row of filteredUsageRows) {
+      const key = row.dateKey;
+      if (!key) continue;
+      let dayMap = byDay.get(key);
+      if (!dayMap) {
+        dayMap = new Map<string, number>();
+        byDay.set(key, dayMap);
+      }
+      const prev = dayMap.get(row.model) ?? 0;
+      dayMap.set(row.model, prev + row.costClientNumber);
+    }
+    const sortedKeys = Array.from(byDay.keys()).sort();
+    return sortedKeys.map((dateKey) => {
+      const dayMap = byDay.get(dateKey)!;
+      const out: DayModelRow = {
+        dateKey,
+        dateLabel: dateKey.split("-").reverse().join("/"),
+      };
+      for (const model of modelsInChart) {
+        out[model] = dayMap.get(model) ?? 0;
+      }
+      return out;
+    });
+  }, [filteredUsageRows, modelsInChart]);
+
   const hasUsages = usageRows.length > 0;
+
+  const consumptionChartConfig: ChartConfig = React.useMemo(() => {
+    const base: ChartConfig = {
+      costClient: {
+        label: "Costo cliente (€)",
+        color: "var(--chart-1)",
+      },
+      totalTokens: {
+        label: "Token totali",
+        color: "var(--chart-2)",
+      },
+    };
+    const chartColors = ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5"];
+    modelsInChart.forEach((model, i) => {
+      base[model] = {
+        label: model,
+        color: `var(--${chartColors[i % chartColors.length]})`,
+      };
+    });
+    return base;
+  }, [modelsInChart]);
 
   React.useEffect(() => {
     if (userData) {
@@ -419,20 +552,20 @@ export default function Settings() {
   const [clearCacheConfirmText, setClearCacheConfirmText] = React.useState("");
 
   // WhatsApp state
-  const [whatsappStatus, setWhatsappStatus] =
-    React.useState<WhatsAppStatusResponse["data"] | null>(null);
+  const [whatsappStatus, setWhatsappStatus] = React.useState<
+    WhatsAppStatusResponse["data"] | null
+  >(null);
   const [whatsappQrCode, setWhatsappQrCode] = React.useState<string | null>(
-    null
+    null,
   );
   const [isLoadingWhatsappStatus, setIsLoadingWhatsappStatus] =
     React.useState(false);
   const [isSettingUpWhatsapp, setIsSettingUpWhatsapp] = React.useState(false);
   const [isDisconnectingWhatsapp, setIsDisconnectingWhatsapp] =
     React.useState(false);
-  const [isWhatsappConnecting, setIsWhatsappConnecting] =
-    React.useState(false);
+  const [isWhatsappConnecting, setIsWhatsappConnecting] = React.useState(false);
   const whatsappStatusPollingIntervalRef = React.useRef<NodeJS.Timeout | null>(
-    null
+    null,
   );
 
   const { mutateAsync: clearCacheAsync, isPending: isClearingCache } =
@@ -472,9 +605,9 @@ export default function Settings() {
       try {
         const response = await getWhatsAppStatusWithBearer();
         const newStatus = response.data;
-        
+
         setWhatsappStatus(newStatus);
-        
+
         // Update QR code if still in connecting phase (not connected yet)
         if (newStatus.connectionStatus === "connected") {
           // Clear QR code when connected
@@ -514,7 +647,7 @@ export default function Settings() {
     try {
       const response = await getWhatsAppStatusWithBearer();
       setWhatsappStatus(response.data);
-      
+
       // If connecting or QR code ready, start polling
       if (
         response.data.connectionStatus === "connecting" ||
@@ -565,15 +698,15 @@ export default function Settings() {
   // Load WhatsApp status on mount
   React.useEffect(() => {
     let mounted = true;
-    
+
     const loadStatus = async () => {
       setIsLoadingWhatsappStatus(true);
       try {
         const response = await getWhatsAppStatusWithBearer();
         if (!mounted) return;
-        
+
         setWhatsappStatus(response.data);
-        
+
         // If connecting or QR code ready, start polling
         if (
           response.data.connectionStatus === "connecting" ||
@@ -625,9 +758,9 @@ export default function Settings() {
         }
       }
     };
-    
+
     loadStatus();
-    
+
     return () => {
       mounted = false;
       stopWhatsappStatusPolling();
@@ -745,9 +878,20 @@ export default function Settings() {
           </div>
           <div className="text-gray-600 text-sm">{user.email}</div>
           <div className="text-gray-600 text-sm">{current?.companyName}</div>
-          <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-agri-green-50 text-black rounded-full text-sm font-medium">
-            <span className="text-lg">💰</span>
-            <span>{user.credits} crediti disponibili</span>
+          <div className="mt-2 flex flex-col gap-1.5 w-full max-w-xs">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Crediti</span>
+              <span className="font-medium tabular-nums">
+                {user.credits} disponibili
+              </span>
+            </div>
+            <Progress
+              value={Math.min(
+                100,
+                (user.credits / Math.max(100, user.credits)) * 100,
+              )}
+              className="h-2"
+            />
           </div>
         </div>
         <div>
@@ -777,7 +921,7 @@ export default function Settings() {
                   setEditable((prev) =>
                     prev
                       ? updateEditableField(prev, "name", e.target.value)
-                      : prev
+                      : prev,
                   )
                 }
               />
@@ -791,7 +935,7 @@ export default function Settings() {
                   setEditable((prev) =>
                     prev
                       ? updateEditableField(prev, "surname", e.target.value)
-                      : prev
+                      : prev,
                   )
                 }
               />
@@ -805,7 +949,7 @@ export default function Settings() {
                   setEditable((prev) =>
                     prev
                       ? updateEditableField(prev, "fiscalCode", e.target.value)
-                      : prev
+                      : prev,
                   )
                 }
               />
@@ -819,7 +963,7 @@ export default function Settings() {
                   setEditable((prev) =>
                     prev
                       ? updateEditableField(prev, "phoneNumber", e.target.value)
-                      : prev
+                      : prev,
                   )
                 }
               />
@@ -839,7 +983,7 @@ export default function Settings() {
                   setEditable((prev) =>
                     prev
                       ? updateEditableField(prev, "companyName", e.target.value)
-                      : prev
+                      : prev,
                   )
                 }
               />
@@ -853,7 +997,7 @@ export default function Settings() {
                   setEditable((prev) =>
                     prev
                       ? updateEditableField(prev, "vatNumber", e.target.value)
-                      : prev
+                      : prev,
                   )
                 }
               />
@@ -867,7 +1011,7 @@ export default function Settings() {
                   setEditable((prev) =>
                     prev
                       ? updateEditableField(prev, "address", e.target.value)
-                      : prev
+                      : prev,
                   )
                 }
               />
@@ -1095,10 +1239,11 @@ export default function Settings() {
                   </p>
                   <p className="text-sm text-yellow-800">
                     Il numero WhatsApp utilizzato per questa integrazione{" "}
-                    <strong>DEVE essere diverso</strong> dal tuo numero personale.
-                    Se colleghi il tuo numero personale, l'integrazione smetterà
-                    di funzionare correttamente. Ti consigliamo di utilizzare un
-                    numero WhatsApp Business dedicato per la tua azienda agricola.
+                    <strong>DEVE essere diverso</strong> dal tuo numero
+                    personale. Se colleghi il tuo numero personale,
+                    l'integrazione smetterà di funzionare correttamente. Ti
+                    consigliamo di utilizzare un numero WhatsApp Business
+                    dedicato per la tua azienda agricola.
                   </p>
                 </div>
               </div>
@@ -1257,12 +1402,13 @@ export default function Settings() {
                           disabled={isLoadingWhatsappStatus}
                           onClick={async () => {
                             try {
-                              const qrResponse = await getWhatsAppQrCodeWithBearer();
+                              const qrResponse =
+                                await getWhatsAppQrCodeWithBearer();
                               setWhatsappQrCode(qrResponse.data.qrCodeBase64);
                               toast.success("QR code aggiornato");
                             } catch (error) {
                               toast.error(
-                                "Errore durante il caricamento del QR code"
+                                "Errore durante il caricamento del QR code",
                               );
                             }
                           }}
@@ -1399,6 +1545,30 @@ export default function Settings() {
               setFilters((prev) => ({ ...prev, text: e.target.value }))
             }
           />
+          <Label className="sr-only" htmlFor="filter-date-from">
+            Data da
+          </Label>
+          <Input
+            id="filter-date-from"
+            type="date"
+            className="h-10 w-[140px]"
+            value={filters.dateFrom}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, dateFrom: e.target.value }))
+            }
+          />
+          <Label className="sr-only" htmlFor="filter-date-to">
+            Data a
+          </Label>
+          <Input
+            id="filter-date-to"
+            type="date"
+            className="h-10 w-[140px]"
+            value={filters.dateTo}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, dateTo: e.target.value }))
+            }
+          />
           <select
             className="h-10 rounded-md border border-agri-green-100 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-agri-green-200"
             value={filters.jobType}
@@ -1450,6 +1620,22 @@ export default function Settings() {
           </Button>
         </div>
 
+        <Tabs defaultValue="table" className="w-full">
+          <TabsList className="mb-4 flex flex-wrap">
+            <TabsTrigger value="table" className="gap-2">
+              <Table2 className="h-4 w-4" />
+              Tabella
+            </TabsTrigger>
+            <TabsTrigger value="chart" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Barre (per giorno e modello)
+            </TabsTrigger>
+            <TabsTrigger value="line" className="gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Lineare (per modello)
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="table" className="mt-0">
         <div className="max-h-[420px] rounded-lg border border-agri-green-100 bg-white shadow-sm overflow-auto">
           <Table className="min-w-[1040px] [&_tr]:border-agri-green-100 [&_th]:border-agri-green-100 [&_td]:border-agri-green-50">
             <TableHeader>
@@ -1523,6 +1709,117 @@ export default function Settings() {
             </TableBody>
           </Table>
         </div>
+          </TabsContent>
+          <TabsContent value="chart" className="mt-0">
+            <div className="rounded-lg border border-agri-green-100 bg-white p-4 min-h-[320px]">
+              {isLoadingTokenCosts && (
+                <div className="flex items-center justify-center gap-2 py-12 text-sm text-gray-500">
+                  <Spinner size={20} ariaLabel="Caricamento costi" />
+                  <span>Caricamento…</span>
+                </div>
+              )}
+              {!isLoadingTokenCosts && dailyConsumptionByModel.length === 0 && (
+                <div className="flex items-center justify-center py-12 text-sm text-gray-600">
+                  Nessun dato da mostrare. Applica i filtri o attendi nuovi consumi.
+                </div>
+              )}
+              {!isLoadingTokenCosts && dailyConsumptionByModel.length > 0 && (
+                <ChartContainer config={consumptionChartConfig} className="h-[300px] w-full">
+                  <BarChart data={dailyConsumptionByModel} margin={{ top: 8, right: 8, bottom: 24, left: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis
+                      dataKey="dateLabel"
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => v}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => `€ ${Number(v).toFixed(2)}`}
+                    />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          formatter={(value) => [formatCurrency(Number(value))]}
+                        />
+                      }
+                    />
+                    <Legend />
+                    {modelsInChart.map((model) => (
+                      <Bar
+                        key={model}
+                        dataKey={model}
+                        stackId="cost"
+                        fill={`var(--color-${model})`}
+                        radius={[0, 0, 0, 0]}
+                        name={model}
+                      />
+                    ))}
+                  </BarChart>
+                </ChartContainer>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Consumo per giorno per modello (costo cliente €). Barre impilate con nomi modelli in legenda.
+            </p>
+          </TabsContent>
+          <TabsContent value="line" className="mt-0">
+            <div className="rounded-lg border border-agri-green-100 bg-white p-4 min-h-[320px]">
+              {isLoadingTokenCosts && (
+                <div className="flex items-center justify-center gap-2 py-12 text-sm text-gray-500">
+                  <Spinner size={20} ariaLabel="Caricamento costi" />
+                  <span>Caricamento…</span>
+                </div>
+              )}
+              {!isLoadingTokenCosts && dailyConsumptionByModel.length === 0 && (
+                <div className="flex items-center justify-center py-12 text-sm text-gray-600">
+                  Nessun dato da mostrare. Applica i filtri o attendi nuovi consumi.
+                </div>
+              )}
+              {!isLoadingTokenCosts && dailyConsumptionByModel.length > 0 && (
+                <ChartContainer config={consumptionChartConfig} className="h-[300px] w-full">
+                  <LineChart data={dailyConsumptionByModel} margin={{ top: 8, right: 8, bottom: 24, left: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis
+                      dataKey="dateLabel"
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => v}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => `€ ${Number(v).toFixed(2)}`}
+                    />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          formatter={(value) => [formatCurrency(Number(value))]}
+                        />
+                      }
+                    />
+                    <Legend />
+                    {modelsInChart.map((model) => (
+                      <Line
+                        key={model}
+                        type="monotone"
+                        dataKey={model}
+                        stroke={`var(--color-${model})`}
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                        name={model}
+                      />
+                    ))}
+                  </LineChart>
+                </ChartContainer>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Andamento costo cliente (€) per giorno e per modello. Una linea per ogni modello.
+            </p>
+          </TabsContent>
+        </Tabs>
       </Card>
     </div>
   );
