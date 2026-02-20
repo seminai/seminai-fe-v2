@@ -67,11 +67,14 @@ export default function ImportedProductsPanel({
       created: Array<Record<string, unknown>>;
       updated: Array<Record<string, unknown>>;
     }) => {
-      const allRows = [
-        ...payload.created,
-        ...payload.updated,
-      ] as ProductImportPreviewRow[];
-      setTableRows(allRows);
+      const createdRows = payload.created as ProductImportPreviewRow[];
+      const updatedRows = payload.updated as ProductImportPreviewRow[];
+      const updatedById = new Map(updatedRows.map((r) => [r.id, r]));
+
+      setTableRows((prev) => {
+        const merged = prev.map((row) => updatedById.get(row.id) ?? row);
+        return [...merged, ...createdRows];
+      });
     },
     [],
   );

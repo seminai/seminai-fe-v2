@@ -58,6 +58,7 @@ import {
 } from "@/services/dosageJobSocket";
 import { JobDeepThinkingBars } from "./JobDeepThinkingBars";
 import { chatsApiService } from "@/api/chats";
+import { useWorkspaceContext } from "@/contexts/WorkspaceContext";
 
 /** Snapshot dello stato di verifica, per mostrarlo anche nella vista Dettagli */
 export interface VerificationStateSnapshot {
@@ -128,6 +129,7 @@ export const ConformityCheckerPanel = forwardRef<
   const [internalThreadId, setInternalThreadId] = useState(generateThreadId);
   const threadId = externalThreadId || internalThreadId;
 
+  const { currentWorkspace } = useWorkspaceContext();
   const [deepThinking, setDeepThinking] = useState<boolean>(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -146,7 +148,7 @@ export const ConformityCheckerPanel = forwardRef<
     loadMessages,
     clearMessages,
     messagesEndRef,
-  } = useJobVerificationAgent(threadId);
+  } = useJobVerificationAgent(threadId, currentWorkspace?.id);
   const selectedJobsCount = selectedJobs.length;
   const thinkingEndRef = useRef<HTMLDivElement | null>(null);
 

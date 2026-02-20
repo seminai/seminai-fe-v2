@@ -270,11 +270,15 @@ class ProductTableColumnsFactory {
     row: Record<string, unknown>,
   ): ReactNode {
     const data = ProductTableColumnsFactory.asRow(row);
-    return (
-      <Badge variant={data.stockBadgeVariant}>
-        {data.stockTotal} {data.stockUnit}
-      </Badge>
-    );
+    const total = data.stockTotal;
+    const sign = total > 0 ? "+" : total < 0 ? "-" : "";
+    const rounded = Math.round(Math.abs(total) * 1000) / 1000;
+    const formatted = rounded.toFixed(3);
+    const display = `${sign}${formatted} ${data.stockUnit}`;
+    if (total <= 0) {
+      return <Badge variant="destructive">{display}</Badge>;
+    }
+    return <span>{display}</span>;
   }
 
   private static renderWarehouse(

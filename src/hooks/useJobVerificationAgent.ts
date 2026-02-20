@@ -84,7 +84,10 @@ function extractResponseMessage(
   return fallback;
 }
 
-export function useJobVerificationAgent(threadId: string) {
+export function useJobVerificationAgent(
+  threadId: string,
+  workspaceId?: string
+) {
   const queryClient = useQueryClient();
   const [messages, setMessages] = useState<JobVerificationMessage[]>([]);
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
@@ -204,6 +207,7 @@ export function useJobVerificationAgent(threadId: string) {
           threadId,
           jobs,
           message,
+          ...(workspaceId ? { workspaceId } : {}),
           metadata: options?.metadata,
           modelName: options?.modelName,
           temperature: options?.temperature,

@@ -75,6 +75,8 @@ export type JobVerificationRequest = {
   threadId: string;
   jobs: JobWithRelations[];
   message: string;
+  /** ID del workspace per contesto multi-tenant (inviato al backend agent-chat/stream) */
+  workspaceId?: string;
   metadata?: {
     images?: string[];
     links?: string[];
