@@ -26,20 +26,25 @@ const CURRENCY_OPTIONS = [
 interface ProductStockFieldsProps {
   stockData: StockFormData;
   onStockChange: (field: keyof StockFormData, value: string) => void;
+  /** When true, movement is required (e.g. add stock to existing product) */
+  required?: boolean;
 }
 
 export default function ProductStockFields({
   stockData,
   onStockChange,
+  required = false,
 }: ProductStockFieldsProps) {
   return (
     <section className="space-y-4">
       <div>
         <h4 className="text-base font-semibold border-b pb-2">
-          Movimento di stock (opzionale)
+          Movimento di stock {required ? "" : "(opzionale)"}
         </h4>
         <p className="text-sm text-muted-foreground mt-2">
-          Se vuoi registrare un carico iniziale, compila i campi seguenti.
+          {required
+            ? "Inserisci i dati del movimento di stock da aggiungere al prodotto."
+            : "Se vuoi registrare un carico iniziale, compila i campi seguenti."}
         </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -91,7 +96,9 @@ export default function ProductStockFields({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>{stockData.type === "IN" ? "Prezzo acquisto" : "Prezzo vendita"}</Label>
+          <Label>
+            {stockData.type === "IN" ? "Prezzo acquisto" : "Prezzo vendita"}
+          </Label>
           <Input
             type="number"
             min="0"

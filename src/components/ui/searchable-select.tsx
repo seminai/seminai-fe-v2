@@ -32,6 +32,8 @@ export interface SearchableSelectProps {
   maxVisibleOptions?: number;
   maxHeight?: string;
   keepOpenOnSelect?: (value: string) => boolean; // Funzione per determinare se mantenere aperta la select dopo la selezione
+  /** Se true, mostra opzioni solo quando l'utente ha digitato (solo risultati filtrati, mai lista completa) */
+  showOptionsOnlyWhenSearching?: boolean;
 }
 
 export function SearchableSelect({
@@ -50,6 +52,7 @@ export function SearchableSelect({
   maxVisibleOptions,
   maxHeight = "max-h-60",
   keepOpenOnSelect,
+  showOptionsOnlyWhenSearching = false,
 }: SearchableSelectProps): React.ReactElement {
   const EMPTY_VALUE_TOKEN = "__SEARCHABLE_SELECT_EMPTY__";
   const [searchTerm, setSearchTerm] = React.useState<string>("");
@@ -72,17 +75,24 @@ export function SearchableSelect({
     });
   }, [options, normalizedSearch]);
 
+  const optionsToShow = React.useMemo(() => {
+    if (showOptionsOnlyWhenSearching && !normalizedSearch) {
+      return [];
+    }
+    return filteredOptions;
+  }, [showOptionsOnlyWhenSearching, normalizedSearch, filteredOptions]);
+
   const visibleOptions = React.useMemo(() => {
     if (!maxVisibleOptions || maxVisibleOptions <= 0) {
-      return filteredOptions;
+      return optionsToShow;
     }
-    return filteredOptions.slice(0, maxVisibleOptions);
-  }, [filteredOptions, maxVisibleOptions]);
+    return optionsToShow.slice(0, maxVisibleOptions);
+  }, [optionsToShow, maxVisibleOptions]);
 
   const isTruncated = React.useMemo(() => {
     if (!maxVisibleOptions) return false;
-    return filteredOptions.length > visibleOptions.length;
-  }, [filteredOptions, visibleOptions, maxVisibleOptions]);
+    return optionsToShow.length > visibleOptions.length;
+  }, [optionsToShow, visibleOptions, maxVisibleOptions]);
 
   React.useEffect(() => {
     setSearchTerm("");
@@ -171,7 +181,9 @@ export function SearchableSelect({
           )}
           {visibleOptions.length === 0 ? (
             <div className="px-3 py-4 text-sm text-muted-foreground">
-              {emptyMessage}
+              {showOptionsOnlyWhenSearching && !normalizedSearch
+                ? "Digita per cercare e vedere i risultati"
+                : emptyMessage}
             </div>
           ) : (
             visibleOptions.map((option) => (

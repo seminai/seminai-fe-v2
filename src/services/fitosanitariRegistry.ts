@@ -96,6 +96,11 @@ class FitosanitariRegistry {
     });
   }
 
+  /** Returns all fitosanitari records including revoked/expired (with stato_amministrativo). */
+  public async getAllRecords(): Promise<FitosanitariDatasetRecord[]> {
+    return this.getRecords();
+  }
+
   private async getRecords(): Promise<FitosanitariDatasetRecord[]> {
     if (this.records) {
       return this.records;
@@ -166,4 +171,10 @@ export async function getAdministrativeStatusMap(): Promise<
   Map<string, string>
 > {
   return registryInstance.getAdministrativeStatusMap();
+}
+
+export async function getAllFitosanitariRecords(): Promise<
+  FitosanitariDatasetRecord[]
+> {
+  return registryInstance.getAllRecords();
 }
