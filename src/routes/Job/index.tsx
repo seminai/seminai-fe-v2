@@ -34,6 +34,10 @@ import {
   isJobModificationEntry,
   isJobStandardHistoryEntry,
 } from "@/api/jobs";
+import {
+  dosageAgentApiService,
+  type DosageJobState,
+} from "@/api/dosage-agent";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1527,6 +1531,38 @@ class JobBulkVerifier {
 }
 
 type ViewMode = "all" | "review";
+type ActiveDosageJobStatus = {
+  state: DosageJobState;
+  progress: number;
+};
+
+const DOSAGE_ACTIVE_STATES: DosageJobState[] = [
+  "queued",
+  "waiting",
+  "active",
+  "delayed",
+];
+
+function formatDosageStateLabel(state: DosageJobState): string {
+  switch (state) {
+    case "queued":
+      return "In coda";
+    case "waiting":
+      return "In attesa";
+    case "active":
+      return "In esecuzione";
+    case "delayed":
+      return "Ritardato";
+    case "completed":
+      return "Completato";
+    case "failed":
+      return "Fallito";
+    case "stalled":
+      return "Bloccato";
+    default:
+      return state;
+  }
+}
 
 export default function JobPage() {
   const navigate = useNavigate();
@@ -1878,6 +1914,68 @@ export default function JobPage() {
     refetch: refetchGroupDetail,
   } = useJobGroupDetail(selectedGroupCode);
 
+  const { data: dosageJobsResponse, isLoading: isLoadingDosageJobs } = useQuery({
+    queryKey: ["dosage-agent-jobs"],
+    queryFn: async () => {
+      return await dosageAgentApiService.listJobs();
+    },
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchInterval: 5000,
+  });
+
+  const dosageJobs = useMemo(() => {
+    return dosageJobsResponse?.data ?? [];
+  }, [dosageJobsResponse?.data]);
+
+  const dosageJobsById = useMemo(() => {
+    return new Map(dosageJobs.map((job) => [job.id, job]));
+  }, [dosageJobs]);
+
+  const activeDosageJobIds = useMemo(() => {
+    return dosageJobs
+      .filter((job) => DOSAGE_ACTIVE_STATES.includes(job.state))
+      .map((job) => job.id);
+  }, [dosageJobs]);
+
+  const activeDosageJobIdsKey = useMemo(() => {
+    return [...activeDosageJobIds].sort().join(",");
+  }, [activeDosageJobIds]);
+
+  const { data: activeDosageStatuses = {} } = useQuery({
+    queryKey: ["dosage-agent-job-statuses", activeDosageJobIdsKey],
+    enabled: activeDosageJobIds.length > 0,
+    queryFn: async () => {
+      const results = await Promise.all(
+        activeDosageJobIds.map(async (jobId) => {
+          try {
+            const response = await dosageAgentApiService.getJobStatus(jobId);
+            return [
+              jobId,
+              {
+                state: response.data.state,
+                progress: response.data.progress,
+              } satisfies ActiveDosageJobStatus,
+            ] as const;
+          } catch {
+            return [jobId, null] as const;
+          }
+        }),
+      );
+
+      const statuses: Record<string, ActiveDosageJobStatus> = {};
+      results.forEach(([jobId, status]) => {
+        if (status) {
+          statuses[jobId] = status;
+        }
+      });
+      return statuses;
+    },
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchInterval: 3000,
+  });
+
   // Lista gruppi per la vista "Tutte" (ordine decrescente per data, poi jobId)
   const sortedAllJobGroups = useMemo(() => {
     const sorted = [...jobGroupsSummary];
@@ -1888,6 +1986,10 @@ export default function JobPage() {
       return b.jobId.localeCompare(a.jobId);
     });
   }, [jobGroupsSummary]);
+
+  const availableGroupIdSet = useMemo(() => {
+    return new Set(sortedAllJobGroups.map((group) => group.jobId));
+  }, [sortedAllJobGroups]);
 
   const selectedAllRowsHistory = useMemo(() => {
     const history: JobHistoryEntry[] = [];
@@ -1993,98 +2095,125 @@ export default function JobPage() {
 
   // Rows per la vista "Tutte" ottenuti dal dettaglio del jobId corrente
   const jobIdOptions = useMemo(() => {
+    const activeIdsSet = new Set(activeDosageJobIds);
     const options = sortedAllJobGroups.map((group) => {
+      const activeStatus = activeDosageStatuses[group.jobId];
+      const isActive = activeIdsSet.has(group.jobId);
       const formattedJobId = JobIdFormatter.format(group.jobId);
       return {
         value: group.jobId,
-        label: `Operazione ${formattedJobId} creata il ${new Date(
-          group.createdAt,
-        ).toLocaleDateString("it-IT")}`,
+        label: isActive
+          ? `Operazione ${formattedJobId} (in elaborazione${
+              typeof activeStatus?.progress === "number"
+                ? ` ${Math.round(activeStatus.progress)}%`
+                : ""
+            })`
+          : `Operazione ${formattedJobId} creata il ${new Date(
+              group.createdAt,
+            ).toLocaleDateString("it-IT")}`,
         jobId: formattedJobId,
         createdAt: group.createdAt,
+        progress: activeStatus?.progress,
+        stateLabel: activeStatus
+          ? formatDosageStateLabel(activeStatus.state)
+          : undefined,
       };
     });
-    // Add pending job as entry if not yet in the groups
-    if (
-      pendingJobId &&
-      !sortedAllJobGroups.find((g) => g.jobId === pendingJobId)
-    ) {
-      const formattedJobId = JobIdFormatter.format(pendingJobId);
+
+    // Add active dosage jobs that are not yet in groups
+    activeDosageJobIds.forEach((activeJobId) => {
+      if (sortedAllJobGroups.some((group) => group.jobId === activeJobId)) {
+        return;
+      }
+
+      const status = activeDosageStatuses[activeJobId];
+      const activeJob = dosageJobsById.get(activeJobId);
+      const formattedJobId = JobIdFormatter.format(activeJobId);
       options.unshift({
-        value: pendingJobId,
-        label: `Operazione ${formattedJobId} (in elaborazione...)`,
+        value: activeJobId,
+        label: `Operazione ${formattedJobId} (in elaborazione${
+          typeof status?.progress === "number"
+            ? ` ${Math.round(status.progress)}%`
+            : ""
+        })`,
         jobId: formattedJobId,
-        createdAt: new Date().toISOString(),
+        createdAt: activeJob?.createdAt ?? new Date().toISOString(),
+        progress: status?.progress,
+        stateLabel: status ? formatDosageStateLabel(status.state) : undefined,
       });
-    }
+    });
     return options;
-  }, [sortedAllJobGroups, pendingJobId]);
+  }, [sortedAllJobGroups, activeDosageJobIds, activeDosageStatuses, dosageJobsById]);
 
   useEffect(() => {
-    // Non auto-selezionare se stiamo aspettando un job pending dal DosageManager
-    if (pendingJobId) return;
+    // Non auto-selezionare quando ci sono job attivi in coda/elaborazione
+    if (pendingJobId || activeDosageJobIds.length > 0) return;
 
     if (jobIdOptions.length > 0 && selectedAllJobIds.length === 0) {
       // seleziona l'ultima per data (lista già ordinata per createdAt desc)
       setSelectedAllJobIds([jobIdOptions[0].value]);
     }
-  }, [jobIdOptions, selectedAllJobIds.length, pendingJobId]);
+  }, [jobIdOptions, selectedAllJobIds.length, pendingJobId, activeDosageJobIds.length]);
 
   // Auto-seleziona il job pending quando appare nella lista dei gruppi
   useEffect(() => {
     if (!pendingJobId) return;
 
-    const found = jobGroupsSummary.find(
+    const foundInGroups = jobGroupsSummary.some(
       (group) => group.jobId === pendingJobId,
     );
-    if (found) {
+    const foundInQueue = activeDosageJobIds.includes(pendingJobId);
+    if (foundInGroups || foundInQueue) {
       setSelectedAllJobIds([pendingJobId]);
       setPendingJobId(null);
     }
-  }, [pendingJobId, jobGroupsSummary]);
+  }, [pendingJobId, jobGroupsSummary, activeDosageJobIds]);
 
-  // Polling: ricarica i gruppi finché il job pending non appare
+  // Polling: ricarica i gruppi mentre esistono job attivi nel dosage-agent
   useEffect(() => {
-    if (!pendingJobId) return;
+    if (activeDosageJobIds.length === 0 && !pendingJobId) return;
 
     const interval = setInterval(() => {
       refetchGroupsSummary();
     }, 3000);
 
-    // Timeout di sicurezza: smetti di fare polling dopo 2 minuti
-    const timeout = setTimeout(() => {
-      setPendingJobId(null);
-      toast.info("Il calcolo sta richiedendo più tempo del previsto", {
-        description: "Ricarica la pagina per verificare lo stato.",
-      });
-    }, 120_000);
-
     return () => {
       clearInterval(interval);
-      clearTimeout(timeout);
     };
-  }, [pendingJobId, refetchGroupsSummary]);
+  }, [activeDosageJobIds.length, pendingJobId, refetchGroupsSummary]);
 
   useEffect(() => {
     const fetchSelectedJobs = async () => {
-      // Filter out pending job ID - it doesn't exist in the backend yet
       const jobIdsToFetch = selectedAllJobIds.filter(
-        (id) => id !== pendingJobId,
+        (id) => availableGroupIdSet.has(id),
       );
       if (jobIdsToFetch.length === 0) {
         setAllSelectedJobs([]);
+        setErrorSelectedJobs(null);
         return;
       }
       setIsLoadingSelectedJobs(true);
       setErrorSelectedJobs(null);
       try {
-        const responses = await Promise.all(
+        const responses = await Promise.allSettled(
           jobIdsToFetch.map((jobId) =>
             jobsApiService.getGroupDetail(jobId),
           ),
         );
-        const jobs = responses.flatMap((res) => res.data.jobs ?? []);
+        const jobs = responses
+          .filter(
+            (
+              res,
+            ): res is PromiseFulfilledResult<
+              Awaited<ReturnType<typeof jobsApiService.getGroupDetail>>
+            > => res.status === "fulfilled",
+          )
+          .flatMap((res) => res.value.data.jobs ?? []);
         setAllSelectedJobs(jobs);
+        const rejected = responses.find((res) => res.status === "rejected");
+        if (rejected && jobs.length === 0) {
+          throw new Error("Errore nel caricamento di alcuni gruppi selezionati");
+        }
       } catch (err) {
         setErrorSelectedJobs(err);
       } finally {
@@ -2093,7 +2222,7 @@ export default function JobPage() {
     };
 
     fetchSelectedJobs();
-  }, [selectedAllJobIds, pendingJobId]);
+  }, [selectedAllJobIds, availableGroupIdSet]);
 
   const allGroupRows = useMemo(() => {
     if (!allSelectedJobs || allSelectedJobs.length === 0) return [];
@@ -2116,7 +2245,7 @@ export default function JobPage() {
 
   const allViewError = jobGroupsSummaryError ?? errorSelectedJobs;
   const isLoadingAllView =
-    isLoadingGroupsSummary || isLoadingSelectedJobs;
+    isLoadingGroupsSummary || isLoadingSelectedJobs || isLoadingDosageJobs;
 
   useEffect(() => {
     if (viewMode === "all") {
@@ -3736,7 +3865,7 @@ export default function JobPage() {
       }}
       displayMode={displayMode}
       onDisplayModeChange={setDisplayMode}
-      pendingJobId={pendingJobId}
+      pendingJobIds={activeDosageJobIds}
     />
   );
 
@@ -3836,7 +3965,7 @@ export default function JobPage() {
                 value={selectedAllJobIds}
                 onChange={setSelectedAllJobIds}
                 isLoading={isLoadingAllView}
-                pendingJobId={pendingJobId}
+                pendingJobIds={activeDosageJobIds}
               />
             </div>
           </div>

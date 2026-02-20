@@ -56,6 +56,8 @@ interface JobIdOption {
   label: string;
   jobId: string;
   createdAt: string;
+  progress?: number;
+  stateLabel?: string;
 }
 
 export type RightSidebarMode = "details" | "history" | "conformity";
@@ -103,7 +105,7 @@ interface AllJobsViewProps {
   getRowClassName?: (row: Record<string, unknown>) => string | undefined;
   displayMode: DisplayMode;
   onDisplayModeChange: (mode: DisplayMode) => void;
-  pendingJobId?: string | null;
+  pendingJobIds?: string[];
 }
 
 export function JobIdMultiSelect({
@@ -111,13 +113,13 @@ export function JobIdMultiSelect({
   value,
   onChange,
   isLoading,
-  pendingJobId,
+  pendingJobIds = [],
 }: {
   options: JobIdOption[];
   value: string[];
   onChange: (values: string[]) => void;
   isLoading: boolean;
-  pendingJobId?: string | null;
+  pendingJobIds?: string[];
 }) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -155,7 +157,7 @@ export function JobIdMultiSelect({
     }
   };
 
-  const hasPendingSelected = pendingJobId ? value.includes(pendingJobId) : false;
+  const hasPendingSelected = value.some((id) => pendingJobIds.includes(id));
 
   const triggerLabel = useMemo(() => {
     if (selectedLabels.length === 0) {
@@ -219,7 +221,7 @@ export function JobIdMultiSelect({
               )}
               {filteredOptions.map((option) => {
                 const isSelected = value.includes(option.value);
-                const isPending = option.value === pendingJobId;
+                const isPending = pendingJobIds.includes(option.value);
                 return (
                   <button
                     key={option.value}
@@ -246,7 +248,10 @@ export function JobIdMultiSelect({
                       {isPending ? (
                         <span className="flex items-center gap-1.5 text-xs text-amber-600">
                           <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                          in elaborazione...
+                          in elaborazione
+                          {typeof option.progress === "number"
+                            ? ` (${Math.round(option.progress)}%)`
+                            : "..."}
                         </span>
                       ) : (
                         <span className="text-xs text-slate-600">
@@ -304,7 +309,7 @@ export function AllJobsView({
   getRowClassName,
   displayMode,
   onDisplayModeChange,
-  pendingJobId,
+  pendingJobIds = [],
 }: AllJobsViewProps) {
   const hasError = Boolean(error);
   const errorMessage =
@@ -403,7 +408,7 @@ export function AllJobsView({
                   value={selectedJobIds}
                   onChange={onJobIdsChange}
                   isLoading={isLoading}
-                  pendingJobId={pendingJobId}
+                  pendingJobIds={pendingJobIds}
                 />
               </div>
             </div>
