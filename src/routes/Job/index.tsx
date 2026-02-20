@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useJobGroupsSummary, useJobGroupDetail } from "@/hooks/useJobGroups";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
@@ -1914,14 +1914,16 @@ export default function JobPage() {
     refetch: refetchGroupDetail,
   } = useJobGroupDetail(selectedGroupCode);
 
+  // Fetch dosage jobs list once on mount and on-demand (no aggressive polling).
+  // Real-time updates come from the WebSocket; this is a fallback.
   const { data: dosageJobsResponse, isLoading: isLoadingDosageJobs } = useQuery({
     queryKey: ["dosage-agent-jobs"],
     queryFn: async () => {
       return await dosageAgentApiService.listJobs();
     },
-    staleTime: 0,
+    staleTime: 10_000,
     refetchOnMount: "always",
-    refetchInterval: 5000,
+    refetchInterval: 30_000, // Fallback polling every 30s (socket handles real-time)
   });
 
   const dosageJobs = useMemo(() => {
@@ -1938,43 +1940,39 @@ export default function JobPage() {
       .map((job) => job.id);
   }, [dosageJobs]);
 
-  const activeDosageJobIdsKey = useMemo(() => {
-    return [...activeDosageJobIds].sort().join(",");
-  }, [activeDosageJobIds]);
+  // Status tracking: instead of polling job-status/{id} every 3s,
+  // we rely on the WebSocket "complete" event to know when a job finishes.
+  // Progress is shown via the live log panel, not via REST polling.
+  const activeDosageStatuses = useMemo(() => {
+    const statuses: Record<string, ActiveDosageJobStatus> = {};
+    activeDosageJobIds.forEach((jobId) => {
+      const job = dosageJobsById.get(jobId);
+      if (job) {
+        statuses[jobId] = { state: job.state, progress: job.progress };
+      }
+    });
+    return statuses;
+  }, [activeDosageJobIds, dosageJobsById]);
 
-  const { data: activeDosageStatuses = {} } = useQuery({
-    queryKey: ["dosage-agent-job-statuses", activeDosageJobIdsKey],
-    enabled: activeDosageJobIds.length > 0,
-    queryFn: async () => {
-      const results = await Promise.all(
-        activeDosageJobIds.map(async (jobId) => {
-          try {
-            const response = await dosageAgentApiService.getJobStatus(jobId);
-            return [
-              jobId,
-              {
-                state: response.data.state,
-                progress: response.data.progress,
-              } satisfies ActiveDosageJobStatus,
-            ] as const;
-          } catch {
-            return [jobId, null] as const;
-          }
-        }),
+  // When a dosage job completes via WebSocket, refresh all relevant data
+  const handleDosageJobComplete = useCallback(async (completedJobId: string) => {
+    // Invalidate dosage-agent queries to refresh the jobs list
+    await queryClient.invalidateQueries({ queryKey: ["dosage-agent-jobs"] });
+    // Invalidate group summaries so the new data appears
+    await queryClient.invalidateQueries({ queryKey: ["job-groups-summary"] });
+    await queryClient.invalidateQueries({ queryKey: ["job-group-detail"] });
+    await refetchGroupsSummary();
+
+    // Auto-select the completed job if it was pending
+    if (pendingJobId === completedJobId) {
+      setPendingJobId(null);
+    }
+    if (!selectedAllJobIds.includes(completedJobId)) {
+      setSelectedAllJobIds((prev) =>
+        prev.length === 0 ? [completedJobId] : prev,
       );
-
-      const statuses: Record<string, ActiveDosageJobStatus> = {};
-      results.forEach(([jobId, status]) => {
-        if (status) {
-          statuses[jobId] = status;
-        }
-      });
-      return statuses;
-    },
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchInterval: 3000,
-  });
+    }
+  }, [queryClient, refetchGroupsSummary, pendingJobId, selectedAllJobIds]);
 
   // Lista gruppi per la vista "Tutte" (ordine decrescente per data, poi jobId)
   const sortedAllJobGroups = useMemo(() => {
@@ -2169,13 +2167,14 @@ export default function JobPage() {
     }
   }, [pendingJobId, jobGroupsSummary, activeDosageJobIds]);
 
-  // Polling: ricarica i gruppi mentre esistono job attivi nel dosage-agent
+  // Fallback polling: ricarica i gruppi mentre esistono job attivi nel dosage-agent.
+  // Interval ridotto a 15s perché il refresh principale avviene via WebSocket onComplete.
   useEffect(() => {
     if (activeDosageJobIds.length === 0 && !pendingJobId) return;
 
     const interval = setInterval(() => {
       refetchGroupsSummary();
-    }, 3000);
+    }, 15_000);
 
     return () => {
       clearInterval(interval);
@@ -3866,6 +3865,7 @@ export default function JobPage() {
       displayMode={displayMode}
       onDisplayModeChange={setDisplayMode}
       pendingJobIds={activeDosageJobIds}
+      onDosageJobComplete={handleDosageJobComplete}
     />
   );
 

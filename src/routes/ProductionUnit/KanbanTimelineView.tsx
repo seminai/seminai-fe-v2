@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState, useMemo } from "react";
 import type { ProductionUnit } from "@/api/production-unit";
-import { Pencil, ChevronLeft, ChevronRight } from "lucide-react";
+import { Pencil, ChevronLeft, ChevronRight, Flower } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -83,6 +83,18 @@ function getTodayPosition(year: number): number {
   const yearStart = new Date(year, 0, 1).getTime();
   const yearEnd = new Date(year + 1, 0, 1).getTime();
   return ((now.getTime() - yearStart) / (yearEnd - yearStart)) * 100;
+}
+
+function getDatePosition(
+  dateStr: string | null | undefined,
+  year: number,
+): number {
+  if (!dateStr) return -1;
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime()) || date.getFullYear() !== year) return -1;
+  const yearStart = new Date(year, 0, 1).getTime();
+  const yearEnd = new Date(year + 1, 0, 1).getTime();
+  return ((date.getTime() - yearStart) / (yearEnd - yearStart)) * 100;
 }
 
 function formatDateDDMMYYYY(dateStr: string | null | undefined): string {
@@ -295,6 +307,7 @@ function TimelineRow({
   );
   const barColor = getBarColor(puData.cropName || "default");
   const isEditingThis = editingUnit?.id === puData.id;
+  const floweringPos = getDatePosition(puData.floweringDate, year);
 
   return (
     <div className="flex items-center border-b last:border-b-0 border-gray-100 group hover:bg-gray-50/60 transition-colors">
@@ -326,6 +339,22 @@ function TimelineRow({
             className="absolute top-0 bottom-0 w-px bg-red-400/50 pointer-events-none z-10"
             style={{ left: `${todayPos}%` }}
           />
+        )}
+
+        {floweringPos >= 0 && floweringPos <= 100 && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 pointer-events-auto cursor-default flex items-center justify-center w-6 h-6 rounded-full bg-white/90 shadow border border-pink-200"
+                style={{ left: `${floweringPos}%` }}
+              >
+                <Flower className="w-3.5 h-3.5 text-pink-500" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              Data fioritura: {formatDateDDMMYYYY(puData.floweringDate)}
+            </TooltipContent>
+          </Tooltip>
         )}
 
         {width > 0 && (

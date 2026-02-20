@@ -31,9 +31,15 @@ import {
   History,
   LayoutGrid,
   Table2,
+  Wifi,
+  WifiOff,
+  Loader2,
+  Radio,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { LiveLogEventCard } from "@/components/organism/LiveLogEventCard";
+import { useDosageJobLiveInline } from "./useDosageJobLiveInline";
 
 import HistoryPanel from "./HistoryPanel";
 import { JobCardsView } from "./JobCardsView";
@@ -106,6 +112,7 @@ interface AllJobsViewProps {
   displayMode: DisplayMode;
   onDisplayModeChange: (mode: DisplayMode) => void;
   pendingJobIds?: string[];
+  onDosageJobComplete?: (jobId: string) => void;
 }
 
 export function JobIdMultiSelect({
@@ -310,6 +317,7 @@ export function AllJobsView({
   displayMode,
   onDisplayModeChange,
   pendingJobIds = [],
+  onDosageJobComplete,
 }: AllJobsViewProps) {
   const hasError = Boolean(error);
   const errorMessage =
@@ -378,6 +386,23 @@ export function AllJobsView({
   const handleSelectChatFromHistory = (chatId: string) => {
     conformityCheckerRef.current?.loadChat(chatId);
   };
+
+  // Live panel: only when exactly one job is selected and it is in loading (pending)
+  const jobIdForLive = useMemo(
+    () =>
+      selectedJobIds.length === 1 && pendingJobIds.includes(selectedJobIds[0])
+        ? selectedJobIds[0]
+        : null,
+    [selectedJobIds, pendingJobIds],
+  );
+  const {
+    events: liveEvents,
+    connectionState: liveSocketState,
+    scrollRef: liveScrollRef,
+    clearEvents: clearLiveEvents,
+  } = useDosageJobLiveInline(jobIdForLive, {
+    onComplete: onDosageJobComplete,
+  });
 
   return (
     <div className="flex-1 flex overflow-hidden px-6 pb-6">
@@ -518,6 +543,96 @@ export function AllJobsView({
                   )}
                 </EditableTable>
               </div>
+              {jobIdForLive !== null && (
+                <div className="flex-shrink-0 border-t border-slate-200 bg-white rounded-b-lg max-h-[280px] flex flex-col">
+                  <div className="flex-shrink-0 px-3 py-2 border-b border-slate-100 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Radio className="h-4 w-4 text-green-600 animate-pulse" />
+                      <span className="text-sm font-medium text-slate-700">
+                        Live
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        Operazione {jobIdForLive}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={
+                          liveSocketState === "connected"
+                            ? "default"
+                            : liveSocketState === "connecting"
+                              ? "secondary"
+                              : "destructive"
+                        }
+                        className="flex items-center gap-1.5 text-xs"
+                      >
+                        {liveSocketState === "connected" ? (
+                          <>
+                            <Wifi className="h-3 w-3" />
+                            <span>Connesso</span>
+                          </>
+                        ) : liveSocketState === "connecting" ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <span>Connessione...</span>
+                          </>
+                        ) : (
+                          <>
+                            <WifiOff className="h-3 w-3" />
+                            <span>Disconnesso</span>
+                          </>
+                        )}
+                      </Badge>
+                      {liveEvents.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => {
+                            clearLiveEvents();
+                          }}
+                        >
+                          Pulisci log
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div
+                    ref={liveScrollRef}
+                    className="flex-1 min-h-0 overflow-y-auto px-3 py-2"
+                  >
+                    {liveEvents.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-neutral-500 text-sm">
+                        {liveSocketState === "connected" ? (
+                          <>
+                            <Loader2 className="h-6 w-6 animate-spin mb-2" />
+                            <p>In attesa di eventi...</p>
+                          </>
+                        ) : liveSocketState === "connecting" ? (
+                          <>
+                            <Loader2 className="h-6 w-6 animate-spin mb-2" />
+                            <p>Connessione in corso...</p>
+                          </>
+                        ) : (
+                          <>
+                            <WifiOff className="h-6 w-6 mb-2" />
+                            <p>Non connesso</p>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {liveEvents.map((event, index) => (
+                          <LiveLogEventCard
+                            key={`live-inline-${index}`}
+                            event={event}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

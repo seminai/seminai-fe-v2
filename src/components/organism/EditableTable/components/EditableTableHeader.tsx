@@ -37,6 +37,7 @@ export interface EditableTableHeaderProps {
   rightActions: React.ReactNode[];
   onExportCsv: () => void;
   onExportExcel: () => void;
+  onExportPdf: () => void;
   onColumnVisibilityChange: (columnId: string, visible: boolean) => void;
   onShowAllColumns: () => void;
   onShowDefaultColumns: () => void;
@@ -73,6 +74,7 @@ export function EditableTableHeader({
   rightActions,
   onExportCsv,
   onExportExcel,
+  onExportPdf,
   onColumnVisibilityChange,
   onShowAllColumns,
   onShowDefaultColumns,
@@ -122,6 +124,12 @@ export function EditableTableHeader({
                 className="cursor-pointer"
               >
                 Esporta Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={onExportPdf}
+                className="cursor-pointer"
+              >
+                Esporta PDF
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

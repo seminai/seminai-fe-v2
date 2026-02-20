@@ -38,6 +38,7 @@ export interface EditableTableVerticalProps {
   getRowId?: (row: Record<string, unknown>, index: number) => string | number;
   onExportCsv: () => void;
   onExportExcel: () => void;
+  onExportPdf: () => void;
   onColumnVisibilityChange: (columnId: string, visible: boolean) => void;
   onShowAllColumns: () => void;
   onShowDefaultColumns: () => void;
@@ -96,6 +97,7 @@ export function EditableTableVertical({
   getRowId,
   onExportCsv,
   onExportExcel,
+  onExportPdf,
   onColumnVisibilityChange,
   onShowAllColumns,
   onShowDefaultColumns,
@@ -141,6 +143,12 @@ export function EditableTableVertical({
                   className="cursor-pointer"
                 >
                   Esporta Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={onExportPdf}
+                  className="cursor-pointer"
+                >
+                  Esporta PDF
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

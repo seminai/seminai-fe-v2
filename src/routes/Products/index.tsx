@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { IoOpenOutline } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -182,6 +182,7 @@ class ProductTableRowBuilder {
 class ProductTableColumnsFactory {
   public static create(
     onUpdateAdministrativeStatus: () => Promise<void>,
+    isUpdatingAdministrativeStatus: boolean,
   ): EditableColumn[] {
     return [
       {
@@ -230,6 +231,7 @@ class ProductTableColumnsFactory {
             value,
             row,
             onUpdateAdministrativeStatus,
+            isUpdatingAdministrativeStatus,
           ),
       },
     ];
@@ -301,6 +303,7 @@ class ProductTableColumnsFactory {
     _value: unknown,
     row: Record<string, unknown>,
     onUpdateAdministrativeStatus: () => Promise<void>,
+    isUpdatingAdministrativeStatus: boolean,
   ): ReactNode {
     const data = ProductTableColumnsFactory.asRow(row);
     if (
@@ -312,9 +315,14 @@ class ProductTableColumnsFactory {
           variant="outline"
           size="sm"
           onClick={onUpdateAdministrativeStatus}
+          disabled={isUpdatingAdministrativeStatus}
           className="h-7 px-2 text-xs"
         >
-          <RefreshCw className="h-3 w-3 mr-1" />
+          {isUpdatingAdministrativeStatus ? (
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          ) : (
+            <RefreshCw className="h-3 w-3 mr-1" />
+          )}
           Ricarica
         </Button>
       );
@@ -341,6 +349,8 @@ function ProductsPage() {
     useState<Product | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isAlignLoading, setIsAlignLoading] = useState(false);
+  const [isUpdatingAdministrativeStatus, setIsUpdatingAdministrativeStatus] =
+    useState(false);
   const [datasetStatusMap, setDatasetStatusMap] =
     useState<Map<string, string> | null>(null);
 
@@ -364,6 +374,7 @@ function ProductsPage() {
   }, [products]);
 
   const handleUpdateAdministrativeStatus = useCallback(async () => {
+    setIsUpdatingAdministrativeStatus(true);
     try {
       const response = await productsApiService.updateAdministrativeStatus();
       toast.success("Stato amministrativo aggiornato", {
@@ -376,12 +387,18 @@ function ProductsPage() {
           error instanceof Error ? error.message : "Riprova più tardi",
       });
       console.error("Error updating administrative status:", error);
+    } finally {
+      setIsUpdatingAdministrativeStatus(false);
     }
   }, [refetch]);
 
   const tableColumns = useMemo(
-    () => ProductTableColumnsFactory.create(handleUpdateAdministrativeStatus),
-    [handleUpdateAdministrativeStatus],
+    () =>
+      ProductTableColumnsFactory.create(
+        handleUpdateAdministrativeStatus,
+        isUpdatingAdministrativeStatus,
+      ),
+    [handleUpdateAdministrativeStatus, isUpdatingAdministrativeStatus],
   );
 
   const tableRows = useMemo<ProductTableRow[]>(() => {
