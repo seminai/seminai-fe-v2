@@ -248,7 +248,7 @@ export default function ImportedProductsPanel({
 
   if (step === "edit") {
     return (
-      <div className="flex flex-col lg:h-full min-h-0">
+      <div className="flex flex-col h-full overflow-hidden">
         {/* Header */}
         <div className="flex-shrink-0 px-4 pt-4 space-y-3">
           <h4 className="text-base font-semibold">
@@ -287,7 +287,7 @@ export default function ImportedProductsPanel({
         </div>
 
         {/* Tabella editabile */}
-        <div className="lg:flex-1 lg:min-h-0 lg:overflow-auto px-4 py-3">
+        <div className="flex-1 min-h-0 overflow-auto px-4 py-3">
           <EditableTable
             ref={tableRef}
             columns={columns}
@@ -305,7 +305,7 @@ export default function ImportedProductsPanel({
 
         {/* Footer */}
         {!hideFooter && (
-          <div className="sticky bottom-0 z-10 flex-shrink-0 border-t bg-white p-4 flex justify-end">
+          <div className="flex-shrink-0 border-t bg-white p-4 flex justify-end">
             <Button
               onClick={handleContinue}
               disabled={tableRows.length === 0}
@@ -323,21 +323,10 @@ export default function ImportedProductsPanel({
   // ── STEP 2: Review ────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col lg:h-full min-h-0">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 px-4 pt-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground -ml-2 h-8 px-2"
-            onClick={() => setStep("edit")}
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Modifica
-          </Button>
-          <h4 className="text-base font-semibold">Revisione prodotti</h4>
-        </div>
+        <h4 className="text-base font-semibold">Revisione prodotti</h4>
 
         {importError && (
           <Alert variant="destructive">
@@ -373,7 +362,7 @@ export default function ImportedProductsPanel({
       </div>
 
       {/* Tabella di revisione */}
-      <div className="lg:flex-1 lg:min-h-0 lg:overflow-auto px-4 py-3">
+      <div className="flex-1 min-h-0 overflow-auto px-4 py-3">
         <div className="min-w-max">
           {/* Intestazione */}
           <div
@@ -416,14 +405,19 @@ export default function ImportedProductsPanel({
 
       {/* Footer */}
       {!hideFooter && (
-        <div className="sticky bottom-0 z-10 flex-shrink-0 border-t bg-white p-4 flex items-center justify-between gap-3">
-          <span className="text-sm text-muted-foreground">
-            {acceptedCount} di {reviewRows.length} prodotti selezionati
-          </span>
+        <div className="flex-shrink-0 border-t bg-white p-4 flex items-center justify-between gap-3 min-w-0 overflow-x-auto">
+          <Button
+            variant="outline"
+            onClick={() => setStep("edit")}
+            className="gap-2 shrink-0"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Indietro
+          </Button>
           <Button
             onClick={handleConfirmImport}
             disabled={isImporting || acceptedCount === 0}
-            className="gap-2 bg-agri-green-600 text-white hover:bg-agri-green-700"
+            className="gap-2 shrink-0 bg-agri-green-600 text-white hover:bg-agri-green-700"
           >
             {isImporting ? (
               <>

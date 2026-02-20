@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from "react";
-import { FileText } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { FileText, Minus, Plus } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface FilePreviewPanelProps {
   fileUrl: string | null;
@@ -64,12 +65,16 @@ class MimeTypeClassifier {
   }
 }
 
+const PDF_ZOOM_LEVELS = [50, 75, 90, 100, 110, 125, 150] as const;
+
 export default function FilePreviewPanel({
   fileUrl,
   fileName,
   mimeType,
 }: FilePreviewPanelProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [pdfZoom, setPdfZoom] = useState(100);
+  const isPdf = mimeType !== null && MimeTypeClassifier.isPdf(mimeType);
 
   const loadPreview = useCallback(async () => {
     if (!fileUrl || !mimeType || !iframeRef.current) return;
@@ -129,6 +134,10 @@ export default function FilePreviewPanel({
     void loadPreview();
   }, [loadPreview]);
 
+  useEffect(() => {
+    setPdfZoom(100);
+  }, [fileUrl]);
+
   if (!fileUrl) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3 p-8">
@@ -141,20 +150,79 @@ export default function FilePreviewPanel({
     );
   }
 
+  const zoomIndex = PDF_ZOOM_LEVELS.indexOf(
+    pdfZoom as (typeof PDF_ZOOM_LEVELS)[number],
+  );
+  const safeZoomIndex = zoomIndex >= 0 ? zoomIndex : 3; // 100% default
+  const canZoomOut = safeZoomIndex > 0;
+  const canZoomIn = safeZoomIndex < PDF_ZOOM_LEVELS.length - 1;
+
   return (
     <div className="flex flex-col h-full">
-      {fileName && (
+      {(fileName || isPdf) && (
         <div className="flex items-center gap-2 px-3 py-2 border-b bg-gray-50 flex-shrink-0">
-          <FileText className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium truncate">{fileName}</span>
+          <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+          {fileName && (
+            <span className="text-sm font-medium truncate min-w-0">{fileName}</span>
+          )}
+          {isPdf && (
+            <div className="ml-auto flex items-center gap-1 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                disabled={!canZoomOut}
+                onClick={() => {
+                  if (canZoomOut) setPdfZoom(PDF_ZOOM_LEVELS[safeZoomIndex - 1]);
+                }}
+                aria-label="Riduci zoom"
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              <span className="text-xs font-medium tabular-nums w-10 text-center">
+                {pdfZoom}%
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                disabled={!canZoomIn}
+                onClick={() => {
+                  if (canZoomIn) setPdfZoom(PDF_ZOOM_LEVELS[safeZoomIndex + 1]);
+                }}
+                aria-label="Aumenta zoom"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       )}
-      <div className="flex-1 min-h-0">
-        <iframe
-          ref={iframeRef}
-          className="w-full h-full border-0"
-          title={fileName ?? "Anteprima file"}
-        />
+      <div className="flex-1 min-h-0 overflow-auto">
+        {isPdf ? (
+          <div
+            className="origin-top-left"
+            style={{
+              width: `${(100 / pdfZoom) * 100}%`,
+              height: `${(100 / pdfZoom) * 100}%`,
+              transform: `scale(${pdfZoom / 100})`,
+            }}
+          >
+            <iframe
+              ref={iframeRef}
+              className="w-full h-full border-0"
+              title={fileName ?? "Anteprima file"}
+            />
+          </div>
+        ) : (
+          <iframe
+            ref={iframeRef}
+            className="w-full h-full border-0"
+            title={fileName ?? "Anteprima file"}
+          />
+        )}
       </div>
     </div>
   );

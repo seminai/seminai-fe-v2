@@ -597,9 +597,9 @@ export default function FileImportSection({
         {hasExtractedProducts ? (
           <>
             {/* Desktop: per Excel solo tabella, per altri split 50/50 */}
-            <div className="hidden lg:flex flex-1 min-h-0">
+            <div className="hidden lg:flex flex-1 min-h-0 overflow-x-auto">
               {!isExcelImport && (
-                <div className="w-1/2 border-r flex flex-col min-h-0">
+                <div className="w-1/2 min-w-0 shrink border-r flex flex-col min-h-0">
                   {uploadedFiles.length > 1 && (
                     <div className="px-3 py-2 border-b bg-gray-50 flex items-center gap-2 overflow-x-auto">
                       {uploadedFiles.map((file) => (
@@ -628,7 +628,9 @@ export default function FileImportSection({
               )}
               <div
                 className={
-                  isExcelImport ? "w-full flex flex-col min-h-0" : "w-1/2 flex flex-col min-h-0"
+                  isExcelImport
+                    ? "w-full flex flex-col min-h-0"
+                    : "w-1/2 flex flex-col min-h-0 min-w-[360px] shrink-0"
                 }
               >
                 <ImportedProductsPanel

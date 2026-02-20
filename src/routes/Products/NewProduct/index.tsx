@@ -49,7 +49,7 @@ export default function NewProduct() {
   }, [navigationManager, queryClient]);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6rem)] lg:h-screen">
+    <div className="flex flex-col h-full">
       <div className="flex-shrink-0 bg-gray-50/50 backdrop-blur-sm z-10">
         <PageHeader title="Nuovo Prodotto">
           <div className="flex items-center gap-2">
