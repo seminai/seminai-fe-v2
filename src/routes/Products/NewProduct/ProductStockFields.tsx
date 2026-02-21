@@ -56,12 +56,11 @@ export default function ProductStockFields({
         <div className="space-y-2">
           <Label>Quantità</Label>
           <Input
-            type="number"
-            min="0"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
             value={stockData.quantity}
             onChange={(e) => onStockChange("quantity", e.target.value)}
-            placeholder="0"
+            placeholder="0 (es. 1,5)"
           />
         </div>
         <div className="space-y-2">
@@ -105,12 +104,11 @@ export default function ProductStockFields({
             {stockData.type === "IN" ? "Prezzo acquisto" : "Prezzo vendita"}
           </Label>
           <Input
-            type="number"
-            min="0"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
             value={stockData.price}
             onChange={(e) => onStockChange("price", e.target.value)}
-            placeholder="0.00"
+            placeholder="0,00 (es. 1,5)"
           />
         </div>
         <div className="space-y-2">

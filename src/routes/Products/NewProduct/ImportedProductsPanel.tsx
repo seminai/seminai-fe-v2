@@ -34,6 +34,7 @@ import {
 } from "../productImportPreview.table";
 import { getAllFitosanitariRecords } from "@/services/fitosanitariRegistry";
 import type { FitosanitariDatasetRecord } from "@/services/fitosanitariRegistry";
+import { parseDecimal } from "@/utils/number";
 import { MultiSearchableSelect } from "@/routes/DosageManager/MultiSearchableSelect";
 import type { MultiSearchableSelectOption } from "@/routes/DosageManager/MultiSearchableSelect";
 
@@ -719,16 +720,17 @@ function ReviewRow({
         )}
       </div>
 
-      {/* Col 4 — Quantità */}
+      {/* Col 4 — Quantità (virgola o punto come decimale) */}
       <div>
         <Input
-          type="number"
-          value={displayQty}
+          type="text"
+          inputMode="decimal"
+          value={displayQty != null ? String(displayQty) : ""}
           onChange={(e) =>
             onUpdateField(
               row.id,
               row.useConverted ? "quantityConverted" : "quantity",
-              parseFloat(e.target.value) || 0,
+              parseDecimal(e.target.value) || 0,
             )
           }
           disabled={isRejected}

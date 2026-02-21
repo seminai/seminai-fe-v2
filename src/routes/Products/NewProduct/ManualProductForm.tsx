@@ -21,6 +21,7 @@ import { productsApiService, type CreateProductPayload } from "@/api/products";
 import { stocksApiService } from "@/api/stocks";
 import { getAllFitosanitariRecords } from "@/services/fitosanitariRegistry";
 import type { FitosanitariDatasetRecord } from "@/services/fitosanitariRegistry";
+import { parseDecimal } from "@/utils/number";
 import ProductStockFields from "./ProductStockFields";
 
 const PRODUCT_CATEGORIES = [
@@ -79,8 +80,8 @@ class ManualProductFormValidator {
     type: string,
     stockData: StockFormData,
   ): CreateProductPayload {
-    const quantity = parseFloat(stockData.quantity);
-    const price = parseFloat(stockData.price);
+    const quantity = parseDecimal(stockData.quantity);
+    const price = parseDecimal(stockData.price);
 
     return {
       companyId,
@@ -287,7 +288,7 @@ export default function ManualProductForm({
   const hasAtLeastOneValidStock = useMemo(() => {
     return stockEntries.some(
       (s) =>
-        parseFloat(s.quantity) > 0 && !!s.unitOfMeasureQuantity?.trim(),
+        parseDecimal(s.quantity) > 0 && !!s.unitOfMeasureQuantity?.trim(),
     );
   }, [stockEntries]);
 
@@ -421,7 +422,7 @@ export default function ManualProductForm({
     if (isAddStockMode && selectedExistingProduct) {
       const validEntries = stockEntries.filter(
         (s) =>
-          parseFloat(s.quantity) > 0 && !!s.unitOfMeasureQuantity?.trim(),
+          parseDecimal(s.quantity) > 0 && !!s.unitOfMeasureQuantity?.trim(),
       );
       if (validEntries.length === 0) {
         toast.error(
@@ -434,13 +435,13 @@ export default function ManualProductForm({
         const companyIdForStock = selectedExistingProduct.warehouse.company.id;
         const productIdForStock = selectedExistingProduct.id;
         for (const s of validEntries) {
-          const quantity = parseFloat(s.quantity);
+          const quantity = parseDecimal(s.quantity);
           await stocksApiService.create({
             companyId: companyIdForStock,
             productId: productIdForStock,
             quantity,
             unitOfMeasureQuantity: s.unitOfMeasureQuantity,
-            price: parseFloat(s.price) || undefined,
+            price: parseDecimal(s.price) || undefined,
             unitOfMeasurePrice: s.unitOfMeasurePrice || undefined,
             type: s.type,
             ddtCode: s.ddtCode.trim() || undefined,
@@ -496,16 +497,16 @@ export default function ManualProductForm({
         const companyIdForStock = companyId;
         const extraEntries = stockEntries.slice(1).filter(
           (s) =>
-            parseFloat(s.quantity) > 0 && !!s.unitOfMeasureQuantity?.trim(),
+            parseDecimal(s.quantity) > 0 && !!s.unitOfMeasureQuantity?.trim(),
         );
         for (const s of extraEntries) {
-          const quantity = parseFloat(s.quantity);
+          const quantity = parseDecimal(s.quantity);
           await stocksApiService.create({
             companyId: companyIdForStock,
             productId: createdProductId,
             quantity,
             unitOfMeasureQuantity: s.unitOfMeasureQuantity,
-            price: parseFloat(s.price) || undefined,
+            price: parseDecimal(s.price) || undefined,
             unitOfMeasurePrice: s.unitOfMeasurePrice || undefined,
             type: s.type,
             ddtCode: s.ddtCode.trim() || undefined,

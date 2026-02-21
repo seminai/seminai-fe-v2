@@ -27,35 +27,30 @@ const buildWarehousesColumns = (): EditableColumn[] => {
       id: "nation",
       title: "Nazione",
       type: "text",
-      required: true,
       placeholder: "es. Italia",
     },
     {
       id: "region",
       title: "Regione",
       type: "text",
-      required: true,
       placeholder: "es. Lombardia",
     },
     {
       id: "city",
       title: "Città",
       type: "text",
-      required: true,
       placeholder: "es. Milano",
     },
     {
       id: "address",
       title: "Indirizzo",
       type: "text",
-      required: true,
       placeholder: "es. Via Roma 1",
     },
     {
       id: "cap",
       title: "CAP",
       type: "text",
-      required: true,
       placeholder: "es. 20100",
     },
     {
@@ -126,7 +121,7 @@ export function CompanyWarehousesPanel({
     created: Array<Record<string, unknown>>;
     updated: Array<Record<string, unknown>>;
   }): Promise<void> => {
-    // Gestione creazione: obbligatori = nome, indirizzo, città, nazione, regione, CAP; opzionali = stringa vuota se non inseriti
+    // Gestione creazione: obbligatorio solo nome; indirizzo, città, nazione, regione, CAP e altri opzionali (stringa vuota se non inseriti)
     if (payload.created.length > 0) {
       const createPromises = payload.created.map(async (row) => {
         await createWarehouse({
