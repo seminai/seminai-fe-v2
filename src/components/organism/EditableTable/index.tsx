@@ -68,6 +68,10 @@ import {
 
 import { EditableTableFiltersPanel } from "./EditableTableFiltersPanel";
 import { EditableTableCreateDrawer } from "./EditableTableCreateDrawer";
+import {
+  GLOBAL_COMPANY_FILTER_COLUMN_ID,
+  GLOBAL_COMPANY_FILTER_ROUTES,
+} from "./constants";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper Functions
@@ -424,6 +428,36 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
     }, [filters.filterDraft, columns, tableState.rows, filters]);
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Company filter chip (header) – only on global company filter routes
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const companyFilterChip = useMemo((): {
+      label: string;
+      onClear: () => void;
+    } | null => {
+      const pathname =
+        typeof window !== "undefined" ? window.location.pathname : "";
+      const isGlobalRoute = GLOBAL_COMPANY_FILTER_ROUTES.some(
+        (r) => pathname === r || pathname.startsWith(r + "/"),
+      );
+      const selectedSet =
+        filters.columnFilterSelectedValues[GLOBAL_COMPANY_FILTER_COLUMN_ID];
+      if (!isGlobalRoute || !selectedSet?.size) return null;
+      const label =
+        selectedSet.size === 1
+          ? Array.from(selectedSet)[0]
+          : `${selectedSet.size} aziende selezionate`;
+      return {
+        label,
+        onClear: () =>
+          filters.handleColumnFilterClear(GLOBAL_COMPANY_FILTER_COLUMN_ID),
+      };
+    }, [
+      filters.columnFilterSelectedValues,
+      filters.handleColumnFilterClear,
+    ]);
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Render Input Helper (for create drawer and bulk edit)
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -528,6 +562,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
             onColumnVisibilityChange={visibility.handleColumnVisibilityChange}
             onShowAllColumns={visibility.handleShowAllColumns}
             onShowDefaultColumns={visibility.handleShowDefaultColumns}
+            companyFilterChip={companyFilterChip}
             onToggleEditMode={tableState.toggleEditMode}
             onCellChange={tableState.handleCellChange}
             onAddClick={handleAddButtonClick}
@@ -644,6 +679,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
           onColumnVisibilityChange={visibility.handleColumnVisibilityChange}
           onShowAllColumns={visibility.handleShowAllColumns}
           onShowDefaultColumns={visibility.handleShowDefaultColumns}
+          companyFilterChip={companyFilterChip}
           onDeselectAll={() => selection.toggleSelectAll(false, filteredRows)}
           onToggleEditMode={tableState.toggleEditMode}
           onAddClick={handleAddButtonClick}

@@ -192,13 +192,13 @@ class ProductTableColumnsFactory {
         type: "text",
         render: ProductTableColumnsFactory.renderName,
       },
-      {
-        id: "sku",
-        title: "SKU",
-        width: "140px",
-        type: "text",
-        render: ProductTableColumnsFactory.renderSku,
-      },
+      // {
+      //   id: "sku",
+      //   title: "Codice magazzino (SKU)",
+      //   width: "140px",
+      //   type: "text",
+      //   render: ProductTableColumnsFactory.renderSku,
+      // },
       {
         id: "stockTotal",
         title: "Stock",
@@ -351,8 +351,10 @@ function ProductsPage() {
   const [isAlignLoading, setIsAlignLoading] = useState(false);
   const [isUpdatingAdministrativeStatus, setIsUpdatingAdministrativeStatus] =
     useState(false);
-  const [datasetStatusMap, setDatasetStatusMap] =
-    useState<Map<string, string> | null>(null);
+  const [datasetStatusMap, setDatasetStatusMap] = useState<Map<
+    string,
+    string
+  > | null>(null);
 
   const { products, isLoading, isError, error, refetch } = useProducts();
 
@@ -402,7 +404,10 @@ function ProductsPage() {
   );
 
   const tableRows = useMemo<ProductTableRow[]>(() => {
-    const builder = new ProductTableRowBuilder(sortedProducts, datasetStatusMap);
+    const builder = new ProductTableRowBuilder(
+      sortedProducts,
+      datasetStatusMap,
+    );
     return builder.build();
   }, [sortedProducts, datasetStatusMap]);
 
@@ -432,7 +437,11 @@ function ProductsPage() {
         // Group by companyId + warehouseId (from product on each row)
         const groups = new Map<
           string,
-          { companyId: string; warehouseId: string; rows: Record<string, unknown>[] }
+          {
+            companyId: string;
+            warehouseId: string;
+            rows: Record<string, unknown>[];
+          }
         >();
         for (const row of allRows) {
           const product = (row as ProductTableRow).product;

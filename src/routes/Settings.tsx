@@ -342,6 +342,7 @@ export default function Settings() {
 
   const [filters, setFilters] =
     React.useState<TokenUsageFilters>(DEFAULT_FILTERS);
+  const [tokenCostsTab, setTokenCostsTab] = React.useState("table");
 
   const filterOptions = React.useMemo(() => {
     const jobTypes = Array.from(new Set(usageRows.map((row) => row.jobType)));
@@ -407,7 +408,7 @@ export default function Settings() {
 
   const modelsInChart = React.useMemo(
     () => Array.from(new Set(filteredUsageRows.map((r) => r.model))).sort(),
-    [filteredUsageRows]
+    [filteredUsageRows],
   );
 
   type DayModelRow = {
@@ -1406,7 +1407,8 @@ export default function Settings() {
                                 await getWhatsAppQrCodeWithBearer();
                               setWhatsappQrCode(qrResponse.data.qrCodeBase64);
                               toast.success("QR code aggiornato");
-                            } catch (error) {
+                            } catch (error: unknown) {
+                              console.error(error);
                               toast.error(
                                 "Errore durante il caricamento del QR code",
                               );
@@ -1620,7 +1622,11 @@ export default function Settings() {
           </Button>
         </div>
 
-        <Tabs defaultValue="table" className="w-full">
+        <Tabs
+          value={tokenCostsTab}
+          onValueChange={setTokenCostsTab}
+          className="w-full"
+        >
           <TabsList className="mb-4 flex flex-wrap">
             <TabsTrigger value="table" className="gap-2">
               <Table2 className="h-4 w-4" />
@@ -1636,79 +1642,82 @@ export default function Settings() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="table" className="mt-0">
-        <div className="max-h-[420px] rounded-lg border border-agri-green-100 bg-white shadow-sm overflow-auto">
-          <Table className="min-w-[1040px] [&_tr]:border-agri-green-100 [&_th]:border-agri-green-100 [&_td]:border-agri-green-50">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Job</TableHead>
-                <TableHead>Modello</TableHead>
-                <TableHead className="text-right">Prompt</TableHead>
-                <TableHead className="text-right">Completion</TableHead>
-                <TableHead className="text-right">Token totali</TableHead>
-                <TableHead className="text-right">Costo cliente</TableHead>
-                <TableHead>Azienda (metadata)</TableHead>
-                <TableHead>Riferimento</TableHead>
-                <TableHead>Metadata</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoadingTokenCosts && (
-                <TableRow>
-                  <TableCell colSpan={10}>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Spinner size={16} ariaLabel="Caricamento costi token" />
-                      <span>Recupero costi in corso…</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-
-              {!isLoadingTokenCosts && !hasUsages && (
-                <TableRow>
-                  <TableCell colSpan={10}>
-                    <div className="text-sm text-gray-600">
-                      Nessun costo registrato al momento.
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-
-              {!isLoadingTokenCosts &&
-                hasUsages &&
-                filteredUsageRows.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell>{row.createdAt}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{row.jobType}</Badge>
-                    </TableCell>
-                    <TableCell>{row.model}</TableCell>
-                    <TableCell className="text-right">
-                      {row.promptTokens}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {row.completionTokens}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {row.totalTokens}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {row.clientCost}
-                    </TableCell>
-                    <TableCell className="max-w-[180px] truncate">
-                      {row.metadataCompanyId}
-                    </TableCell>
-                    <TableCell className="max-w-[180px] truncate">
-                      {row.reference}
-                    </TableCell>
-                    <TableCell className="max-w-[260px] truncate">
-                      {row.metadataSummary}
-                    </TableCell>
+            <div className="max-h-[420px] rounded-lg border border-agri-green-100 bg-white shadow-sm overflow-auto">
+              <Table className="min-w-[1040px] [&_tr]:border-agri-green-100 [&_th]:border-agri-green-100 [&_td]:border-agri-green-50">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Job</TableHead>
+                    <TableHead>Modello</TableHead>
+                    <TableHead className="text-right">Prompt</TableHead>
+                    <TableHead className="text-right">Completion</TableHead>
+                    <TableHead className="text-right">Token totali</TableHead>
+                    <TableHead className="text-right">Costo cliente</TableHead>
+                    <TableHead>Azienda (metadata)</TableHead>
+                    <TableHead>Riferimento</TableHead>
+                    <TableHead>Metadata</TableHead>
                   </TableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </div>
+                </TableHeader>
+                <TableBody>
+                  {isLoadingTokenCosts && (
+                    <TableRow>
+                      <TableCell colSpan={10}>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <Spinner
+                            size={16}
+                            ariaLabel="Caricamento costi token"
+                          />
+                          <span>Recupero costi in corso…</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {!isLoadingTokenCosts && !hasUsages && (
+                    <TableRow>
+                      <TableCell colSpan={10}>
+                        <div className="text-sm text-gray-600">
+                          Nessun costo registrato al momento.
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {!isLoadingTokenCosts &&
+                    hasUsages &&
+                    filteredUsageRows.map((row) => (
+                      <TableRow key={row.id}>
+                        <TableCell>{row.createdAt}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{row.jobType}</Badge>
+                        </TableCell>
+                        <TableCell>{row.model}</TableCell>
+                        <TableCell className="text-right">
+                          {row.promptTokens}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {row.completionTokens}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {row.totalTokens}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {row.clientCost}
+                        </TableCell>
+                        <TableCell className="max-w-[180px] truncate">
+                          {row.metadataCompanyId}
+                        </TableCell>
+                        <TableCell className="max-w-[180px] truncate">
+                          {row.reference}
+                        </TableCell>
+                        <TableCell className="max-w-[260px] truncate">
+                          {row.metadataSummary}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
           </TabsContent>
           <TabsContent value="chart" className="mt-0">
             <div className="rounded-lg border border-agri-green-100 bg-white p-4 min-h-[320px]">
@@ -1720,13 +1729,26 @@ export default function Settings() {
               )}
               {!isLoadingTokenCosts && dailyConsumptionByModel.length === 0 && (
                 <div className="flex items-center justify-center py-12 text-sm text-gray-600">
-                  Nessun dato da mostrare. Applica i filtri o attendi nuovi consumi.
+                  Nessun dato da mostrare. Applica i filtri o attendi nuovi
+                  consumi.
                 </div>
               )}
-              {!isLoadingTokenCosts && dailyConsumptionByModel.length > 0 && (
-                <ChartContainer config={consumptionChartConfig} className="h-[300px] w-full">
-                  <BarChart data={dailyConsumptionByModel} margin={{ top: 8, right: 8, bottom: 24, left: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              {!isLoadingTokenCosts &&
+                dailyConsumptionByModel.length > 0 &&
+                tokenCostsTab === "chart" && (
+                <div className="w-full overflow-x-auto min-h-[300px]" style={{ minWidth: 0 }}>
+                <ChartContainer
+                  config={consumptionChartConfig}
+                  className="h-[300px] min-h-[300px] w-full min-w-[280px]"
+                >
+                  <BarChart
+                    data={dailyConsumptionByModel}
+                    margin={{ top: 8, right: 8, bottom: 24, left: 8 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      className="stroke-muted"
+                    />
                     <XAxis
                       dataKey="dateLabel"
                       tickLine={false}
@@ -1758,10 +1780,12 @@ export default function Settings() {
                     ))}
                   </BarChart>
                 </ChartContainer>
+                </div>
               )}
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              Consumo per giorno per modello (costo cliente €). Barre impilate con nomi modelli in legenda.
+              Consumo per giorno per modello (costo cliente €). Barre impilate
+              con nomi modelli in legenda.
             </p>
           </TabsContent>
           <TabsContent value="line" className="mt-0">
@@ -1774,13 +1798,26 @@ export default function Settings() {
               )}
               {!isLoadingTokenCosts && dailyConsumptionByModel.length === 0 && (
                 <div className="flex items-center justify-center py-12 text-sm text-gray-600">
-                  Nessun dato da mostrare. Applica i filtri o attendi nuovi consumi.
+                  Nessun dato da mostrare. Applica i filtri o attendi nuovi
+                  consumi.
                 </div>
               )}
-              {!isLoadingTokenCosts && dailyConsumptionByModel.length > 0 && (
-                <ChartContainer config={consumptionChartConfig} className="h-[300px] w-full">
-                  <LineChart data={dailyConsumptionByModel} margin={{ top: 8, right: 8, bottom: 24, left: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              {!isLoadingTokenCosts &&
+                dailyConsumptionByModel.length > 0 &&
+                tokenCostsTab === "line" && (
+                <div className="w-full overflow-x-auto min-h-[300px]" style={{ minWidth: 0 }}>
+                <ChartContainer
+                  config={consumptionChartConfig}
+                  className="h-[300px] min-h-[300px] w-full min-w-[280px]"
+                >
+                  <LineChart
+                    data={dailyConsumptionByModel}
+                    margin={{ top: 8, right: 8, bottom: 24, left: 8 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      className="stroke-muted"
+                    />
                     <XAxis
                       dataKey="dateLabel"
                       tickLine={false}
@@ -1813,10 +1850,12 @@ export default function Settings() {
                     ))}
                   </LineChart>
                 </ChartContainer>
+                </div>
               )}
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              Andamento costo cliente (€) per giorno e per modello. Una linea per ogni modello.
+              Andamento costo cliente (€) per giorno e per modello. Una linea
+              per ogni modello.
             </p>
           </TabsContent>
         </Tabs>

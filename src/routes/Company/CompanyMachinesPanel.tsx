@@ -141,6 +141,14 @@ export function CompanyMachinesPanel({
     }
   };
 
+  // Converte giorni in anni per la visualizzazione (definito prima di rows useMemo)
+  const convertDaysToYears = (days: number | null): number | null => {
+    if (days === null || days === undefined) {
+      return null;
+    }
+    return Math.round(days / 365);
+  };
+
   const rows = React.useMemo(() => {
     return machines.map((machine) => ({
       id: machine.id,
@@ -207,14 +215,6 @@ export function CompanyMachinesPanel({
       return null;
     }
     return Math.round(num * 365);
-  };
-
-  // Converte giorni in anni per la visualizzazione
-  const convertDaysToYears = (days: number | null): number | null => {
-    if (days === null || days === undefined) {
-      return null;
-    }
-    return Math.round(days / 365);
   };
 
   const handleSave = async (payload: {

@@ -8,7 +8,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { IoDownloadOutline } from "react-icons/io5";
-import { CheckCircle2, Loader2, Merge, Plus, PanelRightOpen } from "lucide-react";
+import {
+  CheckCircle2,
+  Loader2,
+  Merge,
+  Plus,
+  PanelRightOpen,
+  X,
+} from "lucide-react";
 import { EditableColumn } from "../types";
 import { MAX_VISIBLE_COLUMNS } from "../constants";
 import { EditableTableColumnVisibilityDropdown } from "../EditableTableColumnVisibilityDropdown";
@@ -41,6 +48,7 @@ export interface EditableTableHeaderProps {
   onColumnVisibilityChange: (columnId: string, visible: boolean) => void;
   onShowAllColumns: () => void;
   onShowDefaultColumns: () => void;
+  companyFilterChip?: { label: string; onClear: () => void } | null;
   onDeselectAll: () => void;
   onToggleEditMode: () => void;
   onAddClick: () => void;
@@ -78,6 +86,7 @@ export function EditableTableHeader({
   onColumnVisibilityChange,
   onShowAllColumns,
   onShowDefaultColumns,
+  companyFilterChip,
   onDeselectAll,
   onToggleEditMode,
   onAddClick,
@@ -146,6 +155,25 @@ export function EditableTableHeader({
               onShowDefault={onShowDefaultColumns}
             />
           )}
+        {!showEditActions && !anySelected && companyFilterChip && (
+          <span className="inline-flex items-center gap-0.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-sm">
+            <span
+              className="max-w-[180px] truncate"
+              title={companyFilterChip.label}
+            >
+              {companyFilterChip.label}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-5 w-5 shrink-0 p-0 text-muted-foreground hover:text-foreground"
+              onClick={companyFilterChip.onClear}
+              aria-label="Pulisci filtri company"
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </span>
+        )}
         {anySelected && !showEditActions && (
           <Button
             onClick={onDeselectAll}

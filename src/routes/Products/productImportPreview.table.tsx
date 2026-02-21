@@ -50,11 +50,12 @@ export class ProductImportRowBuilder {
       ddtCode: item.ddtCode ?? "",
       supplierName: item.supplierName ?? "",
       ddtDate:
-        item.ddtDate ?? item.invoiceDate ?? new Date().toISOString().split("T")[0],
+        item.ddtDate ??
+        item.invoiceDate ??
+        new Date().toISOString().split("T")[0],
       invoiceDate: item.invoiceDate ?? undefined,
       barcode: item.barcode ?? undefined,
-      category:
-        item.category ?? ImportPreviewDefaults.fallbackCategory,
+      category: item.category ?? ImportPreviewDefaults.fallbackCategory,
       type: item.type ?? undefined,
       description: item.description ?? undefined,
       price: item.price ?? undefined,
@@ -114,7 +115,8 @@ export class ProductImportRowBuilder {
 }
 
 function formatDate(value: unknown): ReactNode {
-  if (!value || value === "") return <span className="text-muted-foreground">-</span>;
+  if (!value || value === "")
+    return <span className="text-muted-foreground">-</span>;
   try {
     const date = new Date(value as string);
     if (isNaN(date.getTime())) return <span>{String(value)}</span>;
@@ -134,10 +136,15 @@ export class ProductImportColumnsFactory {
         width: "220px",
         render: (value): ReactNode => {
           if (!value || value === "" || value === null || value === undefined) {
-            return <span className="text-muted-foreground italic text-xs">—</span>;
+            return (
+              <span className="text-muted-foreground italic text-xs">—</span>
+            );
           }
           return (
-            <span className="inline-block max-w-[200px] truncate rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-700" title={String(value)}>
+            <span
+              className="inline-block max-w-[200px] truncate rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-700"
+              title={String(value)}
+            >
               {String(value)}
             </span>
           );
@@ -232,13 +239,13 @@ export class ProductImportColumnsFactory {
           return <span>{Number(value).toFixed(2)}</span>;
         },
       },
-      {
-        id: "sku",
-        title: "SKU",
-        type: "text",
-        required: true,
-        width: "120px",
-      },
+      // {
+      //   id: "sku",
+      //   title: "SKU",
+      //   type: "text",
+      //   required: true,
+      //   width: "120px",
+      // },
       {
         id: "registrationNumber",
         title: "N. Registrazione",

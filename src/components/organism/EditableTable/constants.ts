@@ -23,6 +23,9 @@ export const GLOBAL_COMPANY_FILTER_ROUTES = [
   "/fields",
   "/products",
   "/operations",
+  "/company",
+  "/production-unit",
+  "/field-notes",
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

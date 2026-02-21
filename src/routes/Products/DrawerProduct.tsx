@@ -575,7 +575,8 @@ function DrawerProduct({
       await stocksApiService.update(editingStock.id, {
         companyId,
         quantity: Number.isFinite(quantityValue) ? quantityValue : undefined,
-        unitOfMeasureQuantity: stockEditForm.unitOfMeasureQuantity?.trim() || undefined,
+        unitOfMeasureQuantity:
+          stockEditForm.unitOfMeasureQuantity?.trim() || undefined,
         type: stockEditForm.type,
         ddtCode: stockEditForm.ddtCode?.trim() || null,
         ddtDate: toIsoDate(stockEditForm.ddtDate) ?? null,
@@ -583,7 +584,8 @@ function DrawerProduct({
         invoiceDate: toIsoDate(stockEditForm.date) ?? null,
         invoiceDueDate: toIsoDate(stockEditForm.invoiceDueDate) ?? null,
         price: Number.isFinite(priceValue) ? priceValue : undefined,
-        unitOfMeasurePrice: stockEditForm.unitOfMeasurePrice?.trim() || undefined,
+        unitOfMeasurePrice:
+          stockEditForm.unitOfMeasurePrice?.trim() || undefined,
       });
       toast.success("Movimento aggiornato");
       queryClient.invalidateQueries({ queryKey: ["products", "me"] });
@@ -651,7 +653,7 @@ function DrawerProduct({
               </div>
               <div className="flex items-center gap-2">
                 <SheetDescription className="mb-0">
-                  SKU: {product.sku}
+                  Codice magazzino (SKU): {product.sku}
                 </SheetDescription>
                 <Badge
                   variant={
@@ -826,12 +828,18 @@ function DrawerProduct({
                                         }))
                                       }
                                     >
-                                      <SelectTrigger id={`edit-type-${stock.id}`}>
+                                      <SelectTrigger
+                                        id={`edit-type-${stock.id}`}
+                                      >
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="IN">Carico (IN)</SelectItem>
-                                        <SelectItem value="OUT">Scarico (OUT)</SelectItem>
+                                        <SelectItem value="IN">
+                                          Carico (IN)
+                                        </SelectItem>
+                                        <SelectItem value="OUT">
+                                          Scarico (OUT)
+                                        </SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>
@@ -867,11 +875,14 @@ function DrawerProduct({
                                       </Label>
                                       <Input
                                         id={`edit-uom-${stock.id}`}
-                                        value={stockEditForm.unitOfMeasureQuantity}
+                                        value={
+                                          stockEditForm.unitOfMeasureQuantity
+                                        }
                                         onChange={(e) =>
                                           setStockEditForm((prev) => ({
                                             ...prev,
-                                            unitOfMeasureQuantity: e.target.value,
+                                            unitOfMeasureQuantity:
+                                              e.target.value,
                                           }))
                                         }
                                         placeholder="es. kg, L"
@@ -960,7 +971,9 @@ function DrawerProduct({
                                         htmlFor={`edit-price-${stock.id}`}
                                         className="text-xs"
                                       >
-                                        {stockEditForm.type === "IN" ? "Prezzo acquisto" : "Prezzo vendita"}
+                                        {stockEditForm.type === "IN"
+                                          ? "Prezzo acquisto"
+                                          : "Prezzo vendita"}
                                       </Label>
                                       <Input
                                         id={`edit-price-${stock.id}`}
@@ -1125,7 +1138,9 @@ function DrawerProduct({
                                       </span>
                                     </span>
                                     <span className="text-gray-500">
-                                      {stock.type === "IN" ? "Prezzo acquisto:" : "Prezzo vendita:"}
+                                      {stock.type === "IN"
+                                        ? "Prezzo acquisto:"
+                                        : "Prezzo vendita:"}
                                       <span className="ml-1 text-gray-900">
                                         {stock.price != null
                                           ? `${stock.price.toFixed(2)} ${stock.unitOfMeasurePrice ?? "EUR"}`

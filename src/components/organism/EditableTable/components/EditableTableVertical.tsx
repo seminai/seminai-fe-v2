@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { TableRow, TableHead } from "@/components/ui/table";
 import { IoDownloadOutline } from "react-icons/io5";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { EditableColumn, InternalRow } from "../types";
 import { MAX_VISIBLE_COLUMNS } from "../constants";
 import { formatDefaultCellValue } from "../utils";
@@ -42,6 +42,7 @@ export interface EditableTableVerticalProps {
   onColumnVisibilityChange: (columnId: string, visible: boolean) => void;
   onShowAllColumns: () => void;
   onShowDefaultColumns: () => void;
+  companyFilterChip?: { label: string; onClear: () => void } | null;
   onToggleEditMode: () => void;
   onCellChange: (
     row: InternalRow,
@@ -101,6 +102,7 @@ export function EditableTableVertical({
   onColumnVisibilityChange,
   onShowAllColumns,
   onShowDefaultColumns,
+  companyFilterChip,
   onCellChange,
   onAddClick,
   onCancel,
@@ -162,6 +164,25 @@ export function EditableTableVertical({
               onShowAll={onShowAllColumns}
               onShowDefault={onShowDefaultColumns}
             />
+          )}
+          {!showEditActions && companyFilterChip && (
+            <span className="inline-flex items-center gap-0.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-sm">
+              <span
+                className="max-w-[180px] truncate"
+                title={companyFilterChip.label}
+              >
+                {companyFilterChip.label}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 w-5 shrink-0 p-0 text-muted-foreground hover:text-foreground"
+                onClick={companyFilterChip.onClear}
+                aria-label="Pulisci filtri company"
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </span>
           )}
         </div>
         <div className="flex items-center gap-2">

@@ -28,25 +28,30 @@ interface ProductStockFieldsProps {
   onStockChange: (field: keyof StockFormData, value: string) => void;
   /** When true, movement is required (e.g. add stock to existing product) */
   required?: boolean;
+  /** When false, hide section title/description (e.g. when used in a list of movements) */
+  showTitle?: boolean;
 }
 
 export default function ProductStockFields({
   stockData,
   onStockChange,
   required = false,
+  showTitle = true,
 }: ProductStockFieldsProps) {
   return (
     <section className="space-y-4">
-      <div>
-        <h4 className="text-base font-semibold border-b pb-2">
-          Movimento di stock {required ? "" : "(opzionale)"}
-        </h4>
-        <p className="text-sm text-muted-foreground mt-2">
-          {required
-            ? "Inserisci i dati del movimento di stock da aggiungere al prodotto."
-            : "Se vuoi registrare un carico iniziale, compila i campi seguenti."}
-        </p>
-      </div>
+      {showTitle && (
+        <div>
+          <h4 className="text-base font-semibold border-b pb-2">
+            Movimento di stock {required ? "" : "(opzionale)"}
+          </h4>
+          <p className="text-sm text-muted-foreground mt-2">
+            {required
+              ? "Inserisci i dati del movimento di stock da aggiungere al prodotto."
+              : "Se vuoi registrare un carico iniziale, compila i campi seguenti."}
+          </p>
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label>Quantità</Label>

@@ -11,6 +11,7 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
+  Plus,
   RefreshCw,
   Save,
   X,
@@ -31,6 +32,10 @@ import {
   ProductImportRowBuilder,
   type ProductImportPreviewRow,
 } from "../productImportPreview.table";
+import { getAllFitosanitariRecords } from "@/services/fitosanitariRegistry";
+import type { FitosanitariDatasetRecord } from "@/services/fitosanitariRegistry";
+import { MultiSearchableSelect } from "@/routes/DosageManager/MultiSearchableSelect";
+import type { MultiSearchableSelectOption } from "@/routes/DosageManager/MultiSearchableSelect";
 
 // ─── Review step types ────────────────────────────────────────────────────────
 
@@ -53,6 +58,8 @@ interface ImportedProductsPanelProps {
   importSource: ProductImportSource;
   onImportCompleted?: () => void;
   mobilePreviewButton?: React.ReactNode;
+  /** Desktop: button to show/hide PDF panel (eye) when in split view */
+  desktopPdfToggle?: React.ReactNode;
   hideFooter?: boolean;
   importTriggerRef?: React.MutableRefObject<(() => Promise<void>) | null>;
   onImportingChange?: (isImporting: boolean) => void;
@@ -68,6 +75,7 @@ export default function ImportedProductsPanel({
   importSource,
   onImportCompleted,
   mobilePreviewButton,
+  desktopPdfToggle,
   hideFooter,
   importTriggerRef,
   onImportingChange,
@@ -84,6 +92,77 @@ export default function ImportedProductsPanel({
 
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+
+  /** When step is "review": which row is showing the registry select instead of the name input (null = none). */
+  const [selectProductRowId, setSelectProductRowId] = useState<string | null>(
+    null,
+  );
+
+  /** Fitosanitari registry: loaded when entering review step, used for name match and select options. */
+  const [fitosanitariRecords, setFitosanitariRecords] = useState<
+    FitosanitariDatasetRecord[]
+  >([]);
+
+  useEffect(() => {
+    if (step !== "review") return;
+    let active = true;
+    getAllFitosanitariRecords()
+      .then((records) => {
+        if (active) setFitosanitariRecords(records);
+      })
+      .catch((err) => {
+        if (active) console.error("Error loading fitosanitari registry:", err);
+      });
+    return () => {
+      active = false;
+    };
+  }, [step]);
+
+  const fitosanitariProductNamesSet = useMemo(() => {
+    const set = new Set<string>();
+    fitosanitariRecords.forEach((r) => {
+      if (r.productName?.trim()) {
+        set.add(r.productName.trim().toLowerCase());
+      }
+    });
+    return set;
+  }, [fitosanitariRecords]);
+
+  const fitosanitariOptionsForReview = useMemo((): MultiSearchableSelectOption[] => {
+    return fitosanitariRecords.map((p, index) => {
+      const sostanzeAttive = (p.activeIngredients ?? "")
+        .replace(/\|/g, " ")
+        .trim();
+      const descPart = sostanzeAttive || p.registrationNumber || "";
+      return {
+        value: String(index),
+        label: p.administrativeStatus
+          ? `${p.productName} (${p.administrativeStatus})`
+          : p.productName,
+        groupLabel: "REGISTRO MINISTERIALE",
+        description: descPart
+          ? `Registro ministeriale • ${descPart}`
+          : "Registro ministeriale",
+        searchAliases: [p.registrationNumber ?? "", sostanzeAttive].filter(
+          Boolean,
+        ),
+      };
+    });
+  }, [fitosanitariRecords]);
+
+  const getFitosanitarioRecordByIndex = useCallback(
+    (indexStr: string): FitosanitariDatasetRecord | null => {
+      const index = parseInt(indexStr, 10);
+      if (
+        Number.isNaN(index) ||
+        index < 0 ||
+        index >= fitosanitariRecords.length
+      )
+        return null;
+      return fitosanitariRecords[index] ?? null;
+    },
+    [fitosanitariRecords],
+  );
 
   const columns = useMemo(() => ProductImportColumnsFactory.create(), []);
 
@@ -162,6 +241,24 @@ export default function ImportedProductsPanel({
       setReviewRows((prev) =>
         prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
       );
+    },
+    [],
+  );
+
+  const handleSelectFromRegistry = useCallback(
+    (rowId: string, record: FitosanitariDatasetRecord) => {
+      setReviewRows((prev) =>
+        prev.map((r) =>
+          r.id === rowId
+            ? {
+                ...r,
+                name: record.productName,
+                registrationNumber: record.registrationNumber ?? "",
+              }
+            : r,
+        ),
+      );
+      setSelectProductRowId(null);
     },
     [],
   );
@@ -251,9 +348,14 @@ export default function ImportedProductsPanel({
       <div className="flex flex-col h-full overflow-hidden">
         {/* Header */}
         <div className="flex-shrink-0 px-4 pt-4 space-y-3">
-          <h4 className="text-base font-semibold">
-            Prodotti estratti da {sourceLabel}
-          </h4>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <h4 className="text-base font-semibold">
+              Prodotti estratti da {sourceLabel}
+            </h4>
+            {desktopPdfToggle && (
+              <div className="hidden lg:block">{desktopPdfToggle}</div>
+            )}
+          </div>
 
           {previewErrors.length > 0 && (
             <Alert variant="destructive">
@@ -326,7 +428,12 @@ export default function ImportedProductsPanel({
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 px-4 pt-4 space-y-3">
-        <h4 className="text-base font-semibold">Revisione prodotti</h4>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h4 className="text-base font-semibold">Revisione prodotti</h4>
+          {desktopPdfToggle && (
+            <div className="hidden lg:block">{desktopPdfToggle}</div>
+          )}
+        </div>
 
         {importError && (
           <Alert variant="destructive">
@@ -397,6 +504,16 @@ export default function ImportedProductsPanel({
                 onToggleAccepted={toggleAccepted}
                 onToggleUseConverted={toggleUseConverted}
                 onUpdateField={updateReviewField}
+                nameMatchesRegistry={fitosanitariProductNamesSet.has(
+                  row.name?.trim().toLowerCase() ?? "",
+                )}
+                isSelectMode={selectProductRowId === row.id}
+                fitosanitariRecords={fitosanitariRecords}
+                fitosanitariOptions={fitosanitariOptionsForReview}
+                getFitosanitarioRecordByIndex={getFitosanitarioRecordByIndex}
+                onSelectFromRegistry={handleSelectFromRegistry}
+                onCloseSelect={() => setSelectProductRowId(null)}
+                onOpenSelect={() => setSelectProductRowId(row.id)}
               />
             ))}
           </div>
@@ -449,6 +566,19 @@ interface ReviewRowProps {
     field: keyof ProductImportPreviewRow,
     value: unknown,
   ) => void;
+  nameMatchesRegistry: boolean;
+  isSelectMode: boolean;
+  fitosanitariRecords: FitosanitariDatasetRecord[];
+  fitosanitariOptions: MultiSearchableSelectOption[];
+  getFitosanitarioRecordByIndex: (
+    indexStr: string,
+  ) => FitosanitariDatasetRecord | null;
+  onSelectFromRegistry: (
+    rowId: string,
+    record: FitosanitariDatasetRecord,
+  ) => void;
+  onCloseSelect: () => void;
+  onOpenSelect: () => void;
 }
 
 function ReviewRow({
@@ -458,6 +588,14 @@ function ReviewRow({
   onToggleAccepted,
   onToggleUseConverted,
   onUpdateField,
+  nameMatchesRegistry,
+  isSelectMode,
+  fitosanitariRecords,
+  fitosanitariOptions,
+  getFitosanitarioRecordByIndex,
+  onSelectFromRegistry,
+  onCloseSelect,
+  onOpenSelect,
 }: ReviewRowProps) {
   const isRejected = !row.accepted;
   const hasConverted =
@@ -523,15 +661,62 @@ function ReviewRow({
         )}
       </div>
 
-      {/* Col 3 — Nome prodotto */}
-      <div>
-        <Input
-          value={row.name}
-          onChange={(e) => onUpdateField(row.id, "name", e.target.value)}
-          disabled={isRejected}
-          className="h-7 text-xs"
-          placeholder="Nome prodotto"
-        />
+      {/* Col 3 — Nome prodotto: input + optional "+" to open registry select when no match */}
+      <div className="min-w-[180px]">
+        {isSelectMode ? (
+          <div className="space-y-1">
+            <MultiSearchableSelect
+              value={
+                (() => {
+                  const idx = fitosanitariRecords.findIndex(
+                    (r) =>
+                      r.productName?.trim().toLowerCase() ===
+                      (row.name ?? "").trim().toLowerCase(),
+                  );
+                  return idx >= 0 ? [String(idx)] : [];
+                })()
+              }
+              options={fitosanitariOptions}
+              placeholder="Cerca per nome, sostanza attiva o n. registrazione..."
+              searchPlaceholder="Nome, sostanza attiva o n. registrazione"
+              emptyMessage="Nessun prodotto trovato"
+              disabled={isRejected}
+              maxVisibleBadges={1}
+              onChange={(next) => {
+                const last = next.length ? next[next.length - 1] : null;
+                const record = last
+                  ? getFitosanitarioRecordByIndex(last)
+                  : null;
+                if (record) onSelectFromRegistry(row.id, record);
+              }}
+              onOpenChange={(open) => {
+                if (!open) onCloseSelect();
+              }}
+            />
+          </div>
+        ) : (
+          <div className="flex items-center gap-1">
+            <Input
+              value={row.name}
+              onChange={(e) => onUpdateField(row.id, "name", e.target.value)}
+              disabled={isRejected}
+              className="h-7 text-xs flex-1 min-w-0"
+              placeholder="Nome prodotto"
+            />
+            {!nameMatchesRegistry && !isRejected && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 shrink-0"
+                onClick={onOpenSelect}
+                title="Seleziona dal registro ministeriale"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Col 4 — Quantità */}

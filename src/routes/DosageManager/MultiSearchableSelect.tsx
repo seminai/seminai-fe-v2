@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactElement } from "react";
+import { useCallback, useMemo, useState, type ReactElement } from "react";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,8 @@ export interface MultiSearchableSelectProps {
   disabled?: boolean;
   maxVisibleBadges?: number;
   onChange: (next: string[]) => void;
+  /** Called when the popover open state changes (e.g. user closes without selecting). */
+  onOpenChange?: (open: boolean) => void;
 }
 
 class MultiSelectValueController {
@@ -126,9 +128,18 @@ export function MultiSearchableSelect({
   disabled = false,
   maxVisibleBadges = 6,
   onChange,
+  onOpenChange,
 }: MultiSearchableSelectProps): ReactElement {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+
+  const handleOpenChange = useCallback(
+    (next: boolean) => {
+      setOpen(next);
+      onOpenChange?.(next);
+    },
+    [onOpenChange]
+  );
 
   const selectedSet = useMemo(() => new Set(value), [value]);
 
@@ -157,7 +168,7 @@ export function MultiSearchableSelect({
 
   return (
     <div className="space-y-2">
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <Button
             type="button"

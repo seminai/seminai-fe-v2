@@ -126,20 +126,20 @@ export function CompanyWarehousesPanel({
     created: Array<Record<string, unknown>>;
     updated: Array<Record<string, unknown>>;
   }): Promise<void> => {
-    // Gestione creazione
+    // Gestione creazione: obbligatori = nome, indirizzo, città, nazione, regione, CAP; opzionali = stringa vuota se non inseriti
     if (payload.created.length > 0) {
       const createPromises = payload.created.map(async (row) => {
         await createWarehouse({
-          name: String(row.name || ""),
-          nation: String(row.nation || ""),
-          region: String(row.region || ""),
-          city: String(row.city || ""),
-          address: String(row.address || ""),
-          cap: String(row.cap || ""),
-          sezione: row.sezione ? String(row.sezione) : null,
-          foglio: row.foglio ? String(row.foglio) : null,
-          particella: row.particella ? String(row.particella) : null,
-          subalterno: row.subalterno ? String(row.subalterno) : null,
+          name: String(row.name ?? "").trim(),
+          nation: String(row.nation ?? "").trim(),
+          region: String(row.region ?? "").trim(),
+          city: String(row.city ?? "").trim(),
+          address: String(row.address ?? "").trim(),
+          cap: String(row.cap ?? "").trim(),
+          sezione: row.sezione != null && String(row.sezione).trim() !== "" ? String(row.sezione).trim() : "",
+          foglio: row.foglio != null && String(row.foglio).trim() !== "" ? String(row.foglio).trim() : "",
+          particella: row.particella != null && String(row.particella).trim() !== "" ? String(row.particella).trim() : "",
+          subalterno: row.subalterno != null && String(row.subalterno).trim() !== "" ? String(row.subalterno).trim() : "",
         });
       });
 
@@ -186,20 +186,22 @@ export function CompanyWarehousesPanel({
           updateData.cap = String(row.cap);
         }
         if (row.sezione !== undefined) {
-          updateData.sezione = row.sezione ? String(row.sezione) : null;
+          updateData.sezione = row.sezione != null && String(row.sezione).trim() !== "" ? String(row.sezione).trim() : "";
         }
         if (row.foglio !== undefined) {
-          updateData.foglio = row.foglio ? String(row.foglio) : null;
+          updateData.foglio = row.foglio != null && String(row.foglio).trim() !== "" ? String(row.foglio).trim() : "";
         }
         if (row.particella !== undefined) {
-          updateData.particella = row.particella
-            ? String(row.particella)
-            : null;
+          updateData.particella =
+            row.particella != null && String(row.particella).trim() !== ""
+              ? String(row.particella).trim()
+              : "";
         }
         if (row.subalterno !== undefined) {
-          updateData.subalterno = row.subalterno
-            ? String(row.subalterno)
-            : null;
+          updateData.subalterno =
+            row.subalterno != null && String(row.subalterno).trim() !== ""
+              ? String(row.subalterno).trim()
+              : "";
         }
 
         if (Object.keys(updateData).length > 0) {

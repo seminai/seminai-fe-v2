@@ -37,7 +37,6 @@ import {
   X,
   PenLine,
   FileUp,
-  ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -954,17 +953,6 @@ export default function NewProductionUnit(): React.ReactElement {
           filteredItems={creationMode ? displayedFieldsCount : 0}
         >
           <div className="flex items-center gap-2">
-            {creationMode !== null && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBackToChoice}
-                className="text-muted-foreground"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Torna alla scelta
-              </Button>
-            )}
             <Button
               variant="outline"
               onClick={handleCancelNavigation}

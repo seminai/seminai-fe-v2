@@ -9,7 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { ArrowLeft, FileDown, FileText, Eye, Info, Receipt, Table } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, FileDown, FileText, Info, Receipt, Table } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useCompanies } from "@/hooks/useCompanies";
@@ -146,6 +146,8 @@ export default function FileImportSection({
   const [previewErrors, setPreviewErrors] = useState<ImportPreviewError[]>([]);
   const [importSource, setImportSource] = useState<ProductImportSource>("csv");
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
+  /** Desktop: when in revision (PDF + table), PDF panel is hidden by default so table is full width; toggle with eye button */
+  const [showPdfPanel, setShowPdfPanel] = useState(false);
 
   useEffect(() => {
     onHasProductsToLoadChange?.(extractedProducts.length > 0);
@@ -596,9 +598,9 @@ export default function FileImportSection({
       <div className="flex-1 min-h-0 flex">
         {hasExtractedProducts ? (
           <>
-            {/* Desktop: per Excel solo tabella, per altri split 50/50 */}
+            {/* Desktop: per Excel solo tabella; per DDT/Fattura PDF nascosto di default, tabella full width, occhio per mostrarlo */}
             <div className="hidden lg:flex flex-1 min-h-0 overflow-x-auto">
-              {!isExcelImport && (
+              {!isExcelImport && showPdfPanel && (
                 <div className="w-1/2 min-w-0 shrink border-r flex flex-col min-h-0">
                   {uploadedFiles.length > 1 && (
                     <div className="px-3 py-2 border-b bg-gray-50 flex items-center gap-2 overflow-x-auto">
@@ -628,7 +630,7 @@ export default function FileImportSection({
               )}
               <div
                 className={
-                  isExcelImport
+                  isExcelImport || (!isExcelImport && !showPdfPanel)
                     ? "w-full flex flex-col min-h-0"
                     : "w-1/2 flex flex-col min-h-0 min-w-[360px] shrink-0"
                 }
@@ -643,6 +645,31 @@ export default function FileImportSection({
                   hideFooter={hideImportButton}
                   importTriggerRef={importTriggerRef}
                   onImportingChange={setPanelImporting}
+                  desktopPdfToggle={
+                    !isExcelImport ? (
+                      showPdfPanel ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => setShowPdfPanel(false)}
+                        >
+                          <EyeOff className="h-4 w-4" />
+                          Nascondi documento
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => setShowPdfPanel(true)}
+                        >
+                          <Eye className="h-4 w-4" />
+                          Mostra documento
+                        </Button>
+                      )
+                    ) : undefined
+                  }
                 />
               </div>
             </div>
