@@ -1,4 +1,5 @@
 import authService from "@/utils/auth";
+import { compressJsonBody } from "@/utils/compress";
 
 export type HttpHeaders = Record<string, string>;
 
@@ -12,7 +13,7 @@ let isRedirectingToAuth = false;
 /**
  * HTTP client che applica automaticamente i cookie di sessione
  * e forza il logout in caso di risposta non autorizzata.
- * 
+ *
  * IMPORTANTE: Dopo la migrazione di sicurezza (Gennaio 2025):
  * - L'autenticazione avviene tramite cookie httpOnly impostato dal backend
  * - Il frontend usa SOLO credentials: 'include' per inviare il cookie
@@ -34,8 +35,21 @@ export class AuthenticatedHttpClient {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
+    // Auto-compressione: comprimi body JSON > 1KB con gzip+base64
+    let { body } = options;
+    if (body && typeof body === "string" && this.isJsonContentType(headers)) {
+      const result = compressJsonBody(body);
+      if (result.compressed) {
+        body = result.body;
+        headers["X-Payload-Compressed"] = "gzip";
+        headers["X-Original-Size"] = String(result.originalSize);
+        headers["X-Compressed-Size"] = String(result.compressedSize);
+      }
+    }
+
     const response = await fetch(input, {
       ...options,
+      body,
       credentials: "include",
       headers,
     });
@@ -58,6 +72,15 @@ export class AuthenticatedHttpClient {
     }
 
     return response;
+  }
+
+  private isJsonContentType(headers: HttpHeaders): boolean {
+    const contentType = Object.entries(headers).find(
+      ([key]) => key.toLowerCase() === "content-type",
+    );
+    return contentType
+      ? contentType[1].toLowerCase().includes("application/json")
+      : false;
   }
 }
 

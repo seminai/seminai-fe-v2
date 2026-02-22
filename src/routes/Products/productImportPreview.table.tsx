@@ -131,7 +131,7 @@ export class ProductImportColumnsFactory {
     return [
       {
         id: "productNameExtracted",
-        title: "Nome sul documento",
+        title: "Nome prodotto",
         type: "text",
         width: "220px",
         render: (value): ReactNode => {
@@ -149,13 +149,6 @@ export class ProductImportColumnsFactory {
             </span>
           );
         },
-      },
-      {
-        id: "name",
-        title: "Nome Prodotto",
-        type: "text",
-        required: true,
-        width: "200px",
       },
       {
         id: "quantity",

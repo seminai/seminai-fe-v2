@@ -1,75 +1,7 @@
-import pako from "pako";
 import { authenticatedHttpClient } from "./http";
 import type { JobWithRelations } from "./jobs";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
-
-// Soglia per la compressione (1MB)
-const COMPRESSION_THRESHOLD_BYTES = 1 * 1024 * 1024;
-
-/** Dimensione chunk per evitare "Maximum call stack size exceeded" con fromCharCode */
-const BASE64_CHUNK_SIZE = 8192;
-
-/**
- * Converte un Uint8Array in stringa binaria a chunk per evitare stack overflow
- * (String.fromCharCode(...array) fallisce con array grandi).
- */
-function uint8ArrayToBinaryString(bytes: Uint8Array): string {
-  let result = "";
-  for (let i = 0; i < bytes.length; i += BASE64_CHUNK_SIZE) {
-    const chunk = bytes.subarray(
-      i,
-      Math.min(i + BASE64_CHUNK_SIZE, bytes.length),
-    );
-    result += String.fromCharCode.apply(null, chunk as unknown as number[]);
-  }
-  return result;
-}
-
-/**
- * Comprime un payload JSON con gzip e lo codifica in base64.
- * Ritorna un oggetto wrapper con flag compressed e dati.
- */
-function compressPayload<T>(payload: T): {
-  compressed: boolean;
-  data: string;
-  originalSize: number;
-  compressedSize: number;
-} {
-  const jsonString = JSON.stringify(payload);
-  const originalSize = new Blob([jsonString]).size;
-
-  if (originalSize < COMPRESSION_THRESHOLD_BYTES) {
-    return {
-      compressed: false,
-      data: jsonString,
-      originalSize,
-      compressedSize: originalSize,
-    };
-  }
-
-  // Comprimi con gzip
-  const encoder = new TextEncoder();
-  const inputBytes = encoder.encode(jsonString);
-  const compressedBytes = pako.gzip(inputBytes);
-
-  // Converti in base64 a chunk per evitare "Maximum call stack size exceeded"
-  const binaryString = uint8ArrayToBinaryString(
-    new Uint8Array(compressedBytes),
-  );
-  const base64 = btoa(binaryString);
-
-  console.log(
-    `📦 Payload compresso: ${(originalSize / 1024 / 1024).toFixed(2)}MB → ${(compressedBytes.length / 1024 / 1024).toFixed(2)}MB (${((1 - compressedBytes.length / originalSize) * 100).toFixed(1)}% riduzione)`,
-  );
-
-  return {
-    compressed: true,
-    data: base64,
-    originalSize,
-    compressedSize: compressedBytes.length,
-  };
-}
 
 export type JobVerificationRequest = {
   threadId: string;
@@ -206,29 +138,15 @@ class JobVerificationAgentApiService {
   }
 
   async streamMessage(request: JobVerificationRequest): Promise<Response> {
-    const { compressed, data, originalSize, compressedSize } =
-      compressPayload(request);
-
-    const headers: Record<string, string> = {
-      Accept: "text/event-stream",
-      "Content-Type": "application/json",
-    };
-
-    // Aggiungi header per indicare compressione
-    if (compressed) {
-      headers["X-Payload-Compressed"] = "gzip";
-      headers["X-Original-Size"] = String(originalSize);
-      headers["X-Compressed-Size"] = String(compressedSize);
-    }
-
-    const body = compressed ? JSON.stringify({ compressed: true, data }) : data;
-
     const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/job-verification-agent/stream`,
       {
         method: "POST",
-        headers,
-        body,
+        headers: {
+          Accept: "text/event-stream",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(request),
       },
     );
 
@@ -241,28 +159,15 @@ class JobVerificationAgentApiService {
   }
 
   async sendMessage(request: JobVerificationRequest): Promise<AgentResponse> {
-    const { compressed, data, originalSize, compressedSize } =
-      compressPayload(request);
-
-    const headers: Record<string, string> = {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    };
-
-    if (compressed) {
-      headers["X-Payload-Compressed"] = "gzip";
-      headers["X-Original-Size"] = String(originalSize);
-      headers["X-Compressed-Size"] = String(compressedSize);
-    }
-
-    const body = compressed ? JSON.stringify({ compressed: true, data }) : data;
-
     const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/job-verification-agent/message`,
       {
         method: "POST",
-        headers,
-        body,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(request),
       },
     );
 

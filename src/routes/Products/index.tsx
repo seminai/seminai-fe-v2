@@ -259,14 +259,6 @@ class ProductTableColumnsFactory {
     );
   }
 
-  private static renderSku(
-    _value: unknown,
-    row: Record<string, unknown>,
-  ): ReactNode {
-    const data = ProductTableColumnsFactory.asRow(row);
-    return <span>{data.sku}</span>;
-  }
-
   private static renderStock(
     _value: unknown,
     row: Record<string, unknown>,

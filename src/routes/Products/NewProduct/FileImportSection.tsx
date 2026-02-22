@@ -147,7 +147,7 @@ export default function FileImportSection({
   const [importSource, setImportSource] = useState<ProductImportSource>("csv");
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
   /** Desktop: when in revision (PDF + table), PDF panel is hidden by default so table is full width; toggle with eye button */
-  const [showPdfPanel, setShowPdfPanel] = useState(false);
+  const [showPdfPanel, setShowPdfPanel] = useState(true);
 
   useEffect(() => {
     onHasProductsToLoadChange?.(extractedProducts.length > 0);

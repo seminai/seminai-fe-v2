@@ -12,7 +12,6 @@ import {
   Check,
   CheckCircle2,
   Plus,
-  RefreshCw,
   Save,
   X,
 } from "lucide-react";
@@ -42,11 +41,18 @@ import type { MultiSearchableSelectOption } from "@/routes/DosageManager/MultiSe
 
 interface ReviewRowState extends ProductImportPreviewRow {
   accepted: boolean;
-  useConverted: boolean;
+  conversionRatio: number | null;
 }
 
 function toReviewRows(rows: ProductImportPreviewRow[]): ReviewRowState[] {
-  return rows.map((r) => ({ ...r, accepted: true, useConverted: false }));
+  return rows.map((r) => ({
+    ...r,
+    accepted: true,
+    conversionRatio:
+      r.quantityConverted != null && r.quantity > 0
+        ? r.quantityConverted / r.quantity
+        : null,
+  }));
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -134,16 +140,16 @@ export default function ImportedProductsPanel({
       const sostanzeAttive = (p.activeIngredients ?? "")
         .replace(/\|/g, " ")
         .trim();
-      const descPart = sostanzeAttive || p.registrationNumber || "";
+      const statoAmministrativo = p.administrativeStatus?.trim() || "-";
+      const principioAttivo = sostanzeAttive || "-";
+      const numeroRegistrazione = p.registrationNumber?.trim() || "-";
       return {
         value: String(index),
         label: p.administrativeStatus
           ? `${p.productName} (${p.administrativeStatus})`
           : p.productName,
         groupLabel: "REGISTRO MINISTERIALE",
-        description: descPart
-          ? `Registro ministeriale • ${descPart}`
-          : "Registro ministeriale",
+        description: `Stato: ${statoAmministrativo} • Principio attivo: ${principioAttivo} • N. registrazione: ${numeroRegistrazione}`,
         searchAliases: [p.registrationNumber ?? "", sostanzeAttive].filter(
           Boolean,
         ),
@@ -229,14 +235,6 @@ export default function ImportedProductsPanel({
     );
   }, []);
 
-  const toggleUseConverted = useCallback((id: string) => {
-    setReviewRows((prev) =>
-      prev.map((r) =>
-        r.id === id ? { ...r, useConverted: !r.useConverted } : r,
-      ),
-    );
-  }, []);
-
   const updateReviewField = useCallback(
     (id: string, field: keyof ProductImportPreviewRow, value: unknown) => {
       setReviewRows((prev) =>
@@ -245,6 +243,23 @@ export default function ImportedProductsPanel({
     },
     [],
   );
+
+  const updateReviewQuantity = useCallback((id: string, quantity: number) => {
+    setReviewRows((prev) =>
+      prev.map((r) => {
+        if (r.id !== id) return r;
+        const nextConverted =
+          r.conversionRatio != null
+            ? Math.round(quantity * r.conversionRatio * 100) / 100
+            : r.quantityConverted;
+        return {
+          ...r,
+          quantity,
+          quantityConverted: nextConverted,
+        };
+      }),
+    );
+  }, []);
 
   const handleSelectFromRegistry = useCallback(
     (rowId: string, record: FitosanitariDatasetRecord) => {
@@ -291,19 +306,7 @@ export default function ImportedProductsPanel({
     setImportError(null);
 
     try {
-      const useConvertedIds =
-        step === "review"
-          ? new Set(
-              (reviewRows as ReviewRowState[])
-                .filter((r) => r.accepted && r.useConverted)
-                .map((r) => r.id),
-            )
-          : undefined;
-
-      const productsPayload = ProductImportRowBuilder.toBulkPayload(
-        rowsToImport,
-        useConvertedIds,
-      );
+      const productsPayload = ProductImportRowBuilder.toBulkPayload(rowsToImport);
 
       const response = await productsApiService.bulkImport({
         companyId,
@@ -482,8 +485,8 @@ export default function ImportedProductsPanel({
             >
               ✓/✗
             </div>
-            <div>Nome estratto</div>
             <div>Nome prodotto</div>
+            <div>Prodotto estratto</div>
             <div>Quantità</div>
             <div>U.M.</div>
             {hasAnyConverted && <div>Qtà conv.</div>}
@@ -503,8 +506,8 @@ export default function ImportedProductsPanel({
                 importSource={importSource}
                 hasAnyConverted={hasAnyConverted}
                 onToggleAccepted={toggleAccepted}
-                onToggleUseConverted={toggleUseConverted}
                 onUpdateField={updateReviewField}
+                onUpdateQuantity={updateReviewQuantity}
                 nameMatchesRegistry={fitosanitariProductNamesSet.has(
                   row.name?.trim().toLowerCase() ?? "",
                 )}
@@ -561,12 +564,12 @@ interface ReviewRowProps {
   importSource: ProductImportSource;
   hasAnyConverted: boolean;
   onToggleAccepted: (id: string) => void;
-  onToggleUseConverted: (id: string) => void;
   onUpdateField: (
     id: string,
     field: keyof ProductImportPreviewRow,
     value: unknown,
   ) => void;
+  onUpdateQuantity: (id: string, quantity: number) => void;
   nameMatchesRegistry: boolean;
   isSelectMode: boolean;
   fitosanitariRecords: FitosanitariDatasetRecord[];
@@ -587,8 +590,8 @@ function ReviewRow({
   importSource,
   hasAnyConverted,
   onToggleAccepted,
-  onToggleUseConverted,
   onUpdateField,
+  onUpdateQuantity,
   nameMatchesRegistry,
   isSelectMode,
   fitosanitariRecords,
@@ -599,8 +602,7 @@ function ReviewRow({
   onOpenSelect,
 }: ReviewRowProps) {
   const isRejected = !row.accepted;
-  const hasConverted =
-    row.quantityConverted != null && row.unitMeasureConverted != null;
+  const hasConverted = row.quantityConverted != null;
 
   const docCode = importSource === "invoice" ? row.invoiceCode : row.ddtCode;
   const docDate = importSource === "invoice" ? row.invoiceDate : row.ddtDate;
@@ -611,14 +613,7 @@ function ReviewRow({
     importSource === "invoice" ? "invoiceDate" : "ddtDate"
   ) as keyof ProductImportPreviewRow;
 
-  const displayQty =
-    row.useConverted && row.quantityConverted != null
-      ? row.quantityConverted
-      : row.quantity;
-  const displayUnit =
-    row.useConverted && row.unitMeasureConverted
-      ? row.unitMeasureConverted
-      : row.unitOfMeasureQuantity;
+  const shouldShowRegistrySelect = isSelectMode || nameMatchesRegistry;
 
   return (
     <div
@@ -647,7 +642,7 @@ function ReviewRow({
         </Button>
       </div>
 
-      {/* Col 2 — Nome estratto (read-only) */}
+      {/* Col 2 — Nome prodotto (read-only from document) */}
       <div className="flex items-start pt-1 min-w-0">
         {row.productNameExtracted ? (
           <Badge
@@ -662,9 +657,9 @@ function ReviewRow({
         )}
       </div>
 
-      {/* Col 3 — Nome prodotto: input + optional "+" to open registry select when no match */}
+      {/* Col 3 — Prodotto estratto: select if matched, otherwise input + "+" */}
       <div className="min-w-[180px]">
-        {isSelectMode ? (
+        {shouldShowRegistrySelect ? (
           <div className="space-y-1">
             <MultiSearchableSelect
               value={
@@ -725,14 +720,8 @@ function ReviewRow({
         <Input
           type="text"
           inputMode="decimal"
-          value={displayQty != null ? String(displayQty) : ""}
-          onChange={(e) =>
-            onUpdateField(
-              row.id,
-              row.useConverted ? "quantityConverted" : "quantity",
-              parseDecimal(e.target.value) || 0,
-            )
-          }
+          value={row.quantity != null ? String(row.quantity) : ""}
+          onChange={(e) => onUpdateQuantity(row.id, parseDecimal(e.target.value) || 0)}
           disabled={isRejected}
           className="h-7 text-xs"
         />
@@ -741,15 +730,9 @@ function ReviewRow({
       {/* Col 5 — Unità di misura */}
       <div>
         <Input
-          value={displayUnit}
+          value={row.unitOfMeasureQuantity}
           onChange={(e) =>
-            onUpdateField(
-              row.id,
-              row.useConverted
-                ? "unitMeasureConverted"
-                : "unitOfMeasureQuantity",
-              e.target.value,
-            )
+            onUpdateField(row.id, "unitOfMeasureQuantity", e.target.value)
           }
           disabled={isRejected}
           className="h-7 text-xs"
@@ -760,33 +743,9 @@ function ReviewRow({
       {hasAnyConverted && (
         <div className="flex flex-col gap-1 pt-0.5">
           {hasConverted ? (
-            <>
-              <span
-                className={`text-xs tabular-nums font-medium ${
-                  row.useConverted ? "text-agri-green-700" : "text-gray-500"
-                }`}
-              >
-                {row.quantityConverted} {row.unitMeasureConverted}
-              </span>
-              <button
-                type="button"
-                disabled={isRejected}
-                onClick={() => onToggleUseConverted(row.id)}
-                className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border transition-colors w-fit ${
-                  row.useConverted
-                    ? "bg-agri-green-100 border-agri-green-400 text-agri-green-700"
-                    : "bg-gray-100 border-gray-300 text-gray-500 hover:bg-gray-200"
-                }`}
-                title={
-                  row.useConverted
-                    ? "Stai usando la quantità convertita — clicca per tornare all'originale"
-                    : "Clicca per usare la quantità convertita"
-                }
-              >
-                <RefreshCw className="h-2.5 w-2.5" />
-                {row.useConverted ? "conv." : "orig."}
-              </button>
-            </>
+            <span className="text-xs tabular-nums font-medium text-gray-600">
+              {row.quantityConverted} {row.unitMeasureConverted ?? ""}
+            </span>
           ) : (
             <span className="text-xs text-muted-foreground">—</span>
           )}

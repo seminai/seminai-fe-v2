@@ -293,6 +293,18 @@ export default function ProductionUnitsStep({
     [editingUnitId, updateUnits],
   );
 
+  const handleDeleteUnits = useCallback(
+    (unitIds: string[]) => {
+      unitIds.forEach((id) => originalPUsMap.current.delete(id));
+      updateUnits((prev) => prev.filter((u) => !unitIds.includes(u.id)));
+      if (editingUnitId && unitIds.includes(editingUnitId)) {
+        setEditingUnitId(null);
+        setShowList(true);
+      }
+    },
+    [editingUnitId, updateUnits],
+  );
+
   const handleSplitUnit = useCallback(
     (originalUnitId: string, parts: ProductionUnitSplitPart[]) => {
       const originalUnit = productionUnits.find(
@@ -472,6 +484,7 @@ export default function ProductionUnitsStep({
           onCancel={handleCancel}
           onEditUnit={handleEditUnit}
           onDeleteUnit={handleDeleteUnit}
+          onDeleteUnits={handleDeleteUnits}
           onSplitUnit={handleSplitUnit}
           onMoveField={handleMoveField}
           onRemoveFieldFromUnit={handleRemoveFieldFromUnit}

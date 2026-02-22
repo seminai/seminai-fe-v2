@@ -685,6 +685,17 @@ export default function NewProductionUnit(): React.ReactElement {
     }
   };
 
+  const handleDeleteUnits = (unitIds: string[]) => {
+    setProductionUnits((prev) =>
+      prev.filter((u) => !unitIds.includes(u.id)),
+    );
+    if (editingUnitId && unitIds.includes(editingUnitId)) {
+      setEditingUnitId(null);
+      setAllocatedFields(new Map());
+      setCurrentStep(1);
+    }
+  };
+
   const handleSplitUnit = useCallback(
     (originalUnitId: string, parts: ProductionUnitSplitPart[]) => {
       const originalUnit = productionUnits.find((u) => u.id === originalUnitId);
@@ -1718,6 +1729,7 @@ export default function NewProductionUnit(): React.ReactElement {
               showList={step2ShowList}
               onEditUnit={handleEditUnit}
               onDeleteUnit={handleDeleteUnit}
+              onDeleteUnits={handleDeleteUnits}
               onSplitUnit={handleSplitUnit}
               onMoveField={handleMoveField}
               onRemoveFieldFromUnit={handleRemoveFieldFromUnit}

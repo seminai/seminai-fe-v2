@@ -25,6 +25,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import {
   CalendarIcon,
@@ -128,6 +129,7 @@ type SingleProductionUnitFormProps = {
   onCancel: () => void;
   onEditUnit: (unitId: string) => void;
   onDeleteUnit: (unitId: string) => void;
+  onDeleteUnits: (unitIds: string[]) => void;
   onSplitUnit: (unitId: string, parts: ProductionUnitSplitPart[]) => void;
   onMoveField?: (
     sourceUnitId: string,
@@ -165,6 +167,7 @@ export const SingleProductionUnitForm: React.FC<
   onCancel,
   onEditUnit,
   onDeleteUnit,
+  onDeleteUnits,
   onSplitUnit,
   onMoveField,
   onRemoveFieldFromUnit,
@@ -193,6 +196,10 @@ export const SingleProductionUnitForm: React.FC<
     fieldId: string;
     areaHa: number;
   } | null>(null);
+  const [listSearchQuery, setListSearchQuery] = useState("");
+  const [selectedUnitIds, setSelectedUnitIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const previousCultivarIdRef = useRef<string | null>(
     formData.cultivarId ?? null,
   );
@@ -272,6 +279,51 @@ export const SingleProductionUnitForm: React.FC<
       0,
     );
   }, [allocatedFields]);
+
+  const filteredProductionUnits = useMemo(() => {
+    const query = listSearchQuery.trim().toLowerCase();
+    if (!query) return productionUnits;
+    return productionUnits.filter((unit) => {
+      const crop = cropVarieties.find((v) => v.code === unit.cropCode);
+      const cropText = [
+        crop?.species,
+        crop?.cropType,
+        unit.importedCropName,
+        unit.importedCropType,
+      ]
+        .filter(Boolean)
+        .join(" ");
+      const parcelParts: string[] = [];
+      for (const [fieldId] of unit.allocations.entries()) {
+        const baseFieldId = getBaseFieldIdFromAllocation(fieldId);
+        const detail = unit.allocationsWithDetails?.find(
+          (d) => d.fieldId === fieldId || d.fieldId === baseFieldId,
+        );
+        const field = allFields.find((f) => f.id === baseFieldId);
+        const name = detail?.fieldName ?? field?.name ?? "";
+        const foglio = detail?.foglio ?? field?.foglio ?? "";
+        const particella = detail?.particella ?? field?.particella ?? "";
+        const sezione = detail?.sezione ?? field?.sezione ?? "";
+        parcelParts.push(name, foglio, particella, sezione);
+      }
+      const cycleText = (unit.cycles ?? [])
+        .map(
+          (c) =>
+            [c.cropName, c.cropType, c.variety].filter(Boolean).join(" "),
+        )
+        .join(" ");
+      const searchable = [
+        unit.name,
+        cropText,
+        ...parcelParts,
+        cycleText,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return searchable.includes(query);
+    });
+  }, [productionUnits, cropVarieties, allFields, listSearchQuery]);
 
   // Genera automaticamente il nome dell'unità produttiva
   const generateAutoName = useMemo(() => {
@@ -385,11 +437,77 @@ export const SingleProductionUnitForm: React.FC<
               <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
                 <CheckCircle className="h-6 w-6 text-green-600" />
                 Unità Produttive create ({productionUnits.length})
+                {listSearchQuery.trim() && (
+                  <span className="text-base font-normal text-gray-500">
+                    — {filteredProductionUnits.length} mostrate
+                  </span>
+                )}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Cerca per nome unità, dati parcellari o coltura"
+                    value={listSearchQuery}
+                    onChange={(e) => setListSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 whitespace-nowrap">
+                    <Checkbox
+                      checked={
+                        filteredProductionUnits.length > 0 &&
+                        filteredProductionUnits.every((u) =>
+                          selectedUnitIds.has(u.id),
+                        )
+                      }
+                      onCheckedChange={(_checked) => {
+                        if (filteredProductionUnits.length === 0) return;
+                        const allSelected = filteredProductionUnits.every(
+                          (u) => selectedUnitIds.has(u.id),
+                        );
+                        setSelectedUnitIds((prev) => {
+                          const next = new Set(prev);
+                          if (allSelected) {
+                            filteredProductionUnits.forEach((u) =>
+                              next.delete(u.id),
+                            );
+                          } else {
+                            filteredProductionUnits.forEach((u) =>
+                              next.add(u.id),
+                            );
+                          }
+                          return next;
+                        });
+                      }}
+                      aria-label="Seleziona tutto"
+                    />
+                    Seleziona tutto
+                  </label>
+                  {selectedUnitIds.size > 0 && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        onDeleteUnits(Array.from(selectedUnitIds));
+                        setSelectedUnitIds(new Set());
+                        toast.success(
+                          `${selectedUnitIds.size} unità eliminate`,
+                        );
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Elimina selezionate ({selectedUnitIds.size})
+                    </Button>
+                  )}
+                </div>
+              </div>
               <Accordion type="single" collapsible className="w-full">
-                {productionUnits.map((unit) => {
+                {filteredProductionUnits.map((unit) => {
                   const crop = cropVarieties.find(
                     (v) => v.code === unit.cropCode,
                   );
@@ -426,6 +544,23 @@ export const SingleProductionUnitForm: React.FC<
                           </div>
                         </AccordionTrigger>
                         <div className="flex items-center gap-2 ml-4">
+                          <div
+                            className="flex items-center"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Checkbox
+                              checked={selectedUnitIds.has(unit.id)}
+                              onCheckedChange={(checked) => {
+                                setSelectedUnitIds((prev) => {
+                                  const next = new Set(prev);
+                                  if (checked) next.add(unit.id);
+                                  else next.delete(unit.id);
+                                  return next;
+                                });
+                              }}
+                              aria-label={`Seleziona ${unit.name}`}
+                            />
+                          </div>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -659,9 +794,11 @@ export const SingleProductionUnitForm: React.FC<
                 })}
               </Accordion>
 
-              {productionUnits.length === 0 && (
+              {filteredProductionUnits.length === 0 && (
                 <div className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg">
-                  Nessuna unità produttiva presente.
+                  {productionUnits.length === 0
+                    ? "Nessuna unità produttiva presente."
+                    : "Nessun risultato per la ricerca."}
                 </div>
               )}
             </CardContent>
