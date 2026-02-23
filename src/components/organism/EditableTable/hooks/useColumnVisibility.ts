@@ -22,6 +22,20 @@ function getStorageKey(tableId: string | undefined, columns: EditableColumn[]): 
   return `${COLUMN_VISIBILITY_STORAGE_PREFIX}${generatedId}`;
 }
 
+function getDefaultVisibleColumnIds(columns: EditableColumn[]): string[] {
+  const requiredIds = columns
+    .filter((c) => c.required === true)
+    .map((c) => c.id);
+  const otherIds = columns
+    .filter((c) => c.required !== true)
+    .map((c) => c.id);
+  const remainingSlots = Math.max(
+    0,
+    MAX_VISIBLE_COLUMNS - requiredIds.length,
+  );
+  return [...requiredIds, ...otherIds.slice(0, remainingSlots)];
+}
+
 function loadVisibleColumnsFromStorage(
   tableId: string | undefined,
   columns: EditableColumn[],
@@ -36,14 +50,21 @@ function loadVisibleColumnsFromStorage(
       const parsed = JSON.parse(stored) as string[];
       const validIds = parsed.filter((id) => columnIds.includes(id));
       if (validIds.length > 0) {
-        return validIds;
+        const requiredIds = new Set(
+          columns.filter((c) => c.required === true).map((c) => c.id),
+        );
+        const visibleIds = new Set(validIds);
+        requiredIds.forEach((id) => visibleIds.add(id));
+        return columns
+          .filter((c) => visibleIds.has(c.id))
+          .map((c) => c.id);
       }
     }
   } catch {
     // Ignore localStorage errors
   }
 
-  return columnIds.slice(0, MAX_VISIBLE_COLUMNS);
+  return getDefaultVisibleColumnIds(columns);
 }
 
 function saveVisibleColumnsToStorage(
@@ -83,6 +104,11 @@ export function useColumnVisibility(
 
   const handleColumnVisibilityChange = useCallback(
     (columnId: string, visible: boolean) => {
+      const column = columns.find((c) => c.id === columnId);
+      if (!visible && column?.required === true) {
+        return;
+      }
+
       setVisibleColumnIds((prev) => {
         let newVisibleIds: string[];
 
@@ -113,7 +139,7 @@ export function useColumnVisibility(
   }, [tableId, columns, userId]);
 
   const handleShowDefaultColumns = useCallback(() => {
-    const defaultColumnIds = columns.slice(0, MAX_VISIBLE_COLUMNS).map((c) => c.id);
+    const defaultColumnIds = getDefaultVisibleColumnIds(columns);
     saveVisibleColumnsToStorage(tableId, columns, defaultColumnIds, userId);
     setVisibleColumnIds(defaultColumnIds);
   }, [tableId, columns, userId]);

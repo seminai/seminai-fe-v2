@@ -49,6 +49,8 @@ export class EditableTableColumnVisibilityDropdown extends React.PureComponent<
 
     // Non permettere di nascondere se è l'ultima colonna visibile
     const canHide = visibleCount > 1;
+    // Le colonne obbligatorie restano sempre visibili
+    const cannotHide = column.required === true || (isVisible && !canHide);
 
     return (
       <div
@@ -61,7 +63,7 @@ export class EditableTableColumnVisibilityDropdown extends React.PureComponent<
         <Checkbox
           id={`col-visibility-${column.id}`}
           checked={isVisible}
-          disabled={isVisible && !canHide}
+          disabled={cannotHide}
           onCheckedChange={(checked) =>
             this.handleColumnToggle(column.id, Boolean(checked))
           }
