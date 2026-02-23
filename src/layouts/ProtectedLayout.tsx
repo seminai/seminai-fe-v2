@@ -46,6 +46,7 @@ import {
   Droplet,
   LayoutDashboard,
   Map,
+  MessageCircle,
   NotebookPen,
   Settings2,
   Sprout,
@@ -730,6 +731,8 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const operationsActive =
     location.pathname === "/operations" ||
     location.pathname.startsWith("/operations/");
+  const dosageAgentChatActive =
+    location.pathname === "/dosage-agent-chat";
 
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -848,6 +851,27 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       <Link to="/field-notes" className="flex items-center gap-3">
                         <NotebookPen className="size-5" />
                         <span>Note di Campo</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                {/* Dosage Agent Chat - solo ADMIN, modalità espansa */}
+                {userRole === UserRole.ADMIN && sidebarOpen && (
+                  <SidebarMenuItem key="dosage-agent-chat-expanded">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={dosageAgentChatActive}
+                      tooltip="Dosage Agent"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
+                    >
+                      <Link
+                        to="/dosage-agent-chat"
+                        className="flex items-center gap-3"
+                      >
+                        <MessageCircle className="size-5" size={20} />
+                        <span>Dosage Agent</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -1051,6 +1075,26 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     >
                       <Link to="/field-notes" className="flex items-center gap-3">
                         <NotebookPen className="size-5" />
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                {/* Dosage Agent Chat - solo ADMIN, icona collassata */}
+                {userRole === UserRole.ADMIN && !sidebarOpen && (
+                  <SidebarMenuItem key="dosage-agent-chat-collapsed">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={dosageAgentChatActive}
+                      tooltip="Dosage Agent"
+                      size="lg"
+                      className="data-[active=true]:bg-neutral-900/5"
+                    >
+                      <Link
+                        to="/dosage-agent-chat"
+                        className="flex items-center gap-3"
+                      >
+                        <MessageCircle className="size-5" size={20} />
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

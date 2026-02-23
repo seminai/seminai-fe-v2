@@ -29,6 +29,7 @@ import EditRule from "./routes/Workspace/EditRule";
 import AcceptInvitation from "./routes/Workspace/AcceptInvitation";
 import BetaTesterAgreement from "./routes/BetaTesterAgreement";
 import BetaTesterAgreementSuccess from "./routes/BetaTesterAgreementSuccess";
+import DosageAgentChat from "./routes/DosageAgentChat";
 
 function App() {
   return (
@@ -58,6 +59,7 @@ function App() {
         <Route path="/job/new-job-manual" element={<NewJobManual />} />
         <Route path="/operations" element={<Operations />} />
         <Route path="/field-notes" element={<FieldNotes />} />
+        <Route path="/dosage-agent-chat" element={<DosageAgentChat />} />
         <Route path="/products" element={<Products />} />
         <Route path="/new-product" element={<NewProduct />} />
         <Route
