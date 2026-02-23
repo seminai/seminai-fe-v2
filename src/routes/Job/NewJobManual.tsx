@@ -136,8 +136,10 @@ export default function NewJobManual() {
 
   const productionUnitSelectOptions = useMemo((): ProductionUnitOption[] => {
     return productionUnits.map((pu) => {
-      const sauHa =
-        pu.fields?.reduce((sum, f) => sum + (f.sauHa ?? 0), 0) ?? undefined;
+      const allocatedAreaHa =
+        typeof pu.productionUnit.areaHa === "number"
+          ? pu.productionUnit.areaHa
+          : pu.fields?.reduce((sum, f) => sum + (f.areaHaOnField ?? 0), 0);
       return {
         id: pu.productionUnit.id,
         name: pu.productionUnit.name,
@@ -147,7 +149,7 @@ export default function NewJobManual() {
         companyName: pu.companyName,
         value: pu.productionUnit.id,
         label: `${pu.productionUnit.name} (${pu.productionUnit.cropName})`,
-        sauHa,
+        sauHa: allocatedAreaHa,
       };
     });
   }, [productionUnits]);
