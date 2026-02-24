@@ -18,6 +18,7 @@ import NewProduct from "./routes/Products/NewProduct";
 import Job from "./routes/Job";
 import NewJobManual from "./routes/Job/NewJobManual";
 import NewJobChoice from "./routes/Job/NewJobChoice";
+import NewOperation from "./routes/NewOperation";
 import Operations from "./routes/Operations";
 import FieldNotes from "./routes/FieldNotes";
 import QuickCreate from "./routes/QuickCreate";
@@ -55,10 +56,10 @@ function App() {
         <Route path="/company/:id" element={<CompanyDetailPage />} />
         <Route path="/production-unit" element={<ProductionUnit />} />
         <Route path="/new-production-unit" element={<NewProductionUnit />} />
-        <Route path="/dosage-manager" element={<DosageManager />} />
+        <Route path="/dosage-manager" element={<Navigate to="/job/new" replace />} />
         <Route path="/job" element={<Job />} />
-        <Route path="/job/new" element={<NewJobChoice />} />
-        <Route path="/job/new-job-manual" element={<NewJobManual />} />
+        <Route path="/job/new" element={<NewOperation />} />
+        <Route path="/job/new-job-manual" element={<Navigate to="/job/new" replace />} />
         <Route path="/operations" element={<Operations />} />
         <Route path="/field-notes" element={<FieldNotes />} />
         <Route path="/dosage-agent-chat" element={<DosageAgentChat />} />

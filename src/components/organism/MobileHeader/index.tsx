@@ -11,11 +11,8 @@ function getPageTitle(pathname: string): string {
   if (pathname === "/label" || pathname.startsWith("/label/")) {
     return "Etichette";
   }
-  if (
-    pathname === "/dosage-manager" ||
-    pathname.startsWith("/dosage-manager/")
-  ) {
-    return "Genera Dosaggi";
+  if (pathname === "/job/new") {
+    return "Nuova Operazione";
   }
   if (pathname === "/job" || pathname.startsWith("/job/")) {
     return "Verifica Operazioni";

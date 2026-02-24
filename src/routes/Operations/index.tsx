@@ -1140,7 +1140,7 @@ export default function OperationsPage() {
             </p>
             <div className="flex items-center justify-center gap-3">
               <Button
-                onClick={() => navigate("/dosage-manager")}
+                onClick={() => navigate("/job/new")}
                 className="bg-agri-green-600 hover:bg-agri-green-700 text-white"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -1190,7 +1190,7 @@ export default function OperationsPage() {
                   data-table-slot="right"
                   variant="ghost"
                   className="gap-2 text-gray-600 hover:text-gray-600 cursor-pointer"
-                  onClick={() => navigate("/dosage-manager")}
+                  onClick={() => navigate("/job/new")}
                 >
                   <Plus className="w-4 h-4" />
                   Aggiungi

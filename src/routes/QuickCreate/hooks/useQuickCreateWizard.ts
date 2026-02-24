@@ -113,7 +113,7 @@ export function useQuickCreateWizard(): UseQuickCreateWizardReturn {
   }, []);
 
   const navigateToDosageManager = useCallback(() => {
-    navigate("/dosage-manager");
+    navigate("/job/new");
   }, [navigate]);
 
   const navigateBack = useCallback(() => {

@@ -13,6 +13,7 @@ export type DosageProduct = {
   ddtDate?: string;
   orderNumber?: string;
   treatedAreaHa?: number;
+  strategy?: DosageStrategy;
 };
 
 export type DosageUnitOfProduction = {

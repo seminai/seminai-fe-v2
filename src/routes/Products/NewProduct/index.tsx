@@ -51,19 +51,23 @@ export default function NewProduct() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-shrink-0 bg-gray-50/50 backdrop-blur-sm z-10">
-        <PageHeader title="Nuovo Prodotto">
-          <div className="flex items-center gap-2">
-            {creationMode !== null && (
-              <Button
-                variant="ghost"
-                size="sm"
+        <PageHeader
+          title={
+            creationMode !== null ? (
+              <button
+                type="button"
                 onClick={handleBackToChoice}
-                className="text-muted-foreground"
+                className="flex items-center gap-2 cursor-pointer hover:opacity-70 transition-opacity"
               >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Torna alla scelta
-              </Button>
-            )}
+                <ArrowLeft className="h-5 w-5" />
+                <span>Torna alla scelta</span>
+              </button>
+            ) : (
+              "Nuovo Prodotto"
+            )
+          }
+        >
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               onClick={handleCancel}

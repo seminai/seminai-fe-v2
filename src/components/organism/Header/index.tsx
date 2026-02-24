@@ -7,7 +7,7 @@ interface PageHeaderProps {
   /**
    * Titolo della pagina
    */
-  title: string;
+  title: React.ReactNode;
 
   /**
    * Placeholder per il campo di ricerca
