@@ -12,7 +12,6 @@ interface ImportToolbarProps {
   isImportingFromWarehouse: boolean;
   isImportingFromNotes: boolean;
   isLoadingWarehouse: boolean;
-  selectedCompanyIds: string[];
 }
 
 export function ImportToolbar({
@@ -23,7 +22,6 @@ export function ImportToolbar({
   isImportingFromWarehouse,
   isImportingFromNotes,
   isLoadingWarehouse,
-  selectedCompanyIds,
 }: ImportToolbarProps): ReactElement {
   const [showCsvImport, setShowCsvImport] = useState(false);
   const [showDdtImport, setShowDdtImport] = useState(false);

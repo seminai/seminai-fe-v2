@@ -246,11 +246,6 @@ export default function NewOperation() {
                     isImportingFromWarehouse={table.isImportingFromWarehouse}
                     isImportingFromNotes={table.isImportingFromNotes}
                     isLoadingWarehouse={state.isLoadingWarehouseProducts}
-                    selectedCompanyIds={
-                      state.selectedCompanyId
-                        ? [state.selectedCompanyId]
-                        : []
-                    }
                   />
                 )}
 
