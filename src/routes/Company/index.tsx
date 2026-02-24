@@ -288,8 +288,7 @@ export default function Company(): React.ReactElement {
     <div className="flex flex-col h-full">
       <PageHeader title="Aziende" className="hidden md:block" />
 
-      {/* Area scrollabile - solo la tabella */}
-      <div className="flex-1 overflow-auto px-6 pb-6">
+      <div className="flex-1 min-h-0 px-6 pb-6">
         {isLoading ? (
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Spinner size={20} ariaLabel="Caricamento aziende" />

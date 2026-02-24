@@ -214,6 +214,35 @@ export class OrchestratorSettingsUpdater {
   }
 }
 
+export class OrchestratorCategoryPriorityList {
+  public static move(
+    list: string[],
+    index: number,
+    direction: "up" | "down",
+  ): string[] {
+    const next = [...list];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= next.length) {
+      return next;
+    }
+    const temp = next[index];
+    next[index] = next[targetIndex];
+    next[targetIndex] = temp;
+    return next;
+  }
+
+  public static remove(list: string[], id: string): string[] {
+    return list.filter((item) => item !== id);
+  }
+
+  public static add(list: string[], id: string): string[] {
+    if (list.includes(id)) {
+      return list;
+    }
+    return [...list, id];
+  }
+}
+
 export class OrchestratorRequestBuilder {
   public static build(
     settings: DosageOrchestratorSettings,

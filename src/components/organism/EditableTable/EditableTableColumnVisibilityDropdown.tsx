@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Columns3, Eye, EyeOff } from "lucide-react";
+import { Columns3, Eye, EyeOff, Lock } from "lucide-react";
 import type { EditableColumn } from "./index";
 
 interface EditableTableColumnVisibilityDropdownProps {
@@ -36,6 +36,11 @@ export class EditableTableColumnVisibilityDropdown extends React.PureComponent<
   };
 
   private handleColumnToggle = (columnId: string, checked: boolean): void => {
+    // Safeguard: never allow hiding a required column
+    if (!checked) {
+      const column = this.props.columns.find((c) => c.id === columnId);
+      if (column?.required === true) return;
+    }
     this.props.onVisibilityChange(columnId, checked);
   };
 
@@ -52,6 +57,8 @@ export class EditableTableColumnVisibilityDropdown extends React.PureComponent<
     // Le colonne obbligatorie restano sempre visibili
     const cannotHide = column.required === true || (isVisible && !canHide);
 
+    const isRequired = column.required === true;
+
     return (
       <div
         key={column.id}
@@ -60,24 +67,32 @@ export class EditableTableColumnVisibilityDropdown extends React.PureComponent<
           isDefaultColumn && "border-l-2 border-agri-green-300"
         )}
       >
-        <Checkbox
-          id={`col-visibility-${column.id}`}
-          checked={isVisible}
-          disabled={cannotHide}
-          onCheckedChange={(checked) =>
-            this.handleColumnToggle(column.id, Boolean(checked))
-          }
-          className={cn("border-gray-300", isVisible && "border-agri-green-500")}
-        />
+        {isRequired ? (
+          <Lock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+        ) : (
+          <Checkbox
+            id={`col-visibility-${column.id}`}
+            checked={isVisible}
+            disabled={cannotHide}
+            onCheckedChange={(checked) =>
+              this.handleColumnToggle(column.id, Boolean(checked))
+            }
+            className={cn("border-gray-300", isVisible && "border-agri-green-500")}
+          />
+        )}
         <label
-          htmlFor={`col-visibility-${column.id}`}
+          htmlFor={isRequired ? undefined : `col-visibility-${column.id}`}
           className={cn(
-            "flex-1 text-sm cursor-pointer select-none",
-            isVisible ? "text-foreground font-medium" : "text-muted-foreground"
+            "flex-1 text-sm select-none",
+            isRequired
+              ? "text-foreground font-medium cursor-default"
+              : "cursor-pointer",
+            !isRequired && isVisible && "text-foreground font-medium",
+            !isRequired && !isVisible && "text-muted-foreground"
           )}
         >
           {column.title}
-          {column.required && <span className="text-red-500 ml-1">*</span>}
+          {isRequired && <span className="text-red-500 ml-1">*</span>}
         </label>
         {isVisible ? (
           <Eye className="h-4 w-4 text-black" />

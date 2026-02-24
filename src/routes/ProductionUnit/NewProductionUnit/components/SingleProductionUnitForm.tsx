@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useMemo, useState, useEffect, useRef } from "react";
 
-import { Calendar } from "@/components/ui/calendar";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -15,11 +15,6 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -28,7 +23,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 
 import {
-  CalendarIcon,
   ChevronLeft,
   ChevronRight,
   MapPin,
@@ -41,8 +35,6 @@ import {
   SplitSquareVertical,
   MoveRight,
 } from "lucide-react";
-
-import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { toast } from "sonner";
@@ -226,19 +218,24 @@ export const SingleProductionUnitForm: React.FC<
     );
   }, [cropVarieties, cropSearchQuery]);
 
-  const availableCultivars = useMemo(() => {
+  const baseCultivarsForCrop = useMemo(() => {
     if (!cultivarCatalog || !selectedCrop) {
       return [];
     }
-    const baseList = cultivarCatalog.getCultivarsForCrop(selectedCrop);
+    return cultivarCatalog.getCultivarsForCrop(selectedCrop);
+  }, [cultivarCatalog, selectedCrop]);
+
+  const hasCatalogCultivars = baseCultivarsForCrop.length > 0;
+
+  const availableCultivars = useMemo(() => {
     if (!cultivarSearchQuery.trim()) {
-      return baseList;
+      return baseCultivarsForCrop;
     }
     const query = cultivarSearchQuery.toLowerCase();
-    return baseList.filter((record) =>
+    return baseCultivarsForCrop.filter((record) =>
       record.cultivar.toLowerCase().includes(query),
     );
-  }, [cultivarCatalog, selectedCrop, cultivarSearchQuery]);
+  }, [baseCultivarsForCrop, cultivarSearchQuery]);
 
   const selectedCultivarRecord = useMemo(() => {
     if (!cultivarCatalog || !formData.cultivarId) {
@@ -307,17 +304,11 @@ export const SingleProductionUnitForm: React.FC<
         parcelParts.push(name, foglio, particella, sezione);
       }
       const cycleText = (unit.cycles ?? [])
-        .map(
-          (c) =>
-            [c.cropName, c.cropType, c.variety].filter(Boolean).join(" "),
+        .map((c) =>
+          [c.cropName, c.cropType, c.variety].filter(Boolean).join(" "),
         )
         .join(" ");
-      const searchable = [
-        unit.name,
-        cropText,
-        ...parcelParts,
-        cycleText,
-      ]
+      const searchable = [unit.name, cropText, ...parcelParts, cycleText]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -467,8 +458,8 @@ export const SingleProductionUnitForm: React.FC<
                       }
                       onCheckedChange={(_checked) => {
                         if (filteredProductionUnits.length === 0) return;
-                        const allSelected = filteredProductionUnits.every(
-                          (u) => selectedUnitIds.has(u.id),
+                        const allSelected = filteredProductionUnits.every((u) =>
+                          selectedUnitIds.has(u.id),
                         );
                         setSelectedUnitIds((prev) => {
                           const next = new Set(prev);
@@ -537,8 +528,8 @@ export const SingleProductionUnitForm: React.FC<
                                 {unit.name}
                               </h4>
                               <p className="text-sm text-gray-500">
-                                {(crop?.species ?? unit.importedCropName ?? "—")} •{" "}
-                                {unitTotalArea.toFixed(2)} Ha
+                                {crop?.species ?? unit.importedCropName ?? "—"}{" "}
+                                • {unitTotalArea.toFixed(2)} Ha
                               </p>
                             </div>
                           </div>
@@ -1052,6 +1043,7 @@ export const SingleProductionUnitForm: React.FC<
                   ...formData,
                   cropCode: value,
                   cultivarId: null,
+                  importedVariety: null,
                 });
                 setCropSearchQuery("");
                 setCultivarSearchQuery("");
@@ -1130,12 +1122,16 @@ export const SingleProductionUnitForm: React.FC<
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium">Cultivar</label>
-                {formData.cultivarId && (
+                {(formData.cultivarId || formData.importedVariety) && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      setFormData({ ...formData, cultivarId: null });
+                      setFormData({
+                        ...formData,
+                        cultivarId: null,
+                        importedVariety: null,
+                      });
                       setCultivarSearchQuery("");
                     }}
                   >
@@ -1151,7 +1147,7 @@ export const SingleProductionUnitForm: React.FC<
                 </p>
               )}
 
-              {cultivarCatalog && (
+              {cultivarCatalog && hasCatalogCultivars && (
                 <>
                   <Select
                     value={formData.cultivarId ?? NO_CULTIVAR_VALUE}
@@ -1160,10 +1156,13 @@ export const SingleProductionUnitForm: React.FC<
                         setFormData({ ...formData, cultivarId: null });
                         return;
                       }
-                      setFormData({ ...formData, cultivarId: value });
+                      setFormData({
+                        ...formData,
+                        cultivarId: value,
+                        importedVariety: null,
+                      });
                       setCultivarSearchQuery("");
                     }}
-                    disabled={availableCultivars.length === 0}
                   >
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Seleziona una cultivar..." />
@@ -1190,7 +1189,7 @@ export const SingleProductionUnitForm: React.FC<
                       <div className="max-h-[260px] overflow-y-auto">
                         {availableCultivars.length === 0 ? (
                           <div className="p-4 text-center text-sm text-gray-500">
-                            Nessuna cultivar disponibile per questa coltura
+                            Nessuna cultivar trovata
                           </div>
                         ) : (
                           availableCultivars.map((cultivar) => (
@@ -1209,17 +1208,30 @@ export const SingleProductionUnitForm: React.FC<
                       </div>
                     </SelectContent>
                   </Select>
-                  {availableCultivars.length === 0 && (
-                    <p className="text-xs text-gray-500">
-                      Aggiorna il dataset per associare una cultivar specifica e
-                      ricevere la data di raccolta consigliata.
-                    </p>
-                  )}
                   {selectedCultivarRecord && cultivarReferenceLabel && (
                     <p className="text-xs text-blue-600">
                       Data raccolta di riferimento: {cultivarReferenceLabel}
                     </p>
                   )}
+                </>
+              )}
+
+              {cultivarCatalog && !hasCatalogCultivars && (
+                <>
+                  <Input
+                    placeholder="es. Sangiovese, Trebbiano..."
+                    value={formData.importedVariety ?? ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        importedVariety: e.target.value || null,
+                      })
+                    }
+                  />
+                  <p className="text-xs text-gray-500">
+                    Nessuna cultivar nel catalogo per questa coltura. Puoi
+                    inserirla manualmente.
+                  </p>
                 </>
               )}
             </div>
@@ -1257,38 +1269,19 @@ export const SingleProductionUnitForm: React.FC<
               </h4>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="text-sm font-medium">Data Semina</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal mt-1",
-                          !effectiveSowingDate && "text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {effectiveSowingDate
-                          ? format(effectiveSowingDate, "dd/MM/yyyy", {
-                              locale: it,
-                            })
-                          : "Seleziona"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={effectiveSowingDate}
-                        onSelect={(date) =>
-                          setFormData({
-                            ...formData,
-                            customSowingDate: date || null,
-                          })
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <label className="text-sm font-medium">
+                    Data Semina o impianto
+                  </label>
+                  <DatePickerInput
+                    value={effectiveSowingDate}
+                    onChange={(date) =>
+                      setFormData({
+                        ...formData,
+                        customSowingDate: date || null,
+                      })
+                    }
+                    className="mt-1"
+                  />
                   {!formData.customSowingDate && defaultCropDates && (
                     <p className="text-xs text-gray-500 mt-1">
                       Default: {selectedCrop.sowingPeriod.minDate}
@@ -1298,37 +1291,16 @@ export const SingleProductionUnitForm: React.FC<
 
                 <div>
                   <label className="text-sm font-medium">Data Fioritura</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal mt-1",
-                          !effectiveFloweringDate && "text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {effectiveFloweringDate
-                          ? format(effectiveFloweringDate, "dd/MM/yyyy", {
-                              locale: it,
-                            })
-                          : "Seleziona"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={effectiveFloweringDate}
-                        onSelect={(date) =>
-                          setFormData({
-                            ...formData,
-                            customFloweringDate: date || null,
-                          })
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <DatePickerInput
+                    value={effectiveFloweringDate}
+                    onChange={(date) =>
+                      setFormData({
+                        ...formData,
+                        customFloweringDate: date || null,
+                      })
+                    }
+                    className="mt-1"
+                  />
                   {!formData.customFloweringDate && defaultCropDates && (
                     <p className="text-xs text-gray-500 mt-1">
                       Default: {selectedCrop.floweringPeriod.minDate}
@@ -1338,38 +1310,17 @@ export const SingleProductionUnitForm: React.FC<
 
                 <div>
                   <label className="text-sm font-medium">Data Raccolta</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal mt-1",
-                          !effectiveHarvestingDate && "text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {effectiveHarvestingDate
-                          ? format(effectiveHarvestingDate, "dd/MM/yyyy", {
-                              locale: it,
-                            })
-                          : "Seleziona"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={effectiveHarvestingDate}
-                        onSelect={(date) => {
-                          setHarvestDateManuallyEdited(true);
-                          setFormData({
-                            ...formData,
-                            customHarvestingDate: date || null,
-                          });
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <DatePickerInput
+                    value={effectiveHarvestingDate}
+                    onChange={(date) => {
+                      setHarvestDateManuallyEdited(true);
+                      setFormData({
+                        ...formData,
+                        customHarvestingDate: date || null,
+                      });
+                    }}
+                    className="mt-1"
+                  />
                   {recommendedHarvestDate && (
                     <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
                       <span>

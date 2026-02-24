@@ -778,8 +778,8 @@ export const ProductionUnitCsvImporter: React.FC<
           <DrawerDescription>
             Il sistema supporta il formato del template del fascicolo aziendale
             (modello AGEA della misura unica), con parcelle e uso del suolo
-            primario e secondario (CSV, XLS, XLSX). Il formato può variare in
-            base alla regione. Seleziona l'azienda e carica un file; i dati
+            primario e secondario (CSV, XLS, XLSX, PDF). Il formato può variare
+            in base alla regione. Seleziona l'azienda e carica un file; i dati
             delle unità produttive verranno estratti automaticamente.
           </DrawerDescription>
         </DrawerHeader>

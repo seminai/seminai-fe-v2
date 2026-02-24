@@ -25,7 +25,7 @@ export function CsvFieldImporter({
   const [error, setError] = useState<string | null>(null);
 
   const validateFile = (file: File): { valid: boolean; error?: string } => {
-    const validExtensions = [".csv", ".xlsx", ".xls"];
+    const validExtensions = [".csv", ".xlsx", ".xls", ".pdf"];
     const fileExtension = file.name
       .substring(file.name.lastIndexOf("."))
       .toLowerCase();
@@ -33,7 +33,7 @@ export function CsvFieldImporter({
     if (!validExtensions.includes(fileExtension)) {
       return {
         valid: false,
-        error: "Formato file non valido. Usa file CSV, XLSX o XLS.",
+        error: "Formato file non valido. Usa file CSV, XLSX, XLS o PDF.",
       };
     }
 
@@ -121,7 +121,7 @@ export function CsvFieldImporter({
       >
         <input
           type="file"
-          accept=".csv,.xlsx,.xls"
+          accept=".csv,.xlsx,.xls,.pdf"
           onChange={handleFileInputChange}
           className="hidden"
           id="csv-file-input"
@@ -136,7 +136,9 @@ export function CsvFieldImporter({
             )}
           />
 
-          <h3 className="text-lg font-medium mb-2">Trascina qui il file CSV</h3>
+          <h3 className="text-lg font-medium mb-2">
+            Trascina qui il file da importare
+          </h3>
 
           <p className="text-sm text-gray-500 mb-4">
             oppure clicca per selezionare un file
@@ -152,7 +154,7 @@ export function CsvFieldImporter({
           </Button>
 
           <p className="text-xs text-gray-400 mt-4">
-            Formati supportati: CSV, XLSX, XLS (max 10MB)
+            Formati supportati: CSV, XLSX, XLS, PDF (max 10MB)
           </p>
         </div>
       </div>

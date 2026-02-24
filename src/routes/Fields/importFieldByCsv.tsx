@@ -204,7 +204,7 @@ export function ImportFieldByCsv({
           <DrawerTitle>Estrazione Automatica Campi </DrawerTitle>
           <DrawerDescription>
             Il sistema supporta il formato del template AGEA della misura unica,
-            con parcelle e uso del suolo primario e secondario (CSV, XLS, XLSX).
+            con parcelle e uso del suolo primario e secondario (CSV, XLS, XLSX, PDF).
             Il formato può variare in base alla regione. Seleziona l'azienda e
             carica un file; i dati dei campi verranno estratti automaticamente.
           </DrawerDescription>

@@ -96,7 +96,7 @@ export default function FieldsStep({
           Importa i dati
         </h2>
         <p className="text-neutral-500 mb-8 text-center max-w-lg">
-          Carica un file CSV o Excel per importare campi e unità produttive.
+          Carica un file CSV, Excel o PDF per importare campi e unità produttive.
         </p>
 
         <FileDropZone

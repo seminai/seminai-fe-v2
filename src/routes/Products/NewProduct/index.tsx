@@ -78,39 +78,47 @@ export default function NewProduct() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {creationMode === null && (
           <div className="flex-1 overflow-auto px-6 pb-6">
-            <div className="py-12">
-              <h2 className="text-xl font-semibold text-center mb-2">
+            <div className="max-w-2xl mx-auto w-full space-y-4 mt-8">
+              <h2 className="text-lg font-semibold text-foreground text-center mb-6">
                 Come vuoi aggiungere i prodotti?
               </h2>
-              <p className="text-sm text-muted-foreground text-center mb-8">
-                Scegli tra importazione da file (CSV/Excel o DDT) oppure
-                inserimento manuale dei dati prodotto.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="h-auto py-6 flex flex-col gap-2 border-2 hover:border-agri-green-500 hover:bg-agri-green-50 hover:text-foreground"
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  type="button"
                   onClick={() => setCreationMode("import")}
+                  className="group flex flex-col items-center gap-4 rounded-2xl border border-border bg-white p-8 shadow-sm transition-all hover:border-foreground/20 hover:shadow-md cursor-pointer"
                 >
-                  <FileUp className="h-10 w-10 text-agri-green-600" />
-                  <span className="font-medium">Importa da file</span>
-                  <span className="text-xs text-muted-foreground font-normal">
-                    CSV, Excel o file DDT PDF
-                  </span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="h-auto py-6 flex flex-col gap-2 border-2 hover:border-agri-green-500 hover:bg-agri-green-50 hover:text-foreground"
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition-colors group-hover:bg-neutral-200">
+                    <FileUp className="h-7 w-7" />
+                  </div>
+                  <div className="space-y-1 text-center">
+                    <p className="text-base font-semibold text-foreground">
+                      Importa da file
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      CSV, Excel o file DDT PDF
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setCreationMode("manual")}
+                  className="group flex flex-col items-center gap-4 rounded-2xl border border-border bg-white p-8 shadow-sm transition-all hover:border-foreground/20 hover:shadow-md cursor-pointer"
                 >
-                  <PenLine className="h-10 w-10 text-agri-green-600" />
-                  <span className="font-medium">Inserisci manualmente</span>
-                  <span className="text-xs text-muted-foreground font-normal">
-                    Compila il form con i dati del prodotto
-                  </span>
-                </Button>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition-colors group-hover:bg-neutral-200">
+                    <PenLine className="h-7 w-7" />
+                  </div>
+                  <div className="space-y-1 text-center">
+                    <p className="text-base font-semibold text-foreground">
+                      Inserisci manualmente
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Compila il form con i dati del prodotto
+                    </p>
+                  </div>
+                </button>
               </div>
             </div>
           </div>

@@ -74,7 +74,12 @@ export type Product = {
   sku: string;
   description?: string;
   barcode?: string;
+  category?: string | null;
+  type?: string | null;
   administrativeStatus?: string | null;
+  registrationNumber?: string | null;
+  labelUrl?: string | null;
+  labelMetadata?: Record<string, unknown> | null;
   warehouseId: string;
   warehouse: {
     name: string;
@@ -131,8 +136,16 @@ export type CreateProductResponse = {
 
 export type UpdateProductPayload = {
   name?: string;
-  description?: string;
+  sku?: string;
   barcode?: string;
+  category?: string;
+  type?: string;
+  description?: string;
+  administrativeStatus?: string;
+  registrationNumber?: string;
+  labelUrl?: string;
+  labelMetadata?: Record<string, unknown>;
+  warehouseId?: string;
 };
 
 export type UpdateProductResponse = {
@@ -190,7 +203,7 @@ export type InvoiceProduct = {
   productName: string;
   productNameExtracted?: string | null;
   registrationNumber?: string | null;
-  productCategory?: "PHYTOSANITARY" | "FERTILIZER" | "OTHER" | string | null;
+  productCategory?: "FERTILIZER" | "PESTICIDE" | "SEED" | "HARVEST" | "EQUIPMENT" | "PACKAGING" | string | null;
   administrativeStatus?: string | null;
   quantity: number | null;
   quantityUnitOfMeasure: string | null;

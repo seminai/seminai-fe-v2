@@ -12,8 +12,9 @@ function isValidFileType(file: File): boolean {
     "text/csv",
     "application/vnd.ms-excel",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/pdf",
   ];
-  const validExtensions = [".csv", ".xlsx", ".xls"];
+  const validExtensions = [".csv", ".xlsx", ".xls", ".pdf"];
   const extension = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
   return validTypes.includes(file.type) || validExtensions.includes(extension);
 }
@@ -102,7 +103,7 @@ export default function FileDropZone({
       <input
         ref={inputRef}
         type="file"
-        accept=".csv,.xlsx,.xls"
+        accept=".csv,.xlsx,.xls,.pdf"
         onChange={handleInputChange}
         className="hidden"
         disabled={isDisabled}
@@ -133,6 +134,7 @@ export default function FileDropZone({
           <span className="px-2 py-1 bg-neutral-100 rounded-md">.csv</span>
           <span className="px-2 py-1 bg-neutral-100 rounded-md">.xlsx</span>
           <span className="px-2 py-1 bg-neutral-100 rounded-md">.xls</span>
+          <span className="px-2 py-1 bg-neutral-100 rounded-md">.pdf</span>
         </div>
       </div>
     </div>

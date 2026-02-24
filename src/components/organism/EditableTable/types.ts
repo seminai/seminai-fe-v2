@@ -40,6 +40,8 @@ export interface EditableColumn {
   readOnly?: boolean;
   maxVisibleOptions?: number;
   keepOpenOnSelect?: (value: string) => boolean;
+  /** Se true, mostra un pulsante X per cancellare la selezione corrente (solo per select con enableSearch) */
+  allowClear?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

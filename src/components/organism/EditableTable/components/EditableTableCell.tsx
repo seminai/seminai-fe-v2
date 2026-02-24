@@ -72,6 +72,7 @@ export function EditableTableCell({
             wrapperClassName="w-full"
             maxVisibleOptions={column.maxVisibleOptions}
             keepOpenOnSelect={column.keepOpenOnSelect}
+            allowClear={column.allowClear}
           />
         );
       }

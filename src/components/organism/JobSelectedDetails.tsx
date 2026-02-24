@@ -6,7 +6,6 @@ import {
   Package,
   Calendar,
   Sprout,
-  Building2,
   Droplet,
   Clock,
   AlertTriangle,
@@ -388,10 +387,40 @@ export function JobSelectedDetails({
               >
                 {/* Header */}
                 <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <Badge variant="outline" className="font-mono text-xs">
-                      {row.jobCode}
-                    </Badge>
+                  <div className="flex items-center gap-2">
+                    {/* Status dot */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span
+                          className={cn(
+                            "h-2.5 w-2.5 rounded-full shrink-0",
+                            (() => {
+                              const conformityChecked =
+                                row._conformityChecked as boolean | undefined;
+                              const isVerified = row._isVerifiedBoolean as
+                                | boolean
+                                | undefined;
+                              if (!conformityChecked) return "bg-amber-400";
+                              return isVerified ? "bg-green-500" : "bg-red-500";
+                            })(),
+                          )}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-slate-900 text-white border border-slate-700 shadow-lg">
+                        {(() => {
+                          const conformityChecked = row._conformityChecked as
+                            | boolean
+                            | undefined;
+                          const isVerified = row._isVerifiedBoolean as
+                            | boolean
+                            | undefined;
+                          if (!conformityChecked)
+                            return "Conformità non verificata";
+                          return isVerified ? "Verificato" : "Non verificato";
+                        })()}
+                      </TooltipContent>
+                    </Tooltip>
+                    {/* Data operazione */}
                     {row.dateOfOpeation && (
                       <span className="text-xs text-slate-500 flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
@@ -400,23 +429,32 @@ export function JobSelectedDetails({
                         )}
                       </span>
                     )}
+                    <Badge
+                      variant="outline"
+                      className="font-mono text-xs ml-auto"
+                    >
+                      {row.jobCode}
+                    </Badge>
                   </div>
-                  {matchesSearch(row.companyName) && (
-                    <div className="flex items-start gap-1.5">
-                      <Building2 className="h-3.5 w-3.5 text-slate-500 mt-0.5 shrink-0" />
-                      <span className="text-xs text-slate-600 font-medium">
-                        {row.companyName}
-                      </span>
-                    </div>
-                  )}
-                  {matchesSearch(row.productionUnitName) && (
+                  {/* Unità produttiva + Azienda */}
+                  {(matchesSearch(row.productionUnitName) ||
+                    matchesSearch(row.companyName)) && (
                     <div className="flex items-start gap-1.5">
                       <Sprout className="h-3.5 w-3.5 text-slate-500 mt-0.5 shrink-0" />
                       <span className="text-xs text-slate-600">
-                        {row.productionUnitName}
+                        <span className="font-medium">
+                          {row.productionUnitName}
+                        </span>
+                        {row.companyName && (
+                          <span className="text-slate-400">
+                            {" "}
+                            - {row.companyName}
+                          </span>
+                        )}
                       </span>
                     </div>
                   )}
+                  {/* Prodotto */}
                   {matchesSearch(row.productName) && (
                     <div className="flex items-start gap-1.5">
                       <Package className="h-3.5 w-3.5 text-slate-500 mt-0.5 shrink-0" />
@@ -436,22 +474,35 @@ export function JobSelectedDetails({
                       </div>
                     </div>
                   )}
-                  <div className="text-xs text-slate-600">
+                  {/* Quantità totale + UDM | Dose/ha */}
+                  <div className="flex items-center gap-3 text-xs text-slate-600">
                     <span className="font-mono">
                       {row.quantity} {row.unitOfMeasureQuantity}
                     </span>
-                    {(row.treatedSurface != null || row.sauHa != null) && (
-                      <>
-                        {" "}
-                        per{" "}
-                        <span className="font-mono">
-                          {Number(row.treatedSurface ?? row.sauHa ?? 0).toLocaleString(
-                            "it-IT",
-                          )}{" "}
-                          ha
-                        </span>
-                      </>
-                    )}
+                    {(() => {
+                      const surface = Number(
+                        row.treatedSurface ?? row.sauHa ?? 0,
+                      );
+                      if (
+                        surface > 0 &&
+                        typeof row.quantity === "number" &&
+                        row.quantity > 0
+                      ) {
+                        const doseHa = row.quantity / surface;
+                        return (
+                          <span className="text-slate-400">
+                            |{" "}
+                            <span className="font-mono text-slate-600">
+                              {doseHa.toLocaleString("it-IT", {
+                                maximumFractionDigits: 2,
+                              })}{" "}
+                              {row.unitOfMeasureQuantity}/ha
+                            </span>
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
 
@@ -698,17 +749,18 @@ export function JobSelectedDetails({
                                     <Info className="h-3 w-3 cursor-help" />
                                   </TooltipTrigger>
                                   <TooltipContent className="bg-slate-900 text-white border border-slate-700 shadow-lg">
-                                    Indica se lo stock in magazzino è sufficiente
-                                    per tutti i trattamenti previsti con{" "}
-                                    {row.productName}. Se manca quantità, viene
-                                    mostrata quella da integrare.
+                                    Indica se lo stock in magazzino è
+                                    sufficiente per tutti i trattamenti previsti
+                                    con {row.productName}. Se manca quantità,
+                                    viene mostrata quella da integrare.
                                   </TooltipContent>
                                 </Tooltip>
                               </span>
                               {formatter.getStockOut() &&
                               matchesSearch(formatter.getStockOut()) ? (
                                 <p className="text-sm text-amber-700 font-medium">
-                                  Quantità da integrare: {formatter.getStockOut()}
+                                  Quantità da integrare:{" "}
+                                  {formatter.getStockOut()}
                                 </p>
                               ) : (
                                 <p className="text-sm text-emerald-600 font-medium">
@@ -725,13 +777,16 @@ export function JobSelectedDetails({
                                   </TooltipTrigger>
                                   <TooltipContent className="bg-slate-900 text-white border border-slate-700 shadow-lg">
                                     Quantità totale necessaria per tutti i
-                                    trattamenti pianificati con {row.productName}
+                                    trattamenti pianificati con{" "}
+                                    {row.productName}
                                     (non lo stock in magazzino).
                                   </TooltipContent>
                                 </Tooltip>
                               </span>
                               {formatter.getTotalStockRequired() &&
-                              matchesSearch(formatter.getTotalStockRequired()) ? (
+                              matchesSearch(
+                                formatter.getTotalStockRequired(),
+                              ) ? (
                                 <p className="text-sm text-slate-700 font-medium">
                                   {formatter.getTotalStockRequired()}
                                 </p>
@@ -758,7 +813,8 @@ export function JobSelectedDetails({
                             </div>
                           )}
 
-                          {row.alertNotes?.ddt_date_after_treatment === true && (
+                          {row.alertNotes?.ddt_date_after_treatment ===
+                            true && (
                             <div className="flex items-start gap-1.5 p-2 border border-red-200 rounded">
                               <FileX className="h-3.5 w-3.5 text-red-600 mt-0.5 shrink-0" />
                               <div className="flex-1">
@@ -778,113 +834,118 @@ export function JobSelectedDetails({
 
                     {/* Disciplinari */}
                     {Array.isArray(row.alertNotes?.disciplinare_info) &&
-                    row.alertNotes.disciplinare_info.length > 0 && (
-                      <div className="space-y-2">
-                        <button
-                          onClick={() => {
-                            setExpandedDisciplinari((prev) => {
-                              const next = new Set(prev);
-                              if (next.has(row.id)) {
-                                next.delete(row.id);
-                              } else {
-                                next.add(row.id);
-                              }
-                              return next;
-                            });
-                          }}
-                          className="w-full text-left flex items-center gap-1 hover:opacity-80 transition-opacity"
-                        >
-                          <BookOpen className="h-3 w-3 text-indigo-600 shrink-0" />
-                          <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
-                            Disciplinari
-                          </span>
-                          {expandedDisciplinari.has(row.id) ? (
-                            <ChevronUp className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
-                          ) : (
-                            <ChevronDown className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
-                          )}
-                        </button>
-                        {expandedDisciplinari.has(row.id) && (
-                          <div className="space-y-4 pl-4">
-                            {row.alertNotes.disciplinare_info.map((info, idx) => (
-                              <div
-                                key={idx}
-                                className="rounded-lg border border-slate-200 bg-slate-50/50 p-3 space-y-2"
-                              >
-                                {info.sostanza_attiva && (
-                                  <div className="flex items-start gap-1.5">
-                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">
-                                      Sostanza attiva:
-                                    </span>
-                                    <span className="text-sm font-medium text-slate-700">
-                                      {info.sostanza_attiva}
-                                    </span>
-                                  </div>
-                                )}
-                                {info.n_max_interventi_sa != null && (
-                                  <div className="flex items-start gap-1.5">
-                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">
-                                      Max interventi:
-                                    </span>
-                                    <span className="text-sm text-slate-700">
-                                      {info.n_max_interventi_sa}
-                                      {info.n_max_interventi_sa_scope && (
-                                        <span className="text-slate-500 text-xs">
-                                          {" "}
-                                          / {info.n_max_interventi_sa_scope}
+                      row.alertNotes.disciplinare_info.length > 0 && (
+                        <div className="space-y-2">
+                          <button
+                            onClick={() => {
+                              setExpandedDisciplinari((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(row.id)) {
+                                  next.delete(row.id);
+                                } else {
+                                  next.add(row.id);
+                                }
+                                return next;
+                              });
+                            }}
+                            className="w-full text-left flex items-center gap-1 hover:opacity-80 transition-opacity"
+                          >
+                            <BookOpen className="h-3 w-3 text-indigo-600 shrink-0" />
+                            <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                              Disciplinari
+                            </span>
+                            {expandedDisciplinari.has(row.id) ? (
+                              <ChevronUp className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
+                            ) : (
+                              <ChevronDown className="h-3 w-3 text-slate-600 ml-auto shrink-0" />
+                            )}
+                          </button>
+                          {expandedDisciplinari.has(row.id) && (
+                            <div className="space-y-4 pl-4">
+                              {row.alertNotes.disciplinare_info.map(
+                                (info, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="rounded-lg border border-slate-200 bg-slate-50/50 p-3 space-y-2"
+                                  >
+                                    {info.sostanza_attiva && (
+                                      <div className="flex items-start gap-1.5">
+                                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">
+                                          Sostanza attiva:
                                         </span>
-                                      )}
-                                    </span>
-                                  </div>
-                                )}
-                                {info.limitazioni_uso_e_note && (
-                                  <div className="flex items-start gap-1.5">
-                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">
-                                      Limitazioni:
-                                    </span>
-                                    <p className="text-xs text-slate-600 leading-relaxed">
-                                      {info.limitazioni_uso_e_note}
-                                    </p>
-                                  </div>
-                                )}
-                                {Array.isArray(info.sources) &&
-                                info.sources.length > 0 && (
-                                  <div className="space-y-1.5 pt-1">
-                                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                                      Fonti
-                                    </span>
-                                    <div className="space-y-1">
-                                      {info.sources.map((source, sIdx) => (
-                                        <div
-                                          key={sIdx}
-                                          className="flex items-start gap-1.5 text-xs"
-                                        >
-                                          {source.pdfFileUrl ? (
-                                            <a
-                                              href={source.pdfFileUrl}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="inline-flex items-center gap-1 text-indigo-600 hover:underline"
-                                            >
-                                              <ExternalLink className="h-3 w-3 shrink-0" />
-                                              {source.ruleName ?? "PDF documento"}
-                                            </a>
-                                          ) : (
-                                            <span className="text-slate-700">
-                                              {source.ruleName ?? "-"}
+                                        <span className="text-sm font-medium text-slate-700">
+                                          {info.sostanza_attiva}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {info.n_max_interventi_sa != null && (
+                                      <div className="flex items-start gap-1.5">
+                                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">
+                                          Max interventi:
+                                        </span>
+                                        <span className="text-sm text-slate-700">
+                                          {info.n_max_interventi_sa}
+                                          {info.n_max_interventi_sa_scope && (
+                                            <span className="text-slate-500 text-xs">
+                                              {" "}
+                                              / {info.n_max_interventi_sa_scope}
                                             </span>
                                           )}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {info.limitazioni_uso_e_note && (
+                                      <div className="flex items-start gap-1.5">
+                                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">
+                                          Limitazioni:
+                                        </span>
+                                        <p className="text-xs text-slate-600 leading-relaxed">
+                                          {info.limitazioni_uso_e_note}
+                                        </p>
+                                      </div>
+                                    )}
+                                    {Array.isArray(info.sources) &&
+                                      info.sources.length > 0 && (
+                                        <div className="space-y-1.5 pt-1">
+                                          <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                                            Fonti
+                                          </span>
+                                          <div className="space-y-1">
+                                            {info.sources.map(
+                                              (source, sIdx) => (
+                                                <div
+                                                  key={sIdx}
+                                                  className="flex items-start gap-1.5 text-xs"
+                                                >
+                                                  {source.pdfFileUrl ? (
+                                                    <a
+                                                      href={source.pdfFileUrl}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      className="inline-flex items-center gap-1 text-indigo-600 hover:underline"
+                                                    >
+                                                      <ExternalLink className="h-3 w-3 shrink-0" />
+                                                      {source.ruleName ??
+                                                        "PDF documento"}
+                                                    </a>
+                                                  ) : (
+                                                    <span className="text-slate-700">
+                                                      {source.ruleName ?? "-"}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              ),
+                                            )}
+                                          </div>
                                         </div>
-                                      ))}
-                                    </div>
+                                      )}
                                   </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                                ),
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                     {/* Toggle Malattie */}
                     <div className="space-y-2">
@@ -914,7 +975,9 @@ export function JobSelectedDetails({
                       </button>
                       {expandedMalattie.has(row.id) &&
                         (formatter.getMalattie().length > 0 &&
-                        formatter.getMalattie().some((m) => matchesSearch(m)) ? (
+                        formatter
+                          .getMalattie()
+                          .some((m) => matchesSearch(m)) ? (
                           <div className="flex flex-wrap gap-1.5 pl-4">
                             {formatter
                               .getMalattie()

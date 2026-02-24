@@ -55,19 +55,18 @@ const buildLabelSummaryColumns = (): EditableColumn[] =>
         const category = value as string | undefined;
         if (!category) return "-";
 
-        const label =
-          category === "FITO"
-            ? "Fitosanitario"
-            : category === "FERTILIZER"
-            ? "Fertilizzante"
-            : category;
+        const isPhytosanitary = category === "FITO" || category === "PESTICIDE";
+        const label = isPhytosanitary
+          ? "Fitosanitario"
+          : category === "FERTILIZER"
+          ? "Fertilizzante"
+          : category;
 
-        const colorClass =
-          category === "FITO"
-            ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-            : category === "FERTILIZER"
-            ? "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400"
-            : "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
+        const colorClass = isPhytosanitary
+          ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+          : category === "FERTILIZER"
+          ? "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400"
+          : "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
 
         return (
           <span

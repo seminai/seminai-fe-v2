@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useSearchParams } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,9 @@ import {
   getWhatsAppQrCodeWithBearer,
   getWhatsAppStatusWithBearer,
   disconnectWhatsAppWithBearer,
+  getWhatsAppAllowlistWithBearer,
+  addWhatsAppAllowlistWithBearer,
+  removeWhatsAppAllowlistWithBearer,
   type WhatsAppStatusResponse,
 } from "@/api/whatsapp";
 import { type TokenUsage } from "@/api/token-costs";
@@ -71,6 +75,9 @@ import {
   BarChart3,
   Table2,
   TrendingUp,
+  Plus,
+  Phone,
+  Info,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -285,6 +292,12 @@ const DEFAULT_FILTERS: TokenUsageFilters = {
 };
 
 export default function Settings() {
+  const [searchParams] = useSearchParams();
+  const activeTab = (searchParams.get("tab") ?? "impostazioni") as
+    | "impostazioni"
+    | "integrazioni"
+    | "costi";
+
   const { data, isLoading, error } = useCurrentUser();
   const queryClient = useQueryClient();
   const {
@@ -552,6 +565,44 @@ export default function Settings() {
   const [clearCacheDialogOpen, setClearCacheDialogOpen] = React.useState(false);
   const [clearCacheConfirmText, setClearCacheConfirmText] = React.useState("");
 
+  // WhatsApp allowlist state
+  const [allowedNumbers, setAllowedNumbers] = React.useState<string[]>([]);
+  const [newAllowlistNumber, setNewAllowlistNumber] = React.useState("");
+  const [isLoadingAllowlist, setIsLoadingAllowlist] = React.useState(false);
+
+  const { mutateAsync: addAllowlistNumberAsync, isPending: isAddingNumber } =
+    useMutation({
+      mutationFn: async (phoneNumber: string) => {
+        return await addWhatsAppAllowlistWithBearer(phoneNumber);
+      },
+      onSuccess: (response) => {
+        setAllowedNumbers(response.data.allowedNumbers);
+        setNewAllowlistNumber("");
+        toast.success("Numero aggiunto alla lista");
+      },
+      onError: (e: unknown) => {
+        const message =
+          e instanceof Error ? e.message : "Errore durante l'aggiunta del numero";
+        toast.error(message);
+      },
+    });
+
+  const { mutateAsync: removeAllowlistNumberAsync, isPending: isRemovingNumber } =
+    useMutation({
+      mutationFn: async (phoneNumber: string) => {
+        return await removeWhatsAppAllowlistWithBearer(phoneNumber);
+      },
+      onSuccess: (response) => {
+        setAllowedNumbers(response.data.allowedNumbers);
+        toast.success("Numero rimosso dalla lista");
+      },
+      onError: (e: unknown) => {
+        const message =
+          e instanceof Error ? e.message : "Errore durante la rimozione del numero";
+        toast.error(message);
+      },
+    });
+
   // WhatsApp state
   const [whatsappStatus, setWhatsappStatus] = React.useState<
     WhatsAppStatusResponse["data"] | null
@@ -562,8 +613,6 @@ export default function Settings() {
   const [isLoadingWhatsappStatus, setIsLoadingWhatsappStatus] =
     React.useState(false);
   const [isSettingUpWhatsapp, setIsSettingUpWhatsapp] = React.useState(false);
-  const [isDisconnectingWhatsapp, setIsDisconnectingWhatsapp] =
-    React.useState(false);
   const [isWhatsappConnecting, setIsWhatsappConnecting] = React.useState(false);
   const whatsappStatusPollingIntervalRef = React.useRef<NodeJS.Timeout | null>(
     null,
@@ -762,6 +811,20 @@ export default function Settings() {
 
     loadStatus();
 
+    // Load allowlist
+    const loadAllowlist = async () => {
+      setIsLoadingAllowlist(true);
+      try {
+        const res = await getWhatsAppAllowlistWithBearer();
+        if (mounted) setAllowedNumbers(res.data.allowedNumbers);
+      } catch {
+        // silently ignore – allowlist is non-critical
+      } finally {
+        if (mounted) setIsLoadingAllowlist(false);
+      }
+    };
+    loadAllowlist();
+
     return () => {
       mounted = false;
       stopWhatsappStatusPolling();
@@ -792,11 +855,14 @@ export default function Settings() {
     },
   });
 
-  const { mutateAsync: disconnectWhatsappAsync } = useMutation({
-    mutationFn: async () => {
-      return await disconnectWhatsAppWithBearer({ deleteInstance: false });
+  const [whatsappDisconnectDialogOpen, setWhatsappDisconnectDialogOpen] =
+    React.useState(false);
+
+  const { mutateAsync: disconnectWhatsappAsync, isPending: isDisconnecting } = useMutation({
+    mutationFn: async (deleteInstance: boolean) => {
+      return await disconnectWhatsAppWithBearer({ deleteInstance });
     },
-    onSuccess: async () => {
+    onSuccess: async (_, deleteInstance) => {
       setWhatsappStatus({
         connected: false,
         connectionStatus: "disconnected",
@@ -804,8 +870,13 @@ export default function Settings() {
       setWhatsappQrCode(null);
       setIsWhatsappConnecting(false);
       stopWhatsappStatusPolling();
+      setWhatsappDisconnectDialogOpen(false);
       await queryClient.invalidateQueries({ queryKey: ["users", "me"] });
-      toast.success("WhatsApp disconnesso con successo");
+      toast.success(
+        deleteInstance
+          ? "Istanza WhatsApp eliminata con successo"
+          : "WhatsApp disconnesso con successo",
+      );
     },
     onError: (e: unknown) => {
       const message =
@@ -846,12 +917,18 @@ export default function Settings() {
   const current = editable?.current;
   const isDirty = editable ? isEditableDirty(editable) : false;
 
+  const sectionTitle =
+    activeTab === "integrazioni"
+      ? "Integrazioni"
+      : activeTab === "costi"
+        ? "Costi"
+        : "Impostazioni";
+
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold mb-6">Impostazioni</h1>
-
-      <div className="flex justify-end mb-4">
-        {isDirty && (
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-semibold">{sectionTitle}</h1>
+        {isDirty && activeTab === "impostazioni" && (
           <Button
             onClick={async () => {
               if (!editable) return;
@@ -865,593 +942,1082 @@ export default function Settings() {
         )}
       </div>
 
-      <Card className="p-6 flex items-center gap-4 shadow-none">
-        <Avatar className="size-16">
-          <AvatarImage
-            src={current?.profilePictureUrl}
-            alt={`${user.name} ${user.surname}`}
-          />
-          <AvatarFallback>{initials || "U"}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1">
-          <div className="text-lg font-medium">
-            {(current?.name ?? "") + " " + (current?.surname ?? "")}
-          </div>
-          <div className="text-gray-600 text-sm">{user.email}</div>
-          <div className="text-gray-600 text-sm">{current?.companyName}</div>
-          <div className="mt-2 flex flex-col gap-1.5 w-full max-w-xs">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Crediti</span>
-              <span className="font-medium tabular-nums">
-                {user.credits} disponibili
-              </span>
+      {activeTab === "impostazioni" && (
+        <div className="space-y-4">
+            <Card className="p-6 flex items-center gap-4 shadow-none">
+              <Avatar className="size-16">
+                <AvatarImage
+                  src={current?.profilePictureUrl}
+                  alt={`${user.name} ${user.surname}`}
+                />
+                <AvatarFallback>{initials || "U"}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="text-lg font-medium">
+                  {(current?.name ?? "") + " " + (current?.surname ?? "")}
+                </div>
+                <div className="text-gray-600 text-sm">{user.email}</div>
+                <div className="text-gray-600 text-sm">{current?.companyName}</div>
+                <div className="mt-2 flex flex-col gap-1.5 w-full max-w-xs">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Crediti</span>
+                    <span className="font-medium tabular-nums">
+                      {user.credits} disponibili
+                    </span>
+                  </div>
+                  <Progress
+                    value={Math.min(
+                      100,
+                      (user.credits / Math.max(100, user.credits)) * 100,
+                    )}
+                    className="h-2"
+                  />
+                </div>
+              </div>
+              <div>
+                <InputFile
+                  id="profilePictureUpload"
+                  label="Foto profilo"
+                  accept="image/*"
+                  disabled={isUploading}
+                  onChange={async (file) => {
+                    if (!file) return;
+                    await uploadAsync(file);
+                  }}
+                />
+              </div>
+            </Card>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <Card className="p-4 shadow-none">
+                <h2 className="font-medium mb-4">Informazioni personali</h2>
+                <div className="space-y-3">
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="name">Nome</Label>
+                    <Input
+                      id="name"
+                      value={current?.name ?? ""}
+                      onChange={(e) =>
+                        setEditable((prev) =>
+                          prev
+                            ? updateEditableField(prev, "name", e.target.value)
+                            : prev,
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="surname">Cognome</Label>
+                    <Input
+                      id="surname"
+                      value={current?.surname ?? ""}
+                      onChange={(e) =>
+                        setEditable((prev) =>
+                          prev
+                            ? updateEditableField(prev, "surname", e.target.value)
+                            : prev,
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="fiscalCode">Codice fiscale</Label>
+                    <Input
+                      id="fiscalCode"
+                      value={current?.fiscalCode ?? ""}
+                      onChange={(e) =>
+                        setEditable((prev) =>
+                          prev
+                            ? updateEditableField(prev, "fiscalCode", e.target.value)
+                            : prev,
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="phoneNumber">Telefono</Label>
+                    <Input
+                      id="phoneNumber"
+                      value={current?.phoneNumber ?? ""}
+                      onChange={(e) =>
+                        setEditable((prev) =>
+                          prev
+                            ? updateEditableField(prev, "phoneNumber", e.target.value)
+                            : prev,
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+              </Card>
+              <Card className="p-4 shadow-none">
+                <h2 className="font-medium mb-4">Dati aziendali</h2>
+                <div className="space-y-3">
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="companyName">Ragione sociale</Label>
+                    <Input
+                      id="companyName"
+                      value={current?.companyName ?? ""}
+                      onChange={(e) =>
+                        setEditable((prev) =>
+                          prev
+                            ? updateEditableField(prev, "companyName", e.target.value)
+                            : prev,
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="vatNumber">P. IVA</Label>
+                    <Input
+                      id="vatNumber"
+                      value={current?.vatNumber ?? ""}
+                      onChange={(e) =>
+                        setEditable((prev) =>
+                          prev
+                            ? updateEditableField(prev, "vatNumber", e.target.value)
+                            : prev,
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="address">Indirizzo</Label>
+                    <Input
+                      id="address"
+                      value={current?.address ?? ""}
+                      onChange={(e) =>
+                        setEditable((prev) =>
+                          prev
+                            ? updateEditableField(prev, "address", e.target.value)
+                            : prev,
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+              </Card>
             </div>
-            <Progress
-              value={Math.min(
-                100,
-                (user.credits / Math.max(100, user.credits)) * 100,
-              )}
-              className="h-2"
-            />
-          </div>
+
+            <Card className="p-4 shadow-none">
+              <h2 className="font-medium mb-4">Cambia password</h2>
+              <div className="grid md:grid-cols-3 gap-3">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="oldPassword">Password attuale</Label>
+                  <Input
+                    id="oldPassword"
+                    type="password"
+                    value={passwords.oldPassword}
+                    onChange={(e) =>
+                      setPasswords((p) => ({ ...p, oldPassword: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="newPassword">Nuova password</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={passwords.newPassword}
+                    onChange={(e) =>
+                      setPasswords((p) => ({ ...p, newPassword: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="confirmPassword">Conferma password</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={passwords.confirmPassword}
+                    onChange={(e) =>
+                      setPasswords((p) => ({
+                        ...p,
+                        confirmPassword: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end mt-4">
+                <Button
+                  disabled={
+                    isChangingPassword ||
+                    !passwords.oldPassword ||
+                    !passwords.newPassword ||
+                    passwords.newPassword !== passwords.confirmPassword
+                  }
+                  onClick={async () => {
+                    if (passwords.newPassword !== passwords.confirmPassword) {
+                      toast.error("Le password non coincidono");
+                      return;
+                    }
+                    await changePasswordAsync(passwords);
+                  }}
+                >
+                  {isChangingPassword ? "Aggiornamento…" : "Cambia password"}
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="p-4 shadow-none">
+              <Accordion type="single" collapsible>
+                <AccordionItem value="cache-management" className="border-0">
+                  <AccordionTrigger className="hover:no-underline py-2">
+                    <div className="flex items-center gap-2">
+                      <HardDrive className="h-4 w-4 text-gray-600" />
+                      <span className="font-medium">Gestione cache</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Elimina la cache locale associata al tuo account. Questa
+                      azione è irreversibile.
+                    </p>
+                    <Button
+                      variant="destructive"
+                      onClick={() => setClearCacheDialogOpen(true)}
+                      disabled={isClearingCache}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Pulisci cache
+                    </Button>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </Card>
         </div>
+      )}
+
+      {activeTab === "integrazioni" && (
         <div>
-          <InputFile
-            id="profilePictureUpload"
-            label="Foto profilo"
-            accept="image/*"
-            disabled={isUploading}
-            onChange={async (file) => {
-              if (!file) return;
-              await uploadAsync(file);
-            }}
-          />
-        </div>
-      </Card>
-
-      <div className="grid md:grid-cols-2 gap-4 mt-6">
-        <Card className="p-4 shadow-none">
-          <h2 className="font-medium mb-4">Informazioni personali</h2>
-          <div className="space-y-3">
-            <div className="grid gap-1.5">
-              <Label htmlFor="name">Nome</Label>
-              <Input
-                id="name"
-                value={current?.name ?? ""}
-                onChange={(e) =>
-                  setEditable((prev) =>
-                    prev
-                      ? updateEditableField(prev, "name", e.target.value)
-                      : prev,
-                  )
-                }
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="surname">Cognome</Label>
-              <Input
-                id="surname"
-                value={current?.surname ?? ""}
-                onChange={(e) =>
-                  setEditable((prev) =>
-                    prev
-                      ? updateEditableField(prev, "surname", e.target.value)
-                      : prev,
-                  )
-                }
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="fiscalCode">Codice fiscale</Label>
-              <Input
-                id="fiscalCode"
-                value={current?.fiscalCode ?? ""}
-                onChange={(e) =>
-                  setEditable((prev) =>
-                    prev
-                      ? updateEditableField(prev, "fiscalCode", e.target.value)
-                      : prev,
-                  )
-                }
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="phoneNumber">Telefono</Label>
-              <Input
-                id="phoneNumber"
-                value={current?.phoneNumber ?? ""}
-                onChange={(e) =>
-                  setEditable((prev) =>
-                    prev
-                      ? updateEditableField(prev, "phoneNumber", e.target.value)
-                      : prev,
-                  )
-                }
-              />
-            </div>
-            {/* URL manuale rimosso: gestito via upload file sopra */}
-          </div>
-        </Card>
-        <Card className="p-4 shadow-none">
-          <h2 className="font-medium mb-4">Dati aziendali</h2>
-          <div className="space-y-3">
-            <div className="grid gap-1.5">
-              <Label htmlFor="companyName">Ragione sociale</Label>
-              <Input
-                id="companyName"
-                value={current?.companyName ?? ""}
-                onChange={(e) =>
-                  setEditable((prev) =>
-                    prev
-                      ? updateEditableField(prev, "companyName", e.target.value)
-                      : prev,
-                  )
-                }
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="vatNumber">P. IVA</Label>
-              <Input
-                id="vatNumber"
-                value={current?.vatNumber ?? ""}
-                onChange={(e) =>
-                  setEditable((prev) =>
-                    prev
-                      ? updateEditableField(prev, "vatNumber", e.target.value)
-                      : prev,
-                  )
-                }
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="address">Indirizzo</Label>
-              <Input
-                id="address"
-                value={current?.address ?? ""}
-                onChange={(e) =>
-                  setEditable((prev) =>
-                    prev
-                      ? updateEditableField(prev, "address", e.target.value)
-                      : prev,
-                  )
-                }
-              />
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4 md:col-span-2 shadow-none">
-          <h2 className="font-medium mb-4">Cambia password</h2>
-          <div className="grid md:grid-cols-3 gap-3">
-            <div className="grid gap-1.5">
-              <Label htmlFor="oldPassword">Password attuale</Label>
-              <Input
-                id="oldPassword"
-                type="password"
-                value={passwords.oldPassword}
-                onChange={(e) =>
-                  setPasswords((p) => ({ ...p, oldPassword: e.target.value }))
-                }
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="newPassword">Nuova password</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                value={passwords.newPassword}
-                onChange={(e) =>
-                  setPasswords((p) => ({ ...p, newPassword: e.target.value }))
-                }
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="confirmPassword">Conferma password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={passwords.confirmPassword}
-                onChange={(e) =>
-                  setPasswords((p) => ({
-                    ...p,
-                    confirmPassword: e.target.value,
-                  }))
-                }
-              />
-            </div>
-          </div>
-          <div className="flex justify-end mt-4">
-            <Button
-              disabled={
-                isChangingPassword ||
-                !passwords.oldPassword ||
-                !passwords.newPassword ||
-                passwords.newPassword !== passwords.confirmPassword
-              }
-              onClick={async () => {
-                if (passwords.newPassword !== passwords.confirmPassword) {
-                  toast.error("Le password non coincidono");
-                  return;
-                }
-                await changePasswordAsync(passwords);
-              }}
-            >
-              {isChangingPassword ? "Aggiornamento…" : "Cambia password"}
-            </Button>
-          </div>
-        </Card>
-        <Card className="p-4 md:col-span-2 shadow-none">
-          <h2 className="font-medium mb-4">Credenziali API</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="grid gap-1.5">
-              <Label htmlFor="qdcApiKey">QDC API Key</Label>
-              <div className="flex items-center gap-2">
-                <img
-                  src="/image/qdc_logo.png"
-                  alt="QDC Logo"
-                  className="h-8 w-8 object-contain"
-                />
-                <Input
-                  id="qdcApiKey"
-                  type="password"
-                  placeholder={
-                    qdcApiKey === null ? "Inserisci credenziali" : undefined
-                  }
-                  value={editingQdc ? qdcValue : "••••••••••••••••"}
-                  readOnly={!editingQdc}
-                  disabled={!editingQdc}
-                  onChange={(e) => setQdcValue(e.target.value)}
-                  className={!editingQdc ? "pr-10" : ""}
-                />
-                {!editingQdc && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10"
-                    onClick={() => {
-                      const original = qdcApiKey ?? "";
-                      setEditingQdc(true);
-                      setQdcValue(original);
-                      setQdcOriginalValue(original);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                )}
-                {editingQdc && isQdcModified && (
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setQdcValue(qdcOriginalValue);
-                        if (qdcApiKey === null && qdcOriginalValue === "") {
-                          // Rimani in editing se era null e non c'era valore originale
-                        } else {
-                          setEditingQdc(false);
-                        }
-                      }}
-                    >
-                      Annulla
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={isSavingApiKeys}
-                      onClick={async () => {
-                        await saveApiKeysAsync({ qdcApiKey: qdcValue || null });
-                      }}
-                    >
-                      {isSavingApiKeys ? "Salvataggio…" : "Salva"}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="ifarmingApiKey">iFarming API Key</Label>
-              <div className="flex items-center gap-2">
-                <img
-                  src="/image/ifarming_logo.png"
-                  alt="iFarming Logo"
-                  className="h-8 w-8 object-contain"
-                />
-                <Input
-                  id="ifarmingApiKey"
-                  type="password"
-                  placeholder={
-                    ifarmingApiKey === null
-                      ? "Inserisci credenziali"
-                      : undefined
-                  }
-                  value={editingIfarming ? ifarmingValue : "••••••••••••••••"}
-                  readOnly={!editingIfarming}
-                  disabled={!editingIfarming}
-                  onChange={(e) => setIfarmingValue(e.target.value)}
-                  className={!editingIfarming ? "pr-10" : ""}
-                />
-                {!editingIfarming && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10"
-                    onClick={() => {
-                      const original = ifarmingApiKey ?? "";
-                      setEditingIfarming(true);
-                      setIfarmingValue(original);
-                      setIfarmingOriginalValue(original);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                )}
-                {editingIfarming && isIfarmingModified && (
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setIfarmingValue(ifarmingOriginalValue);
-                        if (
-                          ifarmingApiKey === null &&
-                          ifarmingOriginalValue === ""
-                        ) {
-                          // Rimani in editing se era null e non c'era valore originale
-                        } else {
-                          setEditingIfarming(false);
-                        }
-                      }}
-                    >
-                      Annulla
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={isSavingApiKeys}
-                      onClick={async () => {
-                        await saveApiKeysAsync({
-                          ifarmingApiKey: ifarmingValue || null,
-                        });
-                      }}
-                    >
-                      {isSavingApiKeys ? "Salvataggio…" : "Salva"}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4 md:col-span-2 shadow-none">
-          <div className="flex items-center gap-2 mb-4">
-            <MessageCircle className="h-5 w-5 text-gray-600" />
-            <h2 className="font-medium">Integrazione WhatsApp</h2>
-          </div>
-          <div className="space-y-4">
-            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-yellow-900 mb-1">
-                    Importante: Numero WhatsApp dedicato richiesto
-                  </p>
-                  <p className="text-sm text-yellow-800">
-                    Il numero WhatsApp utilizzato per questa integrazione{" "}
-                    <strong>DEVE essere diverso</strong> dal tuo numero
-                    personale. Se colleghi il tuo numero personale,
-                    l'integrazione smetterà di funzionare correttamente. Ti
-                    consigliamo di utilizzare un numero WhatsApp Business
-                    dedicato per la tua azienda agricola.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {isLoadingWhatsappStatus ? (
-              <div className="flex items-center gap-2 text-sm text-gray-500 py-4">
-                <Spinner size={16} ariaLabel="Caricamento stato WhatsApp" />
-                <span>Caricamento stato connessione…</span>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-between p-4 rounded-lg border border-agri-green-100 bg-agri-green-50/60">
+            <Accordion type="multiple" className="space-y-3">
+              {/* WhatsApp */}
+              <AccordionItem value="whatsapp" className="rounded-lg border border-gray-200 bg-white">
+                <AccordionTrigger className="px-4 hover:no-underline">
                   <div className="flex items-center gap-3">
-                    {whatsappStatus?.connected ? (
-                      <>
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            WhatsApp connesso
-                          </p>
-                          {whatsappStatus.phoneNumber && (
-                            <p className="text-xs text-gray-600">
-                              Numero: {whatsappStatus.phoneNumber}
-                            </p>
-                          )}
-                          {whatsappStatus.lastSync && (
-                            <p className="text-xs text-gray-600">
-                              Ultima sincronizzazione:{" "}
-                              {formatDateTime(whatsappStatus.lastSync)}
-                            </p>
-                          )}
-                        </div>
-                      </>
-                    ) : whatsappStatus?.connectionStatus === "connecting" ||
-                      whatsappStatus?.connectionStatus === "qr_code_ready" ? (
-                      <>
-                        <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            In attesa di connessione...
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            Scansiona il QR code con WhatsApp per completare la
-                            connessione
-                          </p>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="h-5 w-5 text-gray-400" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            WhatsApp non connesso
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            Collega WhatsApp per inviare note di campo tramite
-                            messaggi
-                          </p>
-                        </div>
-                      </>
+                    <MessageCircle className="h-5 w-5 text-green-600" />
+                    <span className="font-medium">WhatsApp</span>
+                    {whatsappStatus?.connected && (
+                      <Badge variant="outline" className="text-green-600 border-green-200 ml-auto">
+                        Connesso
+                      </Badge>
                     )}
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={isLoadingWhatsappStatus}
-                      onClick={() => {
-                        loadWhatsappStatus();
-                      }}
-                      title="Ricarica stato"
-                    >
-                      <RefreshCw
-                        className={`h-4 w-4 ${
-                          isLoadingWhatsappStatus ? "animate-spin" : ""
-                        }`}
-                      />
-                    </Button>
-                    {whatsappStatus?.connected ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={isDisconnectingWhatsapp}
-                        onClick={async () => {
-                          setIsDisconnectingWhatsapp(true);
-                          try {
-                            await disconnectWhatsappAsync();
-                          } finally {
-                            setIsDisconnectingWhatsapp(false);
-                          }
-                        }}
-                      >
-                        {isDisconnectingWhatsapp ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Disconnessione...
-                          </>
-                        ) : (
-                          "Disconnetti"
-                        )}
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        disabled={isSettingUpWhatsapp}
-                        onClick={async () => {
-                          setIsSettingUpWhatsapp(true);
-                          try {
-                            await setupWhatsappAsync();
-                          } finally {
-                            setIsSettingUpWhatsapp(false);
-                          }
-                        }}
-                      >
-                        {isSettingUpWhatsapp ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Setup...
-                          </>
-                        ) : (
-                          "Collega WhatsApp"
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {(whatsappQrCode || isWhatsappConnecting) &&
-                  whatsappStatus?.connectionStatus !== "connected" && (
-                    <div className="p-4 rounded-lg border border-agri-green-100 bg-white">
-                      <p className="text-sm font-medium text-gray-900 mb-3">
-                        Scansiona questo QR code con WhatsApp:
-                      </p>
-                      {whatsappQrCode && (
-                        <div className="flex justify-center">
-                          <img
-                            src={whatsappQrCode}
-                            alt="WhatsApp QR Code"
-                            className="w-64 h-64 border border-gray-200 rounded-lg"
-                          />
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <div className="space-y-4">
+                    <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-yellow-900 mb-1">
+                            Importante: Numero WhatsApp dedicato richiesto
+                          </p>
+                          <p className="text-sm text-yellow-800">
+                            Il numero WhatsApp utilizzato per questa integrazione{" "}
+                            <strong>DEVE essere diverso</strong> dal tuo numero
+                            personale. Se colleghi il tuo numero personale,
+                            l'integrazione smetterà di funzionare correttamente. Ti
+                            consigliamo di utilizzare un numero WhatsApp Business
+                            dedicato per la tua azienda agricola.
+                          </p>
                         </div>
-                      )}
-                      <p className="text-xs text-gray-600 mt-3 text-center">
-                        1. Apri WhatsApp sul telefono
-                        <br />
-                        2. Vai in Impostazioni → Dispositivi collegati → Collega
-                        un dispositivo
-                        <br />
-                        3. Scansiona questo QR code
-                      </p>
-                      <div className="mt-3 flex justify-center">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={isLoadingWhatsappStatus}
-                          onClick={async () => {
-                            try {
-                              const qrResponse =
-                                await getWhatsAppQrCodeWithBearer();
-                              setWhatsappQrCode(qrResponse.data.qrCodeBase64);
-                              toast.success("QR code aggiornato");
-                            } catch (error: unknown) {
-                              console.error(error);
-                              toast.error(
-                                "Errore durante il caricamento del QR code",
-                              );
-                            }
-                          }}
-                        >
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Aggiorna QR code
-                        </Button>
                       </div>
                     </div>
-                  )}
-              </>
-            )}
-          </div>
-        </Card>
-        <Card className="p-4 md:col-span-2 shadow-none">
-          <Accordion type="single" collapsible>
-            <AccordionItem value="cache-management" className="border-0">
-              <AccordionTrigger className="hover:no-underline py-2">
-                <div className="flex items-center gap-2">
-                  <HardDrive className="h-4 w-4 text-gray-600" />
-                  <span className="font-medium">Gestione cache</span>
+
+                    {isLoadingWhatsappStatus ? (
+                      <div className="flex items-center gap-2 text-sm text-gray-500 py-4">
+                        <Spinner size={16} ariaLabel="Caricamento stato WhatsApp" />
+                        <span>Caricamento stato connessione…</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between p-4 rounded-lg border border-agri-green-100 bg-agri-green-50/60">
+                          <div className="flex items-center gap-3">
+                            {whatsappStatus?.connected ? (
+                              <>
+                                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    WhatsApp connesso
+                                  </p>
+                                  {whatsappStatus.phoneNumber && (
+                                    <p className="text-xs text-gray-600">
+                                      Numero: {whatsappStatus.phoneNumber}
+                                    </p>
+                                  )}
+                                  {whatsappStatus.lastSync && (
+                                    <p className="text-xs text-gray-600">
+                                      Ultima sincronizzazione:{" "}
+                                      {formatDateTime(whatsappStatus.lastSync)}
+                                    </p>
+                                  )}
+                                </div>
+                              </>
+                            ) : whatsappStatus?.connectionStatus === "connecting" ||
+                              whatsappStatus?.connectionStatus === "qr_code_ready" ? (
+                              <>
+                                <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    In attesa di connessione...
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    Scansiona il QR code con WhatsApp per completare la
+                                    connessione
+                                  </p>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="h-5 w-5 text-gray-400" />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    WhatsApp non connesso
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    Collega WhatsApp per inviare note di campo tramite
+                                    messaggi
+                                  </p>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={isLoadingWhatsappStatus}
+                              onClick={() => {
+                                loadWhatsappStatus();
+                              }}
+                              title="Ricarica stato"
+                            >
+                              <RefreshCw
+                                className={`h-4 w-4 ${
+                                  isLoadingWhatsappStatus ? "animate-spin" : ""
+                                }`}
+                              />
+                            </Button>
+                            {whatsappStatus?.connected ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setWhatsappDisconnectDialogOpen(true)}
+                              >
+                                Disconnetti
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                disabled={isSettingUpWhatsapp}
+                                onClick={async () => {
+                                  setIsSettingUpWhatsapp(true);
+                                  try {
+                                    await setupWhatsappAsync();
+                                  } finally {
+                                    setIsSettingUpWhatsapp(false);
+                                  }
+                                }}
+                              >
+                                {isSettingUpWhatsapp ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Setup...
+                                  </>
+                                ) : (
+                                  "Collega WhatsApp"
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        {(whatsappQrCode || isWhatsappConnecting) &&
+                          whatsappStatus?.connectionStatus !== "connected" && (
+                            <div className="p-4 rounded-lg border border-agri-green-100 bg-white">
+                              <p className="text-sm font-medium text-gray-900 mb-3">
+                                Scansiona questo QR code con WhatsApp:
+                              </p>
+                              {whatsappQrCode && (
+                                <div className="flex justify-center">
+                                  <img
+                                    src={whatsappQrCode}
+                                    alt="WhatsApp QR Code"
+                                    className="w-64 h-64 border border-gray-200 rounded-lg"
+                                  />
+                                </div>
+                              )}
+                              <p className="text-xs text-gray-600 mt-3 text-center">
+                                1. Apri WhatsApp sul telefono
+                                <br />
+                                2. Vai in Impostazioni → Dispositivi collegati → Collega
+                                un dispositivo
+                                <br />
+                                3. Scansiona questo QR code
+                              </p>
+                              <div className="mt-3 flex justify-center">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={isLoadingWhatsappStatus}
+                                  onClick={async () => {
+                                    try {
+                                      const qrResponse =
+                                        await getWhatsAppQrCodeWithBearer();
+                                      setWhatsappQrCode(qrResponse.data.qrCodeBase64);
+                                      toast.success("QR code aggiornato");
+                                    } catch (error: unknown) {
+                                      console.error(error);
+                                      toast.error(
+                                        "Errore durante il caricamento del QR code",
+                                      );
+                                    }
+                                  }}
+                                >
+                                  <RefreshCw className="h-4 w-4 mr-2" />
+                                  Aggiorna QR code
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+
+                        {/* Allowlist numeri WhatsApp */}
+                        <div className="p-4 rounded-lg border border-agri-green-100 bg-white">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Phone className="h-4 w-4 text-gray-600" />
+                            <h3 className="text-sm font-medium text-gray-900">
+                              Numeri autorizzati a inviare messaggi
+                            </h3>
+                          </div>
+
+                          <div className="flex items-start gap-2 mb-3 rounded-md border border-blue-200 bg-blue-50 p-3">
+                            <Info className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-blue-800">
+                              Se la lista è vuota, tutti i numeri possono inviare messaggi.
+                              Aggiungendo uno o più numeri, solo quelli elencati saranno
+                              autorizzati.
+                            </p>
+                          </div>
+
+                          {isLoadingAllowlist ? (
+                            <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
+                              <Spinner size={16} ariaLabel="Caricamento lista numeri" />
+                              <span>Caricamento…</span>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="flex gap-2 mb-3">
+                                <Input
+                                  placeholder="+393331234567"
+                                  value={newAllowlistNumber}
+                                  onChange={(e) => setNewAllowlistNumber(e.target.value)}
+                                  onKeyDown={async (e) => {
+                                    if (
+                                      e.key === "Enter" &&
+                                      newAllowlistNumber.trim().length > 0
+                                    ) {
+                                      await addAllowlistNumberAsync(
+                                        newAllowlistNumber.trim(),
+                                      );
+                                    }
+                                  }}
+                                  className="flex-1"
+                                />
+                                <Button
+                                  size="sm"
+                                  disabled={
+                                    isAddingNumber ||
+                                    newAllowlistNumber.trim().length === 0
+                                  }
+                                  onClick={async () => {
+                                    await addAllowlistNumberAsync(
+                                      newAllowlistNumber.trim(),
+                                    );
+                                  }}
+                                >
+                                  {isAddingNumber ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <>
+                                      <Plus className="h-4 w-4 mr-1" />
+                                      Aggiungi
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+
+                              {allowedNumbers.length === 0 ? (
+                                <p className="text-xs text-gray-500 italic">
+                                  Nessun numero in lista — tutti i numeri sono ammessi.
+                                </p>
+                              ) : (
+                                <ul className="space-y-1.5">
+                                  {allowedNumbers.map((phone) => (
+                                    <li
+                                      key={phone}
+                                      className="flex items-center justify-between rounded-md border border-agri-green-100 bg-agri-green-50/40 px-3 py-1.5 text-sm"
+                                    >
+                                      <span className="font-mono text-gray-800">
+                                        {phone}
+                                      </span>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-gray-500 hover:text-red-600"
+                                        disabled={isRemovingNumber}
+                                        onClick={async () => {
+                                          await removeAllowlistNumberAsync(phone);
+                                        }}
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* QDC */}
+              <AccordionItem value="qdc" className="rounded-lg border border-gray-200 bg-white">
+                <AccordionTrigger className="px-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <img src="/image/qdc_logo.png" alt="QDC" className="h-6 w-6 object-contain" />
+                    <span className="font-medium">QDC API Key</span>
+                    {qdcApiKey && (
+                      <Badge variant="outline" className="text-green-600 border-green-200 ml-auto">
+                        Configurata
+                      </Badge>
+                    )}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="qdcApiKey">QDC API Key</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="qdcApiKey"
+                        type="password"
+                        placeholder={
+                          qdcApiKey === null ? "Inserisci credenziali" : undefined
+                        }
+                        value={editingQdc ? qdcValue : "••••••••••••••••"}
+                        readOnly={!editingQdc}
+                        disabled={!editingQdc}
+                        onChange={(e) => setQdcValue(e.target.value)}
+                        className={!editingQdc ? "pr-10" : ""}
+                      />
+                      {!editingQdc && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-10 w-10"
+                          onClick={() => {
+                            const original = qdcApiKey ?? "";
+                            setEditingQdc(true);
+                            setQdcValue(original);
+                            setQdcOriginalValue(original);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {editingQdc && isQdcModified && (
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setQdcValue(qdcOriginalValue);
+                              if (qdcApiKey === null && qdcOriginalValue === "") {
+                                // Rimani in editing se era null e non c'era valore originale
+                              } else {
+                                setEditingQdc(false);
+                              }
+                            }}
+                          >
+                            Annulla
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={isSavingApiKeys}
+                            onClick={async () => {
+                              await saveApiKeysAsync({ qdcApiKey: qdcValue || null });
+                            }}
+                          >
+                            {isSavingApiKeys ? "Salvataggio…" : "Salva"}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* iFarming */}
+              <AccordionItem value="ifarming" className="rounded-lg border border-gray-200 bg-white">
+                <AccordionTrigger className="px-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <img src="/image/ifarming_logo.png" alt="iFarming" className="h-6 w-6 object-contain" />
+                    <span className="font-medium">iFarming API Key</span>
+                    {ifarmingApiKey && (
+                      <Badge variant="outline" className="text-green-600 border-green-200 ml-auto">
+                        Configurata
+                      </Badge>
+                    )}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="ifarmingApiKey">iFarming API Key</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="ifarmingApiKey"
+                        type="password"
+                        placeholder={
+                          ifarmingApiKey === null
+                            ? "Inserisci credenziali"
+                            : undefined
+                        }
+                        value={editingIfarming ? ifarmingValue : "••••••••••••••••"}
+                        readOnly={!editingIfarming}
+                        disabled={!editingIfarming}
+                        onChange={(e) => setIfarmingValue(e.target.value)}
+                        className={!editingIfarming ? "pr-10" : ""}
+                      />
+                      {!editingIfarming && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-10 w-10"
+                          onClick={() => {
+                            const original = ifarmingApiKey ?? "";
+                            setEditingIfarming(true);
+                            setIfarmingValue(original);
+                            setIfarmingOriginalValue(original);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {editingIfarming && isIfarmingModified && (
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setIfarmingValue(ifarmingOriginalValue);
+                              if (
+                                ifarmingApiKey === null &&
+                                ifarmingOriginalValue === ""
+                              ) {
+                                // Rimani in editing se era null e non c'era valore originale
+                              } else {
+                                setEditingIfarming(false);
+                              }
+                            }}
+                          >
+                            Annulla
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={isSavingApiKeys}
+                            onClick={async () => {
+                              await saveApiKeysAsync({
+                                ifarmingApiKey: ifarmingValue || null,
+                              });
+                            }}
+                          >
+                            {isSavingApiKeys ? "Salvataggio…" : "Salva"}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+        </div>
+      )}
+
+      {activeTab === "costi" && (
+        <div>
+            <Card className="p-4 shadow-none">
+              <div className="flex items-center justify-between gap-2 mb-4">
+                <div>
+                  <h2 className="font-medium">Storico costi token</h2>
+                  <p className="text-sm text-gray-600">
+                    Dettaglio dei consumi e dei costi calcolati con margine Seminai.
+                  </p>
                 </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  Elimina la cache locale associata al tuo account. Questa
-                  azione è irreversibile.
-                </p>
-                <Button
-                  variant="destructive"
-                  onClick={() => setClearCacheDialogOpen(true)}
-                  disabled={isClearingCache}
+                {isLoadingTokenCosts && (
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Spinner size={16} ariaLabel="Caricamento costi token" />
+                    <span>Caricamento…</span>
+                  </div>
+                )}
+              </div>
+
+              {isTokenCostsError && (
+                <div className="mb-4 text-sm text-red-600">
+                  {tokenCostsError?.message ?? "Impossibile caricare i costi."}
+                </div>
+              )}
+
+              {tokenCostSummary.length > 0 && (
+                <div className="grid sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
+                  {tokenCostSummary.map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-lg border border-agri-green-100 bg-agri-green-50/60 p-3"
+                    >
+                      <div className="text-xs text-gray-600">{item.label}</div>
+                      <div className="text-base font-semibold text-black">
+                        {item.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="mb-4 flex flex-wrap gap-3 items-center">
+                <Input
+                  placeholder="Cerca per modello, job, metadata…"
+                  value={filters.text}
+                  className="w-full sm:w-64"
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, text: e.target.value }))
+                  }
+                />
+                <Label className="sr-only" htmlFor="filter-date-from">
+                  Data da
+                </Label>
+                <Input
+                  id="filter-date-from"
+                  type="date"
+                  className="h-10 w-[140px]"
+                  value={filters.dateFrom}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, dateFrom: e.target.value }))
+                  }
+                />
+                <Label className="sr-only" htmlFor="filter-date-to">
+                  Data a
+                </Label>
+                <Input
+                  id="filter-date-to"
+                  type="date"
+                  className="h-10 w-[140px]"
+                  value={filters.dateTo}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, dateTo: e.target.value }))
+                  }
+                />
+                <select
+                  className="h-10 rounded-md border border-agri-green-100 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-agri-green-200"
+                  value={filters.jobType}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, jobType: e.target.value }))
+                  }
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Pulisci cache
+                  <option value="">Job type</option>
+                  {filterOptions.jobTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="h-10 rounded-md border border-agri-green-100 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-agri-green-200"
+                  value={filters.model}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, model: e.target.value }))
+                  }
+                >
+                  <option value="">Modello</option>
+                  {filterOptions.models.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="h-10 rounded-md border border-agri-green-100 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-agri-green-200"
+                  value={filters.companyId}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, companyId: e.target.value }))
+                  }
+                >
+                  <option value="">Azienda (metadata)</option>
+                  {filterOptions.companies.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  variant="outline"
+                  onClick={() => setFilters(DEFAULT_FILTERS)}
+                  className="ml-auto"
+                >
+                  Reset filtri
                 </Button>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </Card>
-      </div>
+              </div>
+
+              <Tabs
+                value={tokenCostsTab}
+                onValueChange={setTokenCostsTab}
+                className="w-full"
+              >
+                <TabsList className="mb-4 flex flex-wrap">
+                  <TabsTrigger value="table" className="gap-2">
+                    <Table2 className="h-4 w-4" />
+                    Tabella
+                  </TabsTrigger>
+                  <TabsTrigger value="chart" className="gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    Barre (per giorno e modello)
+                  </TabsTrigger>
+                  <TabsTrigger value="line" className="gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    Lineare (per modello)
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="table" className="mt-0">
+                  <div className="max-h-[420px] rounded-lg border border-agri-green-100 bg-white shadow-sm overflow-auto">
+                    <Table className="min-w-[1040px] [&_tr]:border-agri-green-100 [&_th]:border-agri-green-100 [&_td]:border-agri-green-50">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Data</TableHead>
+                          <TableHead>Job</TableHead>
+                          <TableHead>Modello</TableHead>
+                          <TableHead className="text-right">Prompt</TableHead>
+                          <TableHead className="text-right">Completion</TableHead>
+                          <TableHead className="text-right">Token totali</TableHead>
+                          <TableHead className="text-right">Costo cliente</TableHead>
+                          <TableHead>Azienda (metadata)</TableHead>
+                          <TableHead>Riferimento</TableHead>
+                          <TableHead>Metadata</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {isLoadingTokenCosts && (
+                          <TableRow>
+                            <TableCell colSpan={10}>
+                              <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <Spinner
+                                  size={16}
+                                  ariaLabel="Caricamento costi token"
+                                />
+                                <span>Recupero costi in corso…</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+
+                        {!isLoadingTokenCosts && !hasUsages && (
+                          <TableRow>
+                            <TableCell colSpan={10}>
+                              <div className="text-sm text-gray-600">
+                                Nessun costo registrato al momento.
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+
+                        {!isLoadingTokenCosts &&
+                          hasUsages &&
+                          filteredUsageRows.map((row) => (
+                            <TableRow key={row.id}>
+                              <TableCell>{row.createdAt}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary">{row.jobType}</Badge>
+                              </TableCell>
+                              <TableCell>{row.model}</TableCell>
+                              <TableCell className="text-right">
+                                {row.promptTokens}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {row.completionTokens}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {row.totalTokens}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {row.clientCost}
+                              </TableCell>
+                              <TableCell className="max-w-[180px] truncate">
+                                {row.metadataCompanyId}
+                              </TableCell>
+                              <TableCell className="max-w-[180px] truncate">
+                                {row.reference}
+                              </TableCell>
+                              <TableCell className="max-w-[260px] truncate">
+                                {row.metadataSummary}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+                <TabsContent value="chart" className="mt-0">
+                  <div className="rounded-lg border border-agri-green-100 bg-white p-4 min-h-[320px]">
+                    {isLoadingTokenCosts && (
+                      <div className="flex items-center justify-center gap-2 py-12 text-sm text-gray-500">
+                        <Spinner size={20} ariaLabel="Caricamento costi" />
+                        <span>Caricamento…</span>
+                      </div>
+                    )}
+                    {!isLoadingTokenCosts && dailyConsumptionByModel.length === 0 && (
+                      <div className="flex items-center justify-center py-12 text-sm text-gray-600">
+                        Nessun dato da mostrare. Applica i filtri o attendi nuovi
+                        consumi.
+                      </div>
+                    )}
+                    {!isLoadingTokenCosts &&
+                      dailyConsumptionByModel.length > 0 &&
+                      tokenCostsTab === "chart" && (
+                      <div className="w-full overflow-x-auto min-h-[300px]" style={{ minWidth: 0 }}>
+                      <ChartContainer
+                        config={consumptionChartConfig}
+                        className="h-[300px] min-h-[300px] w-full min-w-[280px]"
+                      >
+                        <BarChart
+                          data={dailyConsumptionByModel}
+                          margin={{ top: 8, right: 8, bottom: 24, left: 8 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            className="stroke-muted"
+                          />
+                          <XAxis
+                            dataKey="dateLabel"
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={(v) => v}
+                          />
+                          <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={(v) => `€ ${Number(v).toFixed(2)}`}
+                          />
+                          <ChartTooltip
+                            content={
+                              <ChartTooltipContent
+                                formatter={(value) => [formatCurrency(Number(value))]}
+                              />
+                            }
+                          />
+                          <Legend />
+                          {modelsInChart.map((model) => (
+                            <Bar
+                              key={model}
+                              dataKey={model}
+                              stackId="cost"
+                              fill={`var(--color-${model})`}
+                              radius={[0, 0, 0, 0]}
+                              name={model}
+                            />
+                          ))}
+                        </BarChart>
+                      </ChartContainer>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Consumo per giorno per modello (costo cliente €). Barre impilate
+                    con nomi modelli in legenda.
+                  </p>
+                </TabsContent>
+                <TabsContent value="line" className="mt-0">
+                  <div className="rounded-lg border border-agri-green-100 bg-white p-4 min-h-[320px]">
+                    {isLoadingTokenCosts && (
+                      <div className="flex items-center justify-center gap-2 py-12 text-sm text-gray-500">
+                        <Spinner size={20} ariaLabel="Caricamento costi" />
+                        <span>Caricamento…</span>
+                      </div>
+                    )}
+                    {!isLoadingTokenCosts && dailyConsumptionByModel.length === 0 && (
+                      <div className="flex items-center justify-center py-12 text-sm text-gray-600">
+                        Nessun dato da mostrare. Applica i filtri o attendi nuovi
+                        consumi.
+                      </div>
+                    )}
+                    {!isLoadingTokenCosts &&
+                      dailyConsumptionByModel.length > 0 &&
+                      tokenCostsTab === "line" && (
+                      <div className="w-full overflow-x-auto min-h-[300px]" style={{ minWidth: 0 }}>
+                      <ChartContainer
+                        config={consumptionChartConfig}
+                        className="h-[300px] min-h-[300px] w-full min-w-[280px]"
+                      >
+                        <LineChart
+                          data={dailyConsumptionByModel}
+                          margin={{ top: 8, right: 8, bottom: 24, left: 8 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            className="stroke-muted"
+                          />
+                          <XAxis
+                            dataKey="dateLabel"
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={(v) => v}
+                          />
+                          <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={(v) => `€ ${Number(v).toFixed(2)}`}
+                          />
+                          <ChartTooltip
+                            content={
+                              <ChartTooltipContent
+                                formatter={(value) => [formatCurrency(Number(value))]}
+                              />
+                            }
+                          />
+                          <Legend />
+                          {modelsInChart.map((model) => (
+                            <Line
+                              key={model}
+                              type="monotone"
+                              dataKey={model}
+                              stroke={`var(--color-${model})`}
+                              strokeWidth={2}
+                              dot={{ r: 3 }}
+                              name={model}
+                            />
+                          ))}
+                        </LineChart>
+                      </ChartContainer>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Andamento costo cliente (€) per giorno e per modello. Una linea
+                    per ogni modello.
+                  </p>
+                </TabsContent>
+              </Tabs>
+            </Card>
+        </div>
+      )}
 
       <Dialog
         open={clearCacheDialogOpen}
@@ -1500,366 +2066,68 @@ export default function Settings() {
         </DialogContent>
       </Dialog>
 
-      <Card className="p-4 shadow-none mt-6">
-        <div className="flex items-center justify-between gap-2 mb-4">
-          <div>
-            <h2 className="font-medium">Storico costi token</h2>
-            <p className="text-sm text-gray-600">
-              Dettaglio dei consumi e dei costi calcolati con margine Seminai.
-            </p>
+      <Dialog
+        open={whatsappDisconnectDialogOpen}
+        onOpenChange={setWhatsappDisconnectDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Disconnetti WhatsApp</DialogTitle>
+            <DialogDescription>
+              Scegli come disconnettere WhatsApp dal tuo account.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <button
+              type="button"
+              className="w-full rounded-lg border border-gray-200 p-4 text-left hover:bg-gray-50 transition-colors disabled:opacity-50"
+              disabled={isDisconnecting}
+              onClick={async () => {
+                await disconnectWhatsappAsync(false);
+              }}
+            >
+              <p className="text-sm font-medium text-gray-900">
+                Disconnetti sessione
+              </p>
+              <p className="text-xs text-gray-600 mt-1">
+                Disconnette la sessione attiva ma mantiene l'istanza. Potrai
+                riconnetterti in futuro scansionando un nuovo QR code.
+              </p>
+            </button>
+            <button
+              type="button"
+              className="w-full rounded-lg border border-red-200 p-4 text-left hover:bg-red-50 transition-colors disabled:opacity-50"
+              disabled={isDisconnecting}
+              onClick={async () => {
+                await disconnectWhatsappAsync(true);
+              }}
+            >
+              <p className="text-sm font-medium text-red-700">
+                Elimina istanza
+              </p>
+              <p className="text-xs text-gray-600 mt-1">
+                Elimina completamente l'istanza WhatsApp e rimuove tutti i dati
+                associati. Dovrai ripetere il setup completo per riconnetterti.
+              </p>
+            </button>
           </div>
-          {isLoadingTokenCosts && (
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={isDisconnecting}
+              onClick={() => setWhatsappDisconnectDialogOpen(false)}
+            >
+              Annulla
+            </Button>
+          </DialogFooter>
+          {isDisconnecting && (
             <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Spinner size={16} ariaLabel="Caricamento costi token" />
-              <span>Caricamento…</span>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Disconnessione in corso…</span>
             </div>
           )}
-        </div>
-
-        {isTokenCostsError && (
-          <div className="mb-4 text-sm text-red-600">
-            {tokenCostsError?.message ?? "Impossibile caricare i costi."}
-          </div>
-        )}
-
-        {tokenCostSummary.length > 0 && (
-          <div className="grid sm:grid-cols-3 md:grid-cols-5 gap-3 mb-4">
-            {tokenCostSummary.map((item) => (
-              <div
-                key={item.label}
-                className="rounded-lg border border-agri-green-100 bg-agri-green-50/60 p-3"
-              >
-                <div className="text-xs text-gray-600">{item.label}</div>
-                <div className="text-base font-semibold text-black">
-                  {item.value}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="mb-4 flex flex-wrap gap-3 items-center">
-          <Input
-            placeholder="Cerca per modello, job, metadata…"
-            value={filters.text}
-            className="w-full sm:w-64"
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, text: e.target.value }))
-            }
-          />
-          <Label className="sr-only" htmlFor="filter-date-from">
-            Data da
-          </Label>
-          <Input
-            id="filter-date-from"
-            type="date"
-            className="h-10 w-[140px]"
-            value={filters.dateFrom}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, dateFrom: e.target.value }))
-            }
-          />
-          <Label className="sr-only" htmlFor="filter-date-to">
-            Data a
-          </Label>
-          <Input
-            id="filter-date-to"
-            type="date"
-            className="h-10 w-[140px]"
-            value={filters.dateTo}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, dateTo: e.target.value }))
-            }
-          />
-          <select
-            className="h-10 rounded-md border border-agri-green-100 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-agri-green-200"
-            value={filters.jobType}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, jobType: e.target.value }))
-            }
-          >
-            <option value="">Job type</option>
-            {filterOptions.jobTypes.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-          <select
-            className="h-10 rounded-md border border-agri-green-100 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-agri-green-200"
-            value={filters.model}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, model: e.target.value }))
-            }
-          >
-            <option value="">Modello</option>
-            {filterOptions.models.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-          <select
-            className="h-10 rounded-md border border-agri-green-100 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-agri-green-200"
-            value={filters.companyId}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, companyId: e.target.value }))
-            }
-          >
-            <option value="">Azienda (metadata)</option>
-            {filterOptions.companies.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <Button
-            variant="outline"
-            onClick={() => setFilters(DEFAULT_FILTERS)}
-            className="ml-auto"
-          >
-            Reset filtri
-          </Button>
-        </div>
-
-        <Tabs
-          value={tokenCostsTab}
-          onValueChange={setTokenCostsTab}
-          className="w-full"
-        >
-          <TabsList className="mb-4 flex flex-wrap">
-            <TabsTrigger value="table" className="gap-2">
-              <Table2 className="h-4 w-4" />
-              Tabella
-            </TabsTrigger>
-            <TabsTrigger value="chart" className="gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Barre (per giorno e modello)
-            </TabsTrigger>
-            <TabsTrigger value="line" className="gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Lineare (per modello)
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="table" className="mt-0">
-            <div className="max-h-[420px] rounded-lg border border-agri-green-100 bg-white shadow-sm overflow-auto">
-              <Table className="min-w-[1040px] [&_tr]:border-agri-green-100 [&_th]:border-agri-green-100 [&_td]:border-agri-green-50">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Job</TableHead>
-                    <TableHead>Modello</TableHead>
-                    <TableHead className="text-right">Prompt</TableHead>
-                    <TableHead className="text-right">Completion</TableHead>
-                    <TableHead className="text-right">Token totali</TableHead>
-                    <TableHead className="text-right">Costo cliente</TableHead>
-                    <TableHead>Azienda (metadata)</TableHead>
-                    <TableHead>Riferimento</TableHead>
-                    <TableHead>Metadata</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoadingTokenCosts && (
-                    <TableRow>
-                      <TableCell colSpan={10}>
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <Spinner
-                            size={16}
-                            ariaLabel="Caricamento costi token"
-                          />
-                          <span>Recupero costi in corso…</span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-
-                  {!isLoadingTokenCosts && !hasUsages && (
-                    <TableRow>
-                      <TableCell colSpan={10}>
-                        <div className="text-sm text-gray-600">
-                          Nessun costo registrato al momento.
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-
-                  {!isLoadingTokenCosts &&
-                    hasUsages &&
-                    filteredUsageRows.map((row) => (
-                      <TableRow key={row.id}>
-                        <TableCell>{row.createdAt}</TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">{row.jobType}</Badge>
-                        </TableCell>
-                        <TableCell>{row.model}</TableCell>
-                        <TableCell className="text-right">
-                          {row.promptTokens}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {row.completionTokens}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {row.totalTokens}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {row.clientCost}
-                        </TableCell>
-                        <TableCell className="max-w-[180px] truncate">
-                          {row.metadataCompanyId}
-                        </TableCell>
-                        <TableCell className="max-w-[180px] truncate">
-                          {row.reference}
-                        </TableCell>
-                        <TableCell className="max-w-[260px] truncate">
-                          {row.metadataSummary}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </div>
-          </TabsContent>
-          <TabsContent value="chart" className="mt-0">
-            <div className="rounded-lg border border-agri-green-100 bg-white p-4 min-h-[320px]">
-              {isLoadingTokenCosts && (
-                <div className="flex items-center justify-center gap-2 py-12 text-sm text-gray-500">
-                  <Spinner size={20} ariaLabel="Caricamento costi" />
-                  <span>Caricamento…</span>
-                </div>
-              )}
-              {!isLoadingTokenCosts && dailyConsumptionByModel.length === 0 && (
-                <div className="flex items-center justify-center py-12 text-sm text-gray-600">
-                  Nessun dato da mostrare. Applica i filtri o attendi nuovi
-                  consumi.
-                </div>
-              )}
-              {!isLoadingTokenCosts &&
-                dailyConsumptionByModel.length > 0 &&
-                tokenCostsTab === "chart" && (
-                <div className="w-full overflow-x-auto min-h-[300px]" style={{ minWidth: 0 }}>
-                <ChartContainer
-                  config={consumptionChartConfig}
-                  className="h-[300px] min-h-[300px] w-full min-w-[280px]"
-                >
-                  <BarChart
-                    data={dailyConsumptionByModel}
-                    margin={{ top: 8, right: 8, bottom: 24, left: 8 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      className="stroke-muted"
-                    />
-                    <XAxis
-                      dataKey="dateLabel"
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(v) => v}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(v) => `€ ${Number(v).toFixed(2)}`}
-                    />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent
-                          formatter={(value) => [formatCurrency(Number(value))]}
-                        />
-                      }
-                    />
-                    <Legend />
-                    {modelsInChart.map((model) => (
-                      <Bar
-                        key={model}
-                        dataKey={model}
-                        stackId="cost"
-                        fill={`var(--color-${model})`}
-                        radius={[0, 0, 0, 0]}
-                        name={model}
-                      />
-                    ))}
-                  </BarChart>
-                </ChartContainer>
-                </div>
-              )}
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Consumo per giorno per modello (costo cliente €). Barre impilate
-              con nomi modelli in legenda.
-            </p>
-          </TabsContent>
-          <TabsContent value="line" className="mt-0">
-            <div className="rounded-lg border border-agri-green-100 bg-white p-4 min-h-[320px]">
-              {isLoadingTokenCosts && (
-                <div className="flex items-center justify-center gap-2 py-12 text-sm text-gray-500">
-                  <Spinner size={20} ariaLabel="Caricamento costi" />
-                  <span>Caricamento…</span>
-                </div>
-              )}
-              {!isLoadingTokenCosts && dailyConsumptionByModel.length === 0 && (
-                <div className="flex items-center justify-center py-12 text-sm text-gray-600">
-                  Nessun dato da mostrare. Applica i filtri o attendi nuovi
-                  consumi.
-                </div>
-              )}
-              {!isLoadingTokenCosts &&
-                dailyConsumptionByModel.length > 0 &&
-                tokenCostsTab === "line" && (
-                <div className="w-full overflow-x-auto min-h-[300px]" style={{ minWidth: 0 }}>
-                <ChartContainer
-                  config={consumptionChartConfig}
-                  className="h-[300px] min-h-[300px] w-full min-w-[280px]"
-                >
-                  <LineChart
-                    data={dailyConsumptionByModel}
-                    margin={{ top: 8, right: 8, bottom: 24, left: 8 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      className="stroke-muted"
-                    />
-                    <XAxis
-                      dataKey="dateLabel"
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(v) => v}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(v) => `€ ${Number(v).toFixed(2)}`}
-                    />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent
-                          formatter={(value) => [formatCurrency(Number(value))]}
-                        />
-                      }
-                    />
-                    <Legend />
-                    {modelsInChart.map((model) => (
-                      <Line
-                        key={model}
-                        type="monotone"
-                        dataKey={model}
-                        stroke={`var(--color-${model})`}
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                        name={model}
-                      />
-                    ))}
-                  </LineChart>
-                </ChartContainer>
-                </div>
-              )}
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Andamento costo cliente (€) per giorno e per modello. Una linea
-              per ogni modello.
-            </p>
-          </TabsContent>
-        </Tabs>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

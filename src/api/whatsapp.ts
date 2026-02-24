@@ -65,6 +65,14 @@ export type WhatsAppSendMessageResponse = {
   };
 };
 
+export type WhatsAppAllowlistResponse = {
+  status: "success";
+  data: {
+    allowedNumbers: string[];
+    count: number;
+  };
+};
+
 async function safeReadText(response: Response): Promise<string> {
   try {
     return await response.text();
@@ -167,6 +175,69 @@ class WhatsAppApiService {
     return (await response.json()) as WhatsAppDisconnectResponse;
   }
 
+  public async getAllowlist(): Promise<WhatsAppAllowlistResponse> {
+    const response = await authenticatedHttpClient.request(
+      `${this.baseUrl}/settings/whatsapp/allowlist`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await safeReadText(response);
+      throw new Error(errorText || "Failed to get allowlist");
+    }
+
+    return (await response.json()) as WhatsAppAllowlistResponse;
+  }
+
+  public async addToAllowlist(
+    phoneNumber: string
+  ): Promise<WhatsAppAllowlistResponse> {
+    const response = await authenticatedHttpClient.request(
+      `${this.baseUrl}/settings/whatsapp/allowlist`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ phoneNumber }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await safeReadText(response);
+      throw new Error(errorText || "Failed to add number to allowlist");
+    }
+
+    return (await response.json()) as WhatsAppAllowlistResponse;
+  }
+
+  public async removeFromAllowlist(
+    phoneNumber: string
+  ): Promise<WhatsAppAllowlistResponse> {
+    const response = await authenticatedHttpClient.request(
+      `${this.baseUrl}/settings/whatsapp/allowlist/${encodeURIComponent(phoneNumber)}`,
+      {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await safeReadText(response);
+      throw new Error(errorText || "Failed to remove number from allowlist");
+    }
+
+    return (await response.json()) as WhatsAppAllowlistResponse;
+  }
+
   public async sendMessage(
     payload: WhatsAppSendMessageRequest
   ): Promise<WhatsAppSendMessageResponse> {
@@ -234,4 +305,30 @@ export async function sendWhatsAppMessageWithBearer(
   const service =
     baseUrl === BASE_URL ? whatsappApiService : new WhatsAppApiService(baseUrl);
   return await service.sendMessage(payload);
+}
+
+export async function getWhatsAppAllowlistWithBearer(
+  baseUrl: string = BASE_URL
+): Promise<WhatsAppAllowlistResponse> {
+  const service =
+    baseUrl === BASE_URL ? whatsappApiService : new WhatsAppApiService(baseUrl);
+  return await service.getAllowlist();
+}
+
+export async function addWhatsAppAllowlistWithBearer(
+  phoneNumber: string,
+  baseUrl: string = BASE_URL
+): Promise<WhatsAppAllowlistResponse> {
+  const service =
+    baseUrl === BASE_URL ? whatsappApiService : new WhatsAppApiService(baseUrl);
+  return await service.addToAllowlist(phoneNumber);
+}
+
+export async function removeWhatsAppAllowlistWithBearer(
+  phoneNumber: string,
+  baseUrl: string = BASE_URL
+): Promise<WhatsAppAllowlistResponse> {
+  const service =
+    baseUrl === BASE_URL ? whatsappApiService : new WhatsAppApiService(baseUrl);
+  return await service.removeFromAllowlist(phoneNumber);
 }

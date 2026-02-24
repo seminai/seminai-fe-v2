@@ -131,6 +131,10 @@ const buildFieldsEditColumns = (companies: Company[]): EditableColumn[] => {
       type: "number",
       required: true,
       placeholder: "es. 12000",
+      onValueChange: ({ value }) => {
+        const mq = Number(value) || 0;
+        return { sauHa: mq > 0 ? +(mq / 10000).toFixed(4) : "" };
+      },
     },
     {
       id: "city",
@@ -144,6 +148,12 @@ const buildFieldsEditColumns = (companies: Company[]): EditableColumn[] => {
       type: "number",
       required: true,
       placeholder: "es. 1.2",
+      onValueChange: ({ value }) => {
+        const ha = Number(value) || 0;
+        return {
+          superficieCatastaleMq: ha > 0 ? Math.round(ha * 10000) : "",
+        };
+      },
     },
     {
       id: "uso",
@@ -405,8 +415,7 @@ export default function Fields(): React.ReactElement {
     <div className="flex flex-col h-full">
       <PageHeader title="Campi" className="hidden md:block" />
 
-      {/* Area scrollabile - solo la tabella */}
-      <div className="flex-1 overflow-auto px-6 pb-6">
+      <div className="flex-1 min-h-0 px-6 pb-6">
         {isLoading || isLoadingCompanies ? (
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Spinner size={20} ariaLabel="Caricamento dati" />
@@ -439,7 +448,7 @@ export default function Fields(): React.ReactElement {
             showDeleteAction={true}
             exportFileName="campi"
             createDrawerImportTitle="Importa file"
-            createDrawerImportDescription="Il sistema supporta il formato del template AGEA della misura unica, con parcelle e uso del suolo primario e secondario (CSV, XLS, XLSX). Il formato può variare in base alla regione. Seleziona l'azienda e carica un file; i dati dei campi verranno estratti automaticamente."
+            createDrawerImportDescription="Il sistema supporta il formato del template AGEA della misura unica, con parcelle e uso del suolo primario e secondario (CSV, XLS, XLSX, PDF). Il formato può variare in base alla regione. Seleziona l'azienda e carica un file; i dati dei campi verranno estratti automaticamente."
             newRowDefaults={{
               companyName: "",
               name: "",

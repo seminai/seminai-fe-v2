@@ -24,12 +24,14 @@ import type { FitosanitariDatasetRecord } from "@/services/fitosanitariRegistry"
 import { parseDecimal } from "@/utils/number";
 import ProductStockFields from "./ProductStockFields";
 
+/** Categorie prodotto: enum Prisma (FERTILIZER, PESTICIDE, SEED, HARVEST, EQUIPMENT, PACKAGING) */
 const PRODUCT_CATEGORIES = [
   { value: "FERTILIZER", label: "Fertilizzante" },
-  { value: "PHYTOSANITARY", label: "Fitosanitario" },
+  { value: "PESTICIDE", label: "Fitosanitario" },
   { value: "SEED", label: "Seme" },
-  { value: "ADJUVANT", label: "Coadiuvante" },
-  { value: "OTHER", label: "Altro" },
+  { value: "HARVEST", label: "Raccolto" },
+  { value: "EQUIPMENT", label: "Attrezzatura" },
+  { value: "PACKAGING", label: "Imballaggio" },
 ];
 
 interface ManualProductFormProps {
@@ -167,7 +169,7 @@ export default function ManualProductForm({
     return allProducts.filter((p) => p.warehouse?.company?.id === companyId);
   }, [allProducts, companyId]);
 
-  const isPhytosanitary = category === "PHYTOSANITARY";
+  const isPhytosanitary = category === "PESTICIDE";
 
   useEffect(() => {
     if (!isPhytosanitary) {
@@ -233,7 +235,7 @@ export default function ManualProductForm({
     setCategory(value);
     setSelectedFitosanitarioId("");
     setProductSource(null);
-    if (value !== "PHYTOSANITARY") {
+    if (value !== "PESTICIDE") {
       setName("");
       setSku("");
     }

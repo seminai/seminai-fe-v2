@@ -52,12 +52,24 @@ import {
   TrendingUp,
   Pencil,
   Info,
+  Tag,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import AddStock from "./AddStock";
 import { useProductDetail } from "@/hooks/useProductDetail";
+import { useCompanyWarehouses } from "@/hooks/useCompanyWarehouses";
 import { Spinner } from "@/components/ui/spinner";
+
+/** Categorie prodotto: enum Prisma (FERTILIZER, PESTICIDE, SEED, HARVEST, EQUIPMENT, PACKAGING) */
+const PRODUCT_CATEGORIES = [
+  { value: "FERTILIZER", label: "Fertilizzante" },
+  { value: "PESTICIDE", label: "Fitosanitario" },
+  { value: "SEED", label: "Seme" },
+  { value: "HARVEST", label: "Raccolto" },
+  { value: "EQUIPMENT", label: "Attrezzatura" },
+  { value: "PACKAGING", label: "Imballaggio" },
+];
 
 interface DrawerProductProps {
   productId: string | null;
@@ -394,6 +406,7 @@ class ProductFormValidator {
 
   public static validateForm(data: {
     name: string;
+    sku?: string;
     description?: string;
     barcode?: string;
   }): string | null {
@@ -454,11 +467,23 @@ function DrawerProduct({
   } = useProductDetail(productId, open);
 
   const product = detailedProduct ?? previewProduct;
+  const companyId = product?.warehouse?.company?.id;
+  const { warehouses } = useCompanyWarehouses(companyId);
 
   // Edit product form
   const [productName, setProductName] = useState("");
+  const [productSku, setProductSku] = useState("");
   const [productDescription, setProductDescription] = useState("");
   const [productBarcode, setProductBarcode] = useState("");
+  const [productCategory, setProductCategory] = useState("");
+  const [productType, setProductType] = useState("");
+  const [productAdministrativeStatus, setProductAdministrativeStatus] =
+    useState("");
+  const [productRegistrationNumber, setProductRegistrationNumber] =
+    useState("");
+  const [productLabelUrl, setProductLabelUrl] = useState("");
+  const [productLabelMetadataJson, setProductLabelMetadataJson] = useState("");
+  const [productWarehouseId, setProductWarehouseId] = useState("");
 
   useEffect(() => {
     setDetailView("movements");
@@ -488,8 +513,22 @@ function DrawerProduct({
       return;
     }
     setProductName(product.name);
+    setProductSku(product.sku ?? "");
     setProductDescription(product.description || "");
     setProductBarcode(product.barcode || "");
+    setProductCategory(
+      product.category === "PHYTOSANITARY" ? "PESTICIDE" : product.category ?? "",
+    );
+    setProductType(product.type ?? "");
+    setProductAdministrativeStatus(product.administrativeStatus ?? "");
+    setProductRegistrationNumber(product.registrationNumber ?? "");
+    setProductLabelUrl(product.labelUrl ?? "");
+    setProductLabelMetadataJson(
+      product.labelMetadata != null
+        ? JSON.stringify(product.labelMetadata, null, 2)
+        : "",
+    );
+    setProductWarehouseId(product.warehouseId ?? "");
     setEditDialogOpen(true);
   };
 
@@ -498,6 +537,7 @@ function DrawerProduct({
 
     const validationError = ProductFormValidator.validateForm({
       name: productName,
+      sku: productSku,
       description: productDescription,
       barcode: productBarcode,
     });
@@ -509,11 +549,36 @@ function DrawerProduct({
 
     setIsUpdating(true);
     try {
-      await productsApiService.update(product.id, {
-        name: productName,
-        description: productDescription || undefined,
-        barcode: productBarcode || undefined,
-      });
+      const metadataTrimmed = productLabelMetadataJson.trim();
+      let labelMetadata: Record<string, unknown> | undefined;
+      if (metadataTrimmed) {
+        try {
+          labelMetadata = JSON.parse(
+            metadataTrimmed,
+          ) as Record<string, unknown>;
+        } catch {
+          toast.error("Label metadata non è JSON valido");
+          setIsUpdating(false);
+          return;
+        }
+      }
+      const payload: Parameters<typeof productsApiService.update>[1] = {
+        name: productName.trim(),
+        sku: productSku.trim() || undefined,
+        description: productDescription.trim() || undefined,
+        barcode: productBarcode.trim() || undefined,
+        category: productCategory.trim() || undefined,
+        type: productType.trim() || undefined,
+        administrativeStatus:
+          productAdministrativeStatus.trim() || undefined,
+        registrationNumber:
+          productRegistrationNumber.trim() || undefined,
+        labelUrl: productLabelUrl.trim() || undefined,
+        labelMetadata,
+        warehouseId: productWarehouseId.trim() || undefined,
+      };
+      await productsApiService.update(product.id, payload);
+      await productsApiService.update(product.id, payload);
 
       toast.success("Prodotto aggiornato con successo");
       setEditDialogOpen(false);
@@ -675,6 +740,23 @@ function DrawerProduct({
             <div className="space-y-3">
               <h3 className="text-lg font-semibold">Informazioni</h3>
               <div className="space-y-2">
+                {product.category && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Tag className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">Categoria:</span>
+                    <span className="text-gray-600">
+                      {PRODUCT_CATEGORIES.find((c) => c.value === product.category)
+                        ?.label ?? product.category}
+                    </span>
+                  </div>
+                )}
+                {product.type && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Package className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">Tipo:</span>
+                    <span className="text-gray-600">{product.type}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 text-sm">
                   <Warehouse className="h-4 w-4 text-gray-500" />
                   <span className="font-medium">Magazzino:</span>
@@ -700,6 +782,22 @@ function DrawerProduct({
                     <span className="font-medium">Barcode:</span>
                     <span className="text-gray-600 font-mono">
                       {product.barcode}
+                    </span>
+                  </div>
+                )}
+                {product.administrativeStatus && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-medium">Stato amministrativo:</span>
+                    <span className="text-gray-600">
+                      {product.administrativeStatus}
+                    </span>
+                  </div>
+                )}
+                {product.registrationNumber && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-medium">N. registrazione:</span>
+                    <span className="text-gray-600 font-mono">
+                      {product.registrationNumber}
                     </span>
                   </div>
                 )}
@@ -1385,7 +1483,7 @@ function DrawerProduct({
               Aggiorna le informazioni del prodotto
             </SheetDescription>
           </SheetHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-y-auto max-h-[70vh] pr-2">
             <div className="space-y-2">
               <Label htmlFor="product-name">
                 Nome <span className="text-red-500">*</span>
@@ -1395,6 +1493,15 @@ function DrawerProduct({
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
                 placeholder="Nome del prodotto"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="product-sku">SKU / Codice magazzino</Label>
+              <Input
+                id="product-sku"
+                value={productSku}
+                onChange={(e) => setProductSku(e.target.value)}
+                placeholder="SKU-001"
               />
             </div>
             <div className="space-y-2">
@@ -1413,8 +1520,102 @@ function DrawerProduct({
                 id="product-barcode"
                 value={productBarcode}
                 onChange={(e) => setProductBarcode(e.target.value)}
-                placeholder="Codice a barre"
+                placeholder="8001234567890"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="product-category">Categoria</Label>
+              <Select
+                value={productCategory || undefined}
+                onValueChange={(v) => setProductCategory(v)}
+              >
+                <SelectTrigger id="product-category">
+                  <SelectValue placeholder="Seleziona categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRODUCT_CATEGORIES.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="product-type">Tipo</Label>
+              <Input
+                id="product-type"
+                value={productType}
+                onChange={(e) => setProductType(e.target.value)}
+                placeholder="es. Generico"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="product-administrative-status">
+                Stato amministrativo
+              </Label>
+              <Input
+                id="product-administrative-status"
+                value={productAdministrativeStatus}
+                onChange={(e) =>
+                  setProductAdministrativeStatus(e.target.value)
+                }
+                placeholder="es. Attivo"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="product-registration-number">
+                Numero di registrazione
+              </Label>
+              <Input
+                id="product-registration-number"
+                value={productRegistrationNumber}
+                onChange={(e) =>
+                  setProductRegistrationNumber(e.target.value)
+                }
+                placeholder="es. 12345"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="product-label-url">URL etichetta</Label>
+              <Input
+                id="product-label-url"
+                type="url"
+                value={productLabelUrl}
+                onChange={(e) => setProductLabelUrl(e.target.value)}
+                placeholder="https://example.com/label.pdf"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="product-label-metadata">
+                Label metadata (JSON)
+              </Label>
+              <Textarea
+                id="product-label-metadata"
+                value={productLabelMetadataJson}
+                onChange={(e) => setProductLabelMetadataJson(e.target.value)}
+                placeholder='{}'
+                rows={3}
+                className="font-mono text-xs"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="product-warehouse">Magazzino</Label>
+              <Select
+                value={productWarehouseId || undefined}
+                onValueChange={(v) => setProductWarehouseId(v)}
+              >
+                <SelectTrigger id="product-warehouse">
+                  <SelectValue placeholder="Seleziona magazzino" />
+                </SelectTrigger>
+                <SelectContent>
+                  {warehouses.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <SheetFooter>

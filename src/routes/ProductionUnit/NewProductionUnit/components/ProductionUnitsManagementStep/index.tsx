@@ -67,7 +67,7 @@ const ProductionUnitsManagementStep: React.FC<
   onPrevious,
 }) => {
   const [editingUnit, setEditingUnit] = useState<ProductionUnitInput | null>(
-    null
+    null,
   );
   const [showForm, setShowForm] = useState(false);
 
@@ -172,7 +172,7 @@ const ProductionUnitsManagementStep: React.FC<
                 unit.totalAreaHa ??
                 Array.from(unit.allocations.values()).reduce(
                   (sum, area) => sum + area,
-                  0
+                  0,
                 );
               const issues = unitIssuesMap.get(unit.id) ?? [];
 
@@ -323,7 +323,7 @@ const ProductionUnitForm: React.FC<ProductionUnitFormProps> = ({
       (variety) =>
         variety.species.toLowerCase().includes(query) ||
         variety.cropType.toLowerCase().includes(query) ||
-        variety.code.toLowerCase().includes(query)
+        variety.code.toLowerCase().includes(query),
     );
   }, [cropVarieties, cropSearchQuery]);
 
@@ -457,14 +457,16 @@ const ProductionUnitForm: React.FC<ProductionUnitFormProps> = ({
               </h4>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="text-sm font-medium">Data Semina</label>
+                  <label className="text-sm font-medium">
+                    Data Semina o impianto
+                  </label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
                           "w-full justify-start text-left font-normal mt-1",
-                          !effectiveSowingDate && "text-muted-foreground"
+                          !effectiveSowingDate && "text-muted-foreground",
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -504,7 +506,7 @@ const ProductionUnitForm: React.FC<ProductionUnitFormProps> = ({
                         variant="outline"
                         className={cn(
                           "w-full justify-start text-left font-normal mt-1",
-                          !effectiveFloweringDate && "text-muted-foreground"
+                          !effectiveFloweringDate && "text-muted-foreground",
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -544,7 +546,7 @@ const ProductionUnitForm: React.FC<ProductionUnitFormProps> = ({
                         variant="outline"
                         className={cn(
                           "w-full justify-start text-left font-normal mt-1",
-                          !effectiveHarvestingDate && "text-muted-foreground"
+                          !effectiveHarvestingDate && "text-muted-foreground",
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -656,7 +658,7 @@ const ProductionUnitForm: React.FC<ProductionUnitFormProps> = ({
                 (isAllocated ? allocatedArea : 0);
               const availableArea = Math.max(
                 maxArea - alreadyAllocatedByOthers,
-                0
+                0,
               );
 
               return (
@@ -664,7 +666,7 @@ const ProductionUnitForm: React.FC<ProductionUnitFormProps> = ({
                   key={fieldId}
                   className={cn(
                     "cursor-pointer transition-all",
-                    isAllocated && "ring-2 ring-green-500 bg-green-50"
+                    isAllocated && "ring-2 ring-green-500 bg-green-50",
                   )}
                 >
                   <CardContent className="pt-4">
@@ -674,7 +676,7 @@ const ProductionUnitForm: React.FC<ProductionUnitFormProps> = ({
                         onCheckedChange={() =>
                           toggleFieldAllocation(
                             fieldId,
-                            Math.min(availableArea, maxArea)
+                            Math.min(availableArea, maxArea),
                           )
                         }
                       />

@@ -71,6 +71,8 @@ import { ImportMethodPolicy, type ImportMethod } from "./importMethod";
 import { dosageJobStateSynchronizer } from "./jobStateSynchronizer";
 import { useUserId } from "@/contexts/UserIdContext";
 import { LiveLogEventCard } from "@/components/organism/LiveLogEventCard";
+import { useDosageWizard } from "./wizard/useDosageWizard";
+import { DosageStepperIndicator } from "./wizard/DosageStepperIndicator";
 class DosageJobDetailsManager {
   public async load(job: DosageJob): Promise<DosageJob> {
     if (job.state === "completed" && job.result) {
@@ -818,6 +820,12 @@ export default function DosageManager() {
   const [endAt, setEndAt] = useState<string>("");
 
   const editableTableRef = useRef<EditableTableRef>(null);
+
+  const wizard = useDosageWizard({
+    hasCompany: selectedCompanyIds.length > 0,
+    hasUnits: selectedUnitIds.length > 0,
+    hasProducts: products.length > 0,
+  });
 
   const [jobs, setJobs] = useState<DosageJob[]>([]);
   const [selectedJob, setSelectedJob] = useState<DosageJob | null>(null);
@@ -2312,39 +2320,60 @@ export default function DosageManager() {
 
   return (
     <div className="flex min-h-svh flex-col">
-      <PageHeader
-        className="fixed top-0 right-0 z-30 bg-white"
-        style={{
-          left: isMobile
-            ? 0
-            : sidebarState === "collapsed"
-              ? "calc(var(--sidebar-width-icon) + 1rem)"
-              : "var(--sidebar-width)",
-        }}
-        title="Genera Dosaggi"
-        totalItems={totalUnits}
-        filteredItems={filteredUnits.length}
-      >
-        <Button
-          variant={isHistoryPage ? "default" : "ghost"}
-          onClick={historyButtonAction}
-          className={
-            isHistoryPage
-              ? "gap-2 bg-blue-600 text-white hover:bg-blue-700"
-              : "gap-2 text-neutral-500 hover:text-neutral-700"
-          }
+      {currentPage === "manage" ? (
+        <div
+          className="fixed top-0 right-0 z-30 bg-white flex-shrink-0 px-4 md:px-6 pt-4 pb-0"
+          style={{
+            left: isMobile
+              ? 0
+              : sidebarState === "collapsed"
+                ? "calc(var(--sidebar-width-icon) + 1rem)"
+                : "var(--sidebar-width)",
+          }}
         >
-          {isHistoryPage ? (
+          <div className="flex items-center justify-between mb-2">
+            <DosageStepperIndicator
+              currentStep={wizard.currentStep}
+              onStepClick={wizard.goToStep}
+              canNavigateTo={wizard.canNavigateTo}
+            />
+            <Button
+              variant="ghost"
+              onClick={historyButtonAction}
+              className="gap-2 text-neutral-500 hover:text-neutral-700 flex-shrink-0"
+            >
+              <Clock className="h-4 w-4" />
+              <span className="hidden md:inline">{historyButtonLabel}</span>
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <PageHeader
+          className="fixed top-0 right-0 z-30 bg-white"
+          style={{
+            left: isMobile
+              ? 0
+              : sidebarState === "collapsed"
+                ? "calc(var(--sidebar-width-icon) + 1rem)"
+                : "var(--sidebar-width)",
+          }}
+          title="Genera Dosaggi"
+          totalItems={totalUnits}
+          filteredItems={filteredUnits.length}
+        >
+          <Button
+            variant="default"
+            onClick={historyButtonAction}
+            className="gap-2 bg-blue-600 text-white hover:bg-blue-700"
+          >
             <ArrowLeft className="h-4 w-4" />
-          ) : (
-            <Clock className="h-4 w-4" />
-          )}
-          <span>{historyButtonLabel}</span>
-        </Button>
-      </PageHeader>
+            <span>{historyButtonLabel}</span>
+          </Button>
+        </PageHeader>
+      )}
 
       <div
-        className="flex-1 overflow-auto px-4 md:px-6 pt-32 md:pt-28"
+        className={`flex-1 overflow-auto px-4 md:px-6 ${currentPage === "manage" ? "pt-28 md:pt-24" : "pt-32 md:pt-28"}`}
         style={{
           paddingBottom: isMobile
             ? Math.max(footerHeight + mobileBottomOccupied + 24, 160) // evita overlay con bottom navbar + footer
@@ -2406,6 +2435,16 @@ export default function DosageManager() {
             setStartAt={setStartAt}
             endAt={endAt}
             setEndAt={setEndAt}
+            onCalculateDosages={handleCalculateDosages}
+            isSubmitting={isSubmitting}
+            isCalculateDisabled={isCalculateDisabled}
+            selectionSummary={selectionSummary}
+            selectedCompanyNames={selectedCompanyNames}
+            orchestratorSummary={orchestratorSummary}
+            isMobile={isMobile}
+            sidebarState={sidebarState}
+            mobileBottomOccupied={mobileBottomOccupied}
+            wizard={wizard}
           />
         ) : (
           <HistorySection
@@ -2424,72 +2463,67 @@ export default function DosageManager() {
         )}
       </div>
 
-      <div
-        ref={footerRef}
-        className="fixed bottom-0 right-0 z-40 flex-shrink-0  bg-white/95 backdrop-blur px-4 md:px-6 py-4 mb-4 shadow-md rounded-md"
-        style={{
-          bottom: isMobile ? mobileBottomOccupied : undefined,
-          left: isMobile
-            ? 0
-            : sidebarState === "collapsed"
-              ? "calc(var(--sidebar-width-icon) + 1rem)"
-              : "var(--sidebar-width)",
-          marginBottom: isMobile ? 0 : undefined,
-        }}
-      >
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="hidden md:block">
-            <p className="text-sm text-neutral-500">
-              {selectedCompanyNames.length > 0
-                ? `Aziend${
-                    selectedCompanyNames.length === 1 ? "a" : "e"
-                  } selezionat${
-                    selectedCompanyNames.length === 1 ? "a" : "e"
-                  }: ${selectedCompanyNames.join(", ")}`
-                : "Nessuna azienda selezionata"}
-            </p>
-            <p className="text-sm text-neutral-500">
-              Strategia selezionata: {selectedStrategyOption.label}
-            </p>
-            <p className="text-sm text-neutral-500">
-              Orchestrator: {orchestratorSummary.objectiveLabel} •{" "}
-              {orchestratorSummary.intensityLabel} • cat.{" "}
-              {orchestratorSummary.categoriesCount} • target{" "}
-              {orchestratorSummary.targetsCount} • LLM{" "}
-              {orchestratorSummary.llm ? "ON" : "OFF"}
-            </p>
-            <p className="text-base font-medium text-neutral-900">
-              {selectionSummary}
-            </p>
+      {/* Footer fisso solo per la pagina History - il wizard ManageSection ha il suo footer */}
+      {currentPage === "history" && (
+        <div
+          ref={footerRef}
+          className="fixed bottom-0 right-0 z-40 flex-shrink-0  bg-white/95 backdrop-blur px-4 md:px-6 py-4 mb-4 shadow-md rounded-md"
+          style={{
+            bottom: isMobile ? mobileBottomOccupied : undefined,
+            left: isMobile
+              ? 0
+              : sidebarState === "collapsed"
+                ? "calc(var(--sidebar-width-icon) + 1rem)"
+                : "var(--sidebar-width)",
+            marginBottom: isMobile ? 0 : undefined,
+          }}
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="hidden md:block">
+              <p className="text-sm text-neutral-500">
+                {selectedCompanyNames.length > 0
+                  ? `Aziend${
+                      selectedCompanyNames.length === 1 ? "a" : "e"
+                    } selezionat${
+                      selectedCompanyNames.length === 1 ? "a" : "e"
+                    }: ${selectedCompanyNames.join(", ")}`
+                  : "Nessuna azienda selezionata"}
+              </p>
+              <p className="text-sm text-neutral-500">
+                Strategia selezionata: {selectedStrategyOption.label}
+              </p>
+              <p className="text-sm text-neutral-500">
+                Orchestrator: {orchestratorSummary.objectiveLabel} •{" "}
+                {orchestratorSummary.intensityLabel} • cat.{" "}
+                {orchestratorSummary.categoriesCount} • target{" "}
+                {orchestratorSummary.targetsCount} • LLM{" "}
+                {orchestratorSummary.llm ? "ON" : "OFF"}
+              </p>
+              <p className="text-base font-medium text-neutral-900">
+                {selectionSummary}
+              </p>
+            </div>
+            <Button
+              size="lg"
+              onClick={handleCalculateDosages}
+              disabled={isCalculateDisabled}
+              className="gap-2 w-full md:w-auto min-w-48 md:self-end"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Calcolo...</span>
+                </>
+              ) : (
+                <>
+                  <Calculator className="h-4 w-4" />
+                  <span>Calcola Dosaggi</span>
+                </>
+              )}
+            </Button>
           </div>
-          <Button
-            size="lg"
-            onClick={handleCalculateDosages}
-            disabled={isCalculateDisabled}
-            className="gap-2 w-full md:w-auto min-w-48 md:self-end"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Calcolo...</span>
-              </>
-            ) : (
-              <>
-                <Calculator className="h-4 w-4" />
-                <span>Calcola Dosaggi</span>
-              </>
-            )}
-          </Button>
         </div>
-      </div>
-
-      <JobDetails
-        selectedJob={selectedJob}
-        onSelectedJobChange={setSelectedJob}
-        jobDetailsLoading={isJobDetailsLoading}
-      />
-
-      {/* Live Logs Drawer */}
+      )}
 
       <JobDetails
         selectedJob={selectedJob}

@@ -6,6 +6,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AlertCircle,
   ArrowLeft,
   ArrowRight,
@@ -54,6 +61,15 @@ function toReviewRows(rows: ProductImportPreviewRow[]): ReviewRowState[] {
         : null,
   }));
 }
+
+const PRODUCT_CATEGORIES = [
+  { value: "FERTILIZER", label: "Fertilizzante" },
+  { value: "PESTICIDE", label: "Fitosanitario" },
+  { value: "SEED", label: "Seme" },
+  { value: "HARVEST", label: "Raccolto" },
+  { value: "EQUIPMENT", label: "Attrezzatura" },
+  { value: "PACKAGING", label: "Imballaggio" },
+];
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -109,16 +125,26 @@ export default function ImportedProductsPanel({
   const [fitosanitariRecords, setFitosanitariRecords] = useState<
     FitosanitariDatasetRecord[]
   >([]);
+  const [fitosanitariLoading, setFitosanitariLoading] = useState(false);
+
+  /** Rows where user explicitly cleared the registry match. */
+  const [deselectedRegistryRowIds, setDeselectedRegistryRowIds] = useState<
+    Set<string>
+  >(() => new Set());
 
   useEffect(() => {
     if (step !== "review") return;
     let active = true;
+    setFitosanitariLoading(true);
     getAllFitosanitariRecords()
       .then((records) => {
         if (active) setFitosanitariRecords(records);
       })
       .catch((err) => {
         if (active) console.error("Error loading fitosanitari registry:", err);
+      })
+      .finally(() => {
+        if (active) setFitosanitariLoading(false);
       });
     return () => {
       active = false;
@@ -275,9 +301,40 @@ export default function ImportedProductsPanel({
         ),
       );
       setSelectProductRowId(null);
+      setDeselectedRegistryRowIds((prev) => {
+        if (!prev.has(rowId)) return prev;
+        const next = new Set(prev);
+        next.delete(rowId);
+        return next;
+      });
     },
     [],
   );
+
+  const handleDeselectRegistry = useCallback((rowId: string) => {
+    setDeselectedRegistryRowIds((prev) => {
+      if (prev.has(rowId)) return prev;
+      const next = new Set(prev);
+      next.add(rowId);
+      return next;
+    });
+    setReviewRows((prev) =>
+      prev.map((r) =>
+        r.id === rowId ? { ...r, registrationNumber: "" } : r,
+      ),
+    );
+    setSelectProductRowId(null);
+  }, []);
+
+  const handleOpenRegistrySelect = useCallback((rowId: string) => {
+    setDeselectedRegistryRowIds((prev) => {
+      if (!prev.has(rowId)) return prev;
+      const next = new Set(prev);
+      next.delete(rowId);
+      return next;
+    });
+    setSelectProductRowId(rowId);
+  }, []);
 
   const acceptedCount = useMemo(
     () => reviewRows.filter((r) => r.accepted).length,
@@ -477,7 +534,7 @@ export default function ImportedProductsPanel({
         <div className="min-w-max">
           {/* Intestazione */}
           <div
-            className={`grid gap-x-2 px-2 py-1.5 bg-gray-100 rounded-t-md border border-b-0 border-gray-200 text-xs font-semibold text-gray-600 sticky top-0 z-10 ${hasAnyConverted ? "grid-cols-[40px_180px_180px_90px_70px_140px_120px_120px_160px]" : "grid-cols-[40px_180px_180px_90px_70px_120px_120px_160px]"}`}
+            className={`grid gap-x-2 px-2 py-1.5 bg-gray-100 rounded-t-md border border-b-0 border-gray-200 text-xs font-semibold text-gray-600 sticky top-0 z-10 ${hasAnyConverted ? "grid-cols-[40px_180px_180px_110px_90px_70px_140px_120px_120px_160px]" : "grid-cols-[40px_180px_180px_110px_90px_70px_120px_120px_160px]"}`}
           >
             <div
               className="flex items-center justify-center"
@@ -487,6 +544,7 @@ export default function ImportedProductsPanel({
             </div>
             <div>Nome prodotto</div>
             <div>Prodotto estratto</div>
+            <div>Categoria</div>
             <div>Quantità</div>
             <div>U.M.</div>
             {hasAnyConverted && <div>Qtà conv.</div>}
@@ -511,13 +569,16 @@ export default function ImportedProductsPanel({
                 nameMatchesRegistry={fitosanitariProductNamesSet.has(
                   row.name?.trim().toLowerCase() ?? "",
                 )}
+                isDeselected={deselectedRegistryRowIds.has(row.id)}
                 isSelectMode={selectProductRowId === row.id}
+                fitosanitariLoading={fitosanitariLoading}
                 fitosanitariRecords={fitosanitariRecords}
                 fitosanitariOptions={fitosanitariOptionsForReview}
                 getFitosanitarioRecordByIndex={getFitosanitarioRecordByIndex}
                 onSelectFromRegistry={handleSelectFromRegistry}
+                onDeselectRegistry={handleDeselectRegistry}
                 onCloseSelect={() => setSelectProductRowId(null)}
-                onOpenSelect={() => setSelectProductRowId(row.id)}
+                onOpenSelect={() => handleOpenRegistrySelect(row.id)}
               />
             ))}
           </div>
@@ -571,7 +632,9 @@ interface ReviewRowProps {
   ) => void;
   onUpdateQuantity: (id: string, quantity: number) => void;
   nameMatchesRegistry: boolean;
+  isDeselected: boolean;
   isSelectMode: boolean;
+  fitosanitariLoading: boolean;
   fitosanitariRecords: FitosanitariDatasetRecord[];
   fitosanitariOptions: MultiSearchableSelectOption[];
   getFitosanitarioRecordByIndex: (
@@ -581,6 +644,7 @@ interface ReviewRowProps {
     rowId: string,
     record: FitosanitariDatasetRecord,
   ) => void;
+  onDeselectRegistry: (rowId: string) => void;
   onCloseSelect: () => void;
   onOpenSelect: () => void;
 }
@@ -593,11 +657,14 @@ function ReviewRow({
   onUpdateField,
   onUpdateQuantity,
   nameMatchesRegistry,
+  isDeselected,
   isSelectMode,
+  fitosanitariLoading,
   fitosanitariRecords,
   fitosanitariOptions,
   getFitosanitarioRecordByIndex,
   onSelectFromRegistry,
+  onDeselectRegistry,
   onCloseSelect,
   onOpenSelect,
 }: ReviewRowProps) {
@@ -613,13 +680,19 @@ function ReviewRow({
     importSource === "invoice" ? "invoiceDate" : "ddtDate"
   ) as keyof ProductImportPreviewRow;
 
-  const shouldShowRegistrySelect = isSelectMode || nameMatchesRegistry;
+  const shouldShowRegistrySelect =
+    (isSelectMode || nameMatchesRegistry) && !isDeselected;
+
+  /** Show spinner when registry is loading and product is likely a phytosanitary */
+  const likelyPhytosanitary =
+    !!row.registrationNumber || row.category === "PESTICIDE";
+  const showRegistrySpinner = fitosanitariLoading && likelyPhytosanitary;
 
   return (
     <div
       className={`grid gap-x-2 px-2 py-2 items-start transition-colors ${
         isRejected ? "bg-gray-50 opacity-50" : "bg-white hover:bg-gray-50/50"
-      } ${hasAnyConverted ? "grid-cols-[40px_180px_180px_90px_70px_140px_120px_120px_160px]" : "grid-cols-[40px_180px_180px_90px_70px_120px_120px_160px]"}`}
+      } ${hasAnyConverted ? "grid-cols-[40px_180px_180px_110px_90px_70px_140px_120px_120px_160px]" : "grid-cols-[40px_180px_180px_110px_90px_70px_120px_120px_160px]"}`}
     >
       {/* Col 1 — Accept/Reject */}
       <div className="flex items-center justify-center pt-1">
@@ -642,64 +715,92 @@ function ReviewRow({
         </Button>
       </div>
 
-      {/* Col 2 — Nome prodotto (read-only from document) */}
-      <div className="flex items-start pt-1 min-w-0">
-        {row.productNameExtracted ? (
+      {/* Col 2 — Nome prodotto (editable) */}
+      <div className="min-w-0">
+        <Input
+          value={row.name}
+          onChange={(e) => onUpdateField(row.id, "name", e.target.value)}
+          disabled={isRejected}
+          className="h-7 text-xs"
+          placeholder="Nome prodotto"
+        />
+        {row.productNameExtracted && row.productNameExtracted !== row.name && (
           <Badge
             variant="secondary"
-            className="text-xs font-normal max-w-full truncate block"
+            className="text-[10px] font-normal max-w-full truncate block mt-1"
             title={row.productNameExtracted}
           >
             {row.productNameExtracted}
           </Badge>
-        ) : (
-          <span className="text-xs text-muted-foreground italic">—</span>
         )}
       </div>
 
-      {/* Col 3 — Prodotto estratto: select if matched, otherwise input + "+" */}
+      {/* Col 3 — Prodotto fitosanitario: select from registry, spinner, or "+" button */}
       <div className="min-w-[180px]">
-        {shouldShowRegistrySelect ? (
+        {showRegistrySpinner ? (
+          <div className="flex items-center gap-2 h-7 px-2">
+            <Spinner size={14} />
+            <span className="text-xs text-muted-foreground">
+              Caricamento registro...
+            </span>
+          </div>
+        ) : shouldShowRegistrySelect ? (
           <div className="space-y-1">
-            <MultiSearchableSelect
-              value={
-                (() => {
-                  const idx = fitosanitariRecords.findIndex(
-                    (r) =>
-                      r.productName?.trim().toLowerCase() ===
-                      (row.name ?? "").trim().toLowerCase(),
-                  );
-                  return idx >= 0 ? [String(idx)] : [];
-                })()
-              }
-              options={fitosanitariOptions}
-              placeholder="Cerca per nome, sostanza attiva o n. registrazione..."
-              searchPlaceholder="Nome, sostanza attiva o n. registrazione"
-              emptyMessage="Nessun prodotto trovato"
-              disabled={isRejected}
-              maxVisibleBadges={1}
-              onChange={(next) => {
-                const last = next.length ? next[next.length - 1] : null;
-                const record = last
-                  ? getFitosanitarioRecordByIndex(last)
-                  : null;
-                if (record) onSelectFromRegistry(row.id, record);
-              }}
-              onOpenChange={(open) => {
-                if (!open) onCloseSelect();
-              }}
-            />
+            <div className="flex items-center gap-1">
+              <div className="flex-1 min-w-0">
+                <MultiSearchableSelect
+                  value={
+                    (() => {
+                      const idx = fitosanitariRecords.findIndex(
+                        (r) =>
+                          r.productName?.trim().toLowerCase() ===
+                          (row.name ?? "").trim().toLowerCase(),
+                      );
+                      return idx >= 0 ? [String(idx)] : [];
+                    })()
+                  }
+                  options={fitosanitariOptions}
+                  placeholder="Cerca fitosanitario..."
+                  searchPlaceholder="Nome, sostanza attiva o n. registrazione"
+                  emptyMessage="Nessun prodotto trovato"
+                  disabled={isRejected}
+                  maxVisibleBadges={1}
+                  onChange={(next) => {
+                    if (next.length === 0) {
+                      onDeselectRegistry(row.id);
+                      return;
+                    }
+                    const last = next[next.length - 1];
+                    const record = getFitosanitarioRecordByIndex(last);
+                    if (record) onSelectFromRegistry(row.id, record);
+                  }}
+                  onOpenChange={(open) => {
+                    if (!open) onCloseSelect();
+                  }}
+                />
+              </div>
+              {!isRejected && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 shrink-0 text-muted-foreground hover:text-red-500"
+                  onClick={() => onDeselectRegistry(row.id)}
+                  title="Rimuovi prodotto fitosanitario"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex items-center gap-1">
-            <Input
-              value={row.name}
-              onChange={(e) => onUpdateField(row.id, "name", e.target.value)}
-              disabled={isRejected}
-              className="h-7 text-xs flex-1 min-w-0"
-              placeholder="Nome prodotto"
-            />
-            {!nameMatchesRegistry && !isRejected && (
+            <span className="text-xs text-muted-foreground flex-1 truncate">
+              {row.registrationNumber
+                ? `N. ${row.registrationNumber}`
+                : "Nessun fitosanitario"}
+            </span>
+            {!isRejected && (
               <Button
                 type="button"
                 variant="ghost"
@@ -715,7 +816,27 @@ function ReviewRow({
         )}
       </div>
 
-      {/* Col 4 — Quantità (virgola o punto come decimale) */}
+      {/* Col 4 — Categoria */}
+      <div>
+        <Select
+          value={row.category || "PESTICIDE"}
+          onValueChange={(val) => onUpdateField(row.id, "category", val)}
+          disabled={isRejected}
+        >
+          <SelectTrigger className="h-7 text-xs px-2">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PRODUCT_CATEGORIES.map((cat) => (
+              <SelectItem key={cat.value} value={cat.value} className="text-xs">
+                {cat.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Col 5 — Quantità (virgola o punto come decimale) */}
       <div>
         <Input
           type="text"
@@ -727,7 +848,7 @@ function ReviewRow({
         />
       </div>
 
-      {/* Col 5 — Unità di misura */}
+      {/* Col 6 — Unità di misura */}
       <div>
         <Input
           value={row.unitOfMeasureQuantity}
@@ -739,7 +860,7 @@ function ReviewRow({
         />
       </div>
 
-      {/* Col 6 — Quantità convertita (opzionale) */}
+      {/* Col 7 — Quantità convertita (opzionale) */}
       {hasAnyConverted && (
         <div className="flex flex-col gap-1 pt-0.5">
           {hasConverted ? (
@@ -752,7 +873,7 @@ function ReviewRow({
         </div>
       )}
 
-      {/* Col 7 — Codice DDT / Fattura */}
+      {/* Col 8 — Codice DDT / Fattura */}
       <div>
         <Input
           value={docCode ?? ""}
@@ -763,7 +884,7 @@ function ReviewRow({
         />
       </div>
 
-      {/* Col 8 — Data */}
+      {/* Col 9 — Data */}
       <div>
         <Input
           value={docDate ?? ""}
@@ -774,7 +895,7 @@ function ReviewRow({
         />
       </div>
 
-      {/* Col 9 — Fornitore */}
+      {/* Col 10 — Fornitore */}
       <div>
         <Input
           value={row.supplierName ?? ""}

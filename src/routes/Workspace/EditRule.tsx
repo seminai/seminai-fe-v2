@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowLeft, FileUp, X, FileText, ExternalLink } from "lucide-react";
+import { ArrowLeft, Eye, FileUp, X, FileText, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,7 @@ import {
   type UpdateRuleRequest,
 } from "@/types/workspace";
 import { Spinner } from "@/components/ui/spinner";
+import { PdfPreviewSheet } from "@/components/PdfPreviewSheet";
 import { fetchDisciplinariBdf, type DisciplinareBdfRow } from "@/utils/disciplinariBdf";
 
 const formSchema = z.object({
@@ -89,6 +90,18 @@ export default function EditRule() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [disciplinariList, setDisciplinariList] = useState<DisciplinareBdfRow[]>([]);
   const [disciplinariLoading, setDisciplinariLoading] = useState(false);
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+
+  const pdfBlobUrl = useMemo(() => {
+    if (!pdfFile) return null;
+    return URL.createObjectURL(pdfFile);
+  }, [pdfFile]);
+
+  useEffect(() => {
+    return () => {
+      if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+    };
+  }, [pdfBlobUrl]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -590,20 +603,32 @@ export default function EditRule() {
                   }}
                 />
                 {/* Show existing PDF if present and no new file selected */}
-                {rule.pdfUrl && !pdfFile && (
+                {rule.pdfFileUrl && !pdfFile && (
                   <div className="flex items-center gap-3 p-3 rounded-lg border bg-green-50">
                     <FileText className="w-5 h-5 text-red-500 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">PDF attuale caricato</p>
+                      <p className="text-sm font-medium truncate">
+                        {rule.pdfFileName || "PDF caricato"}
+                      </p>
                       <a
-                        href={rule.pdfUrl}
+                        href={rule.pdfFileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-blue-600 hover:underline inline-flex items-center gap-1"
                       >
-                        Visualizza PDF <ExternalLink className="w-3 h-3" />
+                        Apri in nuova tab <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0"
+                      onClick={() => setPdfPreviewOpen(true)}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      Anteprima
+                    </Button>
                     <Button
                       type="button"
                       variant="outline"
@@ -626,6 +651,16 @@ export default function EditRule() {
                     <Button
                       type="button"
                       variant="ghost"
+                      size="sm"
+                      className="shrink-0"
+                      onClick={() => setPdfPreviewOpen(true)}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      Anteprima
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
                       size="icon"
                       className="shrink-0"
                       onClick={() => {
@@ -636,7 +671,7 @@ export default function EditRule() {
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
-                ) : !rule.pdfUrl ? (
+                ) : !rule.pdfFileUrl ? (
                   <Button
                     type="button"
                     variant="outline"
@@ -648,6 +683,13 @@ export default function EditRule() {
                   </Button>
                 ) : null}
               </div>
+
+              <PdfPreviewSheet
+                open={pdfPreviewOpen}
+                onOpenChange={setPdfPreviewOpen}
+                pdfUrl={pdfBlobUrl || rule.pdfFileUrl || ""}
+                fileName={pdfFile?.name || rule.pdfFileName || undefined}
+              />
             </div>
 
             {/* Opzioni */}

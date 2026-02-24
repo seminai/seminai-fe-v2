@@ -631,14 +631,11 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
     // Horizontal Layout
     // ─────────────────────────────────────────────────────────────────────────
 
-    const isFlexLayout = className?.includes("flex flex-col");
-
     return (
       <div
         data-slot="table-wrapper"
         className={cn(
-          "relative w-full rounded-lg bg-white",
-          renderCustomBody && "h-full flex flex-col",
+          "relative w-full rounded-lg bg-white flex flex-col h-full",
           className,
         )}
       >
@@ -700,8 +697,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
         ) : (
           <div
             className={cn(
-              "w-full overflow-auto",
-              isFlexLayout ? "flex-1 min-h-0" : "max-h-[calc(100vh-300px)]",
+              "w-full overflow-auto flex-1 min-h-0",
             )}
           >
             <table

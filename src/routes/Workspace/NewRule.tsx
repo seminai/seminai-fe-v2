@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowLeft, FileUp, X, FileText } from "lucide-react";
+import { ArrowLeft, Eye, FileUp, X, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,7 @@ import {
 import { useCreateRule } from "@/hooks/useWorkspaces";
 import { useWorkspaceContext } from "@/contexts/WorkspaceContext";
 import { RuleCategory, type CreateRuleRequest } from "@/types/workspace";
+import { PdfPreviewSheet } from "@/components/PdfPreviewSheet";
 import { fetchDisciplinariBdf, type DisciplinareBdfRow } from "@/utils/disciplinariBdf";
 
 const formSchema = z.object({
@@ -71,6 +72,18 @@ export default function NewRule() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [disciplinariList, setDisciplinariList] = useState<DisciplinareBdfRow[]>([]);
   const [disciplinariLoading, setDisciplinariLoading] = useState(false);
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+
+  const pdfBlobUrl = useMemo(() => {
+    if (!pdfFile) return null;
+    return URL.createObjectURL(pdfFile);
+  }, [pdfFile]);
+
+  useEffect(() => {
+    return () => {
+      if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+    };
+  }, [pdfBlobUrl]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -412,6 +425,16 @@ export default function NewRule() {
                     <Button
                       type="button"
                       variant="ghost"
+                      size="sm"
+                      className="shrink-0"
+                      onClick={() => setPdfPreviewOpen(true)}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      Anteprima
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
                       size="icon"
                       className="shrink-0"
                       onClick={() => {
@@ -432,6 +455,15 @@ export default function NewRule() {
                     <FileUp className="w-5 h-5 mr-2" />
                     Seleziona PDF
                   </Button>
+                )}
+
+                {pdfBlobUrl && (
+                  <PdfPreviewSheet
+                    open={pdfPreviewOpen}
+                    onOpenChange={setPdfPreviewOpen}
+                    pdfUrl={pdfBlobUrl}
+                    fileName={pdfFile?.name}
+                  />
                 )}
               </div>
 

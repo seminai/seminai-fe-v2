@@ -2013,7 +2013,7 @@ export default function ProductionUnit(): React.ReactElement {
           <>
             <TabsContent
               value="table"
-              className="flex-1 overflow-auto px-6 pb-6 mt-0"
+              className="flex-1 min-h-0 px-6 pb-6 mt-0"
             >
               <EditableTable
                 columns={columns}

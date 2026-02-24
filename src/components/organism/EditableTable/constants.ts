@@ -8,7 +8,7 @@ import {
 // Column Visibility Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const MAX_VISIBLE_COLUMNS = 7;
+export const MAX_VISIBLE_COLUMNS = 8;
 export const COLUMN_VISIBILITY_STORAGE_PREFIX = "editable-table-columns-";
 
 // ─────────────────────────────────────────────────────────────────────────────

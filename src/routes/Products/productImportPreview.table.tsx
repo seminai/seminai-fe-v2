@@ -31,7 +31,7 @@ export interface ProductImportPreviewRow extends Record<string, unknown> {
 
 class ImportPreviewDefaults {
   public static readonly quantityUnit = "kg";
-  public static readonly fallbackCategory = "PHYTOSANITARY";
+  public static readonly fallbackCategory = "PESTICIDE";
 }
 
 export class ProductImportRowBuilder {
@@ -55,7 +55,9 @@ export class ProductImportRowBuilder {
         new Date().toISOString().split("T")[0],
       invoiceDate: item.invoiceDate ?? undefined,
       barcode: item.barcode ?? undefined,
-      category: item.category ?? ImportPreviewDefaults.fallbackCategory,
+      category:
+        (item.category === "PHYTOSANITARY" ? "PESTICIDE" : item.category) ??
+        ImportPreviewDefaults.fallbackCategory,
       type: item.type ?? undefined,
       description: item.description ?? undefined,
       price: item.price ?? undefined,

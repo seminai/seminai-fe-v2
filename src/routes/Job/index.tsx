@@ -51,6 +51,12 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   History,
   FileText,
   Search,
@@ -1252,7 +1258,7 @@ class JobTableRowBuilder {
       unitOfMeasureQuantity: job.unitOfMeasureQuantity,
       productName: this.productsFormatter.buildNameLabel(),
       productRegistrationNumber:
-        this.productsFormatter.buildRegistrationNumberLabel(),
+        this.jobWithRelations.products?.[0]?.registrationNumber ?? "",
       modeOfApplication: job.modeOfApplication ?? "-",
       treatedSurface: job.treatedSurface,
       avversity: job.avversity ?? "-",
@@ -1819,20 +1825,28 @@ export default function JobPage() {
 
   // Opzioni prodotti fitosanitari per le select (searchText permette di filtrare anche per principio attivo)
   const fitosanitariOptions = useMemo(() => {
-    return fitosanitariProducts.map((product) => ({
-      label: `${product.productName} (${product.registrationNumber})`,
-      value: product.registrationNumber,
-      searchText: [
-        product.productName,
-        product.registrationNumber,
-        product.activeIngredients,
-      ]
-        .filter(Boolean)
-        .join(" "),
-      productName: product.productName,
-      activeIngredients: product.activeIngredients,
-      activity: product.activity,
-    }));
+    return fitosanitariProducts.map((product) => {
+      const parts = [product.productName];
+      if (product.activeIngredients) {
+        parts.push(`[${product.activeIngredients}]`);
+      }
+      parts.push(`(${product.registrationNumber})`);
+
+      return {
+        label: parts.join(" "),
+        value: product.registrationNumber,
+        searchText: [
+          product.productName,
+          product.registrationNumber,
+          product.activeIngredients,
+        ]
+          .filter(Boolean)
+          .join(" "),
+        productName: product.productName,
+        activeIngredients: product.activeIngredients,
+        activity: product.activity,
+      };
+    });
   }, [fitosanitariProducts]);
 
   // Map per lookup veloce dei prodotti fitosanitari
@@ -1886,8 +1900,8 @@ export default function JobPage() {
       }
     });
     return Array.from(companiesMap.values()).map((company) => ({
-      label: `${company.name}`,
-      value: `company:${company.id}`,
+      label: company.name,
+      value: company.name,
       companyId: company.id,
       companyName: company.name,
       isCompany: true,
@@ -2453,172 +2467,64 @@ export default function JobPage() {
   };
 
   // Colonne per la tabella editabile (vista "Tutte")
-  // Le prime 7 colonne sono visibili di default
   const columns: EditableColumn[] = [
+    // 1. Stato - pallino colorato con tooltip
     {
       id: "isVerified",
       title: "Stato",
       type: "text",
-      width: "150px",
+      width: "60px",
       readOnly: true,
+      required: true,
       render: (_value, row) => {
         const isVerified = row._isVerifiedBoolean as boolean | undefined;
         const conformityChecked = row._conformityChecked as boolean | undefined;
 
-        // Se conformityChecked è false, mostra "Conformità non verificata"
-        if (!conformityChecked) {
-          return (
-            <Badge
-              variant="outline"
-              className="bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300"
-            >
-              Conformità N/V
-            </Badge>
-          );
-        }
+        let color: string;
+        let label: string;
 
-        // Altrimenti mostra lo stato standard
-        const isVerifiedStatus =
-          isVerified === true ? "Verificata" : "Non verificata";
+        if (!conformityChecked) {
+          color = "bg-amber-400";
+          label = "Conformità non verificata";
+        } else if (isVerified) {
+          color = "bg-green-500";
+          label = "Verificata";
+        } else {
+          color = "bg-red-500";
+          label = "Non verificata";
+        }
 
         return (
-          <Badge
-            variant={isVerified ? "default" : "destructive"}
-            className={
-              isVerified
-                ? "bg-green-500 hover:bg-green-600 text-white"
-                : "bg-red-500 hover:bg-red-600 text-white"
-            }
-          >
-            {isVerifiedStatus}
-          </Badge>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className={`inline-block h-3 w-3 rounded-full ${color} cursor-pointer`}
+                />
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p className="text-xs">{label}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         );
       },
     },
+    // 2. Data operazione
     {
-      id: "productionUnitName",
-      title: "Unità Produttiva",
-      type: "select",
-      width: "280px",
+      id: "dateOfOpeation",
+      title: "Data Operazione",
+      type: "date",
+      width: "140px",
       readOnly: false,
       required: true,
-      getOptions: (rowData) => {
-        // Filtra le unità produttive in base all'azienda selezionata
-        const selectedCompanyId =
-          (rowData._companyId as string | undefined) ||
-          (rowData._selectedCompanyForPU as string | undefined);
-
-        if (!selectedCompanyId) {
-          // Se non c'è un'azienda selezionata, mostra un messaggio
-          return [
-            {
-              label: "Seleziona prima un'azienda",
-              value: "__no_company__",
-              disabled: true,
-            },
-          ];
-        }
-
-        // Filtra le unità produttive per l'azienda selezionata
-        const filtered = productionUnitSelectOptions.filter(
-          (pu) => pu.companyId === selectedCompanyId,
-        );
-
-        if (filtered.length === 0) {
-          return [
-            {
-              label: "Nessuna unità produttiva disponibile",
-              value: "__no_units__",
-              disabled: true,
-            },
-          ];
-        }
-
-        return filtered;
-      },
-      placeholder: "Seleziona unità produttiva...",
-      enableSearch: true,
-      searchPlaceholder: "Cerca unità produttiva...",
-      emptyStateMessage: "Nessuna unità produttiva trovata",
-      onValueChange: ({ value, rowData }) => {
-        const stringValue = String(value);
-
-        // Preserva i valori del prodotto esistenti
-        const preservedProductData = {
-          productRegistrationNumber:
-            (rowData.productRegistrationNumber as string | undefined) ?? "",
-          productName: (rowData.productName as string | undefined) ?? "",
-          principioAttivo:
-            (rowData.principioAttivo as string | undefined) ?? "",
-        };
-
-        // Se il valore è vuoto o un placeholder speciale, resetta l'unità produttiva
-        if (
-          !stringValue ||
-          stringValue.trim() === "" ||
-          stringValue.startsWith("__")
-        ) {
-          return {
-            _productionUnitId: "",
-            productionUnitName: "",
-            cropName: "",
-            cropType: "",
-            sauHa: undefined,
-            treatedSurface: undefined,
-            ...preservedProductData,
-          };
-        }
-
-        // Se seleziona un'unità produttiva
-        const selectedPu = productionUnitMap.get(stringValue);
-        if (selectedPu) {
-          return {
-            _productionUnitId: selectedPu.id,
-            productionUnitName: selectedPu.name,
-            cropName: selectedPu.cropName,
-            cropType: selectedPu.cropType,
-            sauHa: selectedPu.sauHa,
-            treatedSurface: selectedPu.sauHa,
-            _companyId: selectedPu.companyId,
-            companyName: selectedPu.companyName,
-            _selectedCompanyForPU: selectedPu.companyId,
-            ...preservedProductData,
-          };
-        }
-
-        // Fallback
-        return {
-          _productionUnitId: "",
-          productionUnitName: stringValue,
-          cropName: "",
-          cropType: "",
-          sauHa: undefined,
-          treatedSurface: undefined,
-          ...preservedProductData,
-        };
-      },
-      render: (value, row) => {
-        const name =
-          (value as string) || (row.productionUnitName as string | undefined);
-        const hasCompany = Boolean(row._companyId || row._selectedCompanyForPU);
-
-        // Se ha un'unità produttiva selezionata, mostrala
-        if (name) {
-          return <span>{name}</span>;
-        }
-
-        // Se ha l'azienda ma non l'UP, mostra placeholder
-        if (hasCompany) {
-          return (
-            <span className="text-muted-foreground italic">
-              Seleziona unità produttiva...
-            </span>
-          );
-        }
-
-        return <span className="text-muted-foreground">-</span>;
+      render: (value) => {
+        if (!value) return "-";
+        const date = value instanceof Date ? value : new Date(value as string);
+        return date.toLocaleDateString("it-IT");
       },
     },
+    // 3. Azienda
     {
       id: "companyName",
       title: "Azienda",
@@ -2634,7 +2540,6 @@ export default function JobPage() {
       onValueChange: ({ value }) => {
         const stringValue = String(value);
 
-        // Se il valore è vuoto, resetta anche l'unità produttiva
         if (!stringValue || stringValue.trim() === "") {
           return {
             companyName: "",
@@ -2648,7 +2553,6 @@ export default function JobPage() {
           };
         }
 
-        // Cerca l'azienda selezionata
         const company = companySelectOptions.find(
           (c) => c.value === stringValue,
         );
@@ -2658,7 +2562,6 @@ export default function JobPage() {
             companyName: company.companyName,
             _companyId: company.companyId,
             _selectedCompanyForPU: company.companyId,
-            // Reset unità produttiva quando cambia azienda
             _productionUnitId: "",
             productionUnitName: "",
             cropName: "",
@@ -2682,11 +2585,239 @@ export default function JobPage() {
         );
       },
     },
+    // 4. Unità produttiva
+    {
+      id: "productionUnitName",
+      title: "Unità Produttiva",
+      type: "select",
+      width: "280px",
+      readOnly: false,
+      required: true,
+      getOptions: (rowData) => {
+        const selectedCompanyId =
+          (rowData._companyId as string | undefined) ||
+          (rowData._selectedCompanyForPU as string | undefined);
+
+        if (!selectedCompanyId) {
+          return [
+            {
+              label: "Seleziona prima un'azienda",
+              value: "__no_company__",
+              disabled: true,
+            },
+          ];
+        }
+
+        const filtered = productionUnitSelectOptions.filter(
+          (pu) => pu.companyId === selectedCompanyId,
+        );
+
+        if (filtered.length === 0) {
+          return [
+            {
+              label: "Nessuna unità produttiva disponibile",
+              value: "__no_units__",
+              disabled: true,
+            },
+          ];
+        }
+
+        return filtered;
+      },
+      placeholder: "Seleziona unità produttiva...",
+      enableSearch: true,
+      searchPlaceholder: "Cerca unità produttiva...",
+      emptyStateMessage: "Nessuna unità produttiva trovata",
+      onValueChange: ({ value, rowData }) => {
+        const stringValue = String(value);
+
+        const preservedProductData = {
+          productRegistrationNumber:
+            (rowData.productRegistrationNumber as string | undefined) ?? "",
+          productName: (rowData.productName as string | undefined) ?? "",
+          principioAttivo:
+            (rowData.principioAttivo as string | undefined) ?? "",
+        };
+
+        if (
+          !stringValue ||
+          stringValue.trim() === "" ||
+          stringValue.startsWith("__")
+        ) {
+          return {
+            _productionUnitId: "",
+            productionUnitName: "",
+            cropName: "",
+            cropType: "",
+            sauHa: undefined,
+            treatedSurface: undefined,
+            ...preservedProductData,
+          };
+        }
+
+        const selectedPu = productionUnitMap.get(stringValue);
+        if (selectedPu) {
+          return {
+            _productionUnitId: selectedPu.id,
+            productionUnitName: selectedPu.name,
+            cropName: selectedPu.cropName,
+            cropType: selectedPu.cropType,
+            sauHa: selectedPu.sauHa,
+            treatedSurface: selectedPu.sauHa,
+            _companyId: selectedPu.companyId,
+            companyName: selectedPu.companyName,
+            _selectedCompanyForPU: selectedPu.companyId,
+            ...preservedProductData,
+          };
+        }
+
+        return {
+          _productionUnitId: "",
+          productionUnitName: stringValue,
+          cropName: "",
+          cropType: "",
+          sauHa: undefined,
+          treatedSurface: undefined,
+          ...preservedProductData,
+        };
+      },
+      render: (value, row) => {
+        const name =
+          (value as string) || (row.productionUnitName as string | undefined);
+        const hasCompany = Boolean(row._companyId || row._selectedCompanyForPU);
+
+        if (name) {
+          return <span>{name}</span>;
+        }
+
+        if (hasCompany) {
+          return (
+            <span className="text-muted-foreground italic">
+              Seleziona unità produttiva...
+            </span>
+          );
+        }
+
+        return <span className="text-muted-foreground">-</span>;
+      },
+    },
+    // 5. Prodotto + sostanza attiva
+    {
+      id: "productRegistrationNumber",
+      title: "Prodotto",
+      type: "select",
+      width: "300px",
+      readOnly: false,
+      required: true,
+      allowClear: true,
+      getOptions: (rowData) => {
+        const currentRegNumber = rowData.productRegistrationNumber as string | undefined;
+        const currentProductName = rowData.productName as string | undefined;
+
+        if (currentRegNumber && currentRegNumber !== "-" && currentRegNumber.trim() !== "") {
+          const existsInOptions = fitosanitariOptions.some(o => o.value === currentRegNumber);
+          if (!existsInOptions) {
+            return [
+              {
+                label: `${currentProductName ?? currentRegNumber} (${currentRegNumber})`,
+                value: currentRegNumber,
+                searchText: [currentProductName, currentRegNumber].filter(Boolean).join(" "),
+              },
+              ...fitosanitariOptions,
+            ];
+          }
+        }
+
+        return fitosanitariOptions;
+      },
+      placeholder: isLoadingFitosanitari
+        ? "Caricamento..."
+        : "Seleziona prodotto...",
+      enableSearch: true,
+      searchPlaceholder: "Cerca prodotto...",
+      emptyStateMessage: "Nessun prodotto trovato",
+      maxVisibleOptions: 50,
+      onValueChange: ({ value, rowData }) => {
+        const stringValue = String(value);
+
+        if (!stringValue || stringValue.trim() === "") {
+          return {
+            productRegistrationNumber: "",
+            productName: "",
+            principioAttivo: "",
+          };
+        }
+
+        const selectedProduct = fitosanitariMap.get(stringValue);
+        if (selectedProduct) {
+          return {
+            productRegistrationNumber: selectedProduct.registrationNumber,
+            productName: selectedProduct.productName,
+            principioAttivo: selectedProduct.activeIngredients,
+          };
+        }
+
+        return {
+          productRegistrationNumber: stringValue,
+          productName: (rowData.productName as string | undefined) ?? "",
+          principioAttivo:
+            (rowData.principioAttivo as string | undefined) ?? "",
+        };
+      },
+      render: (_value, row) => {
+        const name = row.productName as string | undefined;
+        const registrationNumber = row.productRegistrationNumber as
+          | string
+          | undefined;
+        const principioAttivo = row.principioAttivo as string | undefined;
+
+        if (
+          !name ||
+          !registrationNumber ||
+          name.trim() === "" ||
+          registrationNumber.trim() === ""
+        ) {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        return (
+          <div className="flex flex-col leading-tight">
+            <span className="text-sm font-medium">{name}</span>
+            {principioAttivo && principioAttivo.trim() !== "" && (
+              <span className="text-xs text-muted-foreground truncate">
+                {principioAttivo}
+              </span>
+            )}
+          </div>
+        );
+      },
+    },
+    // 6. Quantità totale + UM
+    {
+      id: "quantity",
+      title: "Quantità",
+      type: "number",
+      width: "150px",
+      readOnly: false,
+      required: true,
+      render: (value, row) => {
+        const numValue = Number(value);
+        const um = row.unitOfMeasureQuantity as string | undefined;
+        if (isNaN(numValue) || numValue === 0) {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        return (
+          <span>
+            {numValue.toFixed(3)}{um ? ` ${um}` : ""}
+          </span>
+        );
+      },
+    },
+    // 7. Superficie trattata
     {
       id: "treatedSurface",
-      title: "Superficie da trattare (ha)",
+      title: "Superficie trattata (ha)",
       type: "number",
-      width: "180px",
+      width: "170px",
       readOnly: false,
       onValueChange: ({ value }) => {
         const numValue = Number(value);
@@ -2711,99 +2842,71 @@ export default function JobPage() {
         );
       },
     },
+    // 8. Dose/ha con indicazione min/max
     {
-      id: "sauHa",
-      title: "SAU (ha)",
-      type: "number",
-      width: "120px",
+      id: "dosePerHa",
+      title: "Dose/ha",
+      type: "text",
+      width: "180px",
       readOnly: true,
-      render: (value) => {
-        const numValue = Number(value);
-        if (isNaN(numValue) || numValue === 0) {
-          return <span className="text-muted-foreground">-</span>;
-        }
-        return <span>{numValue.toFixed(2)}</span>;
-      },
-    },
-    {
-      id: "productRegistrationNumber",
-      title: "Prodotto",
-      type: "select",
-      width: "250px",
-      readOnly: false,
-      required: true,
-      getOptions: () => fitosanitariOptions,
-      placeholder: isLoadingFitosanitari
-        ? "Caricamento..."
-        : "Seleziona prodotto...",
-      enableSearch: true,
-      searchPlaceholder: "Cerca prodotto...",
-      emptyStateMessage: "Nessun prodotto trovato",
-      maxVisibleOptions: 50,
-      onValueChange: ({ value, rowData }) => {
-        const stringValue = String(value);
-
-        // Se il valore è vuoto, resetta i campi del prodotto
-        if (!stringValue || stringValue.trim() === "") {
-          return {
-            productRegistrationNumber: "",
-            productName: "",
-            principioAttivo: "",
-          };
-        }
-
-        const selectedProduct = fitosanitariMap.get(stringValue);
-        if (selectedProduct) {
-          return {
-            productRegistrationNumber: selectedProduct.registrationNumber,
-            productName: selectedProduct.productName,
-            principioAttivo: selectedProduct.activeIngredients,
-          };
-        }
-
-        // Se il prodotto non è stato trovato ma c'è un valore, preservalo
-        // Questo può accadere se il valore è stato impostato manualmente o da un'altra fonte
-        return {
-          productRegistrationNumber: stringValue,
-          productName: (rowData.productName as string | undefined) ?? "",
-          principioAttivo:
-            (rowData.principioAttivo as string | undefined) ?? "",
-        };
-      },
       render: (_value, row) => {
-        const name = row.productName as string | undefined;
-        const registrationNumber = row.productRegistrationNumber as
-          | string
-          | undefined;
-        if (
-          !name ||
-          !registrationNumber ||
-          name.trim() === "" ||
-          registrationNumber.trim() === ""
-        ) {
+        const doseMinima = row.doseMinima as number | null | undefined;
+        const doseMassima = row.doseMassima as number | null | undefined;
+        const doseUm = row.doseUm as string | null | undefined;
+
+        if (doseMinima == null && doseMassima == null) {
           return <span className="text-muted-foreground">-</span>;
         }
-        return <span>{name}</span>;
-      },
-    },
-    {
-      id: "quantity",
-      title: "Quantità",
-      type: "number",
-      width: "120px",
-      readOnly: false,
-      required: true,
-      render: (value) => {
-        const numValue = Number(value);
-        if (isNaN(numValue) || numValue === 0) {
-          return <span className="text-muted-foreground">-</span>;
+
+        const unit = doseUm ? ` ${doseUm}` : "";
+
+        if (doseMinima != null && doseMassima != null) {
+          if (doseMinima === doseMassima) {
+            return (
+              <span className="text-sm font-mono text-slate-700">
+                {doseMinima}{unit}
+              </span>
+            );
+          }
+          return (
+            <div className="flex flex-col leading-tight text-sm font-mono text-slate-700">
+              <span>
+                <span className="text-xs text-muted-foreground font-sans">min </span>
+                {doseMinima}{unit}
+              </span>
+              <span>
+                <span className="text-xs text-muted-foreground font-sans">max </span>
+                {doseMassima}{unit}
+              </span>
+            </div>
+          );
         }
-        return <span>{numValue.toFixed(3)}</span>;
+
+        if (doseMinima != null) {
+          return (
+            <span className="text-sm font-mono text-slate-700">
+              <span className="text-xs text-muted-foreground font-sans">min </span>
+              {doseMinima}{unit}
+            </span>
+          );
+        }
+
+        if (doseMassima != null) {
+          return (
+            <span className="text-sm font-mono text-slate-700">
+              <span className="text-xs text-muted-foreground font-sans">max </span>
+              {doseMassima}{unit}
+            </span>
+          );
+        }
+
+        return <span className="text-muted-foreground">-</span>;
       },
     },
+    // --- Colonne secondarie (visibili tramite column visibility) ---
     {
       id: "unitOfMeasureQuantity",
-      title: "Unità",
+      title: "Unità Misura",
       type: "select",
       width: "100px",
       readOnly: false,
@@ -2840,6 +2943,20 @@ export default function JobPage() {
       },
     },
     {
+      id: "sauHa",
+      title: "SAU (ha)",
+      type: "number",
+      width: "120px",
+      readOnly: true,
+      render: (value) => {
+        const numValue = Number(value);
+        if (isNaN(numValue) || numValue === 0) {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        return <span>{numValue.toFixed(2)}</span>;
+      },
+    },
+    {
       id: "jobCode",
       title: "Codice Operazione",
       type: "text",
@@ -2850,19 +2967,6 @@ export default function JobPage() {
           {value as string}
         </Badge>
       ),
-    },
-    {
-      id: "dateOfOpeation",
-      title: "Data Operazione",
-      type: "date",
-      width: "150px",
-      readOnly: false,
-      required: true,
-      render: (value) => {
-        if (!value) return "-";
-        const date = value instanceof Date ? value : new Date(value as string);
-        return date.toLocaleDateString("it-IT");
-      },
     },
     {
       id: "cropName",
@@ -2911,7 +3015,6 @@ export default function JobPage() {
       width: "150px",
       readOnly: true,
     },
-
     {
       id: "fields",
       title: "Campi",
@@ -3142,6 +3245,7 @@ export default function JobPage() {
       title: "Stato",
       type: "select",
       width: "180px",
+      required: true,
       readOnly: true, // Lo stato non può essere modificato manualmente
       options: ["Verificato", "Non Verificato", "Conformità non verificata"],
       onValueChange: ({ value }) => {
@@ -3192,6 +3296,7 @@ export default function JobPage() {
       title: "Data",
       type: "date",
       width: "100px",
+      required: true,
       readOnly: false,
       render: (value) => {
         if (!value) return "-";
@@ -3204,13 +3309,30 @@ export default function JobPage() {
       title: "Unità Produttiva",
       type: "text",
       width: "150px",
+      required: true,
       readOnly: true,
     },
     {
+      id: "treatedSurface",
+      title: "Superficie da trattare (ha)",
+      type: "number",
+      width: "130px",
+      required: true,
+      readOnly: true,
+      render: (value, row) => {
+        const effectiveSurface = Number(value ?? row.sauHa ?? 0);
+        if (isNaN(effectiveSurface) || effectiveSurface === 0) {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        return <span>{effectiveSurface.toFixed(2)}</span>;
+      },
+    },
+    {
       id: "productName",
-      title: "Prodotto",
+      title: "Nome prodotto",
       type: "text",
       width: "180px",
+      required: true,
       readOnly: true,
     },
     {
@@ -3218,6 +3340,7 @@ export default function JobPage() {
       title: "Quantità",
       type: "number",
       width: "100px",
+      required: true,
       readOnly: false,
       render: (value, row) => {
         const numValue = Number(value);
@@ -3235,232 +3358,96 @@ export default function JobPage() {
         );
       },
     },
-    {
-      id: "treatedSurface",
-      title: "Superficie da trattare (ha)",
-      type: "number",
-      width: "130px",
-      readOnly: true,
-      render: (value, row) => {
-        const effectiveSurface = Number(value ?? row.sauHa ?? 0);
-        if (isNaN(effectiveSurface) || effectiveSurface === 0) {
-          return <span className="text-muted-foreground">-</span>;
-        }
-        return <span>{effectiveSurface.toFixed(2)}</span>;
-      },
-    },
-    {
-      id: "quantityPerHa",
-      title: "Quantità per ha",
-      type: "number",
-      width: "130px",
-      readOnly: true,
-      render: (_value, row) => {
-        const quantity = Number(row.quantity ?? 0);
-        const effectiveSurface = Number(row.treatedSurface ?? row.sauHa ?? 0);
-        if (effectiveSurface === 0 || quantity === 0) {
-          return (
-            <span className="font-mono text-sm text-muted-foreground">-</span>
-          );
-        }
-        const quantityPerHa = quantity / effectiveSurface;
-        return (
-          <span className="font-mono text-sm">{quantityPerHa.toFixed(4)}</span>
-        );
-      },
-    },
-    {
-      id: "note",
-      title: "Note",
-      type: "text",
-      width: "200px",
-      readOnly: true,
-    },
-    {
-      id: "machineId",
-      title: "Macchina",
-      type: "select",
-      width: "150px",
-      readOnly: false,
-      getOptions: (rowData) => {
-        const companyId = rowData._companyId as string | undefined;
-        if (!companyId) {
-          return [];
-        }
-        const machines = machinesByCompanyMap.get(companyId) ?? [];
-        return machines.map((machine) => ({
-          label: machine.name,
-          value: machine.id,
-        }));
-      },
-      placeholder: "Seleziona macchina",
-      enableSearch: true,
-      searchPlaceholder: "Cerca macchina...",
-      emptyStateMessage: "Nessuna macchina disponibile",
-      noneOptionLabel: "Nessuna macchina",
-      onValueChange: ({ value, rowData }) => {
-        const companyId = rowData._companyId as string | undefined;
-        if (!companyId) {
-          return { machineId: null, machineName: "-" };
-        }
-        const machines = machinesByCompanyMap.get(companyId) ?? [];
-        const stringValue = String(value ?? "");
-        const selectedMachine = machines.find((m) => m.id === stringValue);
-        return {
-          machineId: stringValue && stringValue !== "" ? stringValue : null,
-          machineName: selectedMachine?.name ?? "-",
-        };
-      },
-      render: (_value, row) => {
-        const machineName = (row.machineName as string | undefined) ?? "-";
-        const label = machineName !== "-" ? machineName : "-";
-        return (
-          <span className={label === "-" ? "text-muted-foreground" : ""}>
-            {label}
-          </span>
-        );
-      },
-    },
-    {
-      id: "userId",
-      title: "Operatore",
-      type: "select",
-      width: "150px",
-      readOnly: false,
-      getOptions: (rowData) => {
-        const companyId = rowData._companyId as string | undefined;
-        if (!companyId) {
-          return [];
-        }
-        const users = usersByCompanyMap.get(companyId) ?? [];
-        return users.map((user) => ({
-          label: getUserFullName(user),
-          value: user.userId,
-        }));
-      },
-      placeholder: "Seleziona operatore",
-      enableSearch: true,
-      searchPlaceholder: "Cerca operatore...",
-      emptyStateMessage: "Nessun operatore disponibile",
-      noneOptionLabel: "Nessun operatore",
-      onValueChange: ({ value, rowData }) => {
-        const companyId = rowData._companyId as string | undefined;
-        if (!companyId) {
-          return { userId: null, userName: null };
-        }
-        const users = usersByCompanyMap.get(companyId) ?? [];
-        const stringValue = String(value ?? "");
-        const selectedUser = users.find((u) => u.userId === stringValue);
-        return {
-          userId: stringValue && stringValue !== "" ? stringValue : null,
-          userName: selectedUser ? getUserFullName(selectedUser) : null,
-        };
-      },
-      render: (_value, row) => {
-        const userName = (row.userName as string | null | undefined) ?? null;
-        if (!userName) {
-          return <span className="text-muted-foreground">-</span>;
-        }
-        return <span>{userName}</span>;
-      },
-    },
-    {
-      id: "modeOfApplication",
-      title: "Modalità Trattamento",
-      type: "select",
-      width: "150px",
-      readOnly: false,
-      options: [
-        { label: "Manuale", value: "manuale" },
-        { label: "Macchinari", value: "macchinari" },
-      ],
-      placeholder: "Seleziona modalità",
-      onValueChange: ({ value }) => {
-        return {
-          modeOfApplication: value ?? "-",
-        };
-      },
-      render: (value) => {
-        const stringValue = value as string;
-        if (!stringValue || stringValue === "-") {
-          return <span className="text-muted-foreground">-</span>;
-        }
-        return <span>{stringValue}</span>;
-      },
-    },
-    {
-      id: "isLocalizedTreatment",
-      title: "Trattamento Localizzato",
-      type: "select",
-      width: "180px",
-      readOnly: false,
-      options: [
-        { label: "Sì", value: "true" },
-        { label: "No", value: "false" },
-      ],
-      placeholder: "Seleziona",
-      onValueChange: ({ value }) => {
-        return {
-          isLocalizedTreatment: value === "true" || value === true,
-        };
-      },
-      render: (value) => {
-        const boolValue =
-          typeof value === "boolean"
-            ? value
-            : value === "true" || value === true;
-        return (
-          <Badge
-            variant={boolValue ? "default" : "outline"}
-            className={
-              boolValue
-                ? "bg-green-500 hover:bg-green-600 text-white"
-                : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-            }
-          >
-            {boolValue ? "Sì" : "No"}
-          </Badge>
-        );
-      },
-    },
   ];
 
-  // Aggiorna le righe per popolare userName quando vengono caricati gli utenti
+  // Aggiorna le righe per popolare userName e risolvere registrationNumber mancanti
   const allGroupRowsWithUsers = useMemo(() => {
     return allGroupRows.map((row) => {
-      const companyId = row._companyId as string | undefined;
-      const userId = row.userId as string | null | undefined;
+      let enrichedRow = row;
+
+      // Risolvi registrationNumber mancante dal nome prodotto via fitosanitari
+      const regNumber = row.productRegistrationNumber as string | undefined;
+      const productName = row.productName as string | undefined;
+      if (
+        (!regNumber || regNumber.trim() === "") &&
+        productName &&
+        productName !== "-" &&
+        productName.trim() !== "" &&
+        fitosanitariProducts.length > 0
+      ) {
+        const match = fitosanitariProducts.find(
+          (p) =>
+            p.productName.toLowerCase().trim() ===
+            productName.toLowerCase().trim(),
+        );
+        if (match) {
+          enrichedRow = {
+            ...enrichedRow,
+            productRegistrationNumber: match.registrationNumber,
+          };
+        }
+      }
+
+      // Popola userName
+      const companyId = enrichedRow._companyId as string | undefined;
+      const userId = enrichedRow.userId as string | null | undefined;
       if (companyId && userId) {
         const users = usersByCompanyMap.get(companyId) ?? [];
         const user = users.find((u) => u.userId === userId);
         if (user) {
           return {
-            ...row,
+            ...enrichedRow,
             userName: getUserFullName(user),
           };
         }
       }
-      return row;
+      return enrichedRow;
     });
-  }, [allGroupRows, usersByCompanyMap]);
+  }, [allGroupRows, usersByCompanyMap, fitosanitariProducts]);
 
   const selectedGroupRowsWithUsers = useMemo(() => {
     return selectedGroupRows.map((row) => {
-      const companyId = row._companyId as string | undefined;
-      const userId = row.userId as string | null | undefined;
+      let enrichedRow = row;
+
+      // Risolvi registrationNumber mancante dal nome prodotto via fitosanitari
+      const regNumber = row.productRegistrationNumber as string | undefined;
+      const productName = row.productName as string | undefined;
+      if (
+        (!regNumber || regNumber.trim() === "") &&
+        productName &&
+        productName !== "-" &&
+        productName.trim() !== "" &&
+        fitosanitariProducts.length > 0
+      ) {
+        const match = fitosanitariProducts.find(
+          (p) =>
+            p.productName.toLowerCase().trim() ===
+            productName.toLowerCase().trim(),
+        );
+        if (match) {
+          enrichedRow = {
+            ...enrichedRow,
+            productRegistrationNumber: match.registrationNumber,
+          };
+        }
+      }
+
+      // Popola userName
+      const companyId = enrichedRow._companyId as string | undefined;
+      const userId = enrichedRow.userId as string | null | undefined;
       if (companyId && userId) {
         const users = usersByCompanyMap.get(companyId) ?? [];
         const user = users.find((u) => u.userId === userId);
         if (user) {
           return {
-            ...row,
+            ...enrichedRow,
             userName: getUserFullName(user),
           };
         }
       }
-      return row;
+      return enrichedRow;
     });
-  }, [selectedGroupRows, usersByCompanyMap]);
+  }, [selectedGroupRows, usersByCompanyMap, fitosanitariProducts]);
 
   // Gestisce il salvataggio delle modifiche
   const handleSave = async (payload: {
@@ -3845,7 +3832,7 @@ export default function JobPage() {
       onToggleRightSidebar={setIsRightSidebarOpen}
       showAddButton={true}
       onAddClick={() =>
-        navigate("/job/new-job-manual", {
+        navigate("/job/new", {
           state: {
             jobId:
               selectedAllJobIds.length > 0 ? selectedAllJobIds[0] : undefined,
@@ -3871,7 +3858,7 @@ export default function JobPage() {
 
   // Handler per aggiunta manuale da mobile (naviga a new-job-manual)
   const handleMobileAddClick = () => {
-    navigate("/job/new-job-manual", {
+    navigate("/job/new", {
       state: {
         jobId: selectedGroupSummary?.jobId,
       },

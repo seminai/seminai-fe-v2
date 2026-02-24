@@ -43,11 +43,14 @@ import {
   Building2,
   CheckCircle2,
   ClipboardCheck,
+  Coins,
   Droplet,
+  Layers,
   LayoutDashboard,
   Map,
   MessageCircle,
   NotebookPen,
+  Plug,
   Settings2,
   Sprout,
   Tags,
@@ -67,7 +70,6 @@ type ProtectedLayoutProps = {
 type MobileBottomBarProps = {
   items: NavigationItem[];
   isMobile: boolean;
-  menuAvailability: MenuAvailabilityState;
   manageVisibility: ManageMenuVisibility;
   fieldNotesVisible: boolean;
   isActive: (item: NavigationItem) => boolean;
@@ -308,7 +310,6 @@ const sidebarIcons = new SidebarIconRegistry();
 function MobileBottomBar({
   isMobile,
   userRole,
-  menuAvailability,
   manageVisibility,
   fieldNotesVisible,
 }: MobileBottomBarProps) {
@@ -319,14 +320,10 @@ function MobileBottomBar({
   const fieldsActive = location.pathname.startsWith("/fields");
   const companyActive = location.pathname.startsWith("/company");
   const productionUnitActive = location.pathname.startsWith("/production-unit");
-  const dosageManagerActive = location.pathname.startsWith("/dosage-manager");
   const jobActive = location.pathname.startsWith("/job");
   const productsActive = location.pathname.startsWith("/products");
   const fieldNotesActive = location.pathname.startsWith("/field-notes");
 
-  const dosageManagerVisible =
-    menuAvailability.allowDosageManagerMenu &&
-    canViewMenuItem("dosage-manager", userRole);
   const hasManageItems =
     Object.values(manageVisibility).some(Boolean) || fieldNotesVisible;
 
@@ -385,26 +382,7 @@ function MobileBottomBar({
               </Link>
             </li>
           )}
-          {dosageManagerVisible && (
-            <li key="dosage-manager">
-              <Link
-                to="/dosage-manager"
-                className={cn(
-                  "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
-                  dosageManagerActive && "text-gray-900 font-medium"
-                )}
-              >
-                <Droplet
-                  className={cn(
-                    "size-5",
-                    dosageManagerActive ? "text-gray-900" : "text-gray-700/90"
-                  )}
-                  size={20}
-                />
-                <span className="mt-1">Dosaggi</span>
-              </Link>
-            </li>
-          )}
+          {/* Genera Dosaggi rimosso dalla bottom bar mobile - accessibile da Operazioni > Aggiungi */}
           {hasManageItems && (
             <MobileManageMenu
               isActive={isManageActive}
@@ -521,8 +499,14 @@ function MobileAccountMenu() {
         <DropdownMenuContent side="top" align="center">
           <DropdownMenuLabel>Il mio account</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => navigate("/settings")}>
-            Impostazioni
+          <DropdownMenuItem onClick={() => navigate("/settings?tab=impostazioni")}>
+            <LuSettings className="size-4" /> Impostazioni
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate("/settings?tab=integrazioni")}>
+            <Plug className="size-4" /> Integrazioni
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate("/settings?tab=costi")}>
+            <Coins className="size-4" /> Costi
           </DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
@@ -692,9 +676,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       menuAvailability.allowJobsMenu,
     ]
   );
-  const dosageManagerVisible =
-    menuAvailability.allowDosageManagerMenu &&
-    canViewMenuItem("dosage-manager", userRole);
   const jobVisible = manageVisibility.jobs;
   const fieldNotesVisible = canViewMenuItem("field-notes", userRole);
   const manageMenuController = useMemo(
@@ -717,9 +698,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const productionUnitActive =
     location.pathname === "/production-unit" ||
     location.pathname.startsWith("/production-unit/");
-  const dosageManagerActive =
-    location.pathname === "/dosage-manager" ||
-    location.pathname.startsWith("/dosage-manager/");
   const jobActive =
     location.pathname === "/job" || location.pathname.startsWith("/job/");
   const fieldNotesActive =
@@ -779,8 +757,8 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   </SidebarMenuItem>
                 )}
 
-                {/* Etichette */}
-                {canViewMenuItem("label", userRole) && (
+                {/* Etichette - solo in modalità espansa */}
+                {canViewMenuItem("label", userRole) && sidebarOpen && (
                   <SidebarMenuItem key="label">
                     <SidebarMenuButton
                       asChild
@@ -791,34 +769,13 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     >
                       <Link to="/label" className="flex items-center gap-3">
                         <Tags className="size-5" size={20} />
-                        <span className="group-data-[collapsible=icon]:hidden">
-                          Etichette
-                        </span>
+                        <span>Etichette</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
 
-                {/* Genera Dosaggi - solo in modalità espansa */}
-                {dosageManagerVisible && sidebarOpen && (
-                  <SidebarMenuItem key="dosage-manager-expanded">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={dosageManagerActive}
-                      tooltip="Genera Dosaggi"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
-                    >
-                      <Link
-                        to="/dosage-manager"
-                        className="flex items-center gap-3"
-                      >
-                        <Droplet className="size-5" size={20} />
-                        <span>Genera Dosaggi</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
+                {/* Genera Dosaggi rimosso dalla sidebar - accessibile da Operazioni > Aggiungi */}
 
                 {/* Operazioni - solo in modalità espansa */}
                 {jobVisible && sidebarOpen && (
@@ -1024,59 +981,50 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     </Collapsible>
                   )}
 
-                {/* ICONE IN MODALITÀ COLLASSATA - Solo queste si vedono quando la sidebar è chiusa */}
-
-                {/* Genera Dosaggi - icona collassata */}
-                {dosageManagerVisible && !sidebarOpen && (
-                  <SidebarMenuItem key="dosage-manager-collapsed">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={dosageManagerActive}
-                      tooltip="Genera Dosaggi"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5"
-                    >
-                      <Link
-                        to="/dosage-manager"
-                        className="flex items-center gap-3"
+                {/* Strumenti raggruppati - icona collassata con dropdown */}
+                {!sidebarOpen && (canViewMenuItem("label", userRole) || jobVisible || fieldNotesVisible) && (
+                  <SidebarMenuItem key="tools-collapsed">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton
+                          type="button"
+                          tooltip="Strumenti"
+                          size="lg"
+                          className={cn(
+                            "data-[state=open]:bg-neutral-900/5",
+                            (labelActive || jobActive || fieldNotesActive) && "bg-neutral-900/5"
+                          )}
+                        >
+                          <Layers className="size-5" size={20} />
+                        </SidebarMenuButton>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        side="right"
+                        align="start"
+                        className="min-w-[220px]"
                       >
-                        <Droplet className="size-5" size={20} />
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-
-                {/* Operazioni - icona collassata */}
-                {jobVisible && !sidebarOpen && (
-                  <SidebarMenuItem key="job-collapsed">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={jobActive}
-                      tooltip="Verifica Operazioni"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5"
-                    >
-                      <Link to="/job" className="flex items-center gap-3">
-                        <CheckCircle2 className="size-5" size={20} />
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-
-                {/* Note di Campo - icona collassata */}
-                {fieldNotesVisible && !sidebarOpen && (
-                  <SidebarMenuItem key="field-notes-collapsed">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={fieldNotesActive}
-                      tooltip="Note di Campo"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5"
-                    >
-                      <Link to="/field-notes" className="flex items-center gap-3">
-                        <NotebookPen className="size-5" />
-                      </Link>
-                    </SidebarMenuButton>
+                        <DropdownMenuLabel>Strumenti</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {canViewMenuItem("label", userRole) && (
+                          <DropdownMenuItem onClick={() => navigate("/label")}>
+                            <Tags className="size-4 mr-2" size={16} />
+                            Etichette
+                          </DropdownMenuItem>
+                        )}
+                        {jobVisible && (
+                          <DropdownMenuItem onClick={() => navigate("/job")}>
+                            <CheckCircle2 className="size-4 mr-2" size={16} />
+                            Verifica Operazioni
+                          </DropdownMenuItem>
+                        )}
+                        {fieldNotesVisible && (
+                          <DropdownMenuItem onClick={() => navigate("/field-notes")}>
+                            <NotebookPen className="size-4 mr-2" size={16} />
+                            Note di Campo
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </SidebarMenuItem>
                 )}
 
@@ -1169,8 +1117,14 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
               <DropdownMenuContent side="right" align="start">
                 <DropdownMenuLabel>Il mio account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/settings")}>
+                <DropdownMenuItem onClick={() => navigate("/settings?tab=impostazioni")}>
                   <LuSettings /> Impostazioni
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/settings?tab=integrazioni")}>
+                  <Plug className="size-4" /> Integrazioni
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/settings?tab=costi")}>
+                  <Coins className="size-4" /> Costi
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
@@ -1213,7 +1167,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           <MobileBottomBar
             items={items}
             isMobile={isMobile}
-            menuAvailability={menuAvailability}
             manageVisibility={manageVisibility}
             fieldNotesVisible={fieldNotesVisible}
             isActive={(i) =>

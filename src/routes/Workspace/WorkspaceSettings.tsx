@@ -1240,9 +1240,9 @@ function RulesSettingsTab() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-1">
                     <h4 className="font-medium">{rule.name}</h4>
-                    {rule.pdfUrl && (
+                    {rule.pdfFileUrl && (
                       <a
-                        href={rule.pdfUrl}
+                        href={rule.pdfFileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700"

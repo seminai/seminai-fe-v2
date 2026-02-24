@@ -1,8 +1,8 @@
 import * as React from "react";
 import { useState, useMemo, useCallback, useEffect } from "react";
 
-import { Calendar } from "@/components/ui/calendar";
 import { PageHeader } from "@/components/organism/Header";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import {
   ProductionUnitCsvImporter,
   type ImportResult,
@@ -39,14 +39,9 @@ import {
   FileUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
+// import { format } from "date-fns";
+// import { it } from "date-fns/locale";
 import { toast } from "sonner";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 import { SingleProductionUnitForm } from "./components/SingleProductionUnitForm";
 import { useCropVarieties } from "./hooks/useCropVarieties";
@@ -686,9 +681,7 @@ export default function NewProductionUnit(): React.ReactElement {
   };
 
   const handleDeleteUnits = (unitIds: string[]) => {
-    setProductionUnits((prev) =>
-      prev.filter((u) => !unitIds.includes(u.id)),
-    );
+    setProductionUnits((prev) => prev.filter((u) => !unitIds.includes(u.id)));
     if (editingUnitId && unitIds.includes(editingUnitId)) {
       setEditingUnitId(null);
       setAllocatedFields(new Map());
@@ -902,8 +895,8 @@ export default function NewProductionUnit(): React.ReactElement {
           const resolvedVariety =
             (unit.cultivarId &&
               cultivarCatalog?.getCultivarName(unit.cultivarId)) ||
-            crop?.code ||
             unit.importedVariety ||
+            crop?.code ||
             unit.name;
 
           return {
@@ -979,43 +972,47 @@ export default function NewProductionUnit(): React.ReactElement {
         {/* Schermata scelta: Creazione manuale o Importa da file */}
         {creationMode === null && (
           <div className="flex-1 overflow-auto px-6 pb-6">
-            <div className="py-12">
-              <h2 className="text-xl font-semibold text-center mb-2">
+            <div className="max-w-2xl mx-auto w-full space-y-4 mt-8">
+              <h2 className="text-lg font-semibold text-foreground text-center mb-6">
                 Come vuoi creare le unità produttive?
               </h2>
-              <p className="text-sm text-muted-foreground text-center mb-8">
-                Scegli tra creazione manuale (selezione campi e dati) o
-                importazione da file (CSV/XLS template AGEA).
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="h-auto py-6 flex flex-col gap-2 border-2 hover:border-agri-green-500 hover:bg-agri-green-50 hover:text-foreground"
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  type="button"
                   onClick={() => setCreationMode("manual")}
+                  className="group flex flex-col items-center gap-4 rounded-2xl border border-border bg-white p-8 shadow-sm transition-all hover:border-foreground/20 hover:shadow-md cursor-pointer"
                 >
-                  <PenLine className="h-10 w-10 text-agri-green-600 hover:text-agri-green-600" />
-                  <span className="font-medium hover:text-foreground">
-                    Creazione manuale
-                  </span>
-                  <span className="text-xs text-muted-foreground font-normal hover:text-muted-foreground">
-                    Seleziona campi e compila i dati
-                  </span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="h-auto py-6 flex flex-col gap-2 border-2 hover:border-agri-green-500 hover:bg-agri-green-50 hover:text-foreground"
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition-colors group-hover:bg-neutral-200">
+                    <PenLine className="h-7 w-7" />
+                  </div>
+                  <div className="space-y-1 text-center">
+                    <p className="text-base font-semibold text-foreground">
+                      Creazione manuale
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Seleziona campi e compila i dati
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setCreationMode("import")}
+                  className="group flex flex-col items-center gap-4 rounded-2xl border border-border bg-white p-8 shadow-sm transition-all hover:border-foreground/20 hover:shadow-md cursor-pointer"
                 >
-                  <FileUp className="h-10 w-10 text-agri-green-600 hover:text-agri-green-600" />
-                  <span className="font-medium hover:text-foreground">
-                    Importa da file
-                  </span>
-                  <span className="text-xs text-muted-foreground font-normal hover:text-muted-foreground">
-                    CSV, XLS, XLSX (template AGEA)
-                  </span>
-                </Button>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition-colors group-hover:bg-neutral-200">
+                    <FileUp className="h-7 w-7" />
+                  </div>
+                  <div className="space-y-1 text-center">
+                    <p className="text-base font-semibold text-foreground">
+                      Importa da file
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      CSV, XLS, XLSX, PDF (template AGEA)
+                    </p>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -1059,7 +1056,7 @@ export default function NewProductionUnit(): React.ReactElement {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {/* Calendario per periodo di disponibilità */}
+                    {/* Durata unità produttiva e ricerca parcelle disponibili */}
                     <Card className="bg-white shadow-md">
                       <CardContent className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
                         <div className="flex flex-col gap-2 w-full lg:max-w-lg">
@@ -1067,15 +1064,15 @@ export default function NewProductionUnit(): React.ReactElement {
                             <CalendarIcon className="h-6 w-6" />
                             <div className="flex flex-col">
                               <span className="text-base font-semibold">
-                                Periodo di disponibilità dei campi
+                                Scegli la durata dell'unità produttiva
                               </span>
                               <span className="text-sm text-muted-foreground">
-                                Seleziona il periodo per visualizzare i campi
-                                disponibili
+                                Verranno mostrate solo le parcelle disponibili
+                                in questo intervallo.
                               </span>
                             </div>
                           </div>
-                          {dateRange?.start && dateRange?.end && (
+                          {/* {dateRange?.start && dateRange?.end && (
                             <p className="text-xs font-medium text-foreground">
                               Periodo selezionato:{" "}
                               <span className="font-semibold">
@@ -1088,95 +1085,41 @@ export default function NewProductionUnit(): React.ReactElement {
                                 })}
                               </span>
                             </p>
-                          )}
+                          )} */}
                         </div>
                         <div className="flex flex-col gap-4 w-full lg:w-auto lg:flex-row lg:items-end">
                           <div className="flex flex-col gap-2 w-full lg:w-[220px]">
                             <label className="text-sm font-medium text-foreground">
-                              Data Inizio
+                              Data Inizio unità produttiva
                             </label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                    "w-full justify-start text-left font-normal bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600",
-                                    !tempDateRange.start &&
-                                      "text-muted-foreground",
-                                  )}
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {tempDateRange.start ? (
-                                    format(tempDateRange.start, "dd/MM/yyyy", {
-                                      locale: it,
-                                    })
-                                  ) : (
-                                    <span>Seleziona data</span>
-                                  )}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent
-                                className="w-auto p-0 bg-white"
-                                align="start"
-                              >
-                                <Calendar
-                                  mode="single"
-                                  selected={tempDateRange.start}
-                                  onSelect={(date) =>
-                                    date &&
-                                    setTempDateRange((prev) => ({
-                                      ...prev,
-                                      start: date,
-                                    }))
-                                  }
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
+                            <DatePickerInput
+                              value={tempDateRange.start}
+                              onChange={(date) =>
+                                date &&
+                                setTempDateRange((prev) => ({
+                                  ...prev,
+                                  start: date,
+                                }))
+                              }
+                              placeholder="gg/mm/aaaa"
+                            />
                           </div>
 
                           <div className="flex flex-col gap-2 w-full lg:w-[220px]">
                             <label className="text-sm font-medium text-foreground">
-                              Data Fine
+                              Data Fine unità produttiva
                             </label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                    "w-full justify-start text-left font-normal bg-transparent hover:bg-transparent hover:text-black hover:border-agri-green-600",
-                                    !tempDateRange.end &&
-                                      "text-muted-foreground",
-                                  )}
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {tempDateRange.end ? (
-                                    format(tempDateRange.end, "dd/MM/yyyy", {
-                                      locale: it,
-                                    })
-                                  ) : (
-                                    <span>Seleziona data</span>
-                                  )}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent
-                                className="w-auto p-0 bg-white"
-                                align="start"
-                              >
-                                <Calendar
-                                  mode="single"
-                                  selected={tempDateRange.end}
-                                  onSelect={(date) =>
-                                    date &&
-                                    setTempDateRange((prev) => ({
-                                      ...prev,
-                                      end: date,
-                                    }))
-                                  }
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
+                            <DatePickerInput
+                              value={tempDateRange.end}
+                              onChange={(date) =>
+                                date &&
+                                setTempDateRange((prev) => ({
+                                  ...prev,
+                                  end: date,
+                                }))
+                              }
+                              placeholder="gg/mm/aaaa"
+                            />
                           </div>
 
                           <div className="flex gap-2 w-full lg:w-auto lg:justify-end">
@@ -1379,12 +1322,12 @@ export default function NewProductionUnit(): React.ReactElement {
                         <Search className="mx-auto h-12 w-12 text-gray-400" />
                         <h3 className="mt-2 text-sm font-medium text-gray-900">
                           {showPreSearchEmptyState
-                            ? "Nessun campo selezionato"
+                            ? "Imposta la durata e cerca le parcelle"
                             : "Nessun campo trovato"}
                         </h3>
                         <p className="mt-1 text-sm text-gray-500">
                           {showPreSearchEmptyState
-                            ? "Devi effettuare una ricerca in un range di tempo o importare file."
+                            ? "Scegli il periodo di attività dell'unità produttiva e premi \"Cerca\" per visualizzare le parcelle disponibili in quell'intervallo."
                             : "Prova a modificare i filtri di ricerca o il periodo selezionato."}
                         </p>
                       </div>

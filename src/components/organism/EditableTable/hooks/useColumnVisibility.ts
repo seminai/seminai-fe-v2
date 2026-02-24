@@ -23,17 +23,19 @@ function getStorageKey(tableId: string | undefined, columns: EditableColumn[]): 
 }
 
 function getDefaultVisibleColumnIds(columns: EditableColumn[]): string[] {
-  const requiredIds = columns
-    .filter((c) => c.required === true)
-    .map((c) => c.id);
-  const otherIds = columns
-    .filter((c) => c.required !== true)
-    .map((c) => c.id);
-  const remainingSlots = Math.max(
-    0,
-    MAX_VISIBLE_COLUMNS - requiredIds.length,
-  );
-  return [...requiredIds, ...otherIds.slice(0, remainingSlots)];
+  // Take the first MAX_VISIBLE_COLUMNS columns in array order
+  const defaultIds = columns.slice(0, MAX_VISIBLE_COLUMNS).map((c) => c.id);
+  const defaultSet = new Set(defaultIds);
+
+  // Ensure all required columns are included (append any that aren't already visible)
+  columns.forEach((c) => {
+    if (c.required === true && !defaultSet.has(c.id)) {
+      defaultIds.push(c.id);
+      defaultSet.add(c.id);
+    }
+  });
+
+  return defaultIds;
 }
 
 function loadVisibleColumnsFromStorage(
