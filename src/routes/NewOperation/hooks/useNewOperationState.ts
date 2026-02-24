@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useProductionUnit } from "@/hooks/useProductionUnit";
 import { useProducts } from "@/hooks/useProducts";
-import type { ProductionUnit } from "@/api/production-unit";
 import type { Product } from "@/api/products";
 import type { NewOperationStep, OperationMode } from "../types";
 

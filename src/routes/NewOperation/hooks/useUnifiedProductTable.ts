@@ -1,7 +1,6 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import type { Product, StockEntry } from "@/api/products";
-import type { DosageProduct } from "@/api/dosage-agent";
 import { productsApiService } from "@/api/products";
 import type { VerifiedPhytosanitaryProduct } from "@/api/products";
 import {

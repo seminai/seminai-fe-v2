@@ -46,7 +46,6 @@ interface OperationTableProps {
     value: unknown,
   ) => void;
   onRemoveRows: (internalIds: string[]) => void;
-  onAddProductFromKey: (key: string) => void;
   onChangeRowProduct: (internalId: string, key: string) => void;
   onAddEmptyRow: () => void;
 }
@@ -60,7 +59,6 @@ export function OperationTable({
   onGlobalSelectedUnitIdsChange,
   onUpdateRow,
   onRemoveRows,
-  onAddProductFromKey,
   onChangeRowProduct,
   onAddEmptyRow,
 }: OperationTableProps): ReactElement {
@@ -71,16 +69,6 @@ export function OperationTable({
   const isAutomatic = mode === "automatic";
 
   // Unit options for multi-select in manual mode
-  const unitMultiSelectOptions = useMemo(
-    () =>
-      unitOptions.map((u) => ({
-        value: u.id,
-        label: u.name,
-        description: `${u.cropName} - ${u.areaHa.toFixed(2)} ha`,
-      })),
-    [unitOptions],
-  );
-
   const toggleRowSelection = useCallback((id: string) => {
     setSelectedRowIds((prev) => {
       const next = new Set(prev);
@@ -235,7 +223,6 @@ export function OperationTable({
                   mode={mode}
                   isSelected={selectedRowIds.has(row._internalId)}
                   onToggleSelect={() => toggleRowSelection(row._internalId)}
-                  unitMultiSelectOptions={unitMultiSelectOptions}
                   globalSelectedUnitIds={globalSelectedUnitIds}
                   onUpdateRow={onUpdateRow}
                   onOpenUnitsDrawer={() =>
@@ -268,7 +255,6 @@ interface OperationTableRowProps {
   mode: OperationMode;
   isSelected: boolean;
   onToggleSelect: () => void;
-  unitMultiSelectOptions: MultiSearchableSelectOption[];
   globalSelectedUnitIds: string[];
   onUpdateRow: (
     internalId: string,
@@ -285,7 +271,6 @@ function OperationTableRow({
   mode,
   isSelected,
   onToggleSelect,
-  unitMultiSelectOptions,
   globalSelectedUnitIds,
   onUpdateRow,
   onOpenUnitsDrawer,

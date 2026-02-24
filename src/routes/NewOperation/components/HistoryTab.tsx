@@ -389,8 +389,8 @@ export function HistoryTab(): ReactElement {
 
       <JobDetails
         selectedJob={selectedJob}
-        isLoading={isJobDetailsLoading}
-        onClose={() => setSelectedJob(null)}
+        jobDetailsLoading={isJobDetailsLoading}
+        onSelectedJobChange={(job) => { if (!job) setSelectedJob(null); }}
       />
 
       {/* Live logs drawer */}

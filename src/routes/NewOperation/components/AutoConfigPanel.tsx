@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, type ReactElement, type Dispatch, type SetStateAction } from "react";
+import { useState, useMemo, type ReactElement, type Dispatch, type SetStateAction } from "react";
 import {
   Select,
   SelectContent,

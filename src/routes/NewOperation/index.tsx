@@ -13,7 +13,6 @@ import {
   OrchestratorDatasetsLoader,
   type OrchestratorDatasets,
 } from "@/routes/DosageManager/orchestrator";
-import type { OperationMode } from "./types";
 import { useNewOperationState } from "./hooks/useNewOperationState";
 import { useUnifiedProductTable } from "./hooks/useUnifiedProductTable";
 import { useManualSubmission } from "./hooks/useManualSubmission";
@@ -273,7 +272,6 @@ export default function NewOperation() {
                     }
                     onUpdateRow={table.updateRow}
                     onRemoveRows={table.removeRows}
-                    onAddProductFromKey={table.addProductFromKey}
                     onChangeRowProduct={table.changeRowProduct}
                     onAddEmptyRow={table.addEmptyRow}
                   />

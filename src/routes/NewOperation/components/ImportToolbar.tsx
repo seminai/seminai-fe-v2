@@ -86,7 +86,6 @@ export function ImportToolbar({
             onAddRowsFromCsv(rows);
             setShowCsvImport(false);
           }}
-          onClose={() => setShowCsvImport(false)}
         />
       )}
 
@@ -96,8 +95,6 @@ export function ImportToolbar({
             onAddRowsFromDdt(rows);
             setShowDdtImport(false);
           }}
-          selectedCompanyIds={selectedCompanyIds}
-          onClose={() => setShowDdtImport(false)}
         />
       )}
     </div>
