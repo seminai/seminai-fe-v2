@@ -974,11 +974,6 @@ export default function OperationsPage() {
     [detailColumns, drawerFormChanges, queryClient, refetch, detailsSearchTerm],
   );
 
-  const openBulkEditAll = useCallback(() => {
-    setBulkEditRows([...rows]);
-    setBulkEditDrawerOpen(true);
-  }, [rows]);
-
   const openBulkEditSelected = useCallback(() => {
     if (selectedRows.length === 0) return;
     setBulkEditRows([...selectedRows]);
@@ -1178,19 +1173,7 @@ export default function OperationsPage() {
               detailsTitle=""
               className="bg-background"
             >
-              {rows.length > 0 && (
-                <Button
-                  data-table-slot="right"
-                  variant="ghost"
-                  size="sm"
-                  className="gap-2 text-gray-600 hover:text-gray-600 cursor-pointer border border-gray-200 hover:bg-gray-50"
-                  onClick={openBulkEditAll}
-                >
-                  <Pencil className="w-4 h-4" />
-                  Modifica tutte
-                </Button>
-              )}
-              {selectedRows.length > 0 && (
+              {selectedRows.length > 2 && (
                 <Button
                   data-table-slot="right"
                   variant="ghost"
