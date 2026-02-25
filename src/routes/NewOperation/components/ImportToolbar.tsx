@@ -40,7 +40,7 @@ export function ImportToolbar({
         ) : (
           <Warehouse className="h-4 w-4" />
         )}
-        Magazzino
+        Importa da Magazzino
       </Button>
 
       <Button
@@ -50,7 +50,7 @@ export function ImportToolbar({
         className="gap-2"
       >
         <FileSpreadsheet className="h-4 w-4" />
-        CSV
+        Importa da CSV
       </Button>
 
       <Button
@@ -60,7 +60,7 @@ export function ImportToolbar({
         className="gap-2"
       >
         <FileText className="h-4 w-4" />
-        DDT
+        Importa da DDT
       </Button>
 
       <Button
@@ -75,7 +75,7 @@ export function ImportToolbar({
         ) : (
           <StickyNote className="h-4 w-4" />
         )}
-        Note
+        Importa da Note
       </Button>
 
       {showCsvImport && (

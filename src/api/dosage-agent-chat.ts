@@ -5,12 +5,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
 export type DosageAgentChatRequest = {
   threadId: string;
   message: string;
-  modelName?:
-    | "gpt-4o"
-    | "gpt-4o-mini"
-    | "gpt-4-turbo"
-    | "gpt-4"
-    | "gpt-3.5-turbo";
+  modelName?: string;
   temperature?: number;
   jobId?: string;
   workspaceId?: string;
@@ -35,26 +30,71 @@ export type DosageAgentStreamEventType =
   | "requires_approval"
   | "loop_warning"
   | "complete"
-  | "error";
+  | "error"
+  | "thinking"
+  | "working_memory_update"
+  | "plan_step_generated"
+  | "plan_presented"
+  | "plan_step_modified"
+  | "plan_executing"
+  | "plan_step_executed"
+  | "model_selected";
+
+export type PlanStep = {
+  stepNumber: number;
+  description: string;
+  toolName?: string;
+  status?: "pending" | "in_progress" | "completed" | "modified" | "failed";
+  result?: string;
+};
+
+export type PlanEventData = {
+  planId?: string;
+  step?: PlanStep;
+  totalSteps?: number;
+  currentStep?: number;
+  status?: string;
+};
+
+export type ModelInfo = {
+  provider: "claude" | "openai";
+  modelName: string;
+  complexity: "low" | "medium" | "high";
+};
+
+export type CostInfo = {
+  inputTokens: number;
+  outputTokens: number;
+  tavilyCalls: number;
+  totalCostUsd: number;
+  costWithMarginUsd: number;
+  provider?: string;
+  modelName?: string;
+  byProvider?: Array<{
+    provider: string;
+    inputTokens: number;
+    outputTokens: number;
+    costUsd: number;
+  }>;
+};
 
 export type DosageAgentStreamEvent = {
   type: DosageAgentStreamEventType;
   content?: string;
   toolCall?: DosageAgentToolCall;
   sources?: DosageAgentSourceCitation[];
-  cost?: {
-    inputTokens: number;
-    outputTokens: number;
-    tavilyCalls: number;
-    totalCostUsd: number;
-    costWithMarginUsd: number;
-  };
+  cost?: CostInfo;
   response?: {
     status: "COMPLETED" | "REQUIRES_APPROVAL" | "ERROR";
     message?: string;
     sources?: DosageAgentSourceCitation[];
+    error?: string;
+    pendingToolCalls?: DosageAgentToolCall[];
   };
   error?: string;
+  plan?: PlanEventData;
+  modelInfo?: ModelInfo;
+  workingMemoryKey?: string;
 };
 
 export type DosageAgentResponse = {
