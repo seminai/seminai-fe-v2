@@ -24,7 +24,11 @@ import {
   X,
   Quote,
   TextSelect,
+  Mic,
+  Square,
+  Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +74,8 @@ import {
   type ActivePlan,
 } from "@/hooks/useDosageAgentChat";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AudioRecorderService } from "@/routes/FieldNotes/FieldNoteAudioRecorder";
+import { audioToTextApiService } from "@/api/audio-to-text";
 
 // ─── Tool label mapping ───────────────────────────────────────
 const TOOL_LABELS: Record<string, string> = {
@@ -129,6 +135,9 @@ export default function DosageAgentChat() {
     Array<{ id: string; text: string; preview: string }>
   >([]);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const audioRecorderRef = useRef<AudioRecorderService | null>(null);
 
   const {
     messages,
@@ -151,12 +160,6 @@ export default function DosageAgentChat() {
     modelName,
     workspaceId: currentWorkspace?.id,
   });
-
-  // Admin guard
-  if (meLoading) return null;
-  if (!meData || meData.role !== UserRole.ADMIN) {
-    return <Navigate to="/dashboard" replace />;
-  }
 
   const updateThreadId = useCallback(
     (newThreadId: string) => {
@@ -233,9 +236,86 @@ export default function DosageAgentChat() {
     }
   };
 
+  const getRecorder = useCallback(() => {
+    if (!audioRecorderRef.current) {
+      audioRecorderRef.current = new AudioRecorderService(
+        AudioRecorderService.getSupportedMimeType(),
+      );
+    }
+    return audioRecorderRef.current;
+  }, []);
+
+  const transcribeAudioFile = useCallback(async (file: File) => {
+    setIsTranscribing(true);
+    try {
+      const response = await audioToTextApiService.transcribeAudio({ file });
+      const transcription = response.data?.text?.trim();
+      if (transcription) {
+        setInput((prev) => (prev ? `${prev}\n${transcription}` : transcription));
+      } else {
+        toast.error("Trascrizione non disponibile");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Errore sconosciuto";
+      toast.error("Errore durante la trascrizione", {
+        description: errorMessage,
+      });
+    } finally {
+      setIsTranscribing(false);
+    }
+  }, []);
+
+  const handleRecordToggle = useCallback(async () => {
+    if (isTranscribing || isStreaming) return;
+
+    if (isRecording) {
+      try {
+        const recorder = getRecorder();
+        const audioBlob = await recorder.stop();
+        setIsRecording(false);
+        const audioFile = AudioRecorderService.buildAudioFile(audioBlob);
+        await transcribeAudioFile(audioFile);
+      } catch (error) {
+        setIsRecording(false);
+        const errorMessage =
+          error instanceof Error ? error.message : "Errore sconosciuto";
+        toast.error("Errore durante la registrazione", {
+          description: errorMessage,
+        });
+      }
+      return;
+    }
+
+    try {
+      const recorder = getRecorder();
+      await recorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Errore sconosciuto";
+      toast.error("Microfono non disponibile", {
+        description: errorMessage,
+      });
+    }
+  }, [isTranscribing, isStreaming, isRecording, getRecorder, transcribeAudioFile]);
+
+  // Cleanup audio recorder on unmount
+  useEffect(() => {
+    return () => {
+      audioRecorderRef.current?.cancel();
+    };
+  }, []);
+
   const handleSuggestionClick = (text: string) => {
     sendMessage(text);
   };
+
+  // Admin guard
+  if (meLoading) return null;
+  if (!meData || meData.role !== UserRole.ADMIN) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const sidebarContent = (
     <ChatHistorySidebar
@@ -380,6 +460,33 @@ export default function DosageAgentChat() {
                 className="min-h-[80px] resize-none text-sm"
               />
               <div className="flex items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRecordToggle}
+                  disabled={isStreaming || isTranscribing}
+                  className={cn(
+                    isRecording && "border-red-300 bg-red-50 text-red-600 hover:bg-red-100",
+                  )}
+                >
+                  {isTranscribing ? (
+                    <>
+                      <Spinner className="h-4 w-4 mr-2" ariaLabel="Trascrizione in corso" />
+                      Trascrivo...
+                    </>
+                  ) : isRecording ? (
+                    <>
+                      <Square className="h-4 w-4 mr-2" />
+                      Ferma
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="h-4 w-4 mr-2" />
+                      Vocale
+                    </>
+                  )}
+                </Button>
                 {isStreaming ? (
                   <Button
                     onClick={cancelRequest}
