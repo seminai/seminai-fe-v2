@@ -38,7 +38,8 @@ export type DosageAgentStreamEventType =
   | "plan_step_modified"
   | "plan_executing"
   | "plan_step_executed"
-  | "model_selected";
+  | "model_selected"
+  | "questionnaire_presented";
 
 export type PlanStep = {
   stepNumber: number;
@@ -78,6 +79,29 @@ export type CostInfo = {
   }>;
 };
 
+export type QuestionType = "single_select" | "multi_select" | "text";
+
+export type QuestionOption = {
+  label: string;
+  value: string;
+  description?: string;
+};
+
+export type Question = {
+  id: string;
+  question: string;
+  type: QuestionType;
+  options?: QuestionOption[];
+  required: boolean;
+  placeholder?: string;
+};
+
+export type Questionnaire = {
+  title: string;
+  description?: string;
+  questions: Question[];
+};
+
 export type DosageAgentStreamEvent = {
   type: DosageAgentStreamEventType;
   content?: string;
@@ -95,6 +119,7 @@ export type DosageAgentStreamEvent = {
   plan?: PlanEventData;
   modelInfo?: ModelInfo;
   workingMemoryKey?: string;
+  questionnaire?: Questionnaire;
 };
 
 export type DosageAgentResponse = {

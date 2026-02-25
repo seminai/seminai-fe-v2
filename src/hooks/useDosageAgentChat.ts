@@ -9,6 +9,7 @@ import {
   type CostInfo,
   type ModelInfo,
   type PlanStep,
+  type Questionnaire,
 } from "@/api/dosage-agent-chat";
 import type { ChatMessage } from "@/api/chats";
 
@@ -65,6 +66,8 @@ export function useDosageAgentChat(
   );
   const [lastCost, setLastCost] = useState<CostInfo | null>(null);
   const [currentPlan, setCurrentPlan] = useState<ActivePlan | null>(null);
+  const [activeQuestionnaire, setActiveQuestionnaire] =
+    useState<Questionnaire | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const messageIdCounter = useRef(0);
@@ -118,6 +121,7 @@ export function useDosageAgentChat(
     setCurrentModelInfo(null);
     setLastCost(null);
     setCurrentPlan(null);
+    setActiveQuestionnaire(null);
   }, []);
 
   const cancelRequest = useCallback(() => {
@@ -355,6 +359,14 @@ export function useDosageAgentChat(
                 break;
               }
 
+              case "questionnaire_presented": {
+                if (event.questionnaire) {
+                  setActiveQuestionnaire(event.questionnaire);
+                }
+                scrollToBottom();
+                break;
+              }
+
               case "loop_warning": {
                 toast.warning("Attenzione", {
                   description:
@@ -559,6 +571,21 @@ export function useDosageAgentChat(
     ],
   );
 
+  const submitQuestionnaire = useCallback(
+    async (answers: Record<string, string | string[]>) => {
+      setActiveQuestionnaire(null);
+      const lines = Object.entries(answers)
+        .map(([questionId, answer]) => {
+          const value = Array.isArray(answer) ? answer.join(", ") : answer;
+          return `- ${questionId}: ${value}`;
+        })
+        .join("\n");
+      const formattedMessage = `Risposte al questionario:\n${lines}`;
+      await sendMessage(formattedMessage);
+    },
+    [sendMessage],
+  );
+
   const loadMessages = useCallback(
     (chatMessages: ChatMessage[]) => {
       const convertedMessages: DosageAgentMessage[] = chatMessages.map(
@@ -595,10 +622,12 @@ export function useDosageAgentChat(
     currentModelInfo,
     lastCost,
     currentPlan,
+    activeQuestionnaire,
     sendMessage,
     approveAction,
     rejectAction,
     cancelRequest,
+    submitQuestionnaire,
     loadMessages,
     clearMessages,
     messagesEndRef,

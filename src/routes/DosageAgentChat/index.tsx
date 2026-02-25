@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Navigate, useSearchParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -13,13 +13,17 @@ import {
   Wrench,
   Bot,
   Cpu,
-  DollarSign,
   ChevronDown,
   ChevronRight,
   CheckCircle2,
   Circle,
   AlertTriangle,
   Sparkles,
+  HelpCircle,
+  Check,
+  X,
+  Quote,
+  TextSelect,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,11 +52,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useMe } from "@/hooks/useAuth";
@@ -61,7 +61,7 @@ import { useWorkspaceContext } from "@/contexts/WorkspaceContext";
 import { useChats, useDeleteChat } from "@/hooks/useChats";
 import { chatsApiService } from "@/api/chats";
 import type { ChatSummary } from "@/api/chats";
-import type { CostInfo, PlanStep } from "@/api/dosage-agent-chat";
+import type { PlanStep, Questionnaire } from "@/api/dosage-agent-chat";
 import {
   useDosageAgentChat,
   type DosageAgentMessage,
@@ -76,6 +76,7 @@ const TOOL_LABELS: Record<string, string> = {
   list_user_companies: "Caricamento aziende",
   list_production_units: "Caricamento unita produttive",
   list_company_products: "Caricamento prodotti magazzino",
+  ask_user_questions: "Preparazione domande",
   check_product_revoked: "Verifica stato prodotto",
   expand_production_cycles: "Caricamento cicli produttivi",
   extract_buffer_zones: "Calcolo fasce di rispetto",
@@ -116,11 +117,18 @@ export default function DosageAgentChat() {
   const { data: meData, isLoading: meLoading } = useMe();
   const { currentWorkspace } = useWorkspaceContext();
   const isMobile = useIsMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [threadId, setThreadId] = useState<string>(() => crypto.randomUUID());
-  const [modelName] = useState("gpt-4o-mini");
+  const [threadId, setThreadId] = useState<string>(
+    () => searchParams.get("threadId") || crypto.randomUUID(),
+  );
+  const modelName = "gpt-4o-mini";
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [input, setInput] = useState("");
+  const [contextChips, setContextChips] = useState<
+    Array<{ id: string; text: string; preview: string }>
+  >([]);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const {
     messages,
@@ -129,13 +137,13 @@ export default function DosageAgentChat() {
     pendingApproval,
     activeTool,
     toolCount,
-    currentModelInfo,
-    lastCost,
     currentPlan,
+    activeQuestionnaire,
     sendMessage,
     approveAction,
     rejectAction,
     cancelRequest,
+    submitQuestionnaire,
     loadMessages,
     clearMessages,
     messagesEndRef,
@@ -150,11 +158,54 @@ export default function DosageAgentChat() {
     return <Navigate to="/dashboard" replace />;
   }
 
+  const updateThreadId = useCallback(
+    (newThreadId: string) => {
+      setThreadId(newThreadId);
+      setSearchParams({ threadId: newThreadId }, { replace: true });
+    },
+    [setSearchParams],
+  );
+
+  // Sync URL on initial mount if threadId was generated (no param in URL)
+  useEffect(() => {
+    if (!searchParams.get("threadId")) {
+      setSearchParams({ threadId }, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const addContextChip = useCallback((text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    setContextChips((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        text: trimmed,
+        preview: trimmed.length > 60 ? trimmed.slice(0, 57) + "..." : trimmed,
+      },
+    ]);
+  }, []);
+
+  const removeContextChip = useCallback((id: string) => {
+    setContextChips((prev) => prev.filter((c) => c.id !== id));
+  }, []);
+
   const handleSend = () => {
     const trimmed = input.trim();
     if (!trimmed || isStreaming) return;
-    sendMessage(trimmed);
+
+    let messageToSend = trimmed;
+    if (contextChips.length > 0) {
+      const contextBlock = contextChips
+        .map((c) => `> ${c.text.replace(/\n/g, "\n> ")}`)
+        .join("\n\n");
+      messageToSend = `${contextBlock}\n\n${trimmed}`;
+    }
+
+    sendMessage(messageToSend);
     setInput("");
+    setContextChips([]);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -165,15 +216,16 @@ export default function DosageAgentChat() {
   };
 
   const handleNewChat = () => {
-    setThreadId(crypto.randomUUID());
+    updateThreadId(crypto.randomUUID());
     clearMessages();
     setInput("");
+    setContextChips([]);
   };
 
   const handleLoadChat = async (chat: ChatSummary) => {
     try {
       const detail = await chatsApiService.getChatDetail(chat.id);
-      setThreadId(detail.threadId);
+      updateThreadId(detail.threadId);
       loadMessages(detail.messages);
       if (isMobile) setSidebarOpen(false);
     } catch {
@@ -225,39 +277,18 @@ export default function DosageAgentChat() {
               </Button>
             )}
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <Bot className="h-5 w-5 text-emerald-600 shrink-0" />
               <h1 className="text-sm font-semibold text-slate-800 truncate">
-                Dosage Agent
+                Agente Seminai
               </h1>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              {currentModelInfo ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="outline" className="text-[10px] gap-1">
-                      <Cpu className="h-3 w-3" />
-                      {currentModelInfo.modelName}
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="text-xs space-y-0.5">
-                      <div>Provider: {currentModelInfo.provider}</div>
-                      <div>Complessita: {currentModelInfo.complexity}</div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              ) : (
-                <Badge variant="outline" className="text-[10px]">
-                  {modelName}
-                </Badge>
-              )}
-              {lastCost && <CostBadge cost={lastCost} />}
             </div>
           </div>
 
           {/* Messages Area */}
           <ScrollArea className="flex-1 min-h-0">
-            <div className="p-4 space-y-4 max-w-3xl mx-auto">
+            <div
+              ref={messagesContainerRef}
+              className="w-full min-w-0 p-4 space-y-4 max-w-3xl mx-auto relative"
+            >
               {messages.length === 0 && !isStreaming && (
                 <EmptyState onSuggestionClick={handleSuggestionClick} />
               )}
@@ -268,6 +299,14 @@ export default function DosageAgentChat() {
 
               {currentPlan && currentPlan.steps.length > 0 && (
                 <TreatmentPlanCard plan={currentPlan} />
+              )}
+
+              {activeQuestionnaire && (
+                <QuestionnaireCard
+                  questionnaire={activeQuestionnaire}
+                  onSubmit={submitQuestionnaire}
+                  disabled={isStreaming}
+                />
               )}
 
               {pendingApproval && (
@@ -291,9 +330,47 @@ export default function DosageAgentChat() {
             </div>
           </ScrollArea>
 
+          <SelectionFloatingButton
+            containerRef={messagesContainerRef}
+            onAddContext={addContextChip}
+          />
+
           {/* Input Area */}
           <div className="shrink-0 border-t border-slate-200 bg-white">
             <div className="p-4 max-w-3xl mx-auto space-y-3">
+              {/* Context chips */}
+              {contextChips.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {contextChips.map((chip) => (
+                    <Tooltip key={chip.id}>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 rounded-md px-2 py-1 max-w-[250px]">
+                          <Quote className="h-3 w-3 text-slate-400 shrink-0" />
+                          <span className="text-xs text-slate-600 truncate">
+                            {chip.preview}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeContextChip(chip.id)}
+                            className="shrink-0 text-slate-400 hover:text-slate-600 transition-colors"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-w-sm max-h-[200px] overflow-y-auto"
+                      >
+                        <pre className="whitespace-pre-wrap text-xs">
+                          {chip.text}
+                        </pre>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              )}
+
               <Textarea
                 placeholder="Chiedi all'agronomo AI..."
                 value={input}
@@ -333,43 +410,100 @@ export default function DosageAgentChat() {
   );
 }
 
-// ─── Cost Badge ──────────────────────────────────────────────
-function CostBadge({ cost }: { cost: CostInfo }) {
+// ─── Selection Floating Button ───────────────────────────────
+function SelectionFloatingButton({
+  containerRef,
+  onAddContext,
+}: {
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  onAddContext: (text: string) => void;
+}) {
+  const [selectionInfo, setSelectionInfo] = useState<{
+    text: string;
+    top: number;
+    left: number;
+  } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const handleMouseUp = () => {
+      // Small delay to let the browser finalize the selection
+      setTimeout(() => {
+        const selection = window.getSelection();
+        if (
+          !selection ||
+          selection.isCollapsed ||
+          !selection.toString().trim()
+        ) {
+          return;
+        }
+
+        const container = containerRef.current;
+        if (!container) return;
+
+        // Ensure the selection is inside the messages container
+        const range = selection.getRangeAt(0);
+        if (!container.contains(range.commonAncestorContainer)) {
+          return;
+        }
+
+        // Use screen coordinates (fixed positioning)
+        const rect = range.getBoundingClientRect();
+        setSelectionInfo({
+          text: selection.toString().trim(),
+          top: rect.bottom + 6,
+          left: Math.max(8, Math.min(rect.left, window.innerWidth - 200)),
+        });
+      }, 10);
+    };
+
+    const handleMouseDown = (e: MouseEvent) => {
+      if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
+        setSelectionInfo(null);
+      }
+    };
+
+    const handleScroll = () => {
+      setSelectionInfo(null);
+    };
+
+    document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("mousedown", handleMouseDown);
+
+    // Dismiss on scroll in the messages area
+    const container = containerRef.current;
+    const viewport = container?.closest("[data-slot='scroll-area-viewport']");
+    viewport?.addEventListener("scroll", handleScroll);
+
+    return () => {
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousedown", handleMouseDown);
+      viewport?.removeEventListener("scroll", handleScroll);
+    };
+  }, [containerRef]);
+
+  if (!selectionInfo) return null;
+
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Badge
-          variant="outline"
-          className="text-[10px] gap-1 text-blue-700 border-blue-200 bg-blue-50"
-        >
-          <DollarSign className="h-3 w-3" />$
-          {cost.totalCostUsd.toFixed(4)}
-        </Badge>
-      </TooltipTrigger>
-      <TooltipContent>
-        <div className="text-xs space-y-0.5">
-          <div>Input: {cost.inputTokens.toLocaleString()} token</div>
-          <div>Output: {cost.outputTokens.toLocaleString()} token</div>
-          {cost.tavilyCalls > 0 && (
-            <div>Tavily: {cost.tavilyCalls} chiamate</div>
-          )}
-          <div>Costo: ${cost.totalCostUsd.toFixed(4)}</div>
-          <div>Con margine: ${cost.costWithMarginUsd.toFixed(4)}</div>
-          {cost.provider && <div>Provider: {cost.provider}</div>}
-          {cost.modelName && <div>Modello: {cost.modelName}</div>}
-          {cost.byProvider && cost.byProvider.length > 0 && (
-            <>
-              <hr className="border-slate-600 my-1" />
-              {cost.byProvider.map((bp) => (
-                <div key={bp.provider}>
-                  {bp.provider}: ${bp.costUsd.toFixed(4)}
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-      </TooltipContent>
-    </Tooltip>
+    <button
+      ref={buttonRef}
+      type="button"
+      onClick={() => {
+        onAddContext(selectionInfo.text);
+        setSelectionInfo(null);
+        window.getSelection()?.removeAllRanges();
+      }}
+      style={{
+        position: "fixed",
+        top: selectionInfo.top,
+        left: selectionInfo.left,
+        zIndex: 9999,
+      }}
+      className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 shadow-lg hover:bg-slate-50 hover:border-emerald-300 transition-colors animate-in fade-in-0 zoom-in-95 duration-150"
+    >
+      <TextSelect className="h-3.5 w-3.5 text-emerald-600" />
+      Aggiungi al contesto
+    </button>
   );
 }
 
@@ -469,9 +603,7 @@ function PlanStepRow({ step }: { step: PlanStep }) {
       case "completed":
         return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />;
       case "in_progress":
-        return (
-          <Spinner className="h-3.5 w-3.5" ariaLabel="In corso" />
-        );
+        return <Spinner className="h-3.5 w-3.5" ariaLabel="In corso" />;
       case "modified":
         return <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />;
       case "failed":
@@ -494,10 +626,7 @@ function PlanStepRow({ step }: { step: PlanStep }) {
         <span className="font-medium">Passo {step.stepNumber}:</span>{" "}
         {step.description}
         {step.toolName && (
-          <Badge
-            variant="outline"
-            className="ml-1.5 text-[9px] px-1 py-0"
-          >
+          <Badge variant="outline" className="ml-1.5 text-[9px] px-1 py-0">
             {getToolLabel(step.toolName)}
           </Badge>
         )}
@@ -545,10 +674,12 @@ function ChatHistorySidebar({
 
   return (
     <>
-      <div className={cn(
-        "flex shrink-0 flex-col bg-slate-50/50 h-full overflow-hidden",
-        isMobile ? "w-full" : "w-[280px] border-r border-slate-200",
-      )}>
+      <div
+        className={cn(
+          "flex shrink-0 flex-col bg-slate-50/50 h-full overflow-hidden",
+          isMobile ? "w-full" : "w-[280px] border-r border-slate-200",
+        )}
+      >
         {/* Sidebar Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-3 py-3">
           <span className="text-sm font-semibold text-slate-700">
@@ -571,10 +702,7 @@ function ChatHistorySidebar({
           <div className="p-2 space-y-1">
             {isLoading && (
               <div className="flex items-center justify-center py-8">
-                <Spinner
-                  className="h-4 w-4"
-                  ariaLabel="Caricamento chat..."
-                />
+                <Spinner className="h-4 w-4" ariaLabel="Caricamento chat..." />
               </div>
             )}
 
@@ -693,13 +821,13 @@ function MessageBubble({ message }: { message: DosageAgentMessage }) {
   return (
     <div
       className={cn(
-        "flex min-w-0",
+        "flex w-full min-w-0",
         isUser ? "justify-end" : "justify-start",
       )}
     >
       <div
         className={cn(
-          "min-w-0 max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm",
+          "w-full min-w-0 max-w-full sm:w-fit sm:max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm",
           isUser
             ? "bg-emerald-600 text-white"
             : "bg-white border border-slate-200 text-slate-800",
@@ -723,9 +851,11 @@ function MessageBubble({ message }: { message: DosageAgentMessage }) {
 
         {/* Content */}
         {isUser ? (
-          <p className="whitespace-pre-wrap break-words">{content}</p>
+          <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">
+            {content}
+          </p>
         ) : (
-          <div className="min-w-0 max-w-full break-words">
+          <div className="min-w-0 max-w-full [overflow-wrap:anywhere] overflow-x-auto">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
@@ -806,8 +936,8 @@ function MessageBubble({ message }: { message: DosageAgentMessage }) {
                 ),
                 hr: () => <hr className="my-3 border-slate-200" />,
                 table: ({ children }) => (
-                  <div className="my-3 w-full min-w-0 overflow-x-auto">
-                    <table className="w-max min-w-full border-collapse text-left text-sm text-slate-800">
+                  <div className="my-3 min-w-0 overflow-x-auto">
+                    <table className="border-collapse text-left text-sm text-slate-800">
                       {children}
                     </table>
                   </div>
@@ -824,12 +954,12 @@ function MessageBubble({ message }: { message: DosageAgentMessage }) {
                   </tr>
                 ),
                 th: ({ children }) => (
-                  <th className="whitespace-nowrap px-2 py-1.5 font-semibold text-slate-700 first:pl-0 last:pr-0">
+                  <th className="whitespace-normal break-words sm:whitespace-nowrap px-2 py-1.5 font-semibold text-slate-700 first:pl-0 last:pr-0">
                     {children}
                   </th>
                 ),
                 td: ({ children }) => (
-                  <td className="whitespace-nowrap px-2 py-1.5 first:pl-0 last:pr-0">
+                  <td className="whitespace-normal break-words sm:whitespace-nowrap px-2 py-1.5 first:pl-0 last:pr-0">
                     {children}
                   </td>
                 ),
@@ -861,19 +991,16 @@ function MessageBubble({ message }: { message: DosageAgentMessage }) {
           </div>
         )}
 
-        {/* Per-message cost & model info */}
-        {!isUser && (message.cost || message.modelInfo) && (
+        {/* Per-message model info */}
+        {!isUser && message.modelInfo && (
           <div className="mt-2 flex items-center gap-1.5 border-t border-slate-100 pt-2">
-            {message.cost && <CostBadge cost={message.cost} />}
-            {message.modelInfo && (
-              <Badge
-                variant="outline"
-                className="text-[9px] gap-1 text-slate-500"
-              >
-                <Cpu className="h-2.5 w-2.5" />
-                {message.modelInfo.modelName}
-              </Badge>
-            )}
+            <Badge
+              variant="outline"
+              className="text-[9px] gap-1 text-slate-500"
+            >
+              <Cpu className="h-2.5 w-2.5" />
+              {message.modelInfo.modelName}
+            </Badge>
           </div>
         )}
       </div>
@@ -918,8 +1045,7 @@ function PendingActionCard({
         <p className="font-medium">Azione in attesa di approvazione</p>
       </div>
       <p className="text-xs text-amber-800">
-        L'agente vuole eseguire:{" "}
-        <strong>{getToolLabel(toolName)}</strong>
+        L'agente vuole eseguire: <strong>{getToolLabel(toolName)}</strong>
       </p>
       {destructiveDescription && (
         <p className="text-xs text-amber-700 bg-amber-100 rounded p-2">
@@ -976,6 +1102,143 @@ function PendingActionCard({
   );
 }
 
+// ─── Questionnaire Card ──────────────────────────────────────
+function QuestionnaireCard({
+  questionnaire,
+  onSubmit,
+  disabled,
+}: {
+  questionnaire: Questionnaire;
+  onSubmit: (answers: Record<string, string | string[]>) => void;
+  disabled?: boolean;
+}) {
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+
+  const handleSingleSelect = (questionId: string, value: string) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+  };
+
+  const handleMultiSelect = (questionId: string, value: string) => {
+    setAnswers((prev) => {
+      const current = (prev[questionId] as string[]) || [];
+      const updated = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value];
+      return { ...prev, [questionId]: updated };
+    });
+  };
+
+  const handleTextInput = (questionId: string, value: string) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+  };
+
+  const isComplete = questionnaire.questions
+    .filter((q) => q.required)
+    .every((q) => {
+      const answer = answers[q.id];
+      return (
+        answer &&
+        (Array.isArray(answer) ? answer.length > 0 : answer.length > 0)
+      );
+    });
+
+  return (
+    <div className="rounded-lg border border-sky-200 bg-sky-50/50 p-4 space-y-4">
+      <div className="flex items-center gap-2">
+        <HelpCircle className="h-4 w-4 text-sky-600 shrink-0" />
+        <span className="text-sm font-medium text-slate-800">
+          {questionnaire.title}
+        </span>
+      </div>
+      {questionnaire.description && (
+        <p className="text-xs text-slate-600">{questionnaire.description}</p>
+      )}
+
+      {questionnaire.questions.map((q) => (
+        <div key={q.id} className="space-y-2">
+          <label className="text-xs font-medium text-slate-700">
+            {q.question}
+            {q.required && <span className="text-red-500 ml-0.5">*</span>}
+          </label>
+
+          {(q.type === "single_select" || q.type === "multi_select") &&
+            q.options && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {q.options.map((opt) => {
+                  const isSelected =
+                    q.type === "single_select"
+                      ? answers[q.id] === opt.value
+                      : ((answers[q.id] as string[]) || []).includes(opt.value);
+
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() =>
+                        q.type === "single_select"
+                          ? handleSingleSelect(q.id, opt.value)
+                          : handleMultiSelect(q.id, opt.value)
+                      }
+                      className={cn(
+                        "flex items-start gap-2 rounded-md border px-3 py-2 text-left text-xs transition-colors",
+                        isSelected
+                          ? "border-sky-400 bg-sky-100 text-sky-900"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-sky-300 hover:bg-sky-50",
+                        disabled && "opacity-50 cursor-not-allowed",
+                      )}
+                    >
+                      {q.type === "multi_select" && (
+                        <div
+                          className={cn(
+                            "mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-sm border",
+                            isSelected
+                              ? "border-sky-500 bg-sky-500 text-white"
+                              : "border-slate-300",
+                          )}
+                        >
+                          {isSelected && <Check className="h-2.5 w-2.5" />}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <span className="font-medium">{opt.label}</span>
+                        {opt.description && (
+                          <span className="block text-[10px] text-slate-500 mt-0.5">
+                            {opt.description}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+          {q.type === "text" && (
+            <Textarea
+              placeholder={q.placeholder || "Scrivi qui..."}
+              value={(answers[q.id] as string) || ""}
+              onChange={(e) => handleTextInput(q.id, e.target.value)}
+              disabled={disabled}
+              className="min-h-[60px] resize-none text-xs"
+            />
+          )}
+        </div>
+      ))}
+
+      <Button
+        size="sm"
+        className="bg-sky-600 hover:bg-sky-700 text-white"
+        disabled={!isComplete || disabled}
+        onClick={() => onSubmit(answers)}
+      >
+        <Send className="h-3.5 w-3.5 mr-1.5" />
+        Invia risposte
+      </Button>
+    </div>
+  );
+}
+
 // ─── Empty State ──────────────────────────────────────────────
 function EmptyState({
   onSuggestionClick,
@@ -989,8 +1252,8 @@ function EmptyState({
       </div>
       <p className="text-base font-medium text-slate-700">Dosage Agent</p>
       <p className="text-sm text-slate-500 max-w-sm mt-2">
-        Chiedi informazioni su dosaggi, conformita ai disciplinari, compatibilita
-        tra prodotti fitosanitari e molto altro.
+        Chiedi informazioni su dosaggi, conformita ai disciplinari,
+        compatibilita tra prodotti fitosanitari e molto altro.
       </p>
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-md">
         {[

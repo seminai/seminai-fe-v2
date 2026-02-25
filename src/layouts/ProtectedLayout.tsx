@@ -317,6 +317,7 @@ function MobileBottomBar({
 
   const labelActive = location.pathname.startsWith("/label");
   const labelDashboard = location.pathname.startsWith("/dashboard");
+  const chatActive = location.pathname.startsWith("/dosage-agent-chat");
   const fieldsActive = location.pathname.startsWith("/fields");
   const companyActive = location.pathname.startsWith("/company");
   const productionUnitActive = location.pathname.startsWith("/production-unit");
@@ -359,6 +360,26 @@ function MobileBottomBar({
                   size={20}
                 />
                 <span className="mt-1">Home</span>
+              </Link>
+            </li>
+          )}
+          {userRole === UserRole.ADMIN && (
+            <li key="chat">
+              <Link
+                to="/dosage-agent-chat"
+                className={cn(
+                  "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
+                  chatActive && "text-gray-900 font-medium"
+                )}
+              >
+                <MessageCircle
+                  className={cn(
+                    "size-5",
+                    chatActive ? "text-gray-900" : "text-gray-700/90"
+                  )}
+                  size={20}
+                />
+                <span className="mt-1">Chat</span>
               </Link>
             </li>
           )}
