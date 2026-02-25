@@ -277,7 +277,7 @@ function ChatHistorySidebar({
 
   return (
     <>
-      <div className="flex w-[280px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/50 h-full">
+      <div className="flex w-[280px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/50 h-full overflow-hidden">
         {/* Sidebar Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-3 py-3">
           <span className="text-sm font-semibold text-slate-700">
@@ -294,7 +294,7 @@ function ChatHistorySidebar({
         </div>
 
         {/* Chat List */}
-        <ScrollArea className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
           <div className="p-2 space-y-1">
             {isLoading && (
               <div className="flex items-center justify-center py-8">
@@ -322,7 +322,7 @@ function ChatHistorySidebar({
               />
             ))}
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* Delete Confirmation Dialog */}
@@ -377,14 +377,14 @@ function ChatHistoryItem({
   return (
     <div
       className={cn(
-        "group relative flex items-start gap-2 rounded-lg px-3 py-2.5 pr-8 cursor-pointer transition-colors",
+        "group flex items-center gap-2 rounded-lg px-3 py-2.5 cursor-pointer transition-colors overflow-hidden min-w-0",
         isActive
           ? "bg-emerald-50 border border-emerald-200"
           : "hover:bg-slate-100 border border-transparent",
       )}
       onClick={onSelect}
     >
-      <MessageCircle className="h-4 w-4 text-slate-400 shrink-0 mt-0.5" />
+      <MessageCircle className="h-4 w-4 text-slate-400 shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-xs text-slate-700 truncate leading-relaxed">
           {preview}
@@ -394,7 +394,7 @@ function ChatHistoryItem({
       <Button
         variant="ghost"
         size="sm"
-        className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 shrink-0 h-6 w-6 p-0 text-slate-400 hover:text-red-600"
+        className="shrink-0 h-6 w-6 p-0 text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
         onClick={(e) => {
           e.stopPropagation();
           onDelete();
@@ -452,7 +452,7 @@ function MessageBubble({ message }: { message: DosageAgentMessage }) {
         {isUser ? (
           <p className="whitespace-pre-wrap break-words">{content}</p>
         ) : (
-          <div className="min-w-0 max-w-full break-words whitespace-pre-wrap">
+          <div className="min-w-0 max-w-full break-words">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
@@ -482,17 +482,19 @@ function MessageBubble({ message }: { message: DosageAgentMessage }) {
                   </p>
                 ),
                 ul: ({ children }) => (
-                  <ul className="list-disc list-inside mb-2 space-y-1 text-slate-800 break-words">
+                  <ul className="list-disc pl-5 mb-2 space-y-0.5 text-slate-800 break-words">
                     {children}
                   </ul>
                 ),
                 ol: ({ children }) => (
-                  <ol className="list-decimal list-inside mb-2 space-y-1 text-slate-800 break-words">
+                  <ol className="list-decimal pl-5 mb-2 space-y-0.5 text-slate-800 break-words">
                     {children}
                   </ol>
                 ),
                 li: ({ children }) => (
-                  <li className="text-slate-800 break-words">{children}</li>
+                  <li className="text-slate-800 break-words pl-0.5">
+                    {children}
+                  </li>
                 ),
                 strong: ({ children }) => (
                   <strong className="font-semibold text-slate-900">

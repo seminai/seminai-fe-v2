@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ChevronUp,
   Lock,
+  RotateCcw,
   Settings,
   X,
 } from "lucide-react";
@@ -60,6 +61,8 @@ interface AutoConfigPanelProps {
   setStartAt: Dispatch<SetStateAction<string>>;
   endAt: string;
   setEndAt: Dispatch<SetStateAction<string>>;
+  suggestedStartAt?: string;
+  suggestedEndAt?: string;
 }
 
 const STRATEGY_OPTIONS: Array<{
@@ -106,6 +109,8 @@ export function AutoConfigPanel({
   setStartAt,
   endAt,
   setEndAt,
+  suggestedStartAt,
+  suggestedEndAt,
 }: AutoConfigPanelProps): ReactElement {
   const [showMaxLimits, setShowMaxLimits] = useState(false);
 
@@ -166,7 +171,7 @@ export function AutoConfigPanel({
     minDateObj.setMonth(minDateObj.getMonth() - 3);
     const minDate = minDateObj.toISOString().split("T")[0];
     const endDates = selectedUnits
-      .map((unit) => unit.productionUnit.endDate)
+      .map((unit) => unit.productionUnit.endDate ?? unit.productionUnit.harvestingDate)
       .filter((date): date is string => Boolean(date));
     let maxDate: string | undefined;
     if (endDates.length > 0) {
@@ -252,38 +257,75 @@ export function AutoConfigPanel({
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-1">
-                  <Label className="text-xs">Data inizio</Label>
-                  <Input
-                    type="date"
-                    value={startAt}
-                    onChange={(e) => {
-                      setStartAt(e.target.value);
-                      if (endAt && e.target.value && endAt < e.target.value) {
-                        setEndAt("");
+              <div className="space-y-3">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Data inizio</Label>
+                    <Input
+                      type="date"
+                      value={startAt}
+                      onChange={(e) => {
+                        setStartAt(e.target.value);
+                        if (endAt && e.target.value && endAt < e.target.value) {
+                          setEndAt("");
+                        }
+                      }}
+                      min={validDateRange.minDate}
+                      max={validDateRange.maxDate}
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Data fine</Label>
+                    <Input
+                      type="date"
+                      value={endAt}
+                      onChange={(e) => setEndAt(e.target.value)}
+                      min={
+                        startAt && startAt >= (validDateRange.minDate || "")
+                          ? startAt
+                          : validDateRange.minDate
                       }
-                    }}
-                    min={validDateRange.minDate}
-                    max={validDateRange.maxDate}
-                    className="h-9"
-                  />
+                      max={validDateRange.maxDate}
+                      className="h-9"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Data fine</Label>
-                  <Input
-                    type="date"
-                    value={endAt}
-                    onChange={(e) => setEndAt(e.target.value)}
-                    min={
-                      startAt && startAt >= (validDateRange.minDate || "")
-                        ? startAt
-                        : validDateRange.minDate
-                    }
-                    max={validDateRange.maxDate}
-                    className="h-9"
-                  />
-                </div>
+
+                {/* Suggested range hint */}
+                {(suggestedStartAt || suggestedEndAt) && (
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-neutral-400">
+                      Suggerito:{" "}
+                      {suggestedStartAt
+                        ? new Date(suggestedStartAt).toLocaleDateString("it-IT")
+                        : "—"}{" "}
+                      →{" "}
+                      {suggestedEndAt
+                        ? new Date(suggestedEndAt).toLocaleDateString("it-IT")
+                        : "—"}{" "}
+                      <span className="text-neutral-300">
+                        (±3 mesi dalle unità selezionate)
+                      </span>
+                    </p>
+                    {(startAt !== (suggestedStartAt ?? "") ||
+                      endAt !== (suggestedEndAt ?? "")) && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 gap-1 px-2 text-xs text-neutral-500"
+                        onClick={() => {
+                          if (suggestedStartAt) setStartAt(suggestedStartAt);
+                          if (suggestedEndAt) setEndAt(suggestedEndAt);
+                        }}
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        Usa suggeriti
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </AccordionContent>
           </AccordionItem>

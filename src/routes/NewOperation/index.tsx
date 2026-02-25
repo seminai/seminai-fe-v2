@@ -46,6 +46,58 @@ export default function NewOperation() {
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
 
+  // Main state hook
+  const state = useNewOperationState();
+
+  // Suggested treatment date range based on selected production units
+  const suggestedDateRange = useMemo(() => {
+    if (state.globalSelectedUnitIds.length === 0) {
+      return { suggestedStartAt: undefined, suggestedEndAt: undefined };
+    }
+    const selectedUnits = state.productionUnits.filter((pu) =>
+      state.globalSelectedUnitIds.includes(pu.productionUnit.id),
+    );
+    if (selectedUnits.length === 0) {
+      return { suggestedStartAt: undefined, suggestedEndAt: undefined };
+    }
+
+    // Earliest startDate - 3 months
+    const startDates = selectedUnits
+      .map((u) => u.productionUnit.startDate)
+      .filter((d): d is string => Boolean(d));
+    let suggestedStartAt: string | undefined;
+    if (startDates.length > 0) {
+      const earliest = startDates.reduce((a, b) => (a < b ? a : b));
+      const d = new Date(earliest);
+      d.setMonth(d.getMonth() - 3);
+      suggestedStartAt = d.toISOString().split("T")[0];
+    }
+
+    // Latest (endDate ?? harvestingDate) + 3 months
+    const endOrHarvestDates = selectedUnits
+      .map((u) => u.productionUnit.endDate ?? u.productionUnit.harvestingDate)
+      .filter((d): d is string => Boolean(d));
+    let suggestedEndAt: string | undefined;
+    if (endOrHarvestDates.length > 0) {
+      const latest = endOrHarvestDates.reduce((a, b) => (a > b ? a : b));
+      const d = new Date(latest);
+      d.setMonth(d.getMonth() + 3);
+      suggestedEndAt = d.toISOString().split("T")[0];
+    }
+
+    return { suggestedStartAt, suggestedEndAt };
+  }, [state.globalSelectedUnitIds, state.productionUnits]);
+
+  // Auto-fill dates when units are selected and dates are still empty
+  useEffect(() => {
+    if (startAt === "" && suggestedDateRange.suggestedStartAt) {
+      setStartAt(suggestedDateRange.suggestedStartAt);
+    }
+    if (endAt === "" && suggestedDateRange.suggestedEndAt) {
+      setEndAt(suggestedDateRange.suggestedEndAt);
+    }
+  }, [suggestedDateRange.suggestedStartAt, suggestedDateRange.suggestedEndAt]);
+
   // Load orchestrator datasets
   useEffect(() => {
     const loader = new OrchestratorDatasetsLoader();
@@ -54,9 +106,6 @@ export default function NewOperation() {
       .then(setOrchestratorDatasets)
       .catch((e) => console.error("Failed to load orchestrator datasets", e));
   }, []);
-
-  // Main state hook
-  const state = useNewOperationState();
 
   // Production unit map for manual submission
   const productionUnitMap = useMemo(() => {
@@ -290,6 +339,8 @@ export default function NewOperation() {
                     setStartAt={setStartAt}
                     endAt={endAt}
                     setEndAt={setEndAt}
+                    suggestedStartAt={suggestedDateRange.suggestedStartAt}
+                    suggestedEndAt={suggestedDateRange.suggestedEndAt}
                   />
                 )}
 
