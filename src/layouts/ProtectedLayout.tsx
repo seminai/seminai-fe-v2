@@ -61,7 +61,10 @@ import { UserRole } from "@/api/auth";
 import { WorkspaceSwitcher } from "@/components/organism/WorkspaceSwitcher";
 import { MobileHeader } from "@/components/organism/MobileHeader";
 import { useUserId } from "@/contexts/UserIdContext";
-import { getScopedStorageItem, setScopedStorageItem } from "@/utils/storageKeys";
+import {
+  getScopedStorageItem,
+  setScopedStorageItem,
+} from "@/utils/storageKeys";
 
 type ProtectedLayoutProps = {
   children: React.ReactNode;
@@ -281,7 +284,7 @@ class ManageMenuController {
       },
       {
         key: "operations",
-        label: "Operazioni",
+        label: "Qdca",
         path: "/operations",
         icon: icons.getOperationsIcon(),
       },
@@ -349,13 +352,13 @@ function MobileBottomBar({
                 to="/dashboard"
                 className={cn(
                   "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
-                  labelDashboard && "text-gray-900 font-medium"
+                  labelDashboard && "text-gray-900 font-medium",
                 )}
               >
                 <LayoutDashboard
                   className={cn(
                     "size-5",
-                    labelDashboard ? "text-gray-900" : "text-gray-700/90"
+                    labelDashboard ? "text-gray-900" : "text-gray-700/90",
                   )}
                   size={20}
                 />
@@ -369,13 +372,13 @@ function MobileBottomBar({
                 to="/dosage-agent-chat"
                 className={cn(
                   "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
-                  chatActive && "text-gray-900 font-medium"
+                  chatActive && "text-gray-900 font-medium",
                 )}
               >
                 <MessageCircle
                   className={cn(
                     "size-5",
-                    chatActive ? "text-gray-900" : "text-gray-700/90"
+                    chatActive ? "text-gray-900" : "text-gray-700/90",
                   )}
                   size={20}
                 />
@@ -389,13 +392,13 @@ function MobileBottomBar({
                 to="/label"
                 className={cn(
                   "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
-                  labelActive && "text-gray-900 font-medium"
+                  labelActive && "text-gray-900 font-medium",
                 )}
               >
                 <Tags
                   className={cn(
                     "size-5",
-                    labelActive ? "text-gray-900" : "text-gray-700/90"
+                    labelActive ? "text-gray-900" : "text-gray-700/90",
                   )}
                   size={20}
                 />
@@ -437,13 +440,13 @@ function MobileManageMenu({
             type="button"
             className={cn(
               "flex w-full flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
-              isActive && "text-gray-900 font-medium"
+              isActive && "text-gray-900 font-medium",
             )}
           >
             <Settings2
               className={cn(
                 "size-5",
-                isActive ? "text-gray-900" : "text-gray-700/90"
+                isActive ? "text-gray-900" : "text-gray-700/90",
               )}
               size={20}
             />
@@ -510,7 +513,7 @@ function MobileAccountMenu() {
           <button
             type="button"
             className={cn(
-              "flex w-full flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80"
+              "flex w-full flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
             )}
           >
             <IoPersonCircleOutline className="size-5 text-gray-700/90" />
@@ -520,10 +523,14 @@ function MobileAccountMenu() {
         <DropdownMenuContent side="top" align="center">
           <DropdownMenuLabel>Il mio account</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => navigate("/settings?tab=impostazioni")}>
+          <DropdownMenuItem
+            onClick={() => navigate("/settings?tab=impostazioni")}
+          >
             <LuSettings className="size-4" /> Impostazioni
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate("/settings?tab=integrazioni")}>
+          <DropdownMenuItem
+            onClick={() => navigate("/settings?tab=integrazioni")}
+          >
             <Plug className="size-4" /> Integrazioni
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate("/settings?tab=costi")}>
@@ -580,7 +587,7 @@ function SidebarToggleButton({
       onClick={onToggle}
       className={cn(
         "flex cursor-pointer h-9 w-9 items-center justify-center transition rounded-lg hover:bg-neutral-100/50",
-        className
+        className,
       )}
     >
       <svg
@@ -650,14 +657,18 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     }
   });
   useEffect(() => {
-    setScopedStorageItem(SIDEBAR_STATE_KEY, userId, JSON.stringify(sidebarOpen));
+    setScopedStorageItem(
+      SIDEBAR_STATE_KEY,
+      userId,
+      JSON.stringify(sidebarOpen),
+    );
   }, [sidebarOpen, userId]);
 
   useEffect(() => {
     setScopedStorageItem(
       MANAGE_MENU_STATE_KEY,
       userId,
-      JSON.stringify(manageMenuOpen)
+      JSON.stringify(manageMenuOpen),
     );
   }, [manageMenuOpen, userId]);
 
@@ -695,13 +706,13 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       menuAvailability.allowProductionUnitMenu,
       menuAvailability.allowProductsMenu,
       menuAvailability.allowJobsMenu,
-    ]
+    ],
   );
   const jobVisible = manageVisibility.jobs;
   const fieldNotesVisible = canViewMenuItem("field-notes", userRole);
   const manageMenuController = useMemo(
     () => new ManageMenuController(manageVisibility, sidebarIcons),
-    [manageVisibility]
+    [manageVisibility],
   );
   const manageMenuItems = manageMenuController.getVisibleItems();
   const hasManageItems = manageMenuItems.length > 0;
@@ -730,8 +741,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const operationsActive =
     location.pathname === "/operations" ||
     location.pathname.startsWith("/operations/");
-  const dosageAgentChatActive =
-    location.pathname === "/dosage-agent-chat";
+  const dosageAgentChatActive = location.pathname === "/dosage-agent-chat";
 
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -826,7 +836,10 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       size="lg"
                       className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                     >
-                      <Link to="/field-notes" className="flex items-center gap-3">
+                      <Link
+                        to="/field-notes"
+                        className="flex items-center gap-3"
+                      >
                         <NotebookPen className="size-5" />
                         <span>Note di Campo</span>
                       </Link>
@@ -879,7 +892,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                             <IoChevronDownOutline
                               className={cn(
                                 "ml-auto size-4 transition-transform",
-                                manageMenuOpen && "rotate-180"
+                                manageMenuOpen && "rotate-180",
                               )}
                             />
                           </SidebarMenuButton>
@@ -899,10 +912,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                     to="/company"
                                     className="flex items-center gap-3"
                                   >
-                                    <Building2
-                                      className="size-5"
-                                      size={20}
-                                    />
+                                    <Building2 className="size-5" size={20} />
                                     <span>Aziende</span>
                                   </Link>
                                 </SidebarMenuButton>
@@ -921,10 +931,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                     to="/fields"
                                     className="flex items-center gap-3"
                                   >
-                                    <Map
-                                      className="size-5"
-                                      size={20}
-                                    />
+                                    <Map className="size-5" size={20} />
                                     <span>Campi</span>
                                   </Link>
                                 </SidebarMenuButton>
@@ -943,10 +950,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                     to="/production-unit"
                                     className="flex items-center gap-3"
                                   >
-                                    <Sprout
-                                      className="size-5"
-                                      size={20}
-                                    />
+                                    <Sprout className="size-5" size={20} />
                                     <span>Unità Produttive</span>
                                   </Link>
                                 </SidebarMenuButton>
@@ -965,10 +969,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                     to="/products"
                                     className="flex items-center gap-3"
                                   >
-                                    <Warehouse
-                                      className="size-5"
-                                      size={20}
-                                    />
+                                    <Warehouse className="size-5" size={20} />
                                     <span>Magazzino</span>
                                   </Link>
                                 </SidebarMenuButton>
@@ -1003,51 +1004,59 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   )}
 
                 {/* Strumenti raggruppati - icona collassata con dropdown */}
-                {!sidebarOpen && (canViewMenuItem("label", userRole) || jobVisible || fieldNotesVisible) && (
-                  <SidebarMenuItem key="tools-collapsed">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton
-                          type="button"
-                          tooltip="Strumenti"
-                          size="lg"
-                          className={cn(
-                            "data-[state=open]:bg-neutral-900/5",
-                            (labelActive || jobActive || fieldNotesActive) && "bg-neutral-900/5"
-                          )}
+                {!sidebarOpen &&
+                  (canViewMenuItem("label", userRole) ||
+                    jobVisible ||
+                    fieldNotesVisible) && (
+                    <SidebarMenuItem key="tools-collapsed">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <SidebarMenuButton
+                            type="button"
+                            tooltip="Strumenti"
+                            size="lg"
+                            className={cn(
+                              "data-[state=open]:bg-neutral-900/5",
+                              (labelActive || jobActive || fieldNotesActive) &&
+                                "bg-neutral-900/5",
+                            )}
+                          >
+                            <Layers className="size-5" size={20} />
+                          </SidebarMenuButton>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          side="right"
+                          align="start"
+                          className="min-w-[220px]"
                         >
-                          <Layers className="size-5" size={20} />
-                        </SidebarMenuButton>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        side="right"
-                        align="start"
-                        className="min-w-[220px]"
-                      >
-                        <DropdownMenuLabel>Strumenti</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {canViewMenuItem("label", userRole) && (
-                          <DropdownMenuItem onClick={() => navigate("/label")}>
-                            <Tags className="size-4 mr-2" size={16} />
-                            Etichette
-                          </DropdownMenuItem>
-                        )}
-                        {jobVisible && (
-                          <DropdownMenuItem onClick={() => navigate("/job")}>
-                            <CheckCircle2 className="size-4 mr-2" size={16} />
-                            Verifica Operazioni
-                          </DropdownMenuItem>
-                        )}
-                        {fieldNotesVisible && (
-                          <DropdownMenuItem onClick={() => navigate("/field-notes")}>
-                            <NotebookPen className="size-4 mr-2" size={16} />
-                            Note di Campo
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </SidebarMenuItem>
-                )}
+                          <DropdownMenuLabel>Strumenti</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          {canViewMenuItem("label", userRole) && (
+                            <DropdownMenuItem
+                              onClick={() => navigate("/label")}
+                            >
+                              <Tags className="size-4 mr-2" size={16} />
+                              Etichette
+                            </DropdownMenuItem>
+                          )}
+                          {jobVisible && (
+                            <DropdownMenuItem onClick={() => navigate("/job")}>
+                              <CheckCircle2 className="size-4 mr-2" size={16} />
+                              Verifica Operazioni
+                            </DropdownMenuItem>
+                          )}
+                          {fieldNotesVisible && (
+                            <DropdownMenuItem
+                              onClick={() => navigate("/field-notes")}
+                            >
+                              <NotebookPen className="size-4 mr-2" size={16} />
+                              Note di Campo
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </SidebarMenuItem>
+                  )}
 
                 {/* Dosage Agent Chat - solo ADMIN, icona collassata */}
                 {userRole === UserRole.ADMIN && !sidebarOpen && (
@@ -1099,7 +1108,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                               <Icon className="size-4 mr-2" size={16} />
                               {label}
                             </DropdownMenuItem>
-                          )
+                          ),
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -1138,13 +1147,19 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
               <DropdownMenuContent side="right" align="start">
                 <DropdownMenuLabel>Il mio account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/settings?tab=impostazioni")}>
+                <DropdownMenuItem
+                  onClick={() => navigate("/settings?tab=impostazioni")}
+                >
                   <LuSettings /> Impostazioni
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/settings?tab=integrazioni")}>
+                <DropdownMenuItem
+                  onClick={() => navigate("/settings?tab=integrazioni")}
+                >
                   <Plug className="size-4" /> Integrazioni
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/settings?tab=costi")}>
+                <DropdownMenuItem
+                  onClick={() => navigate("/settings?tab=costi")}
+                >
                   <Coins className="size-4" /> Costi
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -1184,7 +1199,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       <SidebarInset className="overflow-hidden max-h-svh">
         <MobileHeader />
         <div className="h-full w-full flex flex-col overflow-hidden pb-24 lg:pb-0 md:pt-0 pt-14">
-          <main className="flex-1 min-h-0 w-full overflow-auto">{children}</main>
+          <main className="flex-1 min-h-0 w-full overflow-auto">
+            {children}
+          </main>
           <MobileBottomBar
             items={items}
             isMobile={isMobile}
