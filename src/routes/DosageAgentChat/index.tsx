@@ -27,6 +27,7 @@ import {
   Mic,
   Square,
   Download,
+  ListFilter,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
@@ -514,6 +520,381 @@ export default function DosageAgentChat() {
         </div>
       </div>
     </TooltipProvider>
+  );
+}
+
+// ─── Downloadable Table ──────────────────────────────────────
+function DownloadableTable({ children }: { children: React.ReactNode }) {
+  const sourceRef = useRef<HTMLTableElement>(null);
+  const [parsed, setParsed] = useState<{
+    headers: string[];
+    rows: string[][];
+  } | null>(null);
+  const [columnFilters, setColumnFilters] = useState<
+    Record<number, Set<string>>
+  >({});
+  const [sortConfig, setSortConfig] = useState<{
+    col: number;
+    dir: "asc" | "desc";
+  } | null>(null);
+
+  useEffect(() => {
+    const table = sourceRef.current;
+    if (!table) return;
+    const headers: string[] = [];
+    table.querySelectorAll("thead th").forEach((th) => {
+      headers.push((th as HTMLElement).textContent?.trim() ?? "");
+    });
+    const rows: string[][] = [];
+    table.querySelectorAll("tbody tr").forEach((tr) => {
+      const cells: string[] = [];
+      tr.querySelectorAll("td").forEach((td) => {
+        cells.push((td as HTMLElement).textContent?.trim() ?? "");
+      });
+      if (cells.length > 0) rows.push(cells);
+    });
+    if (headers.length > 0) {
+      setParsed({ headers, rows });
+    }
+  }, [children]);
+
+  const getUniqueValues = useCallback(
+    (colIdx: number): string[] => {
+      if (!parsed) return [];
+      const values = new Set(parsed.rows.map((row) => row[colIdx] ?? ""));
+      return Array.from(values).sort((a, b) => a.localeCompare(b, "it"));
+    },
+    [parsed],
+  );
+
+  const getFilteredRows = useCallback(() => {
+    if (!parsed) return [];
+    let rows = [...parsed.rows];
+    for (const [colStr, allowed] of Object.entries(columnFilters)) {
+      const col = Number(colStr);
+      if (allowed.size > 0) {
+        rows = rows.filter((row) => allowed.has(row[col] ?? ""));
+      }
+    }
+    if (sortConfig) {
+      const { col, dir } = sortConfig;
+      rows.sort((a, b) => {
+        const va = a[col] ?? "";
+        const vb = b[col] ?? "";
+        const na = parseFloat(va.replace(",", "."));
+        const nb = parseFloat(vb.replace(",", "."));
+        if (!isNaN(na) && !isNaN(nb)) {
+          return dir === "asc" ? na - nb : nb - na;
+        }
+        return dir === "asc"
+          ? va.localeCompare(vb, "it")
+          : vb.localeCompare(va, "it");
+      });
+    }
+    return rows;
+  }, [parsed, columnFilters, sortConfig]);
+
+  const handleDownload = (format: "csv" | "xlsx") => {
+    if (!parsed) return;
+    const rows = getFilteredRows();
+    const data = [parsed.headers, ...rows];
+    if (format === "csv") {
+      const csv = data
+        .map((row) =>
+          row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(","),
+        )
+        .join("\n");
+      const blob = new Blob(["\uFEFF" + csv], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `tabella-${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Dati");
+      XLSX.writeFile(wb, `tabella-${Date.now()}.xlsx`);
+    }
+  };
+
+  const filteredRows = getFilteredRows();
+
+  return (
+    <div className="my-3 min-w-0 overflow-x-auto">
+      {/* Hidden source table for DOM parsing */}
+      <table ref={sourceRef} className="hidden">
+        {children}
+      </table>
+
+      {parsed && (
+        <>
+          <table className="border-collapse text-left text-sm text-slate-800 w-full">
+            <thead className="border-b border-slate-200 bg-slate-50/80">
+              <tr>
+                {parsed.headers.map((header, i) => (
+                  <th
+                    key={i}
+                    className="whitespace-nowrap px-2 py-1.5 font-semibold text-slate-700 first:pl-0 last:pr-0"
+                  >
+                    <ColumnFilterPopover
+                      header={header}
+                      colIdx={i}
+                      uniqueValues={getUniqueValues(i)}
+                      activeFilter={columnFilters[i]}
+                      sortDir={sortConfig?.col === i ? sortConfig.dir : null}
+                      onSort={(dir) => setSortConfig({ col: i, dir })}
+                      onApplyFilter={(col, values) =>
+                        setColumnFilters((prev) => ({ ...prev, [col]: values }))
+                      }
+                      onClearFilter={(col) =>
+                        setColumnFilters((prev) => {
+                          const next = { ...prev };
+                          delete next[col];
+                          return next;
+                        })
+                      }
+                    />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRows.map((row, i) => (
+                <tr
+                  key={i}
+                  className="border-b border-slate-100 last:border-b-0"
+                >
+                  {row.map((cell, j) => (
+                    <td
+                      key={j}
+                      className="whitespace-normal break-words sm:whitespace-nowrap px-2 py-1.5 first:pl-0 last:pr-0"
+                    >
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              {filteredRows.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={parsed.headers.length}
+                    className="px-2 py-4 text-center text-xs text-slate-400"
+                  >
+                    Nessun risultato
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          <div className="flex items-center gap-3 mt-1.5">
+            <button
+              type="button"
+              className="flex items-center gap-1 text-[10px] text-slate-400 cursor-pointer"
+              onClick={() => handleDownload("csv")}
+            >
+              <Download className="h-3 w-3" />
+              Scarica CSV
+            </button>
+            <button
+              type="button"
+              className="flex items-center gap-1 text-[10px] text-slate-400 cursor-pointer"
+              onClick={() => handleDownload("xlsx")}
+            >
+              <Download className="h-3 w-3" />
+              Scarica Excel
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Column Filter Popover ───────────────────────────────────
+function ColumnFilterPopover({
+  header,
+  colIdx,
+  uniqueValues,
+  activeFilter,
+  sortDir,
+  onSort,
+  onApplyFilter,
+  onClearFilter,
+}: {
+  header: string;
+  colIdx: number;
+  uniqueValues: string[];
+  activeFilter: Set<string> | undefined;
+  sortDir: "asc" | "desc" | null;
+  onSort: (dir: "asc" | "desc") => void;
+  onApplyFilter: (col: number, values: Set<string>) => void;
+  onClearFilter: (col: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const isFiltered =
+    activeFilter &&
+    activeFilter.size > 0 &&
+    activeFilter.size < uniqueValues.length;
+
+  useEffect(() => {
+    if (open) {
+      setSelected(
+        activeFilter && activeFilter.size > 0
+          ? new Set(activeFilter)
+          : new Set(uniqueValues),
+      );
+      setSearch("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const filteredValues = uniqueValues.filter((v) =>
+    v.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const toggleValue = (v: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(v)) next.delete(v);
+      else next.add(v);
+      return next;
+    });
+  };
+
+  const selectAll = () => setSelected(new Set(uniqueValues));
+  const deselectAll = () => setSelected(new Set());
+
+  const handleOk = () => {
+    if (selected.size === uniqueValues.length || selected.size === 0) {
+      onClearFilter(colIdx);
+    } else {
+      onApplyFilter(colIdx, selected);
+    }
+    setOpen(false);
+  };
+
+  const handleClear = () => {
+    onClearFilter(colIdx);
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-1 font-semibold text-slate-700"
+        >
+          {header}
+          {isFiltered ? (
+            <ListFilter className="h-3 w-3 text-emerald-600" />
+          ) : (
+            <ChevronDown className="h-2.5 w-2.5 text-slate-400" />
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-56 p-0">
+        <div className="p-3 space-y-2">
+          {/* Sort */}
+          <button
+            type="button"
+            onClick={() => {
+              onSort("asc");
+              setOpen(false);
+            }}
+            className={cn(
+              "flex items-center gap-2 w-full text-xs py-1 rounded px-1",
+              sortDir === "asc"
+                ? "font-semibold text-slate-900"
+                : "text-slate-600",
+            )}
+          >
+            <span className="text-sm">↑</span> Ordina A-Z
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onSort("desc");
+              setOpen(false);
+            }}
+            className={cn(
+              "flex items-center gap-2 w-full text-xs py-1 rounded px-1",
+              sortDir === "desc"
+                ? "font-semibold text-slate-900"
+                : "text-slate-600",
+            )}
+          >
+            <span className="text-sm">↓</span> Ordina Z-A
+          </button>
+
+          {/* Search */}
+          <input
+            type="text"
+            placeholder="Cerca..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 outline-none focus:border-slate-300"
+          />
+
+          {/* Select all / none */}
+          <div className="flex items-center gap-2 text-[10px] text-slate-500">
+            <button type="button" onClick={selectAll} className="underline">
+              Tutti
+            </button>
+            <button type="button" onClick={deselectAll} className="underline">
+              Nessuno
+            </button>
+          </div>
+
+          {/* Values */}
+          <div className="max-h-[180px] overflow-y-auto space-y-0.5">
+            {filteredValues.map((v) => (
+              <label
+                key={v}
+                className="flex items-center gap-2 rounded px-1 py-1 text-xs text-slate-700 hover:bg-slate-50 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={selected.has(v)}
+                  onChange={() => toggleValue(v)}
+                  className="h-3.5 w-3.5 rounded-sm border-slate-300 accent-slate-800"
+                />
+                <span className="truncate">
+                  {v || (
+                    <em className="text-slate-400">(vuoto)</em>
+                  )}
+                </span>
+              </label>
+            ))}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={handleClear}
+              className="flex-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-600"
+            >
+              Pulisci filtro
+            </button>
+            <button
+              type="button"
+              onClick={handleOk}
+              className="flex-1 rounded-full bg-slate-800 px-3 py-1.5 text-xs text-white"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -1043,11 +1424,7 @@ function MessageBubble({ message }: { message: DosageAgentMessage }) {
                 ),
                 hr: () => <hr className="my-3 border-slate-200" />,
                 table: ({ children }) => (
-                  <div className="my-3 min-w-0 overflow-x-auto">
-                    <table className="border-collapse text-left text-sm text-slate-800">
-                      {children}
-                    </table>
-                  </div>
+                  <DownloadableTable>{children}</DownloadableTable>
                 ),
                 thead: ({ children }) => (
                   <thead className="border-b border-slate-200 bg-slate-50/80">
