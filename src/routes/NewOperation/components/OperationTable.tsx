@@ -157,7 +157,7 @@ export function OperationTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-neutral-50 border-b border-neutral-200">
-              <th className="p-2 w-10">
+              <th className="p-2 w-20 min-w-[5rem]">
                 <input
                   type="checkbox"
                   checked={
@@ -223,6 +223,7 @@ export function OperationTable({
                   mode={mode}
                   isSelected={selectedRowIds.has(row._internalId)}
                   onToggleSelect={() => toggleRowSelection(row._internalId)}
+                  onDelete={() => onRemoveRows([row._internalId])}
                   globalSelectedUnitIds={globalSelectedUnitIds}
                   onUpdateRow={onUpdateRow}
                   onOpenUnitsDrawer={() =>
@@ -255,6 +256,7 @@ interface OperationTableRowProps {
   mode: OperationMode;
   isSelected: boolean;
   onToggleSelect: () => void;
+  onDelete: () => void;
   globalSelectedUnitIds: string[];
   onUpdateRow: (
     internalId: string,
@@ -271,6 +273,7 @@ function OperationTableRow({
   mode,
   isSelected,
   onToggleSelect,
+  onDelete,
   globalSelectedUnitIds,
   onUpdateRow,
   onOpenUnitsDrawer,
@@ -323,14 +326,26 @@ function OperationTableRow({
 
   return (
     <tr className="border-b border-neutral-100 hover:bg-neutral-50/50">
-      {/* Checkbox */}
+      {/* Checkbox + Delete */}
       <td className="p-2">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={onToggleSelect}
-          className="rounded border-neutral-300"
-        />
+        <div className="flex items-center gap-1">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={onToggleSelect}
+            className="rounded border-neutral-300"
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-neutral-500 hover:text-destructive hover:bg-destructive/10"
+            onClick={onDelete}
+            title="Elimina riga"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </td>
 
       {/* Date */}
@@ -544,20 +559,30 @@ function OperationTableRow({
         />
       </td>
 
-      {/* Stock */}
+      {/* Giacenza (sempre modificabile, iniziale 0) */}
       <td className="p-2">
-        {row.availableStock != null ? (
-          <span
-            className={cn(
-              "font-mono text-xs",
-              row.availableStock > 0 ? "text-green-600" : "text-red-500",
-            )}
-          >
-            {row.availableStock.toFixed(2)} {row.stockUnit}
-          </span>
-        ) : (
-          <span className="text-neutral-300 text-xs">—</span>
-        )}
+        <div className="flex items-center gap-1.5">
+          <Input
+            type="number"
+            step="0.01"
+            min={0}
+            value={row.availableStock ?? 0}
+            onChange={(e) =>
+              onUpdateRow(
+                row._internalId,
+                "availableStock",
+                e.target.value === "" ? 0 : parseFloat(e.target.value) || 0,
+              )
+            }
+            placeholder="0"
+            className="h-8 w-24 text-xs"
+          />
+          {row.stockUnit && (
+            <span className="text-xs text-neutral-500 shrink-0">
+              {row.stockUnit}
+            </span>
+          )}
+        </div>
       </td>
 
       {/* Strategy (automatic only) */}

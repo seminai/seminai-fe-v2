@@ -110,10 +110,19 @@ export function useNewOperationState() {
     [selectedCompanyId, operationMode],
   );
 
+  const goBack = useCallback(() => {
+    if (currentStep === "table") {
+      setCurrentStep("mode");
+    } else if (currentStep === "mode") {
+      setCurrentStep("company");
+    }
+  }, [currentStep]);
+
   return {
     // Step
     currentStep,
     goToStep,
+    goBack,
     canGoToStep,
 
     // Company

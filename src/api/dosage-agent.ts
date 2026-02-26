@@ -14,6 +14,7 @@ export type DosageProduct = {
   orderNumber?: string;
   treatedAreaHa?: number;
   strategy?: DosageStrategy;
+  targetStock?: number;
 };
 
 export type DosageUnitOfProduction = {
@@ -70,6 +71,16 @@ export type DosageOrchestratorSettings = {
   useLlmForSelection?: boolean;
 };
 
+export type OperationMachineAssignment = {
+  companyId: string;
+  machineId: string;
+};
+
+export type OperationOperatorAssignment = {
+  companyId: string;
+  userId: string;
+};
+
 export type StartDosageJobRequest = {
   products: DosageProduct[];
   unitOfProduction: DosageUnitOfProduction[];
@@ -78,6 +89,8 @@ export type StartDosageJobRequest = {
   orchestrator?: DosageOrchestratorSettings;
   startAt?: string;
   endAt?: string;
+  operationMachines?: OperationMachineAssignment[];
+  operationOperators?: OperationOperatorAssignment[];
 };
 
 export type StartDosageJobResponse = {

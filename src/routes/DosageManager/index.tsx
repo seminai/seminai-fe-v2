@@ -31,6 +31,8 @@ import {
   type DosageProduct,
   type DosageStrategy,
   type DosageUnitOfProduction,
+  type OperationMachineAssignment,
+  type OperationOperatorAssignment,
 } from "@/api/dosage-agent";
 import type { DosageOrchestratorSettings } from "@/api/dosage-agent";
 import type { ProductionUnit } from "@/api/production-unit";
@@ -758,6 +760,7 @@ class WarehouseProductsMapper {
           quantityUnitOfMeasure: calculator.getUnitOfMeasure(),
           loadWarehouse: true,
           supplierName: product.warehouse.company.name,
+          targetStock: 0,
         };
       }),
     );
@@ -818,6 +821,12 @@ export default function DosageManager() {
     useState<OrchestratorDatasets | null>(null);
   const [startAt, setStartAt] = useState<string>("");
   const [endAt, setEndAt] = useState<string>("");
+  const [operationMachines, setOperationMachines] = useState<
+    OperationMachineAssignment[]
+  >([]);
+  const [operationOperators, setOperationOperators] = useState<
+    OperationOperatorAssignment[]
+  >([]);
 
   const editableTableRef = useRef<EditableTableRef>(null);
 
@@ -1041,6 +1050,13 @@ export default function DosageManager() {
       placeholder: "0",
     },
     {
+      id: "targetStock",
+      title: "Giacenza",
+      type: "number",
+      required: false,
+      placeholder: "0",
+    },
+    {
       id: "supplierName",
       title: "Fornitore",
       type: "text",
@@ -1089,6 +1105,7 @@ export default function DosageManager() {
           supplierVat: row.supplierVat ? String(row.supplierVat) : undefined,
           ddtDate: row.ddtDate ? String(row.ddtDate) : undefined,
           orderNumber: row.orderNumber ? String(row.orderNumber) : undefined,
+          targetStock: row.targetStock ? Number(row.targetStock) : undefined,
           _internalId: internalId,
         };
       });
@@ -1805,6 +1822,7 @@ export default function DosageManager() {
             quantityUnitOfMeasure: unitOfMeasure,
             loadWarehouse: true,
             supplierName: product.warehouse.company.name,
+            targetStock: 0,
           };
         })
         .filter((product) => product.quantity > 0);
@@ -2243,12 +2261,17 @@ export default function DosageManager() {
         ),
       };
 
-      // Add optional date fields if provided
       if (startAt) {
         requestPayload.startAt = startAt;
       }
       if (endAt) {
         requestPayload.endAt = endAt;
+      }
+      if (operationMachines.length > 0) {
+        requestPayload.operationMachines = operationMachines;
+      }
+      if (operationOperators.length > 0) {
+        requestPayload.operationOperators = operationOperators;
       }
 
       // Start job
@@ -2288,6 +2311,8 @@ export default function DosageManager() {
       setSearchQuery("");
       setStartAt("");
       setEndAt("");
+      setOperationMachines([]);
+      setOperationOperators([]);
       setTreatedAreaHaMap(new Map());
     } catch (error) {
       toast.error("Errore durante l'avvio del calcolo", {
@@ -2435,6 +2460,10 @@ export default function DosageManager() {
             setStartAt={setStartAt}
             endAt={endAt}
             setEndAt={setEndAt}
+            operationMachines={operationMachines}
+            setOperationMachines={setOperationMachines}
+            operationOperators={operationOperators}
+            setOperationOperators={setOperationOperators}
             onCalculateDosages={handleCalculateDosages}
             isSubmitting={isSubmitting}
             isCalculateDisabled={isCalculateDisabled}

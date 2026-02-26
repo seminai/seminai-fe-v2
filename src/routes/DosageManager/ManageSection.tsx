@@ -12,6 +12,8 @@ import type {
   DosageStrategy,
   DosageProduct,
   DosageOrchestratorSettings,
+  OperationMachineAssignment,
+  OperationOperatorAssignment,
 } from "@/api/dosage-agent";
 import type { ProductionUnit } from "@/api/production-unit";
 import type { FitosanitariDatasetRecord } from "@/services/fitosanitariRegistry";
@@ -96,6 +98,10 @@ interface ManageSectionProps {
   setStartAt: Dispatch<SetStateAction<string>>;
   endAt: string;
   setEndAt: Dispatch<SetStateAction<string>>;
+  operationMachines: OperationMachineAssignment[];
+  setOperationMachines: Dispatch<SetStateAction<OperationMachineAssignment[]>>;
+  operationOperators: OperationOperatorAssignment[];
+  setOperationOperators: Dispatch<SetStateAction<OperationOperatorAssignment[]>>;
   // Wizard-specific props
   onCalculateDosages: () => void;
   isSubmitting: boolean;
@@ -167,6 +173,10 @@ export function ManageSection({
   setStartAt,
   endAt,
   setEndAt,
+  operationMachines,
+  setOperationMachines,
+  operationOperators,
+  setOperationOperators,
   onCalculateDosages,
   isSubmitting,
   isCalculateDisabled,
@@ -277,6 +287,12 @@ export function ManageSection({
             setStartAt={setStartAt}
             endAt={endAt}
             setEndAt={setEndAt}
+            companies={companies}
+            selectedCompanyIds={selectedCompanyIds}
+            operationMachines={operationMachines}
+            setOperationMachines={setOperationMachines}
+            operationOperators={operationOperators}
+            setOperationOperators={setOperationOperators}
           />
         )}
       </div>

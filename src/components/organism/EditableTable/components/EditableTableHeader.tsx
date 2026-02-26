@@ -1,5 +1,4 @@
 import * as React from "react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -177,7 +176,7 @@ export function EditableTableHeader({
         {anySelected && !showEditActions && (
           <Button
             onClick={onDeselectAll}
-            className={cn("border border-gray-200 text-black hover:bg-gray-50")}
+            className="text-black hover:text-gray-700 cursor-pointer"
             variant="ghost"
             size="sm"
             aria-label="De-seleziona"
@@ -253,7 +252,7 @@ export function EditableTableHeader({
         {shouldRenderBulkVerifyButton && (
           <Button
             onClick={() => onBulkVerifySelected?.(selectionPayload)}
-            className={cn("border border-gray-200 text-black hover:bg-gray-50")}
+            className="text-black hover:text-gray-700 cursor-pointer"
             variant="ghost"
             size="sm"
             aria-label="Verify selected rows"
@@ -270,7 +269,7 @@ export function EditableTableHeader({
         {shouldRenderAlignButton && (
           <Button
             onClick={() => onAlignSelected?.(selectionPayload)}
-            className={cn("border border-gray-200 text-black hover:bg-gray-50")}
+            className="text-black hover:text-gray-700 cursor-pointer"
             variant="ghost"
             size="sm"
             aria-label={alignLabel}
@@ -287,7 +286,7 @@ export function EditableTableHeader({
         {anySelected && !showEditActions && isModify && (
           <Button
             onClick={onOpenBulkEdit}
-            className={cn("border border-gray-200 text-black hover:bg-gray-50")}
+            className="text-black hover:text-gray-700 cursor-pointer"
             variant="ghost"
             size="sm"
             aria-label="Modifica tutti gli elementi selezionati"
@@ -308,7 +307,7 @@ export function EditableTableHeader({
         {anySelected && showDeleteAction !== false && (
           <Button
             onClick={onRequestDelete}
-            className={cn("border border-gray-200 text-black hover:bg-gray-50")}
+            className="text-black hover:text-gray-700 cursor-pointer"
             variant="ghost"
             size="sm"
             aria-label="Elimina"

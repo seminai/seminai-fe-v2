@@ -1,4 +1,4 @@
-import { useState, useRef, type Dispatch, type ReactElement, type RefObject, type SetStateAction } from "react";
+import { useState, useCallback, useRef, type Dispatch, type ReactElement, type RefObject, type SetStateAction } from "react";
 import { Button } from "@/components/ui/button";
 import {
   EditableTable,
@@ -6,12 +6,23 @@ import {
   type EditableTableRef,
 } from "@/components/organism/EditableTable";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  ClipboardPaste,
   FileText,
   Loader2,
   Package,
   Upload,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 import type { DosageProduct } from "@/api/dosage-agent";
 import { ImportProducts } from "../importProducts";
 import { ImportProductsFromDdt } from "../importProductsFromDdt";
@@ -82,6 +93,8 @@ export function ProductsStep({
 }: ProductsStepProps): ReactElement {
   const [showAutomaticCompilation, setShowAutomaticCompilation] =
     useState(false);
+  const [pasteDialogOpen, setPasteDialogOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
 
   // Counter for generating unique IDs for products imported from external sources
   const productIdCounterRef = useRef<number>(0);
@@ -96,6 +109,58 @@ export function ProductsStep({
     );
     setProducts(productsWithIds);
   };
+
+  const parseTsvToRows = useCallback(
+    (text: string): Array<Record<string, unknown>> => {
+      const COLUMN_KEYS = [
+        "productName",
+        "registrationNumber",
+        "quantityUnitOfMeasure",
+        "quantity",
+        "targetStock",
+        "supplierName",
+        "supplierVat",
+        "orderNumber",
+        "ddtDate",
+      ];
+      const NUMBER_FIELDS = new Set(["quantity", "targetStock"]);
+
+      return text
+        .split("\n")
+        .filter((line) => line.trim())
+        .map((line) => {
+          const cells = line.split("\t");
+          const row: Record<string, unknown> = { totalAreaHa: totalAreaHa };
+          COLUMN_KEYS.forEach((key, i) => {
+            const raw = cells[i]?.trim() ?? "";
+            if (NUMBER_FIELDS.has(key)) {
+              row[key] = Number(raw) || 0;
+            } else {
+              row[key] = raw;
+            }
+          });
+          return row;
+        })
+        .filter((row) => row.productName);
+    },
+    [totalAreaHa],
+  );
+
+  const handlePasteConfirm = useCallback(() => {
+    if (!pasteText.trim()) return;
+    const rows = parseTsvToRows(pasteText);
+    if (rows.length === 0) {
+      toast.error("Nessun dato valido trovato", {
+        description:
+          "Verifica che i dati siano separati da tabulazione (copia da Excel).",
+      });
+      return;
+    }
+    editableTableRef.current?.addRows(rows);
+    toast.success(`${rows.length} prodotti incollati`);
+    setPasteText("");
+    setPasteDialogOpen(false);
+  }, [pasteText, parseTsvToRows, editableTableRef]);
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -282,6 +347,14 @@ export function ProductsStep({
                 onSelectImportMethod={() => onSelectImportMethod("ddt")}
               />
             )}
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => setPasteDialogOpen(true)}
+            >
+              <ClipboardPaste className="h-4 w-4" />
+              <span>Incolla da Excel</span>
+            </Button>
             {selectedImportMethod && (
               <Button
                 variant="ghost"
@@ -340,6 +413,56 @@ export function ProductsStep({
         />
       </div>
       {products.length === 0 && renderEmptyProductsPlaceholder()}
+
+      <Dialog
+        open={pasteDialogOpen}
+        onOpenChange={(open) => {
+          setPasteDialogOpen(open);
+          if (!open) setPasteText("");
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardPaste className="h-5 w-5" />
+              Incolla da Excel
+            </DialogTitle>
+            <DialogDescription>
+              Copia le righe da Excel e incollale qui sotto. L'ordine delle
+              colonne deve essere: Nome Prodotto, N. Registrazione, Unità,
+              Quantità, Giacenza, Fornitore, P.IVA, Codice DDT, Data DDT.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={pasteText}
+            onChange={(e) => setPasteText(e.target.value)}
+            placeholder="Incolla qui i dati copiati da Excel (Ctrl+V / Cmd+V)..."
+            className="min-h-40 font-mono text-xs"
+          />
+          {pasteText.trim() && (
+            <p className="text-xs text-neutral-500">
+              {parseTsvToRows(pasteText).length} righe valide trovate
+            </p>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPasteDialogOpen(false);
+                setPasteText("");
+              }}
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={handlePasteConfirm}
+              disabled={!pasteText.trim()}
+            >
+              Importa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -17,8 +17,16 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Calendar } from "@/components/ui/calendar";
 import {
-  Calendar,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format, parseISO } from "date-fns";
+import { it } from "date-fns/locale";
+import {
+  Calendar as CalendarIcon,
   ChevronDown,
   ChevronUp,
   Lock,
@@ -43,6 +51,11 @@ import {
   MultiSearchableSelect,
   type MultiSearchableSelectOption,
 } from "../MultiSearchableSelect";
+import type {
+  OperationMachineAssignment,
+  OperationOperatorAssignment,
+} from "@/api/dosage-agent";
+import { OperatorsAndMachinesSection } from "./OperatorsAndMachinesSection";
 
 interface ConfigurationStepProps {
   strategy: DosageStrategy;
@@ -66,6 +79,12 @@ interface ConfigurationStepProps {
   orchestratorDatasets: OrchestratorDatasets | null;
   selectedUnitIds: string[];
   filteredUnits: ProductionUnit[];
+  companies: Array<{ id: string; name: string }>;
+  selectedCompanyIds: string[];
+  operationMachines: OperationMachineAssignment[];
+  setOperationMachines: Dispatch<SetStateAction<OperationMachineAssignment[]>>;
+  operationOperators: OperationOperatorAssignment[];
+  setOperationOperators: Dispatch<SetStateAction<OperationOperatorAssignment[]>>;
   startAt: string;
   setStartAt: Dispatch<SetStateAction<string>>;
   endAt: string;
@@ -90,6 +109,12 @@ export function ConfigurationStep({
   setStartAt,
   endAt,
   setEndAt,
+  companies,
+  selectedCompanyIds,
+  operationMachines,
+  setOperationMachines,
+  operationOperators,
+  setOperationOperators,
 }: ConfigurationStepProps): ReactElement {
   const [showMaxLimits, setShowMaxLimits] = useState(false);
 
@@ -254,6 +279,20 @@ export function ConfigurationStep({
         </div>
       </div>
 
+      {/* Operators and Machines Section */}
+      {selectedCompanyIds.length > 0 && (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-4 md:p-6">
+          <OperatorsAndMachinesSection
+            companies={companies}
+            selectedCompanyIds={selectedCompanyIds}
+            operationMachines={operationMachines}
+            setOperationMachines={setOperationMachines}
+            operationOperators={operationOperators}
+            setOperationOperators={setOperationOperators}
+          />
+        </div>
+      )}
+
       {/* Treatment Dates Section */}
       {selectedUnitIds.length > 0 && (
         <div className="rounded-2xl border border-neutral-200 bg-white">
@@ -261,7 +300,7 @@ export function ConfigurationStep({
             <AccordionItem value="treatment-dates" className="border-0">
               <AccordionTrigger className="px-4 md:px-6">
                 <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-neutral-600 flex-shrink-0" />
+                  <CalendarIcon className="h-5 w-5 text-neutral-600 flex-shrink-0" />
                   <div className="flex flex-col">
                     <span className="text-base font-medium text-neutral-900">
                       Periodo di trattamento (opzionale)
@@ -300,53 +339,80 @@ export function ConfigurationStep({
                   )}
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="startAt"
-                        className="text-sm font-medium text-neutral-900"
-                      >
+                      <Label className="text-sm font-medium text-neutral-900">
                         Data inizio trattamenti
                       </Label>
-                      <Input
-                        id="startAt"
-                        type="date"
-                        value={startAt}
-                        onChange={(e) => {
-                          const newStartAt = e.target.value;
-                          setStartAt(newStartAt);
-                          if (endAt && newStartAt && endAt < newStartAt) {
-                            setEndAt("");
-                          }
-                        }}
-                        className="bg-white"
-                        placeholder="Seleziona data inizio"
-                        min={validDateRange.minDate}
-                        max={validDateRange.maxDate}
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal bg-white"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {startAt
+                              ? format(parseISO(startAt), "dd/MM/yyyy", { locale: it })
+                              : "Seleziona data inizio"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={startAt ? parseISO(startAt) : undefined}
+                            onSelect={(date) => {
+                              const iso = date ? format(date, "yyyy-MM-dd") : "";
+                              setStartAt(iso);
+                              if (endAt && iso && endAt < iso) {
+                                setEndAt("");
+                              }
+                            }}
+                            disabled={(d) => {
+                              if (validDateRange.minDate && d < parseISO(validDateRange.minDate)) return true;
+                              if (validDateRange.maxDate && d > parseISO(validDateRange.maxDate)) return true;
+                              return false;
+                            }}
+                            locale={it}
+                          />
+                        </PopoverContent>
+                      </Popover>
                       <p className="text-xs text-neutral-500">
                         Data di inizio del periodo di trattamento
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="endAt"
-                        className="text-sm font-medium text-neutral-900"
-                      >
+                      <Label className="text-sm font-medium text-neutral-900">
                         Data fine trattamenti
                       </Label>
-                      <Input
-                        id="endAt"
-                        type="date"
-                        value={endAt}
-                        onChange={(e) => setEndAt(e.target.value)}
-                        className="bg-white"
-                        placeholder="Seleziona data fine"
-                        min={
-                          startAt && startAt >= (validDateRange.minDate || "")
-                            ? startAt
-                            : validDateRange.minDate
-                        }
-                        max={validDateRange.maxDate}
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal bg-white"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {endAt
+                              ? format(parseISO(endAt), "dd/MM/yyyy", { locale: it })
+                              : "Seleziona data fine"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={endAt ? parseISO(endAt) : undefined}
+                            onSelect={(date) => {
+                              setEndAt(date ? format(date, "yyyy-MM-dd") : "");
+                            }}
+                            disabled={(d) => {
+                              const minStr = startAt && startAt >= (validDateRange.minDate || "")
+                                ? startAt
+                                : validDateRange.minDate;
+                              if (minStr && d < parseISO(minStr)) return true;
+                              if (validDateRange.maxDate && d > parseISO(validDateRange.maxDate)) return true;
+                              return false;
+                            }}
+                            locale={it}
+                          />
+                        </PopoverContent>
+                      </Popover>
                       <p className="text-xs text-neutral-500">
                         Data di fine del periodo di trattamento
                       </p>

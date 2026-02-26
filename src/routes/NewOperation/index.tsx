@@ -198,7 +198,13 @@ export default function NewOperation() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate("/job")}
+          onClick={() => {
+            if (state.currentStep === "company") {
+              navigate("/job");
+            } else {
+              state.goBack();
+            }
+          }}
           className="gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
