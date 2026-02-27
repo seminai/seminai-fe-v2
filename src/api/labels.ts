@@ -353,6 +353,77 @@ async function extractWithGpt(
   return (await response.json()) as LabelDetailResponse;
 }
 
+// --- Label History Types ---
+
+export type LabelFieldChange = {
+  field: string;
+  oldValue: unknown;
+  newValue: unknown;
+};
+
+export type LabelHistoryEntry = {
+  id: string;
+  labelExtractionId: string;
+  userId: string;
+  userName: string;
+  userProfilePictureUrl: string | null;
+  changes: LabelFieldChange[];
+  previousSnapshot: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type LabelHistoryResponse = {
+  status: "success";
+  data: LabelHistoryEntry[];
+};
+
+export type LabelRollbackResponse = {
+  status: "success";
+  data: LabelDetail;
+};
+
+async function getLabelHistory(
+  labelExtractionId: string,
+  baseUrl: string
+): Promise<LabelHistoryResponse> {
+  const response = await fetch(
+    `${baseUrl}/labels/${encodeURIComponent(labelExtractionId)}/history`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      credentials: "include",
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to load label history");
+  }
+
+  return (await response.json()) as LabelHistoryResponse;
+}
+
+async function rollbackLabel(
+  historyId: string,
+  baseUrl: string
+): Promise<LabelRollbackResponse> {
+  const response = await fetch(
+    `${baseUrl}/labels/rollback/${encodeURIComponent(historyId)}`,
+    {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      credentials: "include",
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to rollback label");
+  }
+
+  return (await response.json()) as LabelRollbackResponse;
+}
+
 class LabelsApiService {
   private readonly baseUrl: string;
   constructor(baseUrl: string) {
@@ -401,6 +472,16 @@ class LabelsApiService {
 
   public async extractWithGpt(id: string): Promise<LabelDetailResponse> {
     return await extractWithGpt(id, this.baseUrl);
+  }
+
+  public async getHistory(
+    labelExtractionId: string
+  ): Promise<LabelHistoryResponse> {
+    return await getLabelHistory(labelExtractionId, this.baseUrl);
+  }
+
+  public async rollback(historyId: string): Promise<LabelRollbackResponse> {
+    return await rollbackLabel(historyId, this.baseUrl);
   }
 }
 

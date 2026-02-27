@@ -397,7 +397,8 @@ export function createEmptyRow(
 
 export function buildUniqueValueOptions(
   columnId: string | undefined,
-  rows: InternalRow[]
+  rows: InternalRow[],
+  column?: EditableColumn,
 ): NormalizedSelectOption[] {
   if (!columnId) {
     return [];
@@ -434,9 +435,21 @@ export function buildUniqueValueOptions(
       uniqueValues.add(parsedValue);
     }
   });
+
+  const optionsMap = new Map<string, string>();
+  if (column?.options) {
+    for (const opt of column.options) {
+      if (typeof opt === "string") {
+        optionsMap.set(opt, opt);
+      } else {
+        optionsMap.set(opt.value, opt.label);
+      }
+    }
+  }
+
   return Array.from(uniqueValues)
     .sort((first, second) =>
       first.localeCompare(second, "it", { sensitivity: "base" })
     )
-    .map((value) => ({ label: value, value }));
+    .map((value) => ({ label: optionsMap.get(value) || value, value }));
 }

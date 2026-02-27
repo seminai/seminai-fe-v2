@@ -121,7 +121,7 @@ export function EditableTableBody({
             />
           </TableHead>
           {visibleColumns.map((c) => {
-            const uniqueValues = buildUniqueValueOptions(c.id, allRows);
+            const uniqueValues = buildUniqueValueOptions(c.id, allRows, c);
             const selectedValues =
               columnFilterSelectedValues[c.id] || new Set<string>();
             const searchQuery = columnFilterSearchQueries[c.id] || "";

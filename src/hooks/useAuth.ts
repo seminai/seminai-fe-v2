@@ -4,11 +4,18 @@ import {
   register as registerRequest,
   me as meRequest,
   wakeUp as wakeUpRequest,
+  forgotPassword as forgotPasswordRequest,
+  resetPassword as resetPasswordRequest,
   type LoginRequest,
   type RegisterRequest,
   type LoginResponse,
   type RegisterResponse,
   type MeResponse,
+  type ForgotPasswordRequest,
+  type ForgotPasswordResponse,
+  type ResetPasswordRequest,
+  type ResetPasswordResponse,
+  type AuthApiError,
   UserRole,
 } from "@/api/auth";
 import authService from "@/utils/auth";
@@ -54,7 +61,19 @@ export function useWakeUp() {
   return useQuery<void, Error>({
     queryKey: ["auth", "wakeUp"],
     queryFn: () => wakeUpRequest(),
-    retry: 1, // Riprova una volta se fallisce
-    staleTime: Infinity, // Non rieseguire automaticamente la query
+    retry: 1,
+    staleTime: Infinity,
+  });
+}
+
+export function useForgotPassword() {
+  return useMutation<ForgotPasswordResponse, AuthApiError, ForgotPasswordRequest>({
+    mutationFn: (payload) => forgotPasswordRequest(payload),
+  });
+}
+
+export function useResetPassword() {
+  return useMutation<ResetPasswordResponse, AuthApiError, ResetPasswordRequest>({
+    mutationFn: (payload) => resetPasswordRequest(payload),
   });
 }

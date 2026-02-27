@@ -351,7 +351,9 @@ export default function FieldNotesPage() {
       return [];
     }
 
-    return fieldNotes.map((note) => {
+    return [...fieldNotes]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .map((note) => {
       // Estrai nome azienda dai dati annidati (priorità: company.name a livello root)
       let companyName: string | null = null;
       if (note.company?.name) {

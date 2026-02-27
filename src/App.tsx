@@ -1,6 +1,9 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import Home from "./routes/Home";
 import Auth from "./routes/Auth";
+import LoginRegister from "./routes/Auth/LoginRegister";
+import ForgotPassword from "./routes/Auth/ForgotPassword";
+import ResetPassword from "./routes/Auth/ResetPassword";
 import Dashboard from "./routes/Dashboard";
 import Settings from "./routes/Settings";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -34,7 +37,11 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/auth" element={<Auth />} />
+      <Route path="/auth" element={<Auth />}>
+        <Route index element={<LoginRegister />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="reset-password" element={<ResetPassword />} />
+      </Route>
       <Route path="/diventa-beta-tester" element={<BetaTesterAgreement />} />
       <Route
         path="/diventa-beta-tester/successo"

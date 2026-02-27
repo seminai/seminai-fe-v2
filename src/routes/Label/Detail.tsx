@@ -3,10 +3,12 @@ import { Link, useParams } from "react-router-dom";
 import {
   type LabelDetail,
   type LabelDosaggioDettagliato,
+  type LabelFieldChange,
+  type LabelHistoryEntry,
   type LabelInner,
   type LabelResistenza,
 } from "@/api/labels";
-import { useLabel } from "@/hooks/useLabel";
+import { useLabel, useLabelHistory } from "@/hooks/useLabel";
 import { useMe, UserRole } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent } from "@/components/ui/card";
@@ -52,7 +54,20 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { RefreshCcw } from "lucide-react";
+import { History, RefreshCcw, Undo2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type LabelData = LabelDetail["label"];
 
@@ -401,6 +416,140 @@ const countFilledFields = (d: LabelDosaggioDettagliato): string => {
   return `${filled}/${fields.length}`;
 };
 
+// --- History Components ---
+
+function LabelChangeRow({ change }: { change: LabelFieldChange }) {
+  const formatValue = (value: unknown): string => {
+    if (value === null || value === undefined) return "-";
+    if (typeof value === "boolean") return value ? "Si" : "No";
+    if (typeof value === "object") {
+      const json = JSON.stringify(value);
+      return json.length > 80 ? `${json.slice(0, 80)}…` : json;
+    }
+    const str = String(value);
+    return str.length > 80 ? `${str.slice(0, 80)}…` : str;
+  };
+
+  return (
+    <div className="flex flex-col gap-0.5 py-1.5 px-2 bg-gray-50 rounded text-xs border-l-2 border-gray-200">
+      <span className="font-medium text-gray-700">{change.field}</span>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-gray-400 line-through truncate max-w-[160px]">
+          {formatValue(change.oldValue)}
+        </span>
+        <span className="text-gray-400">&rarr;</span>
+        <span className="text-gray-700 font-medium truncate max-w-[160px]">
+          {formatValue(change.newValue)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function LabelHistoryCard({
+  entry,
+  isAdmin,
+  isRollingBack,
+  onRollback,
+}: {
+  entry: LabelHistoryEntry;
+  isAdmin: boolean;
+  isRollingBack: boolean;
+  onRollback: (historyId: string) => Promise<unknown>;
+}) {
+  const initials = entry.userName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  const formattedDate = new Date(entry.createdAt).toLocaleString("it-IT", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+
+  return (
+    <div className="border rounded-lg p-3 space-y-3 bg-white">
+      <div className="flex items-center gap-3">
+        <Avatar className="h-8 w-8">
+          {entry.userProfilePictureUrl ? (
+            <AvatarImage
+              src={entry.userProfilePictureUrl}
+              alt={entry.userName}
+            />
+          ) : null}
+          <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-gray-900 truncate">
+            {entry.userName}
+          </p>
+          <p className="text-xs text-gray-500">{formattedDate}</p>
+        </div>
+        <Badge variant="secondary" className="text-xs shrink-0">
+          {entry.changes.length}{" "}
+          {entry.changes.length === 1 ? "modifica" : "modifiche"}
+        </Badge>
+      </div>
+
+      {entry.changes.length > 0 && (
+        <div className="space-y-1.5">
+          {entry.changes.map((change, idx) => (
+            <LabelChangeRow key={`${entry.id}-${idx}`} change={change} />
+          ))}
+        </div>
+      )}
+
+      {isAdmin && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              disabled={isRollingBack}
+            >
+              {isRollingBack ? (
+                <Spinner size={14} ariaLabel="Rollback in corso" />
+              ) : (
+                <>
+                  <Undo2 className="h-3.5 w-3.5 mr-1.5" />
+                  Ripristina questa versione
+                </>
+              )}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Conferma ripristino</AlertDialogTitle>
+              <AlertDialogDescription>
+                Questa azione ripristinerà l&apos;etichetta alla versione del{" "}
+                {formattedDate}. Le modifiche successive andranno perse.
+                Continuare?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  try {
+                    await onRollback(entry.id);
+                  } catch {
+                    /* handled in mutation */
+                  }
+                }}
+              >
+                Ripristina
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+    </div>
+  );
+}
+
 export default function LabelDetailPage(): React.ReactElement {
   const params = useParams<{ id: string }>();
   const id = params.id as string;
@@ -411,6 +560,7 @@ export default function LabelDetailPage(): React.ReactElement {
   const { data: userData } = useMe();
   const userRole = userData?.role;
   const canModify = userRole === UserRole.ADMIN || userRole === UserRole.LABEL_MANAGER;
+  const isAdmin = userRole === UserRole.ADMIN;
 
   const {
     detail,
@@ -427,6 +577,10 @@ export default function LabelDetailPage(): React.ReactElement {
     extractWithGptAsync,
     isExtractingGpt,
   } = useLabel({ id });
+
+  const [historyDrawerOpen, setHistoryDrawerOpen] = React.useState(false);
+  const { history, isLoadingHistory, rollbackAsync, isRollingBack } =
+    useLabelHistory({ labelExtractionId: id, enabled: historyDrawerOpen });
 
   const [labelJson, setLabelJson] = React.useState<string>("{}");
   const [dosaggiJson, setDosaggiJson] = React.useState<string[]>([]);
@@ -549,13 +703,14 @@ export default function LabelDetailPage(): React.ReactElement {
               </div>
             ) : null}
           </div>
-          {detail?.rawText && canModify ? (
-            <Drawer direction="right">
-              <DrawerTrigger asChild>
-                <button className="text-xs cursor-pointer text-gray-500 hover:text-gray-700 underline self-start sm:self-auto">
-                  Estratto
-                </button>
-              </DrawerTrigger>
+          <div className="flex items-center gap-3 self-start sm:self-auto">
+            {detail?.rawText && canModify ? (
+              <Drawer direction="right">
+                <DrawerTrigger asChild>
+                  <button className="text-xs cursor-pointer text-gray-500 hover:text-gray-700 underline">
+                    Estratto
+                  </button>
+                </DrawerTrigger>
               <DrawerContent className="max-w-[900px] h-full flex flex-col">
                 <DrawerHeader className="border-b shrink-0">
                   <DrawerTitle>Testo estratto</DrawerTitle>
@@ -619,8 +774,65 @@ export default function LabelDetailPage(): React.ReactElement {
                   </DrawerClose>
                 </div>
               </DrawerContent>
-            </Drawer>
-          ) : null}
+              </Drawer>
+            ) : null}
+            {canModify && (
+              <Drawer
+                direction="right"
+                open={historyDrawerOpen}
+                onOpenChange={setHistoryDrawerOpen}
+              >
+                <DrawerTrigger asChild>
+                  <button className="text-xs cursor-pointer text-gray-500 hover:text-gray-700 underline">
+                    Cronologia
+                  </button>
+                </DrawerTrigger>
+                <DrawerContent className="max-w-[480px] h-full flex flex-col">
+                  <DrawerHeader className="border-b shrink-0">
+                    <DrawerTitle>Cronologia modifiche</DrawerTitle>
+                    <DrawerDescription>
+                      Storico delle versioni precedenti dell&apos;etichetta
+                    </DrawerDescription>
+                  </DrawerHeader>
+
+                  <ScrollArea className="flex-1 min-h-0">
+                    {isLoadingHistory ? (
+                      <div className="flex items-center justify-center gap-2 py-12 text-sm text-gray-500">
+                        <Spinner
+                          size={20}
+                          ariaLabel="Caricamento cronologia"
+                        />
+                        <span>Caricamento cronologia…</span>
+                      </div>
+                    ) : history.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                        <History className="h-12 w-12 mb-3" />
+                        <p className="text-sm">Nessuna modifica registrata</p>
+                      </div>
+                    ) : (
+                      <div className="p-4 space-y-4">
+                        {history.map((entry) => (
+                          <LabelHistoryCard
+                            key={entry.id}
+                            entry={entry}
+                            isAdmin={isAdmin}
+                            isRollingBack={isRollingBack}
+                            onRollback={rollbackAsync}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+
+                  <div className="border-t p-4 flex justify-end shrink-0">
+                    <DrawerClose asChild>
+                      <Button variant="outline">Chiudi</Button>
+                    </DrawerClose>
+                  </div>
+                </DrawerContent>
+              </Drawer>
+            )}
+          </div>
         </div>
 
         {/* Controls row */}

@@ -67,6 +67,28 @@ export type UpdatePasswordResponse = {
   };
 };
 
+export type ForgotPasswordRequest = {
+  email: string;
+};
+
+export type ForgotPasswordResponse = {
+  status: "success";
+  message: string;
+};
+
+export type ResetPasswordRequest = {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+};
+
+export type ResetPasswordResponse = {
+  status: "success";
+  message: string;
+};
+
+export type AuthApiError = Error & { code?: string };
+
 async function safeReadText(response: Response): Promise<string> {
   try {
     return await response.text();
@@ -145,6 +167,54 @@ export async function updatePasswordWithBearer(
   }
 
   return (await response.json()) as UpdatePasswordResponse;
+}
+
+async function parseErrorResponse(response: Response): Promise<AuthApiError> {
+  try {
+    const data = await response.json();
+    const err = new Error(data.message || "Request failed") as AuthApiError;
+    if (data.code) err.code = data.code;
+    return err;
+  } catch {
+    const text = await safeReadText(response);
+    return new Error(text || "Request failed") as AuthApiError;
+  }
+}
+
+export async function forgotPassword(
+  payload: ForgotPasswordRequest,
+  baseUrl: string = BASE_URL
+): Promise<ForgotPasswordResponse> {
+  const response = await fetch(`${baseUrl}/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseErrorResponse(response);
+  }
+
+  return (await response.json()) as ForgotPasswordResponse;
+}
+
+export async function resetPassword(
+  payload: ResetPasswordRequest,
+  baseUrl: string = BASE_URL
+): Promise<ResetPasswordResponse> {
+  const response = await fetch(`${baseUrl}/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseErrorResponse(response);
+  }
+
+  return (await response.json()) as ResetPasswordResponse;
 }
 
 export async function logout(baseUrl: string = BASE_URL): Promise<void> {

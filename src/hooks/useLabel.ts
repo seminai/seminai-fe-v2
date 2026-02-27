@@ -1,5 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { labelsApiService, type LabelDetail } from "@/api/labels";
+import {
+  labelsApiService,
+  type LabelDetail,
+  type LabelHistoryEntry,
+} from "@/api/labels";
 import { toast } from "sonner";
 
 interface UseLabelOptions {
@@ -42,6 +46,9 @@ export function useLabel({ id }: UseLabelOptions): UseLabelReturn {
       await queryClient.invalidateQueries({
         queryKey: ["labels", "detail", id],
       });
+      await queryClient.invalidateQueries({
+        queryKey: ["labels", "history", id],
+      });
     },
     onError: (e: unknown) => {
       const message = e instanceof Error ? e.message : "Salvataggio fallito";
@@ -57,6 +64,9 @@ export function useLabel({ id }: UseLabelOptions): UseLabelReturn {
       toast.success("Stato verifica aggiornato");
       await queryClient.invalidateQueries({
         queryKey: ["labels", "detail", id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["labels", "history", id],
       });
     },
     onError: (e: unknown) => {
@@ -74,6 +84,9 @@ export function useLabel({ id }: UseLabelOptions): UseLabelReturn {
       toast.success("Etichetta aggiornata con successo");
       await queryClient.invalidateQueries({
         queryKey: ["labels", "detail", id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["labels", "history", id],
       });
     },
     onError: (e: unknown) => {
@@ -94,6 +107,9 @@ export function useLabel({ id }: UseLabelOptions): UseLabelReturn {
       toast.success("Estrazione completata con successo");
       await queryClient.invalidateQueries({
         queryKey: ["labels", "detail", id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["labels", "history", id],
       });
     },
     onError: (e: unknown) => {
@@ -116,6 +132,9 @@ export function useLabel({ id }: UseLabelOptions): UseLabelReturn {
       toast.success("Estrazione con GPT completata con successo");
       await queryClient.invalidateQueries({
         queryKey: ["labels", "detail", id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["labels", "history", id],
       });
     },
     onError: (e: unknown) => {
@@ -141,5 +160,63 @@ export function useLabel({ id }: UseLabelOptions): UseLabelReturn {
     isExtracting,
     extractWithGptAsync,
     isExtractingGpt,
+  };
+}
+
+// --- Label History Hook ---
+
+interface UseLabelHistoryOptions {
+  labelExtractionId: string;
+  enabled?: boolean;
+}
+
+interface UseLabelHistoryReturn {
+  history: LabelHistoryEntry[];
+  isLoadingHistory: boolean;
+  historyError: Error | null;
+  rollbackAsync: (historyId: string) => Promise<unknown>;
+  isRollingBack: boolean;
+}
+
+export function useLabelHistory({
+  labelExtractionId,
+  enabled = true,
+}: UseLabelHistoryOptions): UseLabelHistoryReturn {
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["labels", "history", labelExtractionId],
+    queryFn: async () => labelsApiService.getHistory(labelExtractionId),
+    enabled: Boolean(labelExtractionId) && enabled,
+  });
+
+  const history: LabelHistoryEntry[] = data?.data ?? [];
+
+  const { mutateAsync: rollbackAsync, isPending: isRollingBack } = useMutation({
+    mutationFn: async (historyId: string) => {
+      return await labelsApiService.rollback(historyId);
+    },
+    onSuccess: async () => {
+      toast.success("Rollback completato con successo");
+      await queryClient.invalidateQueries({
+        queryKey: ["labels", "detail", labelExtractionId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["labels", "history", labelExtractionId],
+      });
+    },
+    onError: (e: unknown) => {
+      const message =
+        e instanceof Error ? e.message : "Rollback fallito";
+      toast.error(message);
+    },
+  });
+
+  return {
+    history,
+    isLoadingHistory: isLoading,
+    historyError: error as Error | null,
+    rollbackAsync,
+    isRollingBack,
   };
 }

@@ -405,7 +405,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       const searchableValueConfig = getSearchableValueConfig(selectedColumn);
       const showSearchableValueSelect = Boolean(searchableValueConfig);
       const searchableValueOptions = showSearchableValueSelect
-        ? buildUniqueValueOptions(selectedColumn?.id, tableState.rows)
+        ? buildUniqueValueOptions(selectedColumn?.id, tableState.rows, selectedColumn)
         : [];
 
       const systemColumns = filters.getAvailableSystemColumns(tableState.rows);
