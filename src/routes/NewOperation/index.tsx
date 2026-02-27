@@ -235,25 +235,35 @@ export default function NewOperation() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="border-b border-border/50 flex-shrink-0 flex items-center justify-between px-4 sm:px-6 py-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            if (state.currentStep === "company") {
-              navigate("/job");
-            } else {
-              state.goBack();
-            }
-          }}
-          className="gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Indietro
-        </Button>
+      <div className="border-b border-border/50 flex-shrink-0 grid grid-cols-3 items-center px-4 sm:px-6 py-3">
+        <div className="flex justify-start">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (state.currentStep === "company") {
+                navigate("/job");
+              } else {
+                state.goBack();
+              }
+            }}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Indietro
+          </Button>
+        </div>
+
+        <div className="flex justify-center">
+          {state.selectedCompanyName && (
+            <span className="text-sm font-semibold text-neutral-900 truncate">
+              {state.selectedCompanyName}
+            </span>
+          )}
+        </div>
 
         {/* Step indicator */}
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden md:flex items-center gap-1 justify-end">
           {stepLabels.map((s, i) => (
             <div key={s.key} className="flex items-center gap-1">
               <button
@@ -297,11 +307,6 @@ export default function NewOperation() {
         {/* Table step */}
         {state.currentStep === "table" && state.operationMode && (
           <div className="p-4 sm:p-6 space-y-4">
-            {/* Company name */}
-            <h2 className="text-lg font-semibold text-neutral-900">
-              {state.selectedCompanyName}
-            </h2>
-
             {/* Tab switcher (only show history tab for automatic) */}
             {state.operationMode === "automatic" && (
               <div className="flex items-center gap-1 border-b border-neutral-200">

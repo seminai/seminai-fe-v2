@@ -85,6 +85,32 @@ function calculateNetStock(stocks: StockEntry[]): number {
 
 const UNIT_MEASURE_OPTIONS = ["L", "KG", "ML", "G"];
 
+function normalizeUnitOfMeasure(raw: string | undefined): string {
+  if (!raw) return "";
+  const upper = raw.trim().toUpperCase();
+  const mapping: Record<string, string> = {
+    L: "L",
+    LT: "L",
+    LITRI: "L",
+    LITRO: "L",
+    KG: "KG",
+    KILO: "KG",
+    KILOGRAMMI: "KG",
+    ML: "ML",
+    G: "G",
+    GR: "G",
+    GRAMMI: "G",
+  };
+  return mapping[upper] ?? upper;
+}
+
+function getUnitOptions(stockUnit?: string): string[] {
+  const normalized = normalizeUnitOfMeasure(stockUnit);
+  if (!normalized || UNIT_MEASURE_OPTIONS.includes(normalized))
+    return UNIT_MEASURE_OPTIONS;
+  return [normalized, ...UNIT_MEASURE_OPTIONS];
+}
+
 export default function NewJobManual() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -292,6 +318,7 @@ export default function NewJobManual() {
         if (!next[key]) {
           const product = products.find((p) => p.key === key);
           if (product) {
+            const normalized = normalizeUnitOfMeasure(product.stockUnit);
             next[key] = {
               key: product.key,
               productName: product.productName,
@@ -299,7 +326,7 @@ export default function NewJobManual() {
               source: product.source,
               qtyPerHa: "",
               totalQty: "",
-              unitOfMeasure: product.stockUnit || "L",
+              unitOfMeasure: normalized || "L",
               availableStock: product.availableStock,
               stockUnit: product.stockUnit,
             };
@@ -630,7 +657,7 @@ export default function NewJobManual() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {UNIT_MEASURE_OPTIONS.map((u) => (
+                              {getUnitOptions(row.stockUnit).map((u) => (
                                 <SelectItem key={u} value={u}>
                                   {u}
                                 </SelectItem>

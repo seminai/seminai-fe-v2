@@ -98,16 +98,16 @@ class ManualProductFormValidator {
               quantity,
               unitOfMeasureQuantity: stockData.unitOfMeasureQuantity || "kg",
               price: isNaN(price) ? undefined : price,
-              unitOfMeasurePrice: stockData.unitOfMeasurePrice || undefined,
+              unitOfMeasurePrice: stockData.unitOfMeasurePrice || "",
               type: stockData.type,
-              ddtCode: stockData.ddtCode.trim() || undefined,
-              invoiceDate: stockData.invoiceDate || undefined,
-              invoiceCode: stockData.invoiceCode.trim() || undefined,
-              invoiceDueDate: stockData.invoiceDueDate || undefined,
+              ddtCode: stockData.ddtCode.trim() || "",
+              invoiceDate: stockData.invoiceDate || "",
+              invoiceCode: stockData.invoiceCode.trim() || "",
+              invoiceDueDate: stockData.invoiceDueDate || "",
               companySupplierName:
-                stockData.companySupplierName.trim() || undefined,
+                stockData.companySupplierName.trim() || "",
               vatNumberSupplier:
-                stockData.vatNumberSupplier.trim() || undefined,
+                stockData.vatNumberSupplier.trim() || "",
             }
           : undefined,
     };
@@ -371,10 +371,10 @@ export default function ManualProductForm({
         city: city.trim(),
         address: address.trim(),
         cap: cap.trim(),
-        sezione: sezione.trim() || null,
-        foglio: foglio.trim() || null,
-        particella: particella.trim() || null,
-        subalterno: subalterno.trim() || null,
+        sezione: sezione.trim() || "",
+        foglio: foglio.trim() || "",
+        particella: particella.trim() || "",
+        subalterno: subalterno.trim() || "",
       });
       const list = await refetchWarehouses();
       if (list.length > 0) setWarehouseId(list[0].id);
@@ -444,14 +444,14 @@ export default function ManualProductForm({
             quantity,
             unitOfMeasureQuantity: s.unitOfMeasureQuantity,
             price: parseDecimal(s.price) || undefined,
-            unitOfMeasurePrice: s.unitOfMeasurePrice || undefined,
+            unitOfMeasurePrice: s.unitOfMeasurePrice || "",
             type: s.type,
-            ddtCode: s.ddtCode.trim() || undefined,
-            invoiceCode: s.invoiceCode.trim() || undefined,
-            invoiceDate: s.invoiceDate || undefined,
-            invoiceDueDate: s.invoiceDueDate || undefined,
-            companySupplierName: s.companySupplierName.trim() || undefined,
-            vatNumberSupplier: s.vatNumberSupplier.trim() || undefined,
+            ddtCode: s.ddtCode.trim() || "",
+            invoiceCode: s.invoiceCode.trim() || "",
+            invoiceDate: s.invoiceDate || "",
+            invoiceDueDate: s.invoiceDueDate || "",
+            companySupplierName: s.companySupplierName.trim() || "",
+            vatNumberSupplier: s.vatNumberSupplier.trim() || "",
           });
         }
         toast.success(
@@ -509,14 +509,14 @@ export default function ManualProductForm({
             quantity,
             unitOfMeasureQuantity: s.unitOfMeasureQuantity,
             price: parseDecimal(s.price) || undefined,
-            unitOfMeasurePrice: s.unitOfMeasurePrice || undefined,
+            unitOfMeasurePrice: s.unitOfMeasurePrice || "",
             type: s.type,
-            ddtCode: s.ddtCode.trim() || undefined,
-            invoiceCode: s.invoiceCode.trim() || undefined,
-            invoiceDate: s.invoiceDate || undefined,
-            invoiceDueDate: s.invoiceDueDate || undefined,
-            companySupplierName: s.companySupplierName.trim() || undefined,
-            vatNumberSupplier: s.vatNumberSupplier.trim() || undefined,
+            ddtCode: s.ddtCode.trim() || "",
+            invoiceCode: s.invoiceCode.trim() || "",
+            invoiceDate: s.invoiceDate || "",
+            invoiceDueDate: s.invoiceDueDate || "",
+            companySupplierName: s.companySupplierName.trim() || "",
+            vatNumberSupplier: s.vatNumberSupplier.trim() || "",
           });
         }
       }
