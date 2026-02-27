@@ -102,6 +102,11 @@ interface ManageSectionProps {
   setOperationMachines: Dispatch<SetStateAction<OperationMachineAssignment[]>>;
   operationOperators: OperationOperatorAssignment[];
   setOperationOperators: Dispatch<SetStateAction<OperationOperatorAssignment[]>>;
+  operationCode: string;
+  setOperationCode: Dispatch<SetStateAction<string>>;
+  operationCodeMode: "random" | "existing";
+  setOperationCodeMode: Dispatch<SetStateAction<"random" | "existing">>;
+  generateRandomCode: () => string;
   // Wizard-specific props
   onCalculateDosages: () => void;
   isSubmitting: boolean;
@@ -177,6 +182,11 @@ export function ManageSection({
   setOperationMachines,
   operationOperators,
   setOperationOperators,
+  operationCode,
+  setOperationCode,
+  operationCodeMode,
+  setOperationCodeMode,
+  generateRandomCode,
   onCalculateDosages,
   isSubmitting,
   isCalculateDisabled,
@@ -293,6 +303,12 @@ export function ManageSection({
             setOperationMachines={setOperationMachines}
             operationOperators={operationOperators}
             setOperationOperators={setOperationOperators}
+            operationCode={operationCode}
+            setOperationCode={setOperationCode}
+            operationCodeMode={operationCodeMode}
+            setOperationCodeMode={setOperationCodeMode}
+            generateRandomCode={generateRandomCode}
+            selectedImportMethod={selectedImportMethod}
           />
         )}
       </div>

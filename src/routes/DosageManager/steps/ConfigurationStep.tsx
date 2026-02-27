@@ -1,4 +1,5 @@
 import { useMemo, useState, type Dispatch, type ReactElement, type SetStateAction } from "react";
+import { useJobGroupsSummary } from "@/hooks/useJobGroups";
 import {
   Select,
   SelectContent,
@@ -29,8 +30,11 @@ import {
   Calendar as CalendarIcon,
   ChevronDown,
   ChevronUp,
+  Hash,
   Lock,
+  RefreshCw,
   Settings,
+  Wrench,
   X,
 } from "lucide-react";
 import type {
@@ -55,6 +59,7 @@ import type {
   OperationMachineAssignment,
   OperationOperatorAssignment,
 } from "@/api/dosage-agent";
+import type { ImportMethod } from "../importMethod";
 import { OperatorsAndMachinesSection } from "./OperatorsAndMachinesSection";
 
 interface ConfigurationStepProps {
@@ -85,6 +90,12 @@ interface ConfigurationStepProps {
   setOperationMachines: Dispatch<SetStateAction<OperationMachineAssignment[]>>;
   operationOperators: OperationOperatorAssignment[];
   setOperationOperators: Dispatch<SetStateAction<OperationOperatorAssignment[]>>;
+  operationCode: string;
+  setOperationCode: Dispatch<SetStateAction<string>>;
+  operationCodeMode: "random" | "existing";
+  setOperationCodeMode: Dispatch<SetStateAction<"random" | "existing">>;
+  generateRandomCode: () => string;
+  selectedImportMethod: ImportMethod | null;
   startAt: string;
   setStartAt: Dispatch<SetStateAction<string>>;
   endAt: string;
@@ -115,8 +126,16 @@ export function ConfigurationStep({
   setOperationMachines,
   operationOperators,
   setOperationOperators,
+  operationCode,
+  setOperationCode,
+  operationCodeMode,
+  setOperationCodeMode,
+  generateRandomCode,
+  selectedImportMethod,
 }: ConfigurationStepProps): ReactElement {
   const [showMaxLimits, setShowMaxLimits] = useState(false);
+  const { groups: jobGroups, isLoading: isLoadingJobGroups } =
+    useJobGroupsSummary();
 
   const categoryPriority = orchestratorSettings.categoryPriority ?? [];
   const priorityTargets = orchestratorSettings.priorityTargets ?? [];
@@ -196,6 +215,90 @@ export function ConfigurationStep({
 
   return (
     <div className="space-y-6">
+      {/* Operation Code Section - only for manual product creation */}
+      {selectedImportMethod === null && (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-4 md:p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <Hash className="h-5 w-5 text-neutral-600 flex-shrink-0" />
+            <div>
+              <h2 className="text-base font-medium text-neutral-900">
+                Codice operazione
+              </h2>
+              <p className="text-sm text-neutral-500">
+                Genera un nuovo codice casuale o associa a un job esistente
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant={operationCodeMode === "random" ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setOperationCodeMode("random");
+                setOperationCode(generateRandomCode());
+              }}
+            >
+              Genera nuovo
+            </Button>
+            <Button
+              type="button"
+              variant={operationCodeMode === "existing" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setOperationCodeMode("existing")}
+              disabled={!jobGroups || jobGroups.length === 0}
+            >
+              Usa esistente
+            </Button>
+          </div>
+
+          {operationCodeMode === "random" ? (
+            <div className="flex items-center gap-3">
+              <Input
+                value={operationCode}
+                readOnly
+                className="max-w-xs font-mono text-lg tracking-wider bg-neutral-50"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setOperationCode(generateRandomCode())}
+                title="Rigenera codice"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <Select
+              value={operationCode}
+              onValueChange={setOperationCode}
+            >
+              <SelectTrigger className="max-w-md h-12 bg-white border-neutral-200">
+                <SelectValue
+                  placeholder={
+                    isLoadingJobGroups
+                      ? "Caricamento..."
+                      : "Seleziona un job esistente"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {(jobGroups ?? []).map((group) => (
+                  <SelectItem key={group.jobId} value={group.jobId}>
+                    <span className="font-mono">{group.jobId}</span>
+                    <span className="ml-2 text-neutral-500">
+                      — {group.company.name} ({new Date(group.createdAt).toLocaleDateString("it-IT")})
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      )}
+
       {/* Strategy Section */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between w-full">
         <div>
@@ -278,20 +381,6 @@ export function ConfigurationStep({
           </div>
         </div>
       </div>
-
-      {/* Operators and Machines Section */}
-      {selectedCompanyIds.length > 0 && (
-        <div className="rounded-2xl border border-neutral-200 bg-white p-4 md:p-6">
-          <OperatorsAndMachinesSection
-            companies={companies}
-            selectedCompanyIds={selectedCompanyIds}
-            operationMachines={operationMachines}
-            setOperationMachines={setOperationMachines}
-            operationOperators={operationOperators}
-            setOperationOperators={setOperationOperators}
-          />
-        </div>
-      )}
 
       {/* Treatment Dates Section */}
       {selectedUnitIds.length > 0 && (
@@ -432,7 +521,7 @@ export function ConfigurationStep({
 
       {/* Orchestrator Section */}
       <div className="rounded-2xl border border-neutral-200 bg-white">
-        <Accordion type="single" collapsible>
+        <Accordion type="multiple">
           <AccordionItem value="orchestrator" className="border-0">
             <AccordionTrigger className="px-4 md:px-6">
               <div className="flex items-center gap-3">
@@ -837,9 +926,39 @@ export function ConfigurationStep({
                     className="min-h-28"
                   />
                 </div>
+
               </div>
             </AccordionContent>
           </AccordionItem>
+
+          {/* Machines and Operators toggle */}
+          {selectedCompanyIds.length > 0 && (
+            <AccordionItem value="machines-operators" className="border-0">
+              <AccordionTrigger className="px-4 md:px-6">
+                <div className="flex items-center gap-3">
+                  <Wrench className="h-5 w-5 text-neutral-600 flex-shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="text-base font-medium text-neutral-900">
+                      Macchinari e operatori
+                    </span>
+                    <span className="text-sm text-neutral-500">
+                      Seleziona macchinari e operatori dalle aziende
+                    </span>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 md:px-6">
+                <OperatorsAndMachinesSection
+                  companies={companies}
+                  selectedCompanyIds={selectedCompanyIds}
+                  operationMachines={operationMachines}
+                  setOperationMachines={setOperationMachines}
+                  operationOperators={operationOperators}
+                  setOperationOperators={setOperationOperators}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          )}
         </Accordion>
       </div>
     </div>

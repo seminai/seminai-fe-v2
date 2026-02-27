@@ -9,6 +9,8 @@ import {
   type DosageUnitOfProduction,
   type DosageOrchestratorSettings,
   type StartDosageJobRequest,
+  type OperationMachineAssignment,
+  type OperationOperatorAssignment,
 } from "@/api/dosage-agent";
 import {
   OrchestratorRequestBuilder,
@@ -27,6 +29,8 @@ interface SubmitParams {
   selectedUnits: ProductionUnit[];
   startAt: string;
   endAt: string;
+  operationMachines: OperationMachineAssignment[];
+  operationOperators: OperationOperatorAssignment[];
 }
 
 export function useAutomaticSubmission() {
@@ -46,6 +50,8 @@ export function useAutomaticSubmission() {
         selectedUnits,
         startAt,
         endAt,
+        operationMachines,
+        operationOperators,
       } = params;
 
       if (rows.length === 0) {
@@ -125,6 +131,12 @@ export function useAutomaticSubmission() {
 
         if (startAt) requestPayload.startAt = startAt;
         if (endAt) requestPayload.endAt = endAt;
+        if (operationMachines.length > 0) {
+          requestPayload.operationMachines = operationMachines;
+        }
+        if (operationOperators.length > 0) {
+          requestPayload.operationOperators = operationOperators;
+        }
 
         const response =
           await dosageAgentApiService.startJob(requestPayload);

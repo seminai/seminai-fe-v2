@@ -24,6 +24,7 @@ import {
   Lock,
   RotateCcw,
   Settings,
+  Wrench,
   X,
 } from "lucide-react";
 import type {
@@ -44,6 +45,11 @@ import {
   MultiSearchableSelect,
   type MultiSearchableSelectOption,
 } from "@/routes/DosageManager/MultiSearchableSelect";
+import type {
+  OperationMachineAssignment,
+  OperationOperatorAssignment,
+} from "@/api/dosage-agent";
+import { OperatorsAndMachinesSection } from "@/routes/DosageManager/steps/OperatorsAndMachinesSection";
 
 interface AutoConfigPanelProps {
   strategy: DosageStrategy;
@@ -63,6 +69,12 @@ interface AutoConfigPanelProps {
   setEndAt: Dispatch<SetStateAction<string>>;
   suggestedStartAt?: string;
   suggestedEndAt?: string;
+  companies: Array<{ id: string; name: string }>;
+  selectedCompanyIds: string[];
+  operationMachines: OperationMachineAssignment[];
+  setOperationMachines: Dispatch<SetStateAction<OperationMachineAssignment[]>>;
+  operationOperators: OperationOperatorAssignment[];
+  setOperationOperators: Dispatch<SetStateAction<OperationOperatorAssignment[]>>;
 }
 
 const STRATEGY_OPTIONS: Array<{
@@ -111,6 +123,12 @@ export function AutoConfigPanel({
   setEndAt,
   suggestedStartAt,
   suggestedEndAt,
+  companies,
+  selectedCompanyIds,
+  operationMachines,
+  setOperationMachines,
+  operationOperators,
+  setOperationOperators,
 }: AutoConfigPanelProps): ReactElement {
   const [showMaxLimits, setShowMaxLimits] = useState(false);
 
@@ -244,7 +262,7 @@ export function AutoConfigPanel({
       </div>
 
       {/* Advanced settings accordion */}
-      <Accordion type="single" collapsible>
+      <Accordion type="multiple">
         {/* Treatment dates */}
         {selectedUnitIds.length > 0 && (
           <AccordionItem value="treatment-dates" className="border-0">
@@ -638,9 +656,34 @@ export function AutoConfigPanel({
                   className="min-h-20"
                 />
               </div>
+
             </div>
           </AccordionContent>
         </AccordionItem>
+
+        {/* Machines and operators */}
+        {selectedCompanyIds.length > 0 && (
+          <AccordionItem value="machines-operators" className="border-0">
+            <AccordionTrigger className="py-2">
+              <div className="flex items-center gap-2">
+                <Wrench className="h-4 w-4 text-neutral-500" />
+                <span className="text-sm font-medium">
+                  Macchinari e operatori
+                </span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <OperatorsAndMachinesSection
+                companies={companies}
+                selectedCompanyIds={selectedCompanyIds}
+                operationMachines={operationMachines}
+                setOperationMachines={setOperationMachines}
+                operationOperators={operationOperators}
+                setOperationOperators={setOperationOperators}
+              />
+            </AccordionContent>
+          </AccordionItem>
+        )}
       </Accordion>
     </div>
   );

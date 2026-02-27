@@ -91,6 +91,7 @@ export type StartDosageJobRequest = {
   endAt?: string;
   operationMachines?: OperationMachineAssignment[];
   operationOperators?: OperationOperatorAssignment[];
+  jobId?: string;
 };
 
 export type StartDosageJobResponse = {

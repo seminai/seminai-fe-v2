@@ -828,6 +828,17 @@ export default function DosageManager() {
     OperationOperatorAssignment[]
   >([]);
 
+  const generateRandomCode = useCallback(
+    () => Math.floor(100000 + Math.random() * 900000).toString(),
+    [],
+  );
+  const [operationCode, setOperationCode] = useState<string>(() =>
+    generateRandomCode(),
+  );
+  const [operationCodeMode, setOperationCodeMode] = useState<
+    "random" | "existing"
+  >("random");
+
   const editableTableRef = useRef<EditableTableRef>(null);
 
   const wizard = useDosageWizard({
@@ -2273,6 +2284,9 @@ export default function DosageManager() {
       if (operationOperators.length > 0) {
         requestPayload.operationOperators = operationOperators;
       }
+      if (operationCode && selectedImportMethod === null) {
+        requestPayload.jobId = operationCode;
+      }
 
       // Start job
       const response = await dosageAgentApiService.startJob(requestPayload);
@@ -2313,6 +2327,8 @@ export default function DosageManager() {
       setEndAt("");
       setOperationMachines([]);
       setOperationOperators([]);
+      setOperationCodeMode("random");
+      setOperationCode(generateRandomCode());
       setTreatedAreaHaMap(new Map());
     } catch (error) {
       toast.error("Errore durante l'avvio del calcolo", {
@@ -2464,6 +2480,11 @@ export default function DosageManager() {
             setOperationMachines={setOperationMachines}
             operationOperators={operationOperators}
             setOperationOperators={setOperationOperators}
+            operationCode={operationCode}
+            setOperationCode={setOperationCode}
+            operationCodeMode={operationCodeMode}
+            setOperationCodeMode={setOperationCodeMode}
+            generateRandomCode={generateRandomCode}
             onCalculateDosages={handleCalculateDosages}
             isSubmitting={isSubmitting}
             isCalculateDisabled={isCalculateDisabled}

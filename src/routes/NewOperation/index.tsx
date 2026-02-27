@@ -1,12 +1,30 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Hash, RefreshCw, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { useJobGroupsSummary } from "@/hooks/useJobGroups";
+import { generateRandomJobId } from "@/routes/Job/utils";
 
 import type {
   DosageStrategy,
   DosageOrchestratorSettings,
+  OperationMachineAssignment,
+  OperationOperatorAssignment,
 } from "@/api/dosage-agent";
 import {
   OrchestratorDefaultsFactory,
@@ -22,6 +40,7 @@ import { ModeSelector } from "./components/ModeSelector";
 import { OperationTable } from "./components/OperationTable";
 import { ImportToolbar } from "./components/ImportToolbar";
 import { AutoConfigPanel } from "./components/AutoConfigPanel";
+import { OperatorsAndMachinesSection } from "@/routes/DosageManager/steps/OperatorsAndMachinesSection";
 import { HistoryTab } from "./components/HistoryTab";
 
 type TabView = "manage" | "history";
@@ -45,6 +64,22 @@ export default function NewOperation() {
     useState<OrchestratorDatasets | null>(null);
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
+  const [operationMachines, setOperationMachines] = useState<
+    OperationMachineAssignment[]
+  >([]);
+  const [operationOperators, setOperationOperators] = useState<
+    OperationOperatorAssignment[]
+  >([]);
+
+  // Operation code state (manual mode only)
+  const [operationCode, setOperationCode] = useState<string>(() =>
+    generateRandomJobId(),
+  );
+  const [operationCodeMode, setOperationCodeMode] = useState<
+    "random" | "existing"
+  >("random");
+  const { groups: jobGroups, isLoading: isLoadingJobGroups } =
+    useJobGroupsSummary();
 
   // Main state hook
   const state = useNewOperationState();
@@ -138,7 +173,8 @@ export default function NewOperation() {
     if (!state.operationMode) return;
 
     if (state.operationMode === "manual") {
-      await manualSubmission.submit(table.rows, jobIdFromState);
+      const manualJobId = operationCode || jobIdFromState;
+      await manualSubmission.submit(table.rows, manualJobId);
     } else {
       const selectedUnits = state.productionUnits.filter((pu) =>
         state.globalSelectedUnitIds.includes(pu.productionUnit.id),
@@ -153,6 +189,8 @@ export default function NewOperation() {
         selectedUnits,
         startAt,
         endAt,
+        operationMachines,
+        operationOperators,
       });
     }
   }, [
@@ -162,6 +200,7 @@ export default function NewOperation() {
     table.rows,
     manualSubmission,
     automaticSubmission,
+    operationCode,
     jobIdFromState,
     strategy,
     outStockLimiter,
@@ -170,6 +209,8 @@ export default function NewOperation() {
     orchestratorDatasets,
     startAt,
     endAt,
+    operationMachines,
+    operationOperators,
   ]);
 
   const canGenerate =
@@ -347,7 +388,128 @@ export default function NewOperation() {
                     setEndAt={setEndAt}
                     suggestedStartAt={suggestedDateRange.suggestedStartAt}
                     suggestedEndAt={suggestedDateRange.suggestedEndAt}
+                    companies={state.companies}
+                    selectedCompanyIds={state.selectedCompanyId ? [state.selectedCompanyId] : []}
+                    operationMachines={operationMachines}
+                    setOperationMachines={setOperationMachines}
+                    operationOperators={operationOperators}
+                    setOperationOperators={setOperationOperators}
                   />
+                )}
+
+                {/* Manual mode: operation code + machines/operators */}
+                {state.operationMode === "manual" && state.selectedCompanyId && (
+                  <div className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-4 md:p-6">
+                    <Accordion type="multiple">
+                      {/* Operation Code */}
+                      <AccordionItem value="operation-code" className="border-0">
+                        <AccordionTrigger className="py-2">
+                          <div className="flex items-center gap-2">
+                            <Hash className="h-4 w-4 text-neutral-500" />
+                            <span className="text-sm font-medium">
+                              Codice operazione
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-3">
+                            <p className="text-xs text-neutral-500">
+                              Genera un nuovo codice casuale o associa a un job esistente
+                            </p>
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant={operationCodeMode === "random" ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => {
+                                  setOperationCodeMode("random");
+                                  setOperationCode(generateRandomJobId());
+                                }}
+                              >
+                                Genera nuovo
+                              </Button>
+                              <Button
+                                type="button"
+                                variant={operationCodeMode === "existing" ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setOperationCodeMode("existing")}
+                                disabled={!jobGroups || jobGroups.length === 0}
+                              >
+                                Usa esistente
+                              </Button>
+                            </div>
+
+                            {operationCodeMode === "random" ? (
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  value={operationCode}
+                                  readOnly
+                                  className="max-w-[180px] font-mono text-base tracking-wider bg-neutral-50 h-9"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-9 w-9 p-0"
+                                  onClick={() => setOperationCode(generateRandomJobId())}
+                                  title="Rigenera codice"
+                                >
+                                  <RefreshCw className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <Select
+                                value={operationCode}
+                                onValueChange={setOperationCode}
+                              >
+                                <SelectTrigger className="h-9 bg-white">
+                                  <SelectValue
+                                    placeholder={
+                                      isLoadingJobGroups
+                                        ? "Caricamento..."
+                                        : "Seleziona un job esistente"
+                                    }
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(jobGroups ?? []).map((group) => (
+                                    <SelectItem key={group.jobId} value={group.jobId}>
+                                      <span className="font-mono">{group.jobId}</span>
+                                      <span className="ml-2 text-neutral-500">
+                                        — {group.company.name} ({new Date(group.createdAt).toLocaleDateString("it-IT")})
+                                      </span>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      {/* Machines and operators */}
+                      <AccordionItem value="machines-operators" className="border-0">
+                        <AccordionTrigger className="py-2">
+                          <div className="flex items-center gap-2">
+                            <Wrench className="h-4 w-4 text-neutral-500" />
+                            <span className="text-sm font-medium">
+                              Macchinari e operatori
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <OperatorsAndMachinesSection
+                            companies={state.companies}
+                            selectedCompanyIds={[state.selectedCompanyId]}
+                            operationMachines={operationMachines}
+                            setOperationMachines={setOperationMachines}
+                            operationOperators={operationOperators}
+                            setOperationOperators={setOperationOperators}
+                          />
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </div>
                 )}
 
                 {/* Generate button */}
