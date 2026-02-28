@@ -31,14 +31,13 @@ export function useManualSubmission(
         (r) =>
           !r.productName.trim() ||
           !r.dateOfOperation ||
-          r.selectedUnitIds.length === 0 ||
           (r.dosePerHa === null && r.quantity <= 0),
       );
 
       if (invalid) {
         toast.error("Dati incompleti", {
           description:
-            "Ogni riga deve avere prodotto, data, unità produttive e dose o quantità",
+            "Ogni riga deve avere prodotto, data e dose o quantità",
         });
         return;
       }
@@ -50,45 +49,70 @@ export function useManualSubmission(
         const payloads: CreateJobPayload[] = [];
 
         for (const row of rows) {
-          // Calculate total treated surface for this row's units
-          const totalTreatedHa = row.selectedUnitIds.reduce((sum, unitId) => {
-            const unitInfo = productionUnitMap.get(unitId);
-            return sum + (unitInfo?.areaHa ?? 0);
-          }, 0);
+          const hasUnits = row.selectedUnitIds.length > 0;
 
-          for (const unitId of row.selectedUnitIds) {
-            const unitInfo = productionUnitMap.get(unitId);
-            if (!unitInfo) continue;
+          if (hasUnits) {
+            const totalTreatedHa = row.selectedUnitIds.reduce((sum, unitId) => {
+              const unitInfo = productionUnitMap.get(unitId);
+              return sum + (unitInfo?.areaHa ?? 0);
+            }, 0);
 
-            const unitShare =
-              totalTreatedHa > 0 ? unitInfo.areaHa / totalTreatedHa : 1;
+            for (const unitId of row.selectedUnitIds) {
+              const unitInfo = productionUnitMap.get(unitId);
+              if (!unitInfo) continue;
 
-            // Calculate quantity for this unit
-            let quantityForUnit: number;
-            if (row.dosePerHa !== null && row.dosePerHa > 0) {
-              quantityForUnit = row.dosePerHa * unitInfo.areaHa;
-            } else {
-              quantityForUnit = row.quantity * unitShare;
+              const unitShare =
+                totalTreatedHa > 0 ? unitInfo.areaHa / totalTreatedHa : 1;
+
+              let quantityForUnit: number;
+              if (row.dosePerHa !== null && row.dosePerHa > 0) {
+                quantityForUnit = row.dosePerHa * unitInfo.areaHa;
+              } else {
+                quantityForUnit = row.quantity * unitShare;
+              }
+
+              payloads.push({
+                productionUnitId: unitId,
+                dateOfOpeation: new Date(row.dateOfOperation).toISOString(),
+                category: "TREATMENT",
+                quantity: quantityForUnit,
+                unitOfMeasureQuantity: row.unitOfMeasure,
+                treatedSurface: unitInfo.areaHa,
+                jobId: currentJobId,
+                stocks: [
+                  {
+                    product: {
+                      name: row.productName,
+                      category: "PESTICIDE",
+                      type: "Fitosanitario",
+                      registrationNumber: row.registrationNumber,
+                      ...(row.sku ? { sku: row.sku } : {}),
+                    },
+                    quantity: -quantityForUnit,
+                    unitOfMeasureQuantity: row.unitOfMeasure,
+                    type: "OUT",
+                  },
+                ],
+              });
             }
-
+          } else {
+            // No units selected — LLM will match units later
             payloads.push({
-              productionUnitId: unitId,
               dateOfOpeation: new Date(row.dateOfOperation).toISOString(),
               category: "TREATMENT",
-              quantity: quantityForUnit,
+              quantity: row.quantity,
               unitOfMeasureQuantity: row.unitOfMeasure,
-              treatedSurface: unitInfo.areaHa,
               jobId: currentJobId,
               stocks: [
                 {
                   product: {
                     name: row.productName,
                     category: "PESTICIDE",
-                    type: "Fitosanitario",
+                    type: "FITOSANITARIO",
                     registrationNumber: row.registrationNumber,
                     ...(row.sku ? { sku: row.sku } : {}),
                   },
-                  quantity: -quantityForUnit,
+                  quantity: -row.quantity,
                   unitOfMeasureQuantity: row.unitOfMeasure,
                   type: "OUT",
                 },

@@ -104,7 +104,7 @@ export function useUnifiedProductTable(
           dateOfOperation: todayIso,
           selectedUnitIds: [...defaultUnitIds],
           productName: product.name,
-          registrationNumber: product.sku || "",
+          registrationNumber: product.registrationNumber ?? product.sku ?? "",
           quantity: 0,
           unitOfMeasure: stockUnit || "L",
           dosePerHa: null,
@@ -188,7 +188,7 @@ export function useUnifiedProductTable(
             return {
               ...row,
               productName: product.name,
-              registrationNumber: product.sku || "",
+              registrationNumber: product.registrationNumber ?? product.sku ?? "",
               unitOfMeasure: stockUnit || row.unitOfMeasure,
               availableStock: netStock,
               stockUnit,
@@ -260,7 +260,7 @@ export function useUnifiedProductTable(
         const stockUnit = product.stocks[0]?.unitOfMeasureQuantity ?? "";
 
         // Try to find registration number from registry
-        let regNumber = product.sku || "";
+        let regNumber = product.registrationNumber ?? product.sku ?? "";
         if (!regNumber) {
           try {
             const found = await findRegNumberByName(product.name);

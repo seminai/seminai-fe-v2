@@ -370,10 +370,17 @@ function OperationTableRow({
           variant="outline"
           size="sm"
           onClick={onOpenUnitsDrawer}
-          className="gap-1.5 h-8 text-xs"
+          className={cn(
+            "gap-1.5 h-8 text-xs",
+            !isAutomatic && unitCount === 0 && "border-dashed text-neutral-400",
+          )}
         >
           <TreeDeciduous className="h-3.5 w-3.5" />
-          {unitCount} unità
+          {unitCount > 0
+            ? `${unitCount} unità`
+            : isAutomatic
+              ? "0 unità"
+              : "Opzionale"}
         </Button>
       </td>
 

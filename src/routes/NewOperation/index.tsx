@@ -225,7 +225,7 @@ export default function NewOperation() {
           (r) =>
             r.productName.trim() !== "" &&
             r.dateOfOperation &&
-            r.selectedUnitIds.length > 0,
+            ((r.dosePerHa !== null && r.dosePerHa > 0) || r.quantity > 0),
         )
       : state.globalSelectedUnitIds.length > 0);
 

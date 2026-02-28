@@ -188,7 +188,7 @@ export type CreateJobProductStock = {
 };
 
 export type CreateJobPayload = {
-  productionUnitId: string;
+  productionUnitId?: string;
   dateOfOpeation: string;
   category: string;
   quantity: number;
