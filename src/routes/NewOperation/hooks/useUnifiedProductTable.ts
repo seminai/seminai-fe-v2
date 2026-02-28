@@ -8,6 +8,7 @@ import {
   findRegNumberByName,
   type FitosanitariDatasetRecord,
 } from "@/services/fitosanitariRegistry";
+import type { BrogliacciPayload } from "@/api/brogliacci";
 import type { OperationMode, UnifiedProductRow } from "../types";
 
 function calculateNetStock(stocks: StockEntry[]): number {
@@ -503,6 +504,54 @@ export function useUnifiedProductTable(
     [defaultUnitIds, todayIso],
   );
 
+  // Add rows from brogliaccio extraction
+  const handleAddRowsFromBrogliacci = useCallback(
+    (payloads: BrogliacciPayload[]) => {
+      const newRows: UnifiedProductRow[] = [];
+
+      for (const job of payloads) {
+        const dateOfOperation = job.dateOfOpeation
+          ? job.dateOfOpeation.split("T")[0]
+          : todayIso;
+
+        for (const stock of job.stocks) {
+          newRows.push({
+            _internalId: nextInternalId(),
+            dateOfOperation,
+            selectedUnitIds: [],
+            productName: stock.product.name,
+            registrationNumber: stock.product.registrationNumber || "",
+            quantity: Math.abs(stock.quantity),
+            unitOfMeasure: stock.unitOfMeasureQuantity.toUpperCase(),
+            dosePerHa: null,
+            treatedSurfaceHa: job.treatedSurface || 0,
+            availableStock: null,
+            stockUnit: null,
+            strategy: null,
+            source: "brogliaccio" as const,
+            loadWarehouse: false,
+          });
+        }
+      }
+
+      setRows((prev) => {
+        const existingKeys = new Set(
+          prev.map((r) => `${r.productName}-${r.registrationNumber}`),
+        );
+        const unique = newRows.filter(
+          (r) =>
+            !existingKeys.has(`${r.productName}-${r.registrationNumber}`),
+        );
+        return [...prev, ...unique];
+      });
+
+      if (newRows.length > 0) {
+        toast.success(`${newRows.length} prodotti importati da brogliaccio`);
+      }
+    },
+    [todayIso],
+  );
+
   // Add a manual empty row
   const addEmptyRow = useCallback(() => {
     setRows((prev) => [
@@ -546,6 +595,7 @@ export function useUnifiedProductTable(
     handleImportFromNotes,
     handleAddRowsFromCsv,
     handleAddRowsFromDdt,
+    handleAddRowsFromBrogliacci,
     isImportingFromWarehouse,
     isImportingFromNotes,
 

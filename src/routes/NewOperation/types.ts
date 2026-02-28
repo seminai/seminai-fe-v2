@@ -37,7 +37,7 @@ export interface UnifiedProductRow {
   strategy: DosageStrategy | null;
 
   // Metadata
-  source: "registry" | "warehouse" | "csv" | "ddt" | "notes" | "manual";
+  source: "registry" | "warehouse" | "csv" | "ddt" | "notes" | "manual" | "brogliaccio";
   loadWarehouse: boolean;
   supplierName?: string;
   supplierVat?: string;

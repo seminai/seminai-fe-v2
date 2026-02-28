@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Hash, RefreshCw, Wrench } from "lucide-react";
+import { ArrowLeft, Hash, RefreshCw, Wrench, ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
@@ -42,6 +42,7 @@ import { ImportToolbar } from "./components/ImportToolbar";
 import { AutoConfigPanel } from "./components/AutoConfigPanel";
 import { OperatorsAndMachinesSection } from "@/routes/DosageManager/steps/OperatorsAndMachinesSection";
 import { HistoryTab } from "./components/HistoryTab";
+import { BrogliacciImportDrawer } from "./components/BrogliacciImportDrawer";
 
 type TabView = "manage" | "history";
 
@@ -70,6 +71,9 @@ export default function NewOperation() {
   const [operationOperators, setOperationOperators] = useState<
     OperationOperatorAssignment[]
   >([]);
+
+  // Brogliaccio import drawer state
+  const [showBrogliacciDrawer, setShowBrogliacciDrawer] = useState(false);
 
   // Operation code state (manual mode only)
   const [operationCode, setOperationCode] = useState<string>(() =>
@@ -349,6 +353,27 @@ export default function NewOperation() {
                     isLoadingWarehouse={state.isLoadingWarehouseProducts}
                   />
                 )}
+
+                {/* Import brogliaccio button (manual mode) */}
+                {state.operationMode === "manual" && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowBrogliacciDrawer(true)}
+                      className="gap-2"
+                    >
+                      <ScanLine className="h-4 w-4" />
+                      Importa brogliaccio
+                    </Button>
+                  </div>
+                )}
+
+                <BrogliacciImportDrawer
+                  open={showBrogliacciDrawer}
+                  onOpenChange={setShowBrogliacciDrawer}
+                  onImportRows={table.handleAddRowsFromBrogliacci}
+                />
 
                 {/* Loading indicator */}
                 {state.isLoadingUnits ? (

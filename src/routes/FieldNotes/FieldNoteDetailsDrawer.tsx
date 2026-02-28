@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Drawer,
   DrawerContent,
@@ -43,9 +43,9 @@ export function FieldNoteDetailsDrawer({
   products,
   onSave,
 }: FieldNoteDetailsDrawerProps) {
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [attachments, setAttachments] = useState<FieldNoteAttachment[]>([]);
+  const hasRequestedLocationForDetails = useRef(false);
 
   const { mutateAsync: uploadAttachment, isPending: isUploadingAttachment } =
     useUploadFieldNoteAttachmentMutation();
@@ -65,38 +65,27 @@ export function FieldNoteDetailsDrawer({
     }
   }, [fieldNote]);
 
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("La geolocalizzazione non è supportata dal tuo browser");
+  // All'apertura: se la nota non ha coordinate, mostra subito la posizione attuale sulla mappa
+  useEffect(() => {
+    if (!open) {
+      hasRequestedLocationForDetails.current = false;
       return;
     }
-
-    setIsGettingLocation(true);
+    if (!fieldNote || !navigator.geolocation || hasRequestedLocationForDetails.current) return;
+    const hasCoords =
+      fieldNote.latitude != null &&
+      fieldNote.longitude != null;
+    if (hasCoords) return;
+    hasRequestedLocationForDetails.current = true;
     navigator.geolocation.getCurrentPosition(
       (position) => {
         formActions.setLatitude(position.coords.latitude);
         formActions.setLongitude(position.coords.longitude);
-        setIsGettingLocation(false);
-        toast.success("Posizione GPS ottenuta con successo");
       },
-      (error) => {
-        setIsGettingLocation(false);
-        let errorMessage = "Errore nell'ottenere la posizione GPS";
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = "Permesso di geolocalizzazione negato";
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = "Informazioni di posizione non disponibili";
-            break;
-          case error.TIMEOUT:
-            errorMessage = "Timeout nella richiesta di geolocalizzazione";
-            break;
-        }
-        toast.error(errorMessage);
-      }
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
-  };
+  }, [open, fieldNote, formActions]);
 
   const handleUploadAttachment = async (file: File) => {
     if (!fieldNote) return;
@@ -190,8 +179,6 @@ export function FieldNoteDetailsDrawer({
           formOptions={formOptions}
           formDerived={formDerived}
           attachments={attachments}
-          isGettingLocation={isGettingLocation}
-          onGetLocation={handleGetLocation}
           onUploadAttachment={handleUploadAttachment}
           isUploadingAttachment={isUploadingAttachment}
         />

@@ -18,8 +18,6 @@ interface FieldNoteDetailsDrawerContentProps {
   formOptions: FieldNoteDetailsFormOptions;
   formDerived: FieldNoteDetailsFormDerived;
   attachments: FieldNoteAttachment[];
-  isGettingLocation: boolean;
-  onGetLocation: () => void;
   onUploadAttachment: (file: File) => Promise<void>;
   isUploadingAttachment: boolean;
 }
@@ -31,8 +29,6 @@ export function FieldNoteDetailsDrawerContent({
   formOptions,
   formDerived,
   attachments,
-  isGettingLocation,
-  onGetLocation,
   onUploadAttachment,
   isUploadingAttachment,
 }: FieldNoteDetailsDrawerContentProps) {
@@ -56,8 +52,6 @@ export function FieldNoteDetailsDrawerContent({
         formState={formState}
         formActions={formActions}
         attachments={attachments}
-        isGettingLocation={isGettingLocation}
-        onGetLocation={onGetLocation}
         onUploadAttachment={onUploadAttachment}
         isUploadingAttachment={isUploadingAttachment}
       />
