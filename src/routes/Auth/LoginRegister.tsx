@@ -360,15 +360,15 @@ Il PDF dell'accordo e' allegato a questa email.`;
               : "Accedi con Email"}
           </Button>
         </form>
-
-        <div className="relative my-4">
+        {/* TODO: login con google */}
+        {/* <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-slate-200" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-white px-2 text-slate-500">oppure</span>
           </div>
-        </div>
+        </div> */}
 
         <div className="flex justify-center">
           {/* TODO: login con google */}
@@ -598,15 +598,15 @@ Il PDF dell'accordo e' allegato a questa email.`;
             </form>
           </>
         )}
-
-        <div className="relative my-4">
+        {/* TODO: registrazione con google */}
+        {/* <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-slate-200" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-white px-2 text-slate-500">oppure</span>
           </div>
-        </div>
+        </div> */}
 
         <div className="flex justify-center">
           {/* TODO: registrazione con google */}
