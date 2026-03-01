@@ -166,6 +166,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       getRowId = (_row, index) => index,
       onSave,
       onDeleteSelected,
+      deleteConfirmDescription,
       deleteConfirmRequiredText,
       newRowDefaults = {},
       detailsRenderer,
@@ -253,6 +254,12 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
     const selectionPayload = useMemo(() => {
       return selection.buildSelectionPayload(tableState.rows);
     }, [selection, tableState.rows]);
+    const deleteDialogDescription = useMemo(() => {
+      if (!deleteConfirmDescription) {
+        return undefined;
+      }
+      return deleteConfirmDescription(selectionPayload);
+    }, [deleteConfirmDescription, selectionPayload]);
 
     // ─────────────────────────────────────────────────────────────────────────
     // Imperative Handle
@@ -643,6 +650,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
           open={confirmDialogOpen}
           onOpenChange={setConfirmDialogOpen}
           targetLabel={selection.getDeletionTargetLabel()}
+          description={deleteDialogDescription}
           onConfirm={handleDelete}
           onCancel={() => setConfirmDialogOpen(false)}
           confirmRequiredText={deleteConfirmRequiredText}

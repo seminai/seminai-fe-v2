@@ -14,6 +14,7 @@ export interface DeleteConfirmationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   targetLabel: string;
+  description?: string;
   onConfirm: () => void;
   onCancel: () => void;
   /** When set, user must type this exact text to enable the confirm button (e.g. "delete"). */
@@ -24,6 +25,7 @@ export function DeleteConfirmationDialog({
   open,
   onOpenChange,
   targetLabel,
+  description,
   onConfirm,
   onCancel,
   confirmRequiredText,
@@ -55,7 +57,7 @@ export function DeleteConfirmationDialog({
         <DialogHeader>
           <DialogTitle>Conferma eliminazione</DialogTitle>
           <DialogDescription>
-            {`Confermi di voler eliminare ${label}?`}
+            {description || `Confermi di voler eliminare ${label}?`}
             {confirmRequiredText && (
               <span className="block mt-2">
                 Digita <strong>{confirmRequiredText}</strong> per confermare.

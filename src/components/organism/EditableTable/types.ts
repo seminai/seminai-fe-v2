@@ -90,6 +90,9 @@ export interface EditableTableProps {
     updated: Array<Record<string, unknown>>;
   }) => void;
   onDeleteSelected?: (removed: Array<Record<string, unknown>>) => void;
+  deleteConfirmDescription?: (
+    selectedRows: Array<Record<string, unknown>>,
+  ) => string;
   /** When set, delete confirmation dialog requires user to type this text (e.g. "delete") to enable confirm. */
   deleteConfirmRequiredText?: string;
   newRowDefaults?: Partial<Record<string, unknown>>;

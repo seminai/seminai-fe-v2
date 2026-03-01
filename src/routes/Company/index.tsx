@@ -284,6 +284,30 @@ export default function Company(): React.ReactElement {
     [deleteCompanies],
   );
 
+  const buildDeleteConfirmDescription = React.useCallback(
+    (selectedRows: Array<Record<string, unknown>>): string => {
+      const companyNames = selectedRows
+        .map((row) =>
+          typeof row.name === "string" ? row.name.trim() : String(row.name ?? "").trim(),
+        )
+        .filter((name) => name.length > 0);
+
+      const companyList = (() => {
+        if (companyNames.length === 0) return "le aziende selezionate";
+        if (companyNames.length === 1) return `azienda ${companyNames[0]}`;
+        if (companyNames.length === 2) {
+          return `aziende ${companyNames[0]} e ${companyNames[1]}`;
+        }
+        const allButLast = companyNames.slice(0, -1).join(", ");
+        const last = companyNames[companyNames.length - 1];
+        return `aziende ${allButLast}, e ${last}`;
+      })();
+
+      return `Sei sicuro di voler eliminare ${companyList}? Se elimini verranno cancellate anche tutte le informazioni in campi, magazzino e unità produttive relative a tali aziende.`;
+    },
+    [],
+  );
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Aziende" className="hidden md:block" />
@@ -312,6 +336,7 @@ export default function Company(): React.ReactElement {
             onSave={handleSave}
             onOpenDetails={handleOpenDetails}
             onDeleteSelected={handleDeleteSelected}
+            deleteConfirmDescription={buildDeleteConfirmDescription}
             deleteConfirmRequiredText="delete"
             exportFileName="aziende"
             createDrawerImportTitle="Importa file"
