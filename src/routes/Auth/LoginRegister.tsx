@@ -1,8 +1,21 @@
 import { useEffect, useState, useRef } from "react";
-import { useNavigate, useSearchParams, useLocation, Link } from "react-router-dom";
+import {
+  useNavigate,
+  useSearchParams,
+  useLocation,
+  Link,
+} from "react-router-dom";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { useLogin, useRegister, useMe, useWakeUp } from "@/hooks/useAuth";
+import {
+  useLogin,
+  // useGoogleLogin,
+  useRegister,
+  useMe,
+  useWakeUp,
+} from "@/hooks/useAuth";
+// import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
+import type { AuthApiError } from "@/api/auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -49,12 +62,15 @@ export default function LoginRegister() {
   const loginMutation = useLogin();
   const registerMutation = useRegister();
 
+  // const googleLoginMutation = useGoogleLogin();
+
   const { data: meData, refetch: refetchMe, error: meError } = useMe();
   const { isSuccess: isWakeUpSuccess } = useWakeUp();
 
   // Show success message from reset-password redirect
   useEffect(() => {
-    const stateMessage = (location.state as { message?: string } | null)?.message;
+    const stateMessage = (location.state as { message?: string } | null)
+      ?.message;
     if (stateMessage) {
       toast.success(stateMessage);
       navigate(location.pathname, { replace: true, state: {} });
@@ -136,11 +152,38 @@ export default function LoginRegister() {
       }, 100);
     } catch (error: unknown) {
       console.error("Login failed:", error);
+      const authError = error as AuthApiError;
+      if (authError.code === "GOOGLE_ONLY_ACCOUNT") {
+        toast.error("Questo account usa Google. Accedi con Google.");
+        return;
+      }
       const message =
         error instanceof Error ? error.message : "Login non riuscito";
       toast.error(message);
     }
   }
+
+  // async function handleGoogleLogin(response: CredentialResponse) {
+  //   if (!response.credential) return;
+
+  //   try {
+  //     const result = await googleLoginMutation.mutateAsync({
+  //       idToken: response.credential,
+  //     });
+  //     toast.success(`Benvenuto ${result.data.user.name}`);
+  //     await refetchMe();
+  //     setTimeout(() => {
+  //       navigate("/dashboard", { replace: true });
+  //     }, 100);
+  //   } catch (error: unknown) {
+  //     console.error("Google login failed:", error);
+  //     const message =
+  //       error instanceof Error
+  //         ? error.message
+  //         : "Accesso con Google non riuscito";
+  //     toast.error(message);
+  //   }
+  // }
 
   async function handleRegisterSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -180,7 +223,9 @@ export default function LoginRegister() {
       setAddress("");
       setBetaTermsAccepted(false);
 
-      toast.info("Ora puoi eseguire login. L'email è già inserita, inserisci solo la password.");
+      toast.info(
+        "Ora puoi eseguire login. L'email è già inserita, inserisci solo la password.",
+      );
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Registrazione non riuscita";
@@ -316,6 +361,26 @@ Il PDF dell'accordo e' allegato a questa email.`;
           </Button>
         </form>
 
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-slate-200" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-slate-500">oppure</span>
+          </div>
+        </div>
+
+        <div className="flex justify-center">
+          {/* TODO: login con google */}
+          {/* <GoogleLogin
+            onSuccess={handleGoogleLogin}
+            onError={() => toast.error("Accesso con Google non riuscito")}
+            text="signin_with"
+            shape="rectangular"
+            width={400}
+          /> */}
+        </div>
+
         <p className="text-xs text-center text-slate-500 px-8">
           Cliccando continua, accetti i nostri{" "}
           <a
@@ -344,10 +409,9 @@ Il PDF dell'accordo e' allegato a questa email.`;
           <AlertTitle>Registrazione su invito</AlertTitle>
           <AlertDescription className="space-y-3 text-slate-600">
             <p>
-              Per provare SeminAI e creare un nuovo account devi prima
-              fissare un incontro con il nostro team dedicato.
-              Organizziamo insieme una breve call per guidarti nella fase
-              di onboarding.
+              Per provare SeminAI e creare un nuovo account devi prima fissare
+              un incontro con il nostro team dedicato. Organizziamo insieme una
+              breve call per guidarti nella fase di onboarding.
             </p>
             <Dialog>
               <DialogTrigger asChild>
@@ -380,8 +444,8 @@ Il PDF dell'accordo e' allegato a questa email.`;
               Sblocca la registrazione
             </p>
             <p className="text-xs text-slate-500 text-center">
-              Inserisci il codice condiviso dal team SeminAI per abilitare
-              il form.
+              Inserisci il codice condiviso dal team SeminAI per abilitare il
+              form.
             </p>
             <form
               onSubmit={handleUnlockRegistration}
@@ -534,6 +598,26 @@ Il PDF dell'accordo e' allegato a questa email.`;
             </form>
           </>
         )}
+
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-slate-200" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-slate-500">oppure</span>
+          </div>
+        </div>
+
+        <div className="flex justify-center">
+          {/* TODO: registrazione con google */}
+          {/* <GoogleLogin
+            onSuccess={handleGoogleLogin}
+            onError={() => toast.error("Registrazione con Google non riuscita")}
+            text="signup_with"
+            shape="rectangular"
+            width={400}
+          /> */}
+        </div>
 
         <p className="text-xs text-center text-slate-500 px-8">
           Cliccando continua, accetti i nostri{" "}

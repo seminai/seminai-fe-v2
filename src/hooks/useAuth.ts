@@ -1,14 +1,17 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   login as loginRequest,
+  googleLogin as googleLoginRequest,
   register as registerRequest,
   me as meRequest,
   wakeUp as wakeUpRequest,
   forgotPassword as forgotPasswordRequest,
   resetPassword as resetPasswordRequest,
   type LoginRequest,
-  type RegisterRequest,
+  type GoogleLoginRequest,
   type LoginResponse,
+  type GoogleLoginResponse,
+  type RegisterRequest,
   type RegisterResponse,
   type MeResponse,
   type ForgotPasswordRequest,
@@ -32,6 +35,16 @@ export function useLogin() {
       authService.setAuthToken(result.data.token);
       // NOTA: I dati utente NON vengono salvati in cookie per sicurezza.
       // React Query gestisce il caching tramite /auth/me (useMe hook).
+      return result;
+    },
+  });
+}
+
+export function useGoogleLogin() {
+  return useMutation<GoogleLoginResponse, AuthApiError, GoogleLoginRequest>({
+    mutationFn: async (payload: GoogleLoginRequest) => {
+      const result = await googleLoginRequest(payload);
+      authService.setAuthToken(result.data.token);
       return result;
     },
   });

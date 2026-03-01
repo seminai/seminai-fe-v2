@@ -7,11 +7,13 @@ WORKDIR /app
 # Definisci l'argomento di build per l'URL API (default verso il backend in Cloud Run)
 ARG VITE_API_URL="https://seminai-be-v2-661301438659.europe-west1.run.app"
 ARG VITE_REGISTRATION_CODE="benvenutodaclariceefrancescoteamseminai2026"
+ARG VITE_GOOGLE_CLIENT_ID="661301438659-s1k70moupqvu486rlr07ul3b563qtbh4.apps.googleusercontent.com"
 ARG COMMIT_SHA
 
 # Imposta la variabile d'ambiente per il build di Vite
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_REGISTRATION_CODE=${VITE_REGISTRATION_CODE}
+ENV VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
 ENV COMMIT_SHA=${COMMIT_SHA}
 
 # Copia i file di configurazione per installare le dipendenze

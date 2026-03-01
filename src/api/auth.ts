@@ -87,6 +87,18 @@ export type ResetPasswordResponse = {
   message: string;
 };
 
+export type GoogleLoginRequest = {
+  idToken: string;
+};
+
+export type GoogleLoginResponse = {
+  status: "success";
+  data: {
+    token: string;
+    user: User;
+  };
+};
+
 export type AuthApiError = Error & { code?: string };
 
 async function safeReadText(response: Response): Promise<string> {
@@ -109,11 +121,28 @@ export async function login(
   });
 
   if (!response.ok) {
-    const errorText = await safeReadText(response);
-    throw new Error(errorText || "Login failed");
+    throw await parseErrorResponse(response);
   }
 
   return (await response.json()) as LoginResponse;
+}
+
+export async function googleLogin(
+  payload: GoogleLoginRequest,
+  baseUrl: string = BASE_URL
+): Promise<GoogleLoginResponse> {
+  const response = await fetch(`${baseUrl}/auth/google/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw await parseErrorResponse(response);
+  }
+
+  return (await response.json()) as GoogleLoginResponse;
 }
 
 export async function register(
