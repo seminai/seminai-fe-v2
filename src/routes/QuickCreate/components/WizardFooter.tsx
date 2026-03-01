@@ -25,7 +25,7 @@ function getNextLabel(
   if (step === "products" && productsStepState) {
     if (productsStepState.isProductsLoading) return "Caricamento...";
     if (productsStepState.hasProductsToLoad) return "Carica";
-    return "Procedi senza caricare prodotti";
+    return "Salta oppure Carica prodotti";
   }
   switch (step) {
     case "company":
@@ -35,7 +35,7 @@ function getNextLabel(
     case "production-units":
       return "Salva e Continua";
     case "products":
-      return "Procedi senza caricare prodotti";
+      return "Salta oppure Carica prodotti";
     default:
       return "Avanti";
   }
