@@ -1173,7 +1173,7 @@ export default function OperationsPage() {
               detailsTitle=""
               className="bg-background"
             >
-              {selectedRows.length > 2 && (
+              {selectedRows.length > 0 && (
                 <Button
                   data-table-slot="right"
                   variant="ghost"
