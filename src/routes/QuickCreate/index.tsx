@@ -78,9 +78,7 @@ export default function QuickCreatePage(): React.ReactElement {
       onBack={handleBack}
       onNext={handleNext}
       onSkip={
-        state.currentStep === "products"
-          ? actions.onProductsSkip
-          : undefined
+        state.currentStep === "products" ? actions.onProductsSkip : undefined
       }
       isNextDisabled={wizard.isActionDisabled}
       productsStepState={
@@ -123,7 +121,7 @@ export default function QuickCreatePage(): React.ReactElement {
       {state.currentStep === "completion" && (
         <CompletionScreen
           onGoToDosage={actions.navigateToDosageManager}
-          onGoToDashboard={() => navigate("/")}
+          onGoToDashboard={() => navigate("/dashboard")}
         />
       )}
     </WizardShell>

@@ -25,7 +25,7 @@ function getNextLabel(
   if (step === "products" && productsStepState) {
     if (productsStepState.isProductsLoading) return "Caricamento...";
     if (productsStepState.hasProductsToLoad) return "Carica";
-    return "Salta oppure Carica prodotti";
+    return "Carica prodotti";
   }
   switch (step) {
     case "company":
@@ -35,7 +35,7 @@ function getNextLabel(
     case "production-units":
       return "Salva e Continua";
     case "products":
-      return "Salta oppure Carica prodotti";
+      return "Carica prodotti";
     default:
       return "Avanti";
   }
@@ -62,7 +62,8 @@ export default function WizardFooter({
   if (currentStep === "completion") return null;
 
   const isProductsStep = currentStep === "products";
-  const productsLoading = isProductsStep && productsStepState?.isProductsLoading;
+  const productsLoading =
+    isProductsStep && productsStepState?.isProductsLoading;
   const nextDisabled =
     isNextDisabled ||
     isLoading ||
@@ -91,15 +92,12 @@ export default function WizardFooter({
               Salta
             </Button>
           )}
-          <Button
-            onClick={onNext}
-            disabled={nextDisabled}
-            className="gap-2"
-          >
+          <Button onClick={onNext} disabled={nextDisabled} className="gap-2">
             {getNextLabel(currentStep, productsStepState)}
-            {currentStep !== "production-units" && currentStep !== "products" && (
-              <IoArrowForward className="w-4 h-4" />
-            )}
+            {currentStep !== "production-units" &&
+              currentStep !== "products" && (
+                <IoArrowForward className="w-4 h-4" />
+              )}
           </Button>
         </div>
       </div>
