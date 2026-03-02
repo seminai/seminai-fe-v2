@@ -34,40 +34,47 @@ export default function CompanyStep({
   const handleCreateCompany = React.useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (newCompanyName.trim() && newCompanyFiscalCode.trim()) {
-        const name = newCompanyName.trim();
-        const fiscalCode = newCompanyFiscalCode.trim();
+      if (!newCompanyName.trim() || !newCompanyFiscalCode.trim()) return;
 
-        try {
-          const response = await companies.createCompaniesAsync([
-            {
-              name,
-              fiscalCode,
-              vatNumber: newCompanyVatNumber.trim() || "",
-              cuaa: newCompanyCuaa.trim() || null,
-            },
-          ]);
+      const name = newCompanyName.trim();
+      const fiscalCode = newCompanyFiscalCode.trim();
 
-          const createdId = response?.data?.companies?.[0]?.id;
-          if (createdId) {
-            actions.setSelectedCompanyId(createdId);
-            actions.goNext();
-            return;
-          }
+      try {
+        const response = await companies.createCompaniesAsync([
+          {
+            name,
+            fiscalCode,
+            vatNumber: newCompanyVatNumber.trim() || "",
+            cuaa: newCompanyCuaa.trim() || null,
+          },
+        ]);
 
+        // Extract the created company ID from the response
+        let createdId = response?.data?.companies?.[0]?.id;
+
+        // Fallback: if the response didn't include the ID,
+        // refetch and find by fiscalCode or name
+        if (!createdId) {
           const refreshed = await companies.refetch();
-          const created = refreshed.data?.data.companies.find(
-            (company) =>
-              company.fiscalCode === fiscalCode || company.name === name,
+          const found = refreshed.data?.data.companies.find(
+            (c) => c.fiscalCode === fiscalCode || c.name === name,
           );
-
-          if (created?.id) {
-            actions.setSelectedCompanyId(created.id);
-            actions.goNext();
-          }
-        } catch {
-          // Error toast is already handled in useCompanies.
+          createdId = found?.id;
         }
+
+        if (createdId) {
+          actions.setSelectedCompanyId(createdId);
+        }
+
+        // Close the form and reset fields — user stays on step 0
+        // and sees the new company selected in the dropdown
+        setShowCreateForm(false);
+        setNewCompanyName("");
+        setNewCompanyVatNumber("");
+        setNewCompanyFiscalCode("");
+        setNewCompanyCuaa("");
+      } catch {
+        // Error toast is already handled in useCompanies.
       }
     },
     [

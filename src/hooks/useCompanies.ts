@@ -37,7 +37,24 @@ export function useCompanies(options?: UseCompaniesOptions) {
       });
     },
     onSuccess: async (response) => {
-      // Refetch esplicito per assicurarsi che i dati vengano aggiornati
+      // Optimistically update the cache with the created companies
+      if (response?.data?.companies) {
+        const createdCompanies = response.data.companies;
+        const currentData = queryClient.getQueryData<CompaniesResponse>([
+          "companies",
+        ]);
+        if (currentData) {
+          queryClient.setQueryData<CompaniesResponse>(["companies"], {
+            ...currentData,
+            data: {
+              ...currentData.data,
+              companies: [...currentData.data.companies, ...createdCompanies],
+            },
+          });
+        }
+      }
+
+      // Invalidate and refetch to ensure server consistency
       await queryClient.invalidateQueries({ queryKey: ["companies"] });
       await companiesQuery.refetch();
 

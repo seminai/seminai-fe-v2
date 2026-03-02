@@ -105,7 +105,6 @@ export async function bulkCreateCompanies(
   }
 
   const data = await response.json();
-  console.log("Risposta bulkCreateCompanies:", data);
   return data as BulkCompaniesResponse;
 }
 
@@ -139,7 +138,6 @@ export async function bulkUpdateCompanies(
   }
 
   const data = await response.json();
-  console.log("Risposta bulkUpdateCompanies:", data);
   return data as BulkCompaniesResponse;
 }
 

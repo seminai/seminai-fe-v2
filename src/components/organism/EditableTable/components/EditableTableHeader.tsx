@@ -142,8 +142,7 @@ export function EditableTableHeader({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-        {!showEditActions &&
-          !anySelected &&
+        {!anySelected &&
           columns.length > MAX_VISIBLE_COLUMNS && (
             <EditableTableColumnVisibilityDropdown
               columns={columns}
