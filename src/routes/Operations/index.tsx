@@ -1023,35 +1023,39 @@ export default function OperationsPage() {
       return;
     }
     try {
-      for (const rowId of toSave) {
-        const currentChanges = drawerFormChanges[rowId] || {};
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const updatePayload: Record<string, any> = {};
-        if ("_isVerifiedBoolean" in currentChanges) {
-          updatePayload.isVerified = currentChanges._isVerifiedBoolean;
-        }
-        if ("_conformityChecked" in currentChanges) {
-          updatePayload.conformityChecked = currentChanges._conformityChecked;
-        }
-        if ("machineId" in currentChanges) {
-          updatePayload.machineId = currentChanges.machineId;
-        }
-        if ("userId" in currentChanges) {
-          updatePayload.userId = currentChanges.userId;
-        }
-        if ("modeOfApplication" in currentChanges) {
-          updatePayload.modeOfApplication = currentChanges.modeOfApplication;
-        }
-        if ("isLocalizedTreatment" in currentChanges) {
-          updatePayload.isLocalizedTreatment =
-            currentChanges.isLocalizedTreatment;
-        }
-        if (Object.keys(updatePayload).length > 0) {
-          await jobsApiService.updateJob(rowId, updatePayload);
-        }
+      const updates = toSave
+        .map((rowId) => {
+          const currentChanges = drawerFormChanges[rowId] || {};
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const data: Record<string, any> = {};
+          if ("_isVerifiedBoolean" in currentChanges) {
+            data.isVerified = currentChanges._isVerifiedBoolean;
+          }
+          if ("_conformityChecked" in currentChanges) {
+            data.conformityChecked = currentChanges._conformityChecked;
+          }
+          if ("machineId" in currentChanges) {
+            data.machineId = currentChanges.machineId;
+          }
+          if ("userId" in currentChanges) {
+            data.userId = currentChanges.userId;
+          }
+          if ("modeOfApplication" in currentChanges) {
+            data.modeOfApplication = currentChanges.modeOfApplication;
+          }
+          if ("isLocalizedTreatment" in currentChanges) {
+            data.isLocalizedTreatment = currentChanges.isLocalizedTreatment;
+          }
+          return Object.keys(data).length > 0 ? { id: rowId, data } : null;
+        })
+        .filter((u): u is NonNullable<typeof u> => u !== null);
+
+      if (updates.length > 0) {
+        await jobsApiService.bulkUpdate({ updates });
       }
+
       toast.success("Modifiche salvate", {
-        description: `${toSave.length} operazione/i aggiornata/e`,
+        description: `${updates.length} operazione/i aggiornata/e`,
       });
       await queryClient.invalidateQueries({ queryKey: ["verified-jobs"] });
       await refetch();
@@ -1082,6 +1086,12 @@ export default function OperationsPage() {
       return changes && Object.keys(changes).length > 0;
     });
   }, [bulkEditRows, drawerFormChanges]);
+
+  const canBulkEdit = useMemo(() => {
+    if (selectedRows.length === 0) return false;
+    const firstCompanyId = selectedRows[0]._companyId as string;
+    return selectedRows.every((r) => (r._companyId as string) === firstCompanyId);
+  }, [selectedRows]);
 
   // Gestisce l'eliminazione multipla
   const handleDeleteSelected = async (
@@ -1173,7 +1183,7 @@ export default function OperationsPage() {
               detailsTitle=""
               className="bg-background"
             >
-              {selectedRows.length > 0 && (
+              {canBulkEdit && (
                 <Button
                   data-table-slot="right"
                   variant="ghost"

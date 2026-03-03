@@ -162,6 +162,15 @@ export type UpdateJobResponse = {
   data?: unknown;
 };
 
+export type BulkUpdateJobsPayload = {
+  updates: Array<{ id: string; data: UpdateJobPayload }>;
+};
+
+export type BulkUpdateJobsResponse = {
+  status: "success" | string;
+  data?: unknown;
+};
+
 export type BulkDeleteJobsPayload = {
   jobIds: string[];
 };
@@ -314,6 +323,31 @@ export async function updateJob(
   console.log("Update job response data:", jsonData);
 
   return jsonData as UpdateJobResponse;
+}
+
+export async function bulkUpdateJobs(
+  payload: BulkUpdateJobsPayload,
+  baseUrl: string = BASE_URL,
+): Promise<BulkUpdateJobsResponse> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/jobs/bulk`,
+    {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Bulk update jobs failed");
+  }
+
+  const jsonData = await response.json();
+  return jsonData as BulkUpdateJobsResponse;
 }
 
 export async function bulkDeleteJobs(
@@ -486,6 +520,12 @@ class JobsApiService {
     payload: UpdateJobPayload,
   ): Promise<UpdateJobResponse> {
     return await updateJob(jobId, payload, this.baseUrl);
+  }
+
+  public async bulkUpdate(
+    payload: BulkUpdateJobsPayload,
+  ): Promise<BulkUpdateJobsResponse> {
+    return await bulkUpdateJobs(payload, this.baseUrl);
   }
 
   public async bulkDelete(
