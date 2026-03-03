@@ -1,4 +1,9 @@
-import { useMemo, type Dispatch, type ReactElement, type SetStateAction } from "react";
+import {
+  useMemo,
+  type Dispatch,
+  type ReactElement,
+  type SetStateAction,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { machinesApiService, type Machine } from "@/api/machines";
 import {
@@ -22,7 +27,9 @@ interface OperatorsAndMachinesSectionProps {
   operationMachines: OperationMachineAssignment[];
   setOperationMachines: Dispatch<SetStateAction<OperationMachineAssignment[]>>;
   operationOperators: OperationOperatorAssignment[];
-  setOperationOperators: Dispatch<SetStateAction<OperationOperatorAssignment[]>>;
+  setOperationOperators: Dispatch<
+    SetStateAction<OperationOperatorAssignment[]>
+  >;
 }
 
 const SEPARATOR = "::";
@@ -31,7 +38,9 @@ function encodeCompositeKey(companyId: string, resourceId: string): string {
   return `${companyId}${SEPARATOR}${resourceId}`;
 }
 
-function decodeCompositeKey(value: string): { companyId: string; resourceId: string } | null {
+function decodeCompositeKey(
+  value: string,
+): { companyId: string; resourceId: string } | null {
   const idx = value.indexOf(SEPARATOR);
   if (idx === -1) return null;
   return {
@@ -138,12 +147,16 @@ export function OperatorsAndMachinesSection({
   }, [usersByCompany, companyNameMap]);
 
   const selectedMachineValues = useMemo(
-    () => operationMachines.map((m) => encodeCompositeKey(m.companyId, m.machineId)),
+    () =>
+      operationMachines.map((m) =>
+        encodeCompositeKey(m.companyId, m.machineId),
+      ),
     [operationMachines],
   );
 
   const selectedOperatorValues = useMemo(
-    () => operationOperators.map((o) => encodeCompositeKey(o.companyId, o.userId)),
+    () =>
+      operationOperators.map((o) => encodeCompositeKey(o.companyId, o.userId)),
     [operationOperators],
   );
 
@@ -152,7 +165,10 @@ export function OperatorsAndMachinesSection({
     for (const v of values) {
       const decoded = decodeCompositeKey(v);
       if (decoded) {
-        assignments.push({ companyId: decoded.companyId, machineId: decoded.resourceId });
+        assignments.push({
+          companyId: decoded.companyId,
+          machineId: decoded.resourceId,
+        });
       }
     }
     setOperationMachines(assignments);
@@ -163,7 +179,10 @@ export function OperatorsAndMachinesSection({
     for (const v of values) {
       const decoded = decodeCompositeKey(v);
       if (decoded) {
-        assignments.push({ companyId: decoded.companyId, userId: decoded.resourceId });
+        assignments.push({
+          companyId: decoded.companyId,
+          userId: decoded.resourceId,
+        });
       }
     }
     setOperationOperators(assignments);
@@ -175,16 +194,6 @@ export function OperatorsAndMachinesSection({
 
   return (
     <div className="space-y-4">
-      <div>
-        <h3 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
-          <Wrench className="h-4 w-4 text-neutral-600" />
-          Macchinari e operatori
-        </h3>
-        <p className="text-xs text-neutral-500 mt-1">
-          Seleziona macchinari e operatori dalle aziende selezionate.
-        </p>
-      </div>
-
       {isLoading ? (
         <div className="flex items-center gap-2 py-4 text-sm text-neutral-500">
           <Loader2 className="h-4 w-4 animate-spin" />

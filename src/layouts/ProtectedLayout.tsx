@@ -623,6 +623,7 @@ function SidebarToggleButton({
 
 const SIDEBAR_STATE_KEY = "sidebar-open-state";
 const MANAGE_MENU_STATE_KEY = "manage-menu-open-state";
+const TOOLS_MENU_STATE_KEY = "tools-menu-open-state";
 
 export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const location = useLocation();
@@ -651,7 +652,17 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const [manageMenuOpen, setManageMenuOpen] = useState<boolean>(() => {
     try {
       const stored = getScopedStorageItem(MANAGE_MENU_STATE_KEY, userId);
-      return stored ? (JSON.parse(stored) as boolean) : true; // aperto di default
+      return stored ? (JSON.parse(stored) as boolean) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  // Gestione stato menu "Strumenti" con localStorage
+  const [toolsMenuOpen, setToolsMenuOpen] = useState<boolean>(() => {
+    try {
+      const stored = getScopedStorageItem(TOOLS_MENU_STATE_KEY, userId);
+      return stored ? (JSON.parse(stored) as boolean) : true;
     } catch {
       return true;
     }
@@ -671,6 +682,14 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       JSON.stringify(manageMenuOpen),
     );
   }, [manageMenuOpen, userId]);
+
+  useEffect(() => {
+    setScopedStorageItem(
+      TOOLS_MENU_STATE_KEY,
+      userId,
+      JSON.stringify(toolsMenuOpen),
+    );
+  }, [toolsMenuOpen, userId]);
 
   const handleSidebarToggle = useCallback(() => {
     setSidebarOpen((prev) => !prev);
@@ -788,85 +807,123 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   </SidebarMenuItem>
                 )}
 
-                {/* Etichette - solo in modalità espansa */}
-                {canViewMenuItem("label", userRole) && sidebarOpen && (
-                  <SidebarMenuItem key="label">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={labelActive}
-                      tooltip="Etichette"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
+                {/* Menu Strumenti - solo in modalità espansa */}
+                {sidebarOpen &&
+                  (canViewMenuItem("label", userRole) ||
+                    jobVisible ||
+                    fieldNotesVisible ||
+                    userRole === UserRole.ADMIN) && (
+                    <Collapsible
+                      open={toolsMenuOpen}
+                      onOpenChange={setToolsMenuOpen}
+                      className="group/tools-collapsible"
                     >
-                      <Link to="/label" className="flex items-center gap-3">
-                        <Tags className="size-5" size={20} />
-                        <span>Etichette</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-
-                {/* Genera Dosaggi rimosso dalla sidebar - accessibile da Operazioni > Aggiungi */}
-
-                {/* Operazioni - solo in modalità espansa */}
-                {jobVisible && sidebarOpen && (
-                  <SidebarMenuItem key="job-expanded">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={jobActive}
-                      tooltip="Verifica Operazioni"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
-                    >
-                      <Link to="/job" className="flex items-center gap-3">
-                        <CheckCircle2 className="size-5" size={20} />
-                        <span>Verifica Operazioni</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-
-                {/* Note di Campo - solo in modalità espansa */}
-                {fieldNotesVisible && sidebarOpen && (
-                  <SidebarMenuItem key="field-notes-expanded">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={fieldNotesActive}
-                      tooltip="Note di Campo"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
-                    >
-                      <Link
-                        to="/field-notes"
-                        className="flex items-center gap-3"
-                      >
-                        <NotebookPen className="size-5" />
-                        <span>Note di Campo</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-
-                {/* Dosage Agent Chat - solo ADMIN, modalità espansa */}
-                {userRole === UserRole.ADMIN && sidebarOpen && (
-                  <SidebarMenuItem key="dosage-agent-chat-expanded">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={dosageAgentChatActive}
-                      tooltip="Dosage Agent"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
-                    >
-                      <Link
-                        to="/dosage-agent-chat"
-                        className="flex items-center gap-3"
-                      >
-                        <MessageCircle className="size-5" size={20} />
-                        <span>Dosage Agent</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
+                      <SidebarMenuItem>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton
+                            tooltip="Strumenti"
+                            size="lg"
+                            className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
+                          >
+                            <Layers className="size-5" size={20} />
+                            <span>Strumenti</span>
+                            <IoChevronDownOutline
+                              className={cn(
+                                "ml-auto size-4 transition-transform",
+                                toolsMenuOpen && "rotate-180",
+                              )}
+                            />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <SidebarMenu className="pl-2 border-l-2 border-neutral-200/50 ml-6 mt-2 gap-1">
+                            {canViewMenuItem("label", userRole) && (
+                              <SidebarMenuItem key="label">
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={labelActive}
+                                  tooltip="Etichette"
+                                  size="lg"
+                                  className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                                >
+                                  <Link
+                                    to="/label"
+                                    className="flex items-center gap-3"
+                                  >
+                                    <Tags className="size-5" size={20} />
+                                    <span>Etichette</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            )}
+                            {jobVisible && (
+                              <SidebarMenuItem key="job">
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={jobActive}
+                                  tooltip="Verifica Operazioni"
+                                  size="lg"
+                                  className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                                >
+                                  <Link
+                                    to="/job"
+                                    className="flex items-center gap-3"
+                                  >
+                                    <CheckCircle2
+                                      className="size-5"
+                                      size={20}
+                                    />
+                                    <span>Verifica Operazioni</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            )}
+                            {fieldNotesVisible && (
+                              <SidebarMenuItem key="field-notes">
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={fieldNotesActive}
+                                  tooltip="Note di Campo"
+                                  size="lg"
+                                  className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                                >
+                                  <Link
+                                    to="/field-notes"
+                                    className="flex items-center gap-3"
+                                  >
+                                    <NotebookPen className="size-5" />
+                                    <span>Note di Campo</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            )}
+                            {userRole === UserRole.ADMIN && (
+                              <SidebarMenuItem key="chat">
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={dosageAgentChatActive}
+                                  tooltip="Chat"
+                                  size="lg"
+                                  className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                                >
+                                  <Link
+                                    to="/dosage-agent-chat"
+                                    className="flex items-center gap-3"
+                                  >
+                                    <MessageCircle
+                                      className="size-5"
+                                      size={20}
+                                    />
+                                    <span>Chat</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            )}
+                          </SidebarMenu>
+                        </CollapsibleContent>
+                      </SidebarMenuItem>
+                    </Collapsible>
+                  )}
 
                 {/* Menu Gestisci - solo in modalità espansa */}
                 {sidebarOpen &&
@@ -1007,7 +1064,8 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                 {!sidebarOpen &&
                   (canViewMenuItem("label", userRole) ||
                     jobVisible ||
-                    fieldNotesVisible) && (
+                    fieldNotesVisible ||
+                    userRole === UserRole.ADMIN) && (
                     <SidebarMenuItem key="tools-collapsed">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -1017,7 +1075,10 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                             size="lg"
                             className={cn(
                               "data-[state=open]:bg-neutral-900/5",
-                              (labelActive || jobActive || fieldNotesActive) &&
+                              (labelActive ||
+                                jobActive ||
+                                fieldNotesActive ||
+                                dosageAgentChatActive) &&
                                 "bg-neutral-900/5",
                             )}
                           >
@@ -1053,30 +1114,21 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                               Note di Campo
                             </DropdownMenuItem>
                           )}
+                          {userRole === UserRole.ADMIN && (
+                            <DropdownMenuItem
+                              onClick={() => navigate("/dosage-agent-chat")}
+                            >
+                              <MessageCircle
+                                className="size-4 mr-2"
+                                size={16}
+                              />
+                              Chat
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </SidebarMenuItem>
                   )}
-
-                {/* Dosage Agent Chat - solo ADMIN, icona collassata */}
-                {userRole === UserRole.ADMIN && !sidebarOpen && (
-                  <SidebarMenuItem key="dosage-agent-chat-collapsed">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={dosageAgentChatActive}
-                      tooltip="Dosage Agent"
-                      size="lg"
-                      className="data-[active=true]:bg-neutral-900/5"
-                    >
-                      <Link
-                        to="/dosage-agent-chat"
-                        className="flex items-center gap-3"
-                      >
-                        <MessageCircle className="size-5" size={20} />
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
 
                 {/* Gestisci - icona collassata */}
                 {!sidebarOpen && hasManageItems && (

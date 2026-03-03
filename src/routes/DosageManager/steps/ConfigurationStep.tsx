@@ -1,4 +1,10 @@
-import { useMemo, useState, type Dispatch, type ReactElement, type SetStateAction } from "react";
+import {
+  useMemo,
+  useState,
+  type Dispatch,
+  type ReactElement,
+  type SetStateAction,
+} from "react";
 import { useJobGroupsSummary } from "@/hooks/useJobGroups";
 import {
   Select,
@@ -89,7 +95,9 @@ interface ConfigurationStepProps {
   operationMachines: OperationMachineAssignment[];
   setOperationMachines: Dispatch<SetStateAction<OperationMachineAssignment[]>>;
   operationOperators: OperationOperatorAssignment[];
-  setOperationOperators: Dispatch<SetStateAction<OperationOperatorAssignment[]>>;
+  setOperationOperators: Dispatch<
+    SetStateAction<OperationOperatorAssignment[]>
+  >;
   operationCode: string;
   setOperationCode: Dispatch<SetStateAction<string>>;
   operationCodeMode: "random" | "existing";
@@ -271,10 +279,7 @@ export function ConfigurationStep({
               </Button>
             </div>
           ) : (
-            <Select
-              value={operationCode}
-              onValueChange={setOperationCode}
-            >
+            <Select value={operationCode} onValueChange={setOperationCode}>
               <SelectTrigger className="max-w-md h-12 bg-white border-neutral-200">
                 <SelectValue
                   placeholder={
@@ -289,7 +294,8 @@ export function ConfigurationStep({
                   <SelectItem key={group.jobId} value={group.jobId}>
                     <span className="font-mono">{group.jobId}</span>
                     <span className="ml-2 text-neutral-500">
-                      — {group.company.name} ({new Date(group.createdAt).toLocaleDateString("it-IT")})
+                      — {group.company.name} (
+                      {new Date(group.createdAt).toLocaleDateString("it-IT")})
                     </span>
                   </SelectItem>
                 ))}
@@ -332,9 +338,7 @@ export function ConfigurationStep({
           <Checkbox
             id="outStockLimiter"
             checked={outStockLimiter}
-            onCheckedChange={(checked) =>
-              setOutStockLimiter(checked === true)
-            }
+            onCheckedChange={(checked) => setOutStockLimiter(checked === true)}
             className="mt-0.5"
           />
           <div className="flex-1 space-y-1">
@@ -439,7 +443,9 @@ export function ConfigurationStep({
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {startAt
-                              ? format(parseISO(startAt), "dd/MM/yyyy", { locale: it })
+                              ? format(parseISO(startAt), "dd/MM/yyyy", {
+                                  locale: it,
+                                })
                               : "Seleziona data inizio"}
                           </Button>
                         </PopoverTrigger>
@@ -448,15 +454,25 @@ export function ConfigurationStep({
                             mode="single"
                             selected={startAt ? parseISO(startAt) : undefined}
                             onSelect={(date) => {
-                              const iso = date ? format(date, "yyyy-MM-dd") : "";
+                              const iso = date
+                                ? format(date, "yyyy-MM-dd")
+                                : "";
                               setStartAt(iso);
                               if (endAt && iso && endAt < iso) {
                                 setEndAt("");
                               }
                             }}
                             disabled={(d) => {
-                              if (validDateRange.minDate && d < parseISO(validDateRange.minDate)) return true;
-                              if (validDateRange.maxDate && d > parseISO(validDateRange.maxDate)) return true;
+                              if (
+                                validDateRange.minDate &&
+                                d < parseISO(validDateRange.minDate)
+                              )
+                                return true;
+                              if (
+                                validDateRange.maxDate &&
+                                d > parseISO(validDateRange.maxDate)
+                              )
+                                return true;
                               return false;
                             }}
                             locale={it}
@@ -479,7 +495,9 @@ export function ConfigurationStep({
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {endAt
-                              ? format(parseISO(endAt), "dd/MM/yyyy", { locale: it })
+                              ? format(parseISO(endAt), "dd/MM/yyyy", {
+                                  locale: it,
+                                })
                               : "Seleziona data fine"}
                           </Button>
                         </PopoverTrigger>
@@ -491,11 +509,17 @@ export function ConfigurationStep({
                               setEndAt(date ? format(date, "yyyy-MM-dd") : "");
                             }}
                             disabled={(d) => {
-                              const minStr = startAt && startAt >= (validDateRange.minDate || "")
-                                ? startAt
-                                : validDateRange.minDate;
+                              const minStr =
+                                startAt &&
+                                startAt >= (validDateRange.minDate || "")
+                                  ? startAt
+                                  : validDateRange.minDate;
                               if (minStr && d < parseISO(minStr)) return true;
-                              if (validDateRange.maxDate && d > parseISO(validDateRange.maxDate)) return true;
+                              if (
+                                validDateRange.maxDate &&
+                                d > parseISO(validDateRange.maxDate)
+                              )
+                                return true;
                               return false;
                             }}
                             locale={it}
@@ -546,8 +570,7 @@ export function ConfigurationStep({
                     </Label>
                     <Select
                       value={
-                        (orchestratorSettings.objective ??
-                          "balanced") as string
+                        (orchestratorSettings.objective ?? "balanced") as string
                       }
                       onValueChange={(value) => {
                         setOrchestratorSettings((prev) => ({
@@ -588,8 +611,7 @@ export function ConfigurationStep({
                             const next: DosageOrchestratorSettings = {
                               ...prev,
                             };
-                            delete (next as Record<string, unknown>)
-                              .intensity;
+                            delete (next as Record<string, unknown>).intensity;
                             return next;
                           });
                           return;
@@ -926,7 +948,6 @@ export function ConfigurationStep({
                     className="min-h-28"
                   />
                 </div>
-
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -938,11 +959,9 @@ export function ConfigurationStep({
                 <div className="flex items-center gap-3">
                   <Wrench className="h-5 w-5 text-neutral-600 flex-shrink-0" />
                   <div className="flex flex-col">
-                    <span className="text-base font-medium text-neutral-900">
-                      Macchinari e operatori
-                    </span>
+                    <span className="text-base font-medium text-neutral-900"></span>
                     <span className="text-sm text-neutral-500">
-                      Seleziona macchinari e operatori dalle aziende
+                      Seleziona dalle aziende
                     </span>
                   </div>
                 </div>

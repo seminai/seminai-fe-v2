@@ -214,6 +214,40 @@ export type CreateProductAndJobResponse = {
   };
 };
 
+export type CreateProductAndJobAsyncResponse = {
+  status: "accepted";
+  data: { taskId: string; message: string };
+};
+
+export type CreateProductAndJobResult =
+  | { kind: "sync"; data: CreateProductAndJobResponse }
+  | { kind: "async"; taskId: string; message: string };
+
+export type JobCreationTaskState =
+  | "queued"
+  | "waiting"
+  | "active"
+  | "completed"
+  | "failed"
+  | "stalled"
+  | "not_found";
+
+export type JobCreationTaskStatus = {
+  id: string;
+  state: JobCreationTaskState;
+  progress: number;
+  result?: {
+    jobs: JobWithRelations[];
+    jobProductLinks: unknown[];
+    warnings?: { productName: string; registrationNumber: string; reason: string }[];
+  };
+  failedReason?: string;
+  stopPolling?: boolean;
+  message?: string;
+  processedOn?: string;
+  finishedOn?: string;
+};
+
 // Types for groups-summary endpoint
 export type JobGroupSummaryCompany = {
   id: string;
@@ -432,9 +466,7 @@ export async function getJobGroupDetail(
 export async function createProductAndJob(
   payload: CreateJobPayload[],
   baseUrl: string = BASE_URL,
-): Promise<CreateProductAndJobResponse> {
-  console.log("Creating product and job:", payload);
-
+): Promise<CreateProductAndJobResult> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/jobs/create-product-and-job`,
     {
@@ -447,18 +479,44 @@ export async function createProductAndJob(
     },
   );
 
-  console.log("Create product and job response status:", response.status);
-
   if (!response.ok) {
     const errorText = await safeReadText(response);
-    console.error("Create product and job error:", errorText);
     throw new Error(errorText || "Create product and job failed");
   }
 
   const jsonData = await response.json();
-  console.log("Create product and job response data:", jsonData);
 
-  return jsonData as CreateProductAndJobResponse;
+  if (response.status === 202) {
+    const asyncBody = jsonData as CreateProductAndJobAsyncResponse;
+    return {
+      kind: "async",
+      taskId: asyncBody.data.taskId,
+      message: asyncBody.data.message,
+    };
+  }
+
+  return { kind: "sync", data: jsonData as CreateProductAndJobResponse };
+}
+
+export async function getJobCreationTaskStatus(
+  taskId: string,
+  baseUrl: string = BASE_URL,
+): Promise<JobCreationTaskStatus> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/jobs/create-product-and-job/status/${taskId}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Get job creation task status failed");
+  }
+
+  const jsonData = await response.json();
+  return (jsonData as { data: JobCreationTaskStatus }).data;
 }
 
 export async function getVerifiedJobs(
@@ -546,8 +604,14 @@ class JobsApiService {
 
   public async createProductAndJob(
     payload: CreateJobPayload[],
-  ): Promise<CreateProductAndJobResponse> {
+  ): Promise<CreateProductAndJobResult> {
     return await createProductAndJob(payload, this.baseUrl);
+  }
+
+  public async getJobCreationTaskStatus(
+    taskId: string,
+  ): Promise<JobCreationTaskStatus> {
+    return await getJobCreationTaskStatus(taskId, this.baseUrl);
   }
 
   public async getVerifiedJobs(options?: {

@@ -28,6 +28,7 @@ import {
   Square,
   Download,
   ListFilter,
+  Paperclip,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
@@ -144,6 +145,8 @@ export default function DosageAgentChat() {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const audioRecorderRef = useRef<AudioRecorderService | null>(null);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     messages,
@@ -212,9 +215,24 @@ export default function DosageAgentChat() {
       messageToSend = `${contextBlock}\n\n${trimmed}`;
     }
 
-    sendMessage(messageToSend);
+    sendMessage(messageToSend, attachedFile ?? undefined);
     setInput("");
     setContextChips([]);
+    setAttachedFile(null);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+    if (file.size > MAX_SIZE) {
+      toast.error("File troppo grande", {
+        description: "La dimensione massima consentita e 10 MB",
+      });
+      return;
+    }
+    setAttachedFile(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -229,6 +247,7 @@ export default function DosageAgentChat() {
     clearMessages();
     setInput("");
     setContextChips([]);
+    setAttachedFile(null);
   };
 
   const handleLoadChat = async (chat: ChatSummary) => {
@@ -257,7 +276,9 @@ export default function DosageAgentChat() {
       const response = await audioToTextApiService.transcribeAudio({ file });
       const transcription = response.data?.text?.trim();
       if (transcription) {
-        setInput((prev) => (prev ? `${prev}\n${transcription}` : transcription));
+        setInput((prev) =>
+          prev ? `${prev}\n${transcription}` : transcription,
+        );
       } else {
         toast.error("Trascrizione non disponibile");
       }
@@ -304,7 +325,13 @@ export default function DosageAgentChat() {
         description: errorMessage,
       });
     }
-  }, [isTranscribing, isStreaming, isRecording, getRecorder, transcribeAudioFile]);
+  }, [
+    isTranscribing,
+    isStreaming,
+    isRecording,
+    getRecorder,
+    transcribeAudioFile,
+  ]);
 
   // Cleanup audio recorder on unmount
   useEffect(() => {
@@ -423,9 +450,16 @@ export default function DosageAgentChat() {
 
           {/* Input Area */}
           <div className="shrink-0 border-t border-slate-200 bg-white">
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept=".csv,.xlsx,.xls,.json,.txt,.pdf"
+              onChange={handleFileSelect}
+            />
             <div className="p-4 max-w-3xl mx-auto space-y-3">
-              {/* Context chips */}
-              {contextChips.length > 0 && (
+              {/* Context chips + attached file chip */}
+              {(contextChips.length > 0 || attachedFile) && (
                 <div className="flex flex-wrap gap-1.5">
                   {contextChips.map((chip) => (
                     <Tooltip key={chip.id}>
@@ -454,6 +488,22 @@ export default function DosageAgentChat() {
                       </TooltipContent>
                     </Tooltip>
                   ))}
+
+                  {attachedFile && (
+                    <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-md px-2 py-1 max-w-[250px]">
+                      <Paperclip className="h-3 w-3 text-emerald-500 shrink-0" />
+                      <span className="text-xs text-emerald-700 truncate">
+                        {attachedFile.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setAttachedFile(null)}
+                        className="shrink-0 text-emerald-400 hover:text-emerald-600 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -466,6 +516,24 @@ export default function DosageAgentChat() {
                 className="min-h-[80px] resize-none text-sm"
               />
               <div className="flex items-center justify-end gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isStreaming}
+                      className={cn(
+                        attachedFile &&
+                          "border-emerald-300 bg-emerald-50 text-emerald-600",
+                      )}
+                    >
+                      <Paperclip className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Allega file</TooltipContent>
+                </Tooltip>
                 <Button
                   type="button"
                   variant="outline"
@@ -473,12 +541,16 @@ export default function DosageAgentChat() {
                   onClick={handleRecordToggle}
                   disabled={isStreaming || isTranscribing}
                   className={cn(
-                    isRecording && "border-red-300 bg-red-50 text-red-600 hover:bg-red-100",
+                    isRecording &&
+                      "border-red-300 bg-red-50 text-red-600 hover:bg-red-100",
                   )}
                 >
                   {isTranscribing ? (
                     <>
-                      <Spinner className="h-4 w-4 mr-2" ariaLabel="Trascrizione in corso" />
+                      <Spinner
+                        className="h-4 w-4 mr-2"
+                        ariaLabel="Trascrizione in corso"
+                      />
                       Trascrivo...
                     </>
                   ) : isRecording ? (
@@ -867,9 +939,7 @@ function ColumnFilterPopover({
                   className="h-3.5 w-3.5 rounded-sm border-slate-300 accent-slate-800"
                 />
                 <span className="truncate">
-                  {v || (
-                    <em className="text-slate-400">(vuoto)</em>
-                  )}
+                  {v || <em className="text-slate-400">(vuoto)</em>}
                 </span>
               </label>
             ))}
@@ -1734,7 +1804,7 @@ function EmptyState({
       <div className="bg-emerald-50 rounded-full p-4 mb-4">
         <Bot className="h-8 w-8 text-emerald-600" />
       </div>
-      <p className="text-base font-medium text-slate-700">Dosage Agent</p>
+      <p className="text-base font-medium text-slate-700">Chat</p>
       <p className="text-sm text-slate-500 max-w-sm mt-2">
         Chiedi informazioni su dosaggi, conformita ai disciplinari,
         compatibilita tra prodotti fitosanitari e molto altro.

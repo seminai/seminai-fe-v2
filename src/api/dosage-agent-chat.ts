@@ -152,17 +152,35 @@ class DosageAgentChatApiService {
     this.baseUrl = baseUrl;
   }
 
-  async streamMessage(request: DosageAgentChatRequest): Promise<Response> {
+  async streamMessage(
+    request: DosageAgentChatRequest,
+    file?: File,
+  ): Promise<Response> {
+    const isMultipart = !!file;
+
+    let body: BodyInit;
+    const headers: Record<string, string> = {
+      Accept: "text/event-stream",
+    };
+
+    if (isMultipart) {
+      const formData = new FormData();
+      formData.append("threadId", request.threadId);
+      formData.append("message", request.message);
+      if (request.modelName) formData.append("modelName", request.modelName);
+      if (request.workspaceId)
+        formData.append("workspaceId", request.workspaceId);
+      if (request.jobId) formData.append("jobId", request.jobId);
+      formData.append("file", file);
+      body = formData;
+    } else {
+      headers["Content-Type"] = "application/json";
+      body = JSON.stringify(request);
+    }
+
     const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/agent-chat/stream`,
-      {
-        method: "POST",
-        headers: {
-          Accept: "text/event-stream",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(request),
-      },
+      { method: "POST", headers, body },
     );
 
     if (!response.ok) {

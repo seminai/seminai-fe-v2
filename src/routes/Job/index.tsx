@@ -83,6 +83,7 @@ import {
   ModificationEntryDetails,
 } from "./HistoryEntryDetails";
 import { generateRandomJobId } from "./utils";
+import { useJobCreationTaskLive } from "./useJobCreationTaskLive";
 
 // Component to display job history in a Sheet
 interface JobHistorySheetProps {
@@ -1581,6 +1582,13 @@ export default function JobPage() {
   const [pendingJobId, setPendingJobId] = useState<string | null>(
     pendingJobIdFromNav,
   );
+
+  // Pending task state: riceve il taskId da useManualSubmission (path asincrono create-product-and-job)
+  const pendingTaskIdFromNav =
+    (location.state as { pendingTaskId?: string } | null)?.pendingTaskId ?? null;
+  const [pendingTaskId, setPendingTaskId] = useState<string | null>(
+    pendingTaskIdFromNav,
+  );
   const [viewMode, setViewMode] = useState<ViewMode>("all");
   const [isBulkVerifying, setIsBulkVerifying] = useState<boolean>(false);
   const [historySheetOpen, setHistorySheetOpen] = useState<boolean>(false);
@@ -1631,10 +1639,10 @@ export default function JobPage() {
 
   // Pulisci il location.state per evitare stato stale al refresh del browser
   useEffect(() => {
-    if (pendingJobIdFromNav) {
+    if (pendingJobIdFromNav || pendingTaskIdFromNav) {
       window.history.replaceState({}, document.title);
     }
-  }, [pendingJobIdFromNav]);
+  }, [pendingJobIdFromNav, pendingTaskIdFromNav]);
 
   // Carica le impostazioni salvate da IndexedDB all'inizializzazione
   useEffect(() => {
@@ -1988,6 +1996,47 @@ export default function JobPage() {
     }
   }, [queryClient, refetchGroupsSummary, pendingJobId, selectedAllJobIds]);
 
+  // When an async create-product-and-job task completes, refresh data and auto-select.
+  // `result` is undefined when the BullMQ job completed before polling could fetch the result (fast completion).
+  const handleJobCreationTaskComplete = useCallback(
+    async (result?: { jobs: JobWithRelations[]; jobProductLinks: unknown[]; warnings?: unknown[] }) => {
+      await queryClient.invalidateQueries({ queryKey: ["job-groups-summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["job-group-detail"] });
+      await refetchGroupsSummary();
+
+      if (result?.jobs?.length) {
+        const firstJobId = result.jobs[0]?.job?.jobId;
+        if (firstJobId) {
+          setSelectedAllJobIds([firstJobId]);
+        }
+        const warningCount = result.warnings?.length ?? 0;
+        toast.success("Interventi creati con successo", {
+          description: warningCount > 0
+            ? `${result.jobs.length} interventi creati, ${warningCount} avvisi`
+            : `${result.jobs.length} interventi creati`,
+        });
+      } else {
+        toast.success("Elaborazione completata", {
+          description: "Gli interventi sono stati creati. La lista è stata aggiornata.",
+        });
+      }
+
+      setPendingTaskId(null);
+    },
+    [queryClient, refetchGroupsSummary],
+  );
+
+  const {
+    events: taskLiveEvents,
+    connectionState: taskLiveSocketState,
+    progress: taskLiveProgress,
+    isComplete: isTaskComplete,
+    error: taskLiveError,
+    scrollRef: taskLiveScrollRef,
+  } = useJobCreationTaskLive(pendingTaskId, {
+    onComplete: handleJobCreationTaskComplete,
+  });
+
   // Lista gruppi per la vista "Tutte" (ordine decrescente per data, poi jobId)
   const sortedAllJobGroups = useMemo(() => {
     const sorted = [...jobGroupsSummary];
@@ -2181,10 +2230,10 @@ export default function JobPage() {
     }
   }, [pendingJobId, jobGroupsSummary, activeDosageJobIds]);
 
-  // Fallback polling: ricarica i gruppi mentre esistono job attivi nel dosage-agent.
-  // Interval ridotto a 15s perché il refresh principale avviene via WebSocket onComplete.
+  // Fallback polling: ricarica i gruppi mentre esistono job attivi nel dosage-agent
+  // o mentre c'è un task asincrono di create-product-and-job in corso.
   useEffect(() => {
-    if (activeDosageJobIds.length === 0 && !pendingJobId) return;
+    if (activeDosageJobIds.length === 0 && !pendingJobId && !pendingTaskId) return;
 
     const interval = setInterval(() => {
       refetchGroupsSummary();
@@ -2193,7 +2242,7 @@ export default function JobPage() {
     return () => {
       clearInterval(interval);
     };
-  }, [activeDosageJobIds.length, pendingJobId, refetchGroupsSummary]);
+  }, [activeDosageJobIds.length, pendingJobId, pendingTaskId, refetchGroupsSummary]);
 
   useEffect(() => {
     const fetchSelectedJobs = async () => {
@@ -3853,6 +3902,13 @@ export default function JobPage() {
       onDisplayModeChange={setDisplayMode}
       pendingJobIds={activeDosageJobIds}
       onDosageJobComplete={handleDosageJobComplete}
+      pendingTaskId={pendingTaskId}
+      taskLiveEvents={taskLiveEvents}
+      taskLiveSocketState={taskLiveSocketState}
+      taskLiveScrollRef={taskLiveScrollRef}
+      taskLiveProgress={taskLiveProgress}
+      taskLiveError={taskLiveError}
+      isTaskComplete={isTaskComplete}
     />
   );
 

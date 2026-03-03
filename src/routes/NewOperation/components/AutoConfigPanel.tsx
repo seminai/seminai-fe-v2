@@ -1,4 +1,10 @@
-import { useState, useMemo, type ReactElement, type Dispatch, type SetStateAction } from "react";
+import {
+  useState,
+  useMemo,
+  type ReactElement,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import {
   Select,
   SelectContent,
@@ -74,7 +80,9 @@ interface AutoConfigPanelProps {
   operationMachines: OperationMachineAssignment[];
   setOperationMachines: Dispatch<SetStateAction<OperationMachineAssignment[]>>;
   operationOperators: OperationOperatorAssignment[];
-  setOperationOperators: Dispatch<SetStateAction<OperationOperatorAssignment[]>>;
+  setOperationOperators: Dispatch<
+    SetStateAction<OperationOperatorAssignment[]>
+  >;
 }
 
 const STRATEGY_OPTIONS: Array<{
@@ -139,7 +147,8 @@ export function AutoConfigPanel({
     | "none";
 
   const selectedStrategyOption = useMemo(
-    () => STRATEGY_OPTIONS.find((o) => o.value === strategy) ?? STRATEGY_OPTIONS[3],
+    () =>
+      STRATEGY_OPTIONS.find((o) => o.value === strategy) ?? STRATEGY_OPTIONS[3],
     [strategy],
   );
 
@@ -189,7 +198,10 @@ export function AutoConfigPanel({
     minDateObj.setMonth(minDateObj.getMonth() - 3);
     const minDate = minDateObj.toISOString().split("T")[0];
     const endDates = selectedUnits
-      .map((unit) => unit.productionUnit.endDate ?? unit.productionUnit.harvestingDate)
+      .map(
+        (unit) =>
+          unit.productionUnit.endDate ?? unit.productionUnit.harvestingDate,
+      )
       .filter((date): date is string => Boolean(date));
     let maxDate: string | undefined;
     if (endDates.length > 0) {
@@ -269,9 +281,7 @@ export function AutoConfigPanel({
             <AccordionTrigger className="py-2">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-neutral-500" />
-                <span className="text-sm font-medium">
-                  Periodo trattamento
-                </span>
+                <span className="text-sm font-medium">Periodo trattamento</span>
               </div>
             </AccordionTrigger>
             <AccordionContent>
@@ -363,7 +373,9 @@ export function AutoConfigPanel({
                 <div className="space-y-1">
                   <Label className="text-xs">Obiettivo</Label>
                   <Select
-                    value={(orchestratorSettings.objective ?? "balanced") as string}
+                    value={
+                      (orchestratorSettings.objective ?? "balanced") as string
+                    }
                     onValueChange={(v) =>
                       setOrchestratorSettings((prev) => ({
                         ...prev,
@@ -415,13 +427,13 @@ export function AutoConfigPanel({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Nessun limite</SelectItem>
-                      {(["low", "medium", "high"] as OrchestratorIntensity[]).map(
-                        (opt) => (
-                          <SelectItem key={opt} value={opt}>
-                            {OrchestratorLabels.intensity(opt)}
-                          </SelectItem>
-                        ),
-                      )}
+                      {(
+                        ["low", "medium", "high"] as OrchestratorIntensity[]
+                      ).map((opt) => (
+                        <SelectItem key={opt} value={opt}>
+                          {OrchestratorLabels.intensity(opt)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -474,7 +486,9 @@ export function AutoConfigPanel({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Max applicazioni/prodotto</Label>
+                      <Label className="text-xs">
+                        Max applicazioni/prodotto
+                      </Label>
                       <Input
                         inputMode="numeric"
                         placeholder="2"
@@ -527,7 +541,9 @@ export function AutoConfigPanel({
               {/* Category Priority */}
               {orchestratorDatasets?.categories?.length ? (
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold">Category priority</Label>
+                  <Label className="text-xs font-semibold">
+                    Category priority
+                  </Label>
                   <MultiSearchableSelect
                     value={categoryPriority}
                     options={categoryOptions}
@@ -625,7 +641,9 @@ export function AutoConfigPanel({
               {/* Priority targets */}
               {orchestratorDatasets?.targets?.length ? (
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold">Priority targets</Label>
+                  <Label className="text-xs font-semibold">
+                    Priority targets
+                  </Label>
                   <MultiSearchableSelect
                     value={priorityTargets}
                     options={targetOptions}
@@ -643,7 +661,9 @@ export function AutoConfigPanel({
 
               {/* Agronomic notes */}
               <div className="space-y-1">
-                <Label className="text-xs font-semibold">Note agronomiche</Label>
+                <Label className="text-xs font-semibold">
+                  Note agronomiche
+                </Label>
                 <Textarea
                   value={orchestratorSettings.agronomicNotes ?? ""}
                   onChange={(e) =>
@@ -656,7 +676,6 @@ export function AutoConfigPanel({
                   className="min-h-20"
                 />
               </div>
-
             </div>
           </AccordionContent>
         </AccordionItem>

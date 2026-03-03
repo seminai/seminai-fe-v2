@@ -133,7 +133,7 @@ export function useDosageAgentChat(
   }, []);
 
   const sendMessage = useCallback(
-    async (message: string) => {
+    async (message: string, file?: File) => {
       if (!message.trim() || isLoading) {
         return;
       }
@@ -149,7 +149,7 @@ export function useDosageAgentChat(
       const userMessage: DosageAgentMessage = {
         id: getNextMessageId("user"),
         role: "user",
-        content: message,
+        content: file ? `${message}\n📎 ${file.name}` : message,
         timestamp: new Date(),
       };
 
@@ -173,12 +173,15 @@ export function useDosageAgentChat(
       }> = [];
 
       try {
-        const response = await dosageAgentChatApiService.streamMessage({
-          threadId,
-          message,
-          modelName,
-          ...(workspaceId ? { workspaceId } : {}),
-        });
+        const response = await dosageAgentChatApiService.streamMessage(
+          {
+            threadId,
+            message,
+            modelName,
+            ...(workspaceId ? { workspaceId } : {}),
+          },
+          file,
+        );
 
         const reader = response.body?.getReader();
         if (!reader) {

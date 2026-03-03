@@ -38,8 +38,10 @@ import {
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 import { LiveLogEventCard } from "@/components/organism/LiveLogEventCard";
 import { useDosageJobLiveInline } from "./useDosageJobLiveInline";
+import type { DosageLogEvent, SocketConnectionState } from "@/services/dosageJobSocket";
 
 import HistoryPanel from "./HistoryPanel";
 import { JobCardsView } from "./JobCardsView";
@@ -113,6 +115,13 @@ interface AllJobsViewProps {
   onDisplayModeChange: (mode: DisplayMode) => void;
   pendingJobIds?: string[];
   onDosageJobComplete?: (jobId: string) => void;
+  pendingTaskId?: string | null;
+  taskLiveEvents?: DosageLogEvent[];
+  taskLiveSocketState?: SocketConnectionState;
+  taskLiveScrollRef?: React.RefObject<HTMLDivElement | null>;
+  taskLiveProgress?: number;
+  taskLiveError?: string | null;
+  isTaskComplete?: boolean;
 }
 
 export function JobIdMultiSelect({
@@ -318,6 +327,13 @@ export function AllJobsView({
   onDisplayModeChange,
   pendingJobIds = [],
   onDosageJobComplete,
+  pendingTaskId = null,
+  taskLiveEvents = [],
+  taskLiveSocketState = "disconnected",
+  taskLiveScrollRef,
+  taskLiveProgress = 0,
+  taskLiveError = null,
+  isTaskComplete = false,
 }: AllJobsViewProps) {
   const hasError = Boolean(error);
   const errorMessage =
@@ -625,6 +641,95 @@ export function AllJobsView({
                         {liveEvents.map((event, index) => (
                           <LiveLogEventCard
                             key={`live-inline-${index}`}
+                            event={event}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {pendingTaskId && !isTaskComplete && !jobIdForLive && (
+                <div className="flex-shrink-0 border-t border-slate-200 bg-white rounded-b-lg max-h-[280px] flex flex-col">
+                  <div className="flex-shrink-0 px-3 py-2 border-b border-slate-100 flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Radio className="h-4 w-4 text-blue-600 animate-pulse" />
+                        <span className="text-sm font-medium text-slate-700">
+                          Creazione interventi
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          Assegnazione unità produttive in corso
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={
+                            taskLiveSocketState === "connected"
+                              ? "default"
+                              : taskLiveSocketState === "connecting"
+                                ? "secondary"
+                                : "destructive"
+                          }
+                          className="flex items-center gap-1.5 text-xs"
+                        >
+                          {taskLiveSocketState === "connected" ? (
+                            <>
+                              <Wifi className="h-3 w-3" />
+                              <span>Connesso</span>
+                            </>
+                          ) : taskLiveSocketState === "connecting" ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <span>Connessione...</span>
+                            </>
+                          ) : (
+                            <>
+                              <WifiOff className="h-3 w-3" />
+                              <span>Disconnesso</span>
+                            </>
+                          )}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Progress value={taskLiveProgress} className="flex-1 h-2" />
+                      <span className="text-xs font-medium text-slate-600 tabular-nums min-w-[3ch]">
+                        {taskLiveProgress}%
+                      </span>
+                    </div>
+                    {taskLiveError && (
+                      <p className="text-xs text-red-600">{taskLiveError}</p>
+                    )}
+                  </div>
+                  <div
+                    ref={taskLiveScrollRef}
+                    className="flex-1 min-h-0 overflow-y-auto px-3 py-2"
+                  >
+                    {taskLiveEvents.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-neutral-500 text-sm">
+                        {taskLiveSocketState === "connected" ? (
+                          <>
+                            <Loader2 className="h-6 w-6 animate-spin mb-2" />
+                            <p>In attesa di eventi...</p>
+                          </>
+                        ) : taskLiveSocketState === "connecting" ? (
+                          <>
+                            <Loader2 className="h-6 w-6 animate-spin mb-2" />
+                            <p>Connessione in corso...</p>
+                          </>
+                        ) : (
+                          <>
+                            <WifiOff className="h-6 w-6 mb-2" />
+                            <p>Non connesso</p>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {taskLiveEvents.map((event, index) => (
+                          <LiveLogEventCard
+                            key={`task-live-${index}`}
                             event={event}
                           />
                         ))}

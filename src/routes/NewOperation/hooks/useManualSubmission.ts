@@ -127,18 +127,36 @@ export function useManualSubmission(
           return;
         }
 
-        await jobsApiService.createProductAndJob(payloads);
-        await queryClient.invalidateQueries({
-          queryKey: ["job-groups-summary"],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["job-group-detail"],
-        });
+        const result = await jobsApiService.createProductAndJob(payloads);
 
-        toast.success("Operazioni create", {
-          description: `${payloads.length} operazioni create con successo`,
-        });
-        navigate("/job");
+        if (result.kind === "async") {
+          queryClient.invalidateQueries({
+            queryKey: ["job-groups-summary"],
+            refetchType: "none",
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["job-group-detail"],
+            refetchType: "none",
+          });
+
+          toast.success("Elaborazione avviata in background", {
+            description:
+              "Le unità produttive verranno assegnate automaticamente. Segui il progresso nella pagina interventi.",
+          });
+          navigate("/job", { state: { pendingTaskId: result.taskId } });
+        } else {
+          await queryClient.invalidateQueries({
+            queryKey: ["job-groups-summary"],
+          });
+          await queryClient.invalidateQueries({
+            queryKey: ["job-group-detail"],
+          });
+
+          toast.success("Operazioni create", {
+            description: `${payloads.length} operazioni create con successo`,
+          });
+          navigate("/job");
+        }
       } catch (err) {
         toast.error("Errore durante il salvataggio", {
           description:
