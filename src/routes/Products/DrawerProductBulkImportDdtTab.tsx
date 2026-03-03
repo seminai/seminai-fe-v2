@@ -27,6 +27,21 @@ import type {
 
 const MAX_DDT_FILES = 10;
 
+const DDT_ACCEPT =
+  "application/pdf,image/png,image/jpeg,image/jpg,.pdf,.png,.jpg,.jpeg";
+
+function isDdtAcceptedFile(file: File): boolean {
+  const type = file.type?.toLowerCase() ?? "";
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return (
+    type === "application/pdf" ||
+    type === "image/png" ||
+    type === "image/jpeg" ||
+    type === "image/jpg" ||
+    [".pdf", ".png", ".jpg", ".jpeg"].includes(`.${ext}`)
+  );
+}
+
 type PreviewReadyPayload = {
   products: ProductImportItem[];
   errors: ImportPreviewError[];
@@ -55,7 +70,7 @@ class DdtImportManager {
   private sanitizeFiles(files: File[]): File[] {
     if (!Array.isArray(files) || files.length === 0) {
       throw new Error(
-        "Seleziona almeno un file DDT in formato PDF per continuare"
+        "Seleziona almeno un file DDT (PDF o immagine PNG/JPG/JPEG) per continuare"
       );
     }
 
@@ -65,19 +80,15 @@ class DdtImportManager {
       );
     }
 
-    const pdfFiles = files.filter(
-      (file) =>
-        file.type === "application/pdf" ||
-        file.name.toLowerCase().endsWith(".pdf")
-    );
+    const acceptedFiles = files.filter((file) => isDdtAcceptedFile(file));
 
-    if (pdfFiles.length === 0) {
+    if (acceptedFiles.length === 0) {
       throw new Error(
-        "Solo i file PDF sono supportati per l'importazione da DDT"
+        "Usa file PDF o immagini (PNG, JPG, JPEG) per l'importazione da DDT"
       );
     }
 
-    return pdfFiles;
+    return acceptedFiles;
   }
 
   private normalizeResponse(
@@ -433,7 +444,7 @@ function DrawerProductBulkImportDdtTab({
               <input
                 ref={ddtFileInputRef}
                 type="file"
-                accept="application/pdf"
+                accept={DDT_ACCEPT}
                 multiple
                 onChange={handleDdtFileInputChange}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
@@ -462,7 +473,7 @@ function DrawerProductBulkImportDdtTab({
                         : "oppure clicca per selezionare i file"}
                     </p>
                     <p className="text-xs text-gray-400 mt-2">
-                      Formato supportato: PDF (max {MAX_DDT_FILES} file)
+                      Formato supportato: PDF o immagini PNG/JPG/JPEG (max {MAX_DDT_FILES} file)
                     </p>
                   </>
                 )}

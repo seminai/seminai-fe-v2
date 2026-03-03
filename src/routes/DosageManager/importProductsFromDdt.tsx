@@ -52,6 +52,21 @@ type DdtImportOutcome = {
 
 const MAX_IMPORT_FILES = 10;
 
+const DDT_ACCEPT =
+  "application/pdf,image/png,image/jpeg,image/jpg,.pdf,.png,.jpg,.jpeg";
+
+function isDdtAcceptedFile(file: File): boolean {
+  const type = file.type?.toLowerCase() ?? "";
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return (
+    type === "application/pdf" ||
+    type === "image/png" ||
+    type === "image/jpeg" ||
+    type === "image/jpg" ||
+    [".pdf", ".png", ".jpg", ".jpeg"].includes(`.${ext}`)
+  );
+}
+
 class DdtProductImportManager {
   constructor(private readonly service: ProductsImporterService) {}
 
@@ -77,7 +92,7 @@ class DdtProductImportManager {
   private sanitizeFiles(files: File[]): File[] {
     if (!Array.isArray(files) || files.length === 0) {
       throw new Error(
-        "Seleziona almeno un file DDT in formato PDF per continuare"
+        "Seleziona almeno un file DDT (PDF o immagine PNG/JPG/JPEG) per continuare"
       );
     }
 
@@ -87,19 +102,15 @@ class DdtProductImportManager {
       );
     }
 
-    const pdfFiles = files.filter(
-      (file) =>
-        file.type === "application/pdf" ||
-        file.name.toLowerCase().endsWith(".pdf")
-    );
+    const acceptedFiles = files.filter((file) => isDdtAcceptedFile(file));
 
-    if (pdfFiles.length === 0) {
+    if (acceptedFiles.length === 0) {
       throw new Error(
-        "Solo i file PDF sono supportati per l'importazione da DDT"
+        "Usa file PDF o immagini (PNG, JPG, JPEG) per l'importazione da DDT"
       );
     }
 
-    return pdfFiles;
+    return acceptedFiles;
   }
 
   private toDosageProducts(results: BulkFromDdtFileResult[]): DosageProduct[] {
@@ -384,7 +395,7 @@ export function ImportProductsFromDdt({
       const combined = [...prev, ...uniqueNewFiles];
 
       if (combined.length > MAX_IMPORT_FILES) {
-        const errorMessage = `Puoi caricare al massimo ${MAX_IMPORT_FILES} file PDF alla volta`;
+        const errorMessage = `Puoi caricare al massimo ${MAX_IMPORT_FILES} file (PDF o immagini) alla volta`;
         setImportError(errorMessage);
         toast.error("Limite file superato", {
           description: errorMessage,
@@ -507,9 +518,9 @@ export function ImportProductsFromDdt({
           className="max-w-[700px] bg-white"
         >
           <DrawerHeader className="border-b border-neutral-100 px-6 py-5">
-            <DrawerTitle>Importa Prodotti da DDT PDF</DrawerTitle>
+            <DrawerTitle>Importa Prodotti da DDT</DrawerTitle>
             <DrawerDescription>
-              Carica uno o più file PDF di DDT per estrarre automaticamente i
+              Carica uno o più file PDF o immagini (PNG/JPG/JPEG) di DDT per estrarre automaticamente i
               prodotti fitosanitari e aggiungerli all&apos;elenco.
             </DrawerDescription>
           </DrawerHeader>
@@ -519,7 +530,7 @@ export function ImportProductsFromDdt({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="application/pdf"
+                accept={DDT_ACCEPT}
                 multiple
                 onChange={handleFileInputChange}
                 disabled={isProcessing}
@@ -542,10 +553,10 @@ export function ImportProductsFromDdt({
                 <p className="text-base font-medium text-neutral-900 mb-2">
                   {selectedFiles.length > 0
                     ? `${selectedFiles.length} file selezionati`
-                    : "Carica file PDF di DDT"}
+                    : "Carica file DDT (PDF o immagini)"}
                 </p>
                 <p className="text-sm text-neutral-500 max-w-md">
-                  Seleziona uno o più file PDF oppure trascinali qui per avviare
+                  Seleziona uno o più file PDF o immagini oppure trascinali qui per avviare
                   l&apos;importazione.
                 </p>
               </label>

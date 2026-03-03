@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 
 const CSV_EXCEL_ACCEPT = ".csv,.xls,.xlsx";
-const DDT_ACCEPT = "application/pdf";
-const INVOICE_ACCEPT = ".pdf,.xml";
+const DDT_ACCEPT =
+  "application/pdf,image/png,image/jpeg,image/jpg,.pdf,.png,.jpg,.jpeg";
+const INVOICE_ACCEPT =
+  ".pdf,.xml,image/png,image/jpeg,image/jpg,.png,.jpg,.jpeg";
 
 interface FileUploadAreaProps {
   mode: "csv" | "ddt" | "invoice";
@@ -23,23 +25,30 @@ class FileTypeValidator {
   }
 
   public static validatePdf(file: File): void {
-    if (
-      file.type !== "application/pdf" &&
-      !file.name.toLowerCase().endsWith(".pdf")
-    ) {
-      throw new Error("Solo file PDF sono supportati per DDT.");
+    const type = file.type?.toLowerCase() ?? "";
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    const isPdf = type === "application/pdf" || ext === "pdf";
+    const isImage =
+      ["image/png", "image/jpeg", "image/jpg"].includes(type) ||
+      [".png", ".jpg", ".jpeg"].includes(`.${ext}`);
+    if (!isPdf && !isImage) {
+      throw new Error("Usa file PDF o immagini (PNG, JPG, JPEG) per DDT.");
     }
   }
 
   public static validateInvoice(file: File): void {
+    const type = file.type?.toLowerCase() ?? "";
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-    const isPdf = file.type === "application/pdf" || ext === "pdf";
+    const isPdf = type === "application/pdf" || ext === "pdf";
     const isXml =
-      file.type === "application/xml" ||
-      file.type === "text/xml" ||
-      ext === "xml";
-    if (!isPdf && !isXml) {
-      throw new Error("Formato non supportato. Usa file PDF o XML.");
+      type === "application/xml" || type === "text/xml" || ext === "xml";
+    const isImage =
+      ["image/png", "image/jpeg", "image/jpg"].includes(type) ||
+      [".png", ".jpg", ".jpeg"].includes(`.${ext}`);
+    if (!isPdf && !isXml && !isImage) {
+      throw new Error(
+        "Formato non supportato. Usa file PDF, XML o immagini (PNG, JPG, JPEG)."
+      );
     }
   }
 }
@@ -76,7 +85,7 @@ export default function FileUploadArea({
             }
           });
           if (validInvoiceFiles.length === 0) {
-            throw new Error("Nessun file PDF o XML valido trovato.");
+            throw new Error("Nessun file PDF, XML o immagine valido trovato.");
           }
           if (validInvoiceFiles.length > 10) {
             throw new Error("Massimo 10 file per upload.");
@@ -205,8 +214,8 @@ export default function FileUploadArea({
                 {mode === "csv"
                   ? "Trascina qui il file CSV o Excel"
                   : mode === "invoice"
-                    ? "Trascina qui le fatture PDF o XML"
-                    : "Trascina qui i file DDT PDF"}
+                    ? "Trascina qui le fatture (PDF, XML o immagini)"
+                    : "Trascina qui i file DDT (PDF o immagini)"}
               </p>
               <p className="text-xs text-gray-500">
                 oppure clicca per selezionare
@@ -215,8 +224,8 @@ export default function FileUploadArea({
                 {mode === "csv"
                   ? "Formati: CSV, XLS, XLSX"
                   : mode === "invoice"
-                    ? "Formati: PDF, XML (max 10 file)"
-                    : "Formato: PDF (max 10 file)"}
+                    ? "Formati: PDF, XML, PNG, JPG, JPEG (max 10 file)"
+                    : "Formati: PDF, PNG, JPG, JPEG (max 10 file)"}
               </p>
             </>
           )}
