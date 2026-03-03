@@ -56,10 +56,12 @@ export default function CompanyStep({
         // refetch and find by fiscalCode or name
         if (!createdId) {
           const refreshed = await companies.refetch();
-          const found = refreshed.data?.data.companies.find(
+          const found = refreshed.data?.data?.companies?.find(
             (c) => c.fiscalCode === fiscalCode || c.name === name,
           );
-          createdId = found?.id;
+          if (found?.id) {
+            createdId = found.id;
+          }
         }
 
         if (createdId) {
