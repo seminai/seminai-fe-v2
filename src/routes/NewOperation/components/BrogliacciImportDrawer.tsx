@@ -155,6 +155,24 @@ export function BrogliacciImportDrawer({
 
       if (allPayloads.length > 0) {
         onImportRows(allPayloads);
+
+        // Check for products with missing registration numbers
+        const productsWithoutRegNumber = allPayloads
+          .flatMap((p) => p.stocks)
+          .filter((s) => !s.product.registrationNumber)
+          .map((s) => s.product.name);
+
+        if (productsWithoutRegNumber.length > 0) {
+          const uniqueNames = [...new Set(productsWithoutRegNumber)];
+          toast.warning(
+            "Numero di registrazione non trovato",
+            {
+              description: `I seguenti prodotti non hanno un numero di registrazione: ${uniqueNames.join(", ")}. Verifica che il prodotto selezionato sia corretto.`,
+              duration: 10000,
+            },
+          );
+        }
+
         if (failedFiles.length === 0) {
           toast.success(
             `Dati estratti da ${response.data.results.length} ${response.data.results.length === 1 ? "brogliaccio" : "brogliacci"}`,

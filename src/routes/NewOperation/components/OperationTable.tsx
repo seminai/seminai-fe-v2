@@ -14,7 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Trash2, TreeDeciduous, ChevronsUpDown, Check } from "lucide-react";
+import { Plus, Trash2, TreeDeciduous, ChevronsUpDown, Check, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DosageStrategy } from "@/api/dosage-agent";
 import type { OperationMode, UnifiedProductRow } from "../types";
@@ -315,6 +315,9 @@ function OperationTableRow({
     return groups;
   }, [filteredProducts]);
 
+  const hasNoRegistrationNumber =
+    row.source === "brogliaccio" && !row.registrationNumber;
+
   const sourceLabel =
     row.source === "warehouse"
       ? "Magazzino"
@@ -409,6 +412,12 @@ function OperationTableRow({
                       <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
                         {sourceLabel}
                       </Badge>
+                    )}
+                    {hasNoRegistrationNumber && (
+                      <span className="flex items-center gap-1 text-[10px] text-amber-600" title="N. registrazione non trovato. Conferma il prodotto nella select.">
+                        <AlertTriangle className="h-3 w-3" />
+                        Verifica prodotto
+                      </span>
                     )}
                   </div>
                 </div>
