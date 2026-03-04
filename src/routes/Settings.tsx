@@ -51,6 +51,7 @@ import {
 } from "@/api/whatsapp";
 import { type TokenUsage } from "@/api/token-costs";
 import { InputFile } from "@/components/ui/input-file";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   updatePasswordWithBearer,
   type UpdatePasswordRequest,
@@ -67,6 +68,7 @@ import {
   Trash2,
   HardDrive,
   MessageCircle,
+  Send,
   AlertTriangle,
   CheckCircle2,
   XCircle,
@@ -858,6 +860,8 @@ export default function Settings() {
   const [whatsappDisconnectDialogOpen, setWhatsappDisconnectDialogOpen] =
     React.useState(false);
 
+  const [telegramEnabled, setTelegramEnabled] = React.useState(false);
+
   const { mutateAsync: disconnectWhatsappAsync, isPending: isDisconnecting } = useMutation({
     mutationFn: async (deleteInstance: boolean) => {
       return await disconnectWhatsAppWithBearer({ deleteInstance });
@@ -1481,6 +1485,63 @@ export default function Settings() {
                           )}
                         </div>
                       </>
+                    )}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* Telegram */}
+              <AccordionItem value="telegram" className="rounded-lg border border-gray-200 bg-white">
+                <AccordionTrigger className="px-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <Send className="h-5 w-5 text-sky-500" />
+                    <span className="font-medium">Telegram</span>
+                    {telegramEnabled && (
+                      <Badge variant="outline" className="text-sky-600 border-sky-200 ml-auto">
+                        Attiva
+                      </Badge>
+                    )}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-agri-green-100 bg-agri-green-50/60">
+                      <div className="flex items-center gap-3">
+                        <Label
+                          htmlFor="telegram-toggle"
+                          className="text-sm font-medium text-gray-900 cursor-pointer flex items-center gap-2"
+                        >
+                          <Checkbox
+                            id="telegram-toggle"
+                            checked={telegramEnabled}
+                            onCheckedChange={(checked) =>
+                              setTelegramEnabled(checked === true)
+                            }
+                          />
+                          Attiva integrazione Telegram
+                        </Label>
+                      </div>
+                    </div>
+                    {telegramEnabled && (
+                      <div className="p-4 rounded-lg border border-agri-green-100 bg-white">
+                        <p className="text-sm font-medium text-gray-900 mb-3">
+                          Scansiona il QR code per collegare l’agente Telegram:
+                        </p>
+                        <div className="flex flex-col items-center">
+                          <img
+                            src="/integration/telegram_qrcode.png"
+                            alt="QR code agente Telegram"
+                            className="w-56 h-auto border border-gray-200 rounded-lg"
+                          />
+                          <p className="text-sm text-gray-600 mt-3 font-mono">
+                            @SEMINAIBOT
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-600 mt-3 text-center">
+                          Apri Telegram, scansiona il codice e avvia una chat con
+                          il bot per usare l’agente da messaggio.
+                        </p>
+                      </div>
                     )}
                   </div>
                 </AccordionContent>
