@@ -4,7 +4,10 @@ import { useJobs } from "@/hooks/useJobs";
 import { useCompanies } from "@/hooks/useCompanies";
 import { useProducts } from "@/hooks/useProducts";
 import { useLabelsSummary } from "@/hooks/useLabelsSummary";
-import { usePendingInvitations, useAcceptInvitation } from "@/hooks/useWorkspaces";
+import {
+  usePendingInvitations,
+  useAcceptInvitation,
+} from "@/hooks/useWorkspaces";
 import { useMe, UserRole } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/organism/Header";
 import { Button } from "@/components/ui/button";
@@ -55,14 +58,14 @@ function DashboardCard({
         onClick &&
           !isLoading &&
           "cursor-pointer hover:scale-[1.02] active:scale-[0.98]",
-        isLoading && "opacity-50 cursor-wait"
+        isLoading && "opacity-50 cursor-wait",
       )}
     >
       {/* Gradient background */}
       <div
         className={cn(
           "absolute inset-0 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-300",
-          gradient
+          gradient,
         )}
       />
 
@@ -75,7 +78,7 @@ function DashboardCard({
                 "flex items-center justify-center w-12 h-12 rounded-2xl",
                 "bg-gradient-to-br shadow-sm",
                 gradient.replace("from-", "from-").replace("to-", "to-"),
-                "bg-opacity-10"
+                "bg-opacity-10",
               )}
             >
               <div className="text-neutral-700">{icon}</div>
@@ -180,7 +183,9 @@ function PendingInvitationsBanner(): React.ReactElement | null {
   const handleAcceptInvitation = async (invitation: PendingInvitation) => {
     try {
       await acceptInvitation(invitation.token);
-      toast.success(`Sei entrato nel workspace "${invitation.workspace.name}"!`);
+      toast.success(
+        `Sei entrato nel workspace "${invitation.workspace.name}"!`,
+      );
       // Refetch workspaces to include the new one, then select it
       await queryClient.invalidateQueries({ queryKey: workspaceKeys.list() });
       selectWorkspace(invitation.workspace.id);

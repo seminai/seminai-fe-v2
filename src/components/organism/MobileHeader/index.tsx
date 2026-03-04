@@ -15,10 +15,10 @@ function getPageTitle(pathname: string): string {
     return "Nuova Operazione";
   }
   if (pathname === "/job" || pathname.startsWith("/job/")) {
-    return "Verifica Operazioni";
+    return "Operazioni";
   }
   if (pathname === "/operations" || pathname.startsWith("/operations/")) {
-    return "Operazioni";
+    return "Qdca";
   }
   if (pathname === "/company" || pathname.startsWith("/company/")) {
     return "Aziende";

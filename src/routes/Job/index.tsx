@@ -34,10 +34,7 @@ import {
   isJobModificationEntry,
   isJobStandardHistoryEntry,
 } from "@/api/jobs";
-import {
-  dosageAgentApiService,
-  type DosageJobState,
-} from "@/api/dosage-agent";
+import { dosageAgentApiService, type DosageJobState } from "@/api/dosage-agent";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1585,7 +1582,8 @@ export default function JobPage() {
 
   // Pending task state: riceve il taskId da useManualSubmission (path asincrono create-product-and-job)
   const pendingTaskIdFromNav =
-    (location.state as { pendingTaskId?: string } | null)?.pendingTaskId ?? null;
+    (location.state as { pendingTaskId?: string } | null)?.pendingTaskId ??
+    null;
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(
     pendingTaskIdFromNav,
   );
@@ -1938,15 +1936,17 @@ export default function JobPage() {
 
   // Fetch dosage jobs list once on mount and on-demand (no aggressive polling).
   // Real-time updates come from the WebSocket; this is a fallback.
-  const { data: dosageJobsResponse, isLoading: isLoadingDosageJobs } = useQuery({
-    queryKey: ["dosage-agent-jobs"],
-    queryFn: async () => {
-      return await dosageAgentApiService.listJobs();
+  const { data: dosageJobsResponse, isLoading: isLoadingDosageJobs } = useQuery(
+    {
+      queryKey: ["dosage-agent-jobs"],
+      queryFn: async () => {
+        return await dosageAgentApiService.listJobs();
+      },
+      staleTime: 10_000,
+      refetchOnMount: "always",
+      refetchInterval: 30_000, // Fallback polling every 30s (socket handles real-time)
     },
-    staleTime: 10_000,
-    refetchOnMount: "always",
-    refetchInterval: 30_000, // Fallback polling every 30s (socket handles real-time)
-  });
+  );
 
   const dosageJobs = useMemo(() => {
     return dosageJobsResponse?.data ?? [];
@@ -1977,29 +1977,36 @@ export default function JobPage() {
   }, [activeDosageJobIds, dosageJobsById]);
 
   // When a dosage job completes via WebSocket, refresh all relevant data
-  const handleDosageJobComplete = useCallback(async (completedJobId: string) => {
-    // Invalidate dosage-agent queries to refresh the jobs list
-    await queryClient.invalidateQueries({ queryKey: ["dosage-agent-jobs"] });
-    // Invalidate group summaries so the new data appears
-    await queryClient.invalidateQueries({ queryKey: ["job-groups-summary"] });
-    await queryClient.invalidateQueries({ queryKey: ["job-group-detail"] });
-    await refetchGroupsSummary();
+  const handleDosageJobComplete = useCallback(
+    async (completedJobId: string) => {
+      // Invalidate dosage-agent queries to refresh the jobs list
+      await queryClient.invalidateQueries({ queryKey: ["dosage-agent-jobs"] });
+      // Invalidate group summaries so the new data appears
+      await queryClient.invalidateQueries({ queryKey: ["job-groups-summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["job-group-detail"] });
+      await refetchGroupsSummary();
 
-    // Auto-select the completed job if it was pending
-    if (pendingJobId === completedJobId) {
-      setPendingJobId(null);
-    }
-    if (!selectedAllJobIds.includes(completedJobId)) {
-      setSelectedAllJobIds((prev) =>
-        prev.length === 0 ? [completedJobId] : prev,
-      );
-    }
-  }, [queryClient, refetchGroupsSummary, pendingJobId, selectedAllJobIds]);
+      // Auto-select the completed job if it was pending
+      if (pendingJobId === completedJobId) {
+        setPendingJobId(null);
+      }
+      if (!selectedAllJobIds.includes(completedJobId)) {
+        setSelectedAllJobIds((prev) =>
+          prev.length === 0 ? [completedJobId] : prev,
+        );
+      }
+    },
+    [queryClient, refetchGroupsSummary, pendingJobId, selectedAllJobIds],
+  );
 
   // When an async create-product-and-job task completes, refresh data and auto-select.
   // `result` is undefined when the BullMQ job completed before polling could fetch the result (fast completion).
   const handleJobCreationTaskComplete = useCallback(
-    async (result?: { jobs: JobWithRelations[]; jobProductLinks: unknown[]; warnings?: unknown[] }) => {
+    async (result?: {
+      jobs: JobWithRelations[];
+      jobProductLinks: unknown[];
+      warnings?: unknown[];
+    }) => {
       await queryClient.invalidateQueries({ queryKey: ["job-groups-summary"] });
       await queryClient.invalidateQueries({ queryKey: ["job-group-detail"] });
       await refetchGroupsSummary();
@@ -2011,13 +2018,15 @@ export default function JobPage() {
         }
         const warningCount = result.warnings?.length ?? 0;
         toast.success("Interventi creati con successo", {
-          description: warningCount > 0
-            ? `${result.jobs.length} interventi creati, ${warningCount} avvisi`
-            : `${result.jobs.length} interventi creati`,
+          description:
+            warningCount > 0
+              ? `${result.jobs.length} interventi creati, ${warningCount} avvisi`
+              : `${result.jobs.length} interventi creati`,
         });
       } else {
         toast.success("Elaborazione completata", {
-          description: "Gli interventi sono stati creati. La lista è stata aggiornata.",
+          description:
+            "Gli interventi sono stati creati. La lista è stata aggiornata.",
         });
       }
 
@@ -2204,7 +2213,12 @@ export default function JobPage() {
       });
     });
     return options;
-  }, [sortedAllJobGroups, activeDosageJobIds, activeDosageStatuses, dosageJobsById]);
+  }, [
+    sortedAllJobGroups,
+    activeDosageJobIds,
+    activeDosageStatuses,
+    dosageJobsById,
+  ]);
 
   useEffect(() => {
     // Non auto-selezionare quando ci sono job attivi in coda/elaborazione
@@ -2214,7 +2228,12 @@ export default function JobPage() {
       // seleziona l'ultima per data (lista già ordinata per createdAt desc)
       setSelectedAllJobIds([jobIdOptions[0].value]);
     }
-  }, [jobIdOptions, selectedAllJobIds.length, pendingJobId, activeDosageJobIds.length]);
+  }, [
+    jobIdOptions,
+    selectedAllJobIds.length,
+    pendingJobId,
+    activeDosageJobIds.length,
+  ]);
 
   // Auto-seleziona il job pending quando appare nella lista dei gruppi
   useEffect(() => {
@@ -2233,7 +2252,8 @@ export default function JobPage() {
   // Fallback polling: ricarica i gruppi mentre esistono job attivi nel dosage-agent
   // o mentre c'è un task asincrono di create-product-and-job in corso.
   useEffect(() => {
-    if (activeDosageJobIds.length === 0 && !pendingJobId && !pendingTaskId) return;
+    if (activeDosageJobIds.length === 0 && !pendingJobId && !pendingTaskId)
+      return;
 
     const interval = setInterval(() => {
       refetchGroupsSummary();
@@ -2242,12 +2262,17 @@ export default function JobPage() {
     return () => {
       clearInterval(interval);
     };
-  }, [activeDosageJobIds.length, pendingJobId, pendingTaskId, refetchGroupsSummary]);
+  }, [
+    activeDosageJobIds.length,
+    pendingJobId,
+    pendingTaskId,
+    refetchGroupsSummary,
+  ]);
 
   useEffect(() => {
     const fetchSelectedJobs = async () => {
-      const jobIdsToFetch = selectedAllJobIds.filter(
-        (id) => availableGroupIdSet.has(id),
+      const jobIdsToFetch = selectedAllJobIds.filter((id) =>
+        availableGroupIdSet.has(id),
       );
       if (jobIdsToFetch.length === 0) {
         setAllSelectedJobs([]);
@@ -2258,9 +2283,7 @@ export default function JobPage() {
       setErrorSelectedJobs(null);
       try {
         const responses = await Promise.allSettled(
-          jobIdsToFetch.map((jobId) =>
-            jobsApiService.getGroupDetail(jobId),
-          ),
+          jobIdsToFetch.map((jobId) => jobsApiService.getGroupDetail(jobId)),
         );
         const jobs = responses
           .filter(
@@ -2274,7 +2297,9 @@ export default function JobPage() {
         setAllSelectedJobs(jobs);
         const rejected = responses.find((res) => res.status === "rejected");
         if (rejected && jobs.length === 0) {
-          throw new Error("Errore nel caricamento di alcuni gruppi selezionati");
+          throw new Error(
+            "Errore nel caricamento di alcuni gruppi selezionati",
+          );
         }
       } catch (err) {
         setErrorSelectedJobs(err);
@@ -2760,17 +2785,27 @@ export default function JobPage() {
       required: true,
       allowClear: true,
       getOptions: (rowData) => {
-        const currentRegNumber = rowData.productRegistrationNumber as string | undefined;
+        const currentRegNumber = rowData.productRegistrationNumber as
+          | string
+          | undefined;
         const currentProductName = rowData.productName as string | undefined;
 
-        if (currentRegNumber && currentRegNumber !== "-" && currentRegNumber.trim() !== "") {
-          const existsInOptions = fitosanitariOptions.some(o => o.value === currentRegNumber);
+        if (
+          currentRegNumber &&
+          currentRegNumber !== "-" &&
+          currentRegNumber.trim() !== ""
+        ) {
+          const existsInOptions = fitosanitariOptions.some(
+            (o) => o.value === currentRegNumber,
+          );
           if (!existsInOptions) {
             return [
               {
                 label: `${currentProductName ?? currentRegNumber} (${currentRegNumber})`,
                 value: currentRegNumber,
-                searchText: [currentProductName, currentRegNumber].filter(Boolean).join(" "),
+                searchText: [currentProductName, currentRegNumber]
+                  .filter(Boolean)
+                  .join(" "),
               },
               ...fitosanitariOptions,
             ];
@@ -2856,7 +2891,8 @@ export default function JobPage() {
         }
         return (
           <span>
-            {numValue.toFixed(3)}{um ? ` ${um}` : ""}
+            {numValue.toFixed(3)}
+            {um ? ` ${um}` : ""}
           </span>
         );
       },
@@ -2913,19 +2949,26 @@ export default function JobPage() {
           if (doseMinima === doseMassima) {
             return (
               <span className="text-sm font-mono text-slate-700">
-                {doseMinima}{unit}
+                {doseMinima}
+                {unit}
               </span>
             );
           }
           return (
             <div className="flex flex-col leading-tight text-sm font-mono text-slate-700">
               <span>
-                <span className="text-xs text-muted-foreground font-sans">min </span>
-                {doseMinima}{unit}
+                <span className="text-xs text-muted-foreground font-sans">
+                  min{" "}
+                </span>
+                {doseMinima}
+                {unit}
               </span>
               <span>
-                <span className="text-xs text-muted-foreground font-sans">max </span>
-                {doseMassima}{unit}
+                <span className="text-xs text-muted-foreground font-sans">
+                  max{" "}
+                </span>
+                {doseMassima}
+                {unit}
               </span>
             </div>
           );
@@ -2934,8 +2977,11 @@ export default function JobPage() {
         if (doseMinima != null) {
           return (
             <span className="text-sm font-mono text-slate-700">
-              <span className="text-xs text-muted-foreground font-sans">min </span>
-              {doseMinima}{unit}
+              <span className="text-xs text-muted-foreground font-sans">
+                min{" "}
+              </span>
+              {doseMinima}
+              {unit}
             </span>
           );
         }
@@ -2943,8 +2989,11 @@ export default function JobPage() {
         if (doseMassima != null) {
           return (
             <span className="text-sm font-mono text-slate-700">
-              <span className="text-xs text-muted-foreground font-sans">max </span>
-              {doseMassima}{unit}
+              <span className="text-xs text-muted-foreground font-sans">
+                max{" "}
+              </span>
+              {doseMassima}
+              {unit}
             </span>
           );
         }
@@ -3975,7 +4024,7 @@ export default function JobPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <PageHeader title="Verifica Operazioni" className="hidden md:block">
+      <PageHeader title="Operazioni" className="hidden md:block">
         {!isMobile && viewMode === "all" && (
           <div className="flex items-center justify-end gap-4 flex-wrap">
             <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -4054,7 +4103,6 @@ export default function JobPage() {
         isLoadingProducts={isLoadingFitosanitari}
         onSave={handleSaveMultipleJobs}
       />
-
     </div>
   );
 }

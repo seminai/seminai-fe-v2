@@ -861,7 +861,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 <SidebarMenuButton
                                   asChild
                                   isActive={jobActive}
-                                  tooltip="Verifica Operazioni"
+                                  tooltip="Operazioni"
                                   size="lg"
                                   className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
                                 >
@@ -873,7 +873,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                       className="size-5"
                                       size={20}
                                     />
-                                    <span>Verifica Operazioni</span>
+                                    <span>Operazioni</span>
                                   </Link>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
@@ -1037,7 +1037,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 <SidebarMenuButton
                                   asChild
                                   isActive={operationsActive}
-                                  tooltip="Operazioni"
+                                  tooltip="Qdca"
                                   size="lg"
                                   className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
                                 >
@@ -1049,7 +1049,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                       className="size-5"
                                       size={20}
                                     />
-                                    <span>Operazioni</span>
+                                    <span>Qdca</span>
                                   </Link>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
@@ -1103,7 +1103,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                           {jobVisible && (
                             <DropdownMenuItem onClick={() => navigate("/job")}>
                               <CheckCircle2 className="size-4 mr-2" size={16} />
-                              Verifica Operazioni
+                              Operazioni
                             </DropdownMenuItem>
                           )}
                           {fieldNotesVisible && (

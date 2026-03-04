@@ -1090,7 +1090,9 @@ export default function OperationsPage() {
   const canBulkEdit = useMemo(() => {
     if (selectedRows.length === 0) return false;
     const firstCompanyId = selectedRows[0]._companyId as string;
-    return selectedRows.every((r) => (r._companyId as string) === firstCompanyId);
+    return selectedRows.every(
+      (r) => (r._companyId as string) === firstCompanyId,
+    );
   }, [selectedRows]);
 
   // Gestisce l'eliminazione multipla
@@ -1127,7 +1129,7 @@ export default function OperationsPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title="Operazioni" className="hidden md:block" />
+      <PageHeader title="Qdca" className="hidden md:block" />
 
       <div className="flex-1 overflow-auto px-6 pb-6">
         {isLoading ? (
@@ -1161,7 +1163,7 @@ export default function OperationsPage() {
                 variant="outline"
                 className="border-gray-300 hover:bg-gray-50"
               >
-                Verifica Operazioni
+                Qdca
               </Button>
             </div>
           </div>
@@ -1294,8 +1296,7 @@ export default function OperationsPage() {
                                   const verified =
                                     currentChanges._isVerifiedBoolean;
                                   if (!checked) {
-                                    currentValue =
-                                      "Conformità non verificata";
+                                    currentValue = "Conformità non verificata";
                                   } else {
                                     currentValue = verified
                                       ? "Verificato"
@@ -1338,7 +1339,8 @@ export default function OperationsPage() {
                                       )}
                                       {(
                                         options as Array<
-                                          string | { label: string; value: string }
+                                          | string
+                                          | { label: string; value: string }
                                         >
                                       ).map((opt) => {
                                         const optValue =
