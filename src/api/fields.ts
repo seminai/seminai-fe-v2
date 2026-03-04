@@ -304,6 +304,13 @@ class FieldsApiService {
   ): Promise<FieldExtractionResponse> {
     return await startJobFieldExtraction(companyId, file, this.baseUrl);
   }
+
+  public async extractFromFiles(
+    companyId: string,
+    files: File[]
+  ): Promise<FieldExtractionResponse> {
+    return await extractFieldsFromFiles(companyId, files, this.baseUrl);
+  }
 }
 
 // Types for fields availability API
@@ -446,6 +453,33 @@ export async function startJobFieldExtraction(
   if (!response.ok) {
     const errorText = await safeReadText(response);
     throw new Error(errorText || "Failed to extract fields from file");
+  }
+
+  return (await response.json()) as FieldExtractionResponse;
+}
+
+export async function extractFieldsFromFiles(
+  companyId: string,
+  files: File[],
+  baseUrl: string = BASE_URL
+): Promise<FieldExtractionResponse> {
+  const formData = new FormData();
+  formData.append("companyId", companyId);
+  for (const file of files) {
+    formData.append("file", file);
+  }
+
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/fields/extract`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to extract fields from files");
   }
 
   return (await response.json()) as FieldExtractionResponse;

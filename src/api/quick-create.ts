@@ -160,11 +160,14 @@ async function safeReadText(response: Response): Promise<string> {
  * POST /onboarding/extract
  */
 export async function extractFromFile(
-  file: File,
+  files: File | File[],
   baseUrl: string = BASE_URL,
 ): Promise<ExtractFromFileResponse> {
   const formData = new FormData();
-  formData.append("file", file);
+  const fileArray = Array.isArray(files) ? files : [files];
+  for (const file of fileArray) {
+    formData.append("file", file);
+  }
 
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/onboarding/extract`,
@@ -221,9 +224,9 @@ export class QuickCreateApiService {
   }
 
   public async extractFromFile(
-    file: File,
+    files: File | File[],
   ): Promise<ExtractFromFileResponse> {
-    return extractFromFile(file, this.baseUrl);
+    return extractFromFile(files, this.baseUrl);
   }
 
   public async bulkCreate(

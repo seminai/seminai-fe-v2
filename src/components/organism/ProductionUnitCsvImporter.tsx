@@ -378,11 +378,12 @@ export const ProductionUnitCsvImporter: React.FC<
     toast.success("Richiesta inviata. Ti risponderemo al più presto.");
   };
 
-  const handleFileSelect = async (file: File): Promise<void> => {
+  const handleFileSelect = async (files: File[]): Promise<void> => {
     if (!selectedCompanyId) {
       toast.error("Seleziona un'azienda prima di importare il file");
       return;
     }
+    if (files.length === 0) return;
 
     setIsLoading(true);
     setValidationErrors([]);
@@ -393,7 +394,7 @@ export const ProductionUnitCsvImporter: React.FC<
         description: "L'operazione potrebbe richiedere alcuni secondi",
       });
 
-      const extracted = await extractProductionUnits(selectedCompanyId, file);
+      const extracted = await extractProductionUnits(selectedCompanyId, files[0]);
 
       if (!extracted || extracted.length === 0) {
         setValidationErrors(["Nessuna unità produttiva trovata nel file."]);

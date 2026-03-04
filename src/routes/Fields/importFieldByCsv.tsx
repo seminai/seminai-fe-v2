@@ -42,9 +42,10 @@ export function ImportFieldByCsv({
   const [showSupportForm, setShowSupportForm] = useState(false);
 
   /**
-   * Gestisce l'estrazione automatica dei campi tramite API
+   * Gestisce l'estrazione automatica dei campi tramite API.
+   * Supporta singolo file (CSV/Excel/PDF), shapefile multipli (.shp+.dbf+.shx) e ZIP.
    */
-  const handleExtraction = async (file: File): Promise<void> => {
+  const handleExtraction = async (files: File[]): Promise<void> => {
     if (!selectedCompanyId) {
       toast.error("Seleziona un'azienda prima di importare il file");
       return;
@@ -59,10 +60,17 @@ export function ImportFieldByCsv({
         description: "L'operazione potrebbe richiedere alcuni minuti",
       });
 
-      const response = await fieldsApiService.startJobFieldExtraction(
-        selectedCompanyId,
-        file,
-      );
+      const isShapefile = files.some((f) => {
+        const name = f.name.toLowerCase();
+        return name.endsWith(".shp") || name.endsWith(".zip");
+      });
+
+      const response = isShapefile
+        ? await fieldsApiService.extractFromFiles(selectedCompanyId, files)
+        : await fieldsApiService.startJobFieldExtraction(
+            selectedCompanyId,
+            files[0],
+          );
 
       if (!response.data?.fields || response.data.fields.length === 0) {
         toast.error("Nessun campo estratto dal file");
@@ -70,7 +78,6 @@ export function ImportFieldByCsv({
         return;
       }
 
-      // Mappa i campi estratti al formato BulkFieldInput
       const mappedFields: BulkFieldInput[] = response.data.fields.map(
         (field) => ({
           companyId: field.companyId,
@@ -106,7 +113,6 @@ export function ImportFieldByCsv({
         }),
       );
 
-      // Chiama la callback per aggiungere i campi alla tabella
       onImportSuccess(mappedFields);
 
       toast.success(
@@ -203,10 +209,10 @@ export function ImportFieldByCsv({
         <DrawerHeader>
           <DrawerTitle>Estrazione Automatica Campi </DrawerTitle>
           <DrawerDescription>
-            Il sistema supporta il formato del template AGEA della misura unica,
-            con parcelle e uso del suolo primario e secondario (CSV, XLS, XLSX, PDF).
-            Il formato può variare in base alla regione. Seleziona l'azienda e
-            carica un file; i dati dei campi verranno estratti automaticamente.
+            Supporta il template AGEA (CSV, XLS, XLSX, PDF) e Shapefile
+            (.shp + .dbf + .shx) o ZIP con coordinate geografiche. Seleziona
+            l'azienda e carica un file; i dati dei campi verranno estratti
+            automaticamente.
           </DrawerDescription>
         </DrawerHeader>
         {importContent}

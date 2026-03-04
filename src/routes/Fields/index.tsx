@@ -448,7 +448,7 @@ export default function Fields(): React.ReactElement {
             showDeleteAction={true}
             exportFileName="campi"
             createDrawerImportTitle="Importa file"
-            createDrawerImportDescription="Il sistema supporta il formato del template AGEA della misura unica, con parcelle e uso del suolo primario e secondario (CSV, XLS, XLSX, PDF). Il formato può variare in base alla regione. Seleziona l'azienda e carica un file; i dati dei campi verranno estratti automaticamente."
+            createDrawerImportDescription="Supporta il template AGEA (CSV, XLS, XLSX, PDF) e Shapefile (.shp + .dbf + .shx) con coordinate geografiche. Seleziona l'azienda e carica un file; i dati verranno estratti automaticamente."
             newRowDefaults={{
               companyName: "",
               name: "",

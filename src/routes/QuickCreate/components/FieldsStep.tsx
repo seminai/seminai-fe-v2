@@ -35,13 +35,14 @@ export default function FieldsStep({
   const hasExtractedData = fieldsData.length > 0;
 
   const handleFileSelect = React.useCallback(
-    async (file: File) => {
-      onFileSelected(file);
+    async (files: File[]) => {
+      if (files.length === 0) return;
+      onFileSelected(files[0]);
       onError(null);
       setIsExtracting(true);
 
       try {
-        const response = await quickCreateApiService.extractFromFile(file);
+        const response = await quickCreateApiService.extractFromFile(files);
 
         onFieldsChange(response.data.fields);
         onProductionUnitsExtracted(response.data.productionUnits);
@@ -96,7 +97,8 @@ export default function FieldsStep({
           Importa i dati
         </h2>
         <p className="text-neutral-500 mb-8 text-center max-w-lg">
-          Carica un file CSV, Excel o PDF per importare campi e unità produttive.
+          Carica un file CSV, Excel, PDF, Shapefile (.shp + .dbf + .shx) o ZIP
+          per importare campi e unità produttive.
         </p>
 
         <FileDropZone

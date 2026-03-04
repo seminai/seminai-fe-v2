@@ -5,15 +5,27 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
+const VALID_EXTENSIONS = [".csv", ".xlsx", ".xls", ".pdf", ".shp", ".dbf", ".shx", ".zip"];
+const SHAPEFILE_EXTENSIONS = [".shp", ".dbf", ".shx"];
+const ACCEPTED_MIME_TYPES = ".csv,.xlsx,.xls,.pdf,.shp,.dbf,.shx,.zip";
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+function getFileExtension(name: string): string {
+  return name.substring(name.lastIndexOf(".")).toLowerCase();
+}
+
+function isShapefileComponent(file: File): boolean {
+  return SHAPEFILE_EXTENSIONS.includes(getFileExtension(file.name));
+}
+
 interface CsvFieldImporterProps {
-  onFileSelect: (file: File) => void;
+  onFileSelect: (files: File[]) => void;
   isProcessing?: boolean;
   className?: string;
 }
 
 /**
- * CsvFieldImporter - Componente per l'importazione di file CSV con drag & drop
- * Gestisce l'upload dei file e fornisce feedback visivo all'utente
+ * File importer with drag-and-drop supporting CSV, Excel, PDF, Shapefile (.shp+.dbf+.shx) and ZIP.
  */
 export function CsvFieldImporter({
   onFileSelect,
@@ -21,47 +33,45 @@ export function CsvFieldImporter({
   className,
 }: CsvFieldImporterProps): React.ReactElement {
   const [isDragging, setIsDragging] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const validateFile = (file: File): { valid: boolean; error?: string } => {
-    const validExtensions = [".csv", ".xlsx", ".xls", ".pdf"];
-    const fileExtension = file.name
-      .substring(file.name.lastIndexOf("."))
-      .toLowerCase();
-
-    if (!validExtensions.includes(fileExtension)) {
-      return {
-        valid: false,
-        error: "Formato file non valido. Usa file CSV, XLSX, XLS o PDF.",
-      };
+  const validateFiles = (files: File[]): { valid: boolean; error?: string } => {
+    for (const file of files) {
+      const ext = getFileExtension(file.name);
+      if (!VALID_EXTENSIONS.includes(ext)) {
+        return { valid: false, error: `Formato "${ext}" non supportato. Usa CSV, XLSX, XLS, PDF, Shapefile (.shp/.dbf/.shx) o ZIP.` };
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        return { valid: false, error: `"${file.name}" troppo grande. Massimo 10 MB.` };
+      }
     }
 
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      return {
-        valid: false,
-        error: "File troppo grande. Dimensione massima: 10MB.",
-      };
+    const hasShpComponent = files.some(isShapefileComponent);
+    if (hasShpComponent) {
+      const hasShp = files.some((f) => getFileExtension(f.name) === ".shp");
+      const hasDbf = files.some((f) => getFileExtension(f.name) === ".dbf");
+      if (!hasShp || !hasDbf) {
+        return { valid: false, error: "Per gli shapefile servono almeno i file .shp e .dbf. Selezionali insieme." };
+      }
     }
 
     return { valid: true };
   };
 
-  const handleFileSelection = useCallback(
-    (file: File) => {
-      const validation = validateFile(file);
+  const handleFilesSelection = useCallback(
+    (files: File[]) => {
+      const validation = validateFiles(files);
       if (!validation.valid) {
-        setError(validation.error || "File non valido");
-        setSelectedFile(null);
+        setError(validation.error ?? "File non valido");
+        setSelectedFiles([]);
         return;
       }
-
       setError(null);
-      setSelectedFile(file);
-      onFileSelect(file);
+      setSelectedFiles(files);
+      onFileSelect(files);
     },
-    [onFileSelect]
+    [onFileSelect],
   );
 
   const handleDrop = useCallback(
@@ -69,13 +79,10 @@ export function CsvFieldImporter({
       e.preventDefault();
       e.stopPropagation();
       setIsDragging(false);
-
-      const files = e.dataTransfer.files;
-      if (files && files.length > 0) {
-        handleFileSelection(files[0]);
-      }
+      const dropped = Array.from(e.dataTransfer.files);
+      if (dropped.length > 0) handleFilesSelection(dropped);
     },
-    [handleFileSelection]
+    [handleFilesSelection],
   );
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -93,17 +100,21 @@ export function CsvFieldImporter({
   const handleFileInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
-      if (files && files.length > 0) {
-        handleFileSelection(files[0]);
-      }
+      if (files && files.length > 0) handleFilesSelection(Array.from(files));
     },
-    [handleFileSelection]
+    [handleFilesSelection],
   );
 
   const handleClearFile = useCallback(() => {
-    setSelectedFile(null);
+    setSelectedFiles([]);
     setError(null);
   }, []);
+
+  const displayLabel = selectedFiles.length === 1
+    ? selectedFiles[0].name
+    : `${selectedFiles.length} file selezionati`;
+
+  const displaySize = selectedFiles.reduce((sum, f) => sum + f.size, 0);
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -116,12 +127,13 @@ export function CsvFieldImporter({
           isDragging
             ? "border-primary bg-primary/5 scale-[1.02]"
             : "border-gray-300 hover:border-gray-400",
-          isProcessing && "opacity-50 pointer-events-none"
+          isProcessing && "opacity-50 pointer-events-none",
         )}
       >
         <input
           type="file"
-          accept=".csv,.xlsx,.xls,.pdf"
+          accept={ACCEPTED_MIME_TYPES}
+          multiple
           onChange={handleFileInputChange}
           className="hidden"
           id="csv-file-input"
@@ -132,7 +144,7 @@ export function CsvFieldImporter({
           <Upload
             className={cn(
               "h-12 w-12 mb-4 transition-colors",
-              isDragging ? "text-primary" : "text-gray-400"
+              isDragging ? "text-primary" : "text-gray-400",
             )}
           />
 
@@ -154,31 +166,26 @@ export function CsvFieldImporter({
           </Button>
 
           <p className="text-xs text-gray-400 mt-4">
-            Formati supportati: CSV, XLSX, XLS, PDF (max 10MB)
+            Formati: CSV, XLSX, XLS, PDF, Shapefile (.shp + .dbf + .shx), ZIP
           </p>
         </div>
       </div>
 
-      {selectedFile && (
+      {selectedFiles.length > 0 && (
         <Alert className="flex items-start justify-between">
           <div className="flex items-start gap-2 flex-1">
             <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
             <div className="flex-1">
               <AlertDescription>
-                <span className="font-medium">{selectedFile.name}</span>
+                <span className="font-medium">{displayLabel}</span>
                 <span className="text-xs text-gray-500 ml-2">
-                  ({(selectedFile.size / 1024).toFixed(2)} KB)
+                  ({(displaySize / 1024).toFixed(2)} KB)
                 </span>
               </AlertDescription>
             </div>
           </div>
           {!isProcessing && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClearFile}
-              className="h-6 w-6 p-0"
-            >
+            <Button variant="ghost" size="sm" onClick={handleClearFile} className="h-6 w-6 p-0">
               <X className="h-4 w-4" />
             </Button>
           )}

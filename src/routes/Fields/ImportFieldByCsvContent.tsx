@@ -12,7 +12,7 @@ interface ImportFieldByCsvContentProps {
   companies: Company[];
   selectedCompanyId: string;
   onCompanyChange: (value: string) => void;
-  onFileSelect: (file: File) => void;
+  onFileSelect: (files: File[]) => void;
   isProcessing: boolean;
   importErrors: string[];
   importWarnings: string[];

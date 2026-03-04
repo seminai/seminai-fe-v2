@@ -1009,7 +1009,7 @@ export default function NewProductionUnit(): React.ReactElement {
                       Importa da file
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      CSV, XLS, XLSX, PDF (template AGEA)
+                      CSV, XLS, XLSX, PDF, Shapefile, ZIP
                     </p>
                   </div>
                 </button>
@@ -1025,9 +1025,9 @@ export default function NewProductionUnit(): React.ReactElement {
               <div className="py-6">
                 <h3 className="text-lg font-semibold mb-2">Importa da file</h3>
                 <p className="text-sm text-muted-foreground mb-6">
-                  Il sistema supporta il formato del template AGEA della misura
-                  unica. Seleziona l'azienda e carica un file; i dati delle
-                  unità produttive verranno estratti automaticamente.
+                  Supporta il template AGEA (CSV, XLS, XLSX, PDF), Shapefile
+                  (.shp + .dbf + .shx) e ZIP. Seleziona l'azienda e carica un file;
+                  i dati verranno estratti automaticamente.
                 </p>
                 <ProductionUnitCsvImporter
                   embedded

@@ -2,21 +2,16 @@ import * as React from "react";
 import { IoCloudUploadOutline } from "react-icons/io5";
 import { cn } from "@/lib/utils";
 
+const VALID_EXTENSIONS = [".csv", ".xlsx", ".xls", ".pdf", ".shp", ".dbf", ".shx", ".zip"];
+
 interface FileDropZoneProps {
-  onFileSelect: (file: File) => void;
+  onFileSelect: (files: File[]) => void;
   isDisabled: boolean;
 }
 
 function isValidFileType(file: File): boolean {
-  const validTypes = [
-    "text/csv",
-    "application/vnd.ms-excel",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/pdf",
-  ];
-  const validExtensions = [".csv", ".xlsx", ".xls", ".pdf"];
   const extension = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
-  return validTypes.includes(file.type) || validExtensions.includes(extension);
+  return VALID_EXTENSIONS.includes(extension);
 }
 
 export default function FileDropZone({
@@ -30,9 +25,7 @@ export default function FileDropZone({
     (e: React.DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      if (!isDisabled) {
-        setIsDragging(true);
-      }
+      if (!isDisabled) setIsDragging(true);
     },
     [isDisabled],
   );
@@ -53,16 +46,10 @@ export default function FileDropZone({
       e.preventDefault();
       e.stopPropagation();
       setIsDragging(false);
-
       if (isDisabled) return;
 
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        const file = files[0];
-        if (isValidFileType(file)) {
-          onFileSelect(file);
-        }
-      }
+      const valid = Array.from(e.dataTransfer.files).filter(isValidFileType);
+      if (valid.length > 0) onFileSelect(valid);
     },
     [isDisabled, onFileSelect],
   );
@@ -70,17 +57,13 @@ export default function FileDropZone({
   const handleInputChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
-      if (files && files.length > 0) {
-        onFileSelect(files[0]);
-      }
+      if (files && files.length > 0) onFileSelect(Array.from(files));
     },
     [onFileSelect],
   );
 
   const handleClick = React.useCallback(() => {
-    if (!isDisabled && inputRef.current) {
-      inputRef.current.click();
-    }
+    if (!isDisabled && inputRef.current) inputRef.current.click();
   }, [isDisabled]);
 
   return (
@@ -103,7 +86,8 @@ export default function FileDropZone({
       <input
         ref={inputRef}
         type="file"
-        accept=".csv,.xlsx,.xls,.pdf"
+        accept=".csv,.xlsx,.xls,.pdf,.shp,.dbf,.shx,.zip"
+        multiple
         onChange={handleInputChange}
         className="hidden"
         disabled={isDisabled}
@@ -130,11 +114,13 @@ export default function FileDropZone({
         <p className="text-neutral-500 mb-4">
           oppure clicca per selezionare un file
         </p>
-        <div className="flex items-center gap-2 text-sm text-neutral-400">
+        <div className="flex items-center gap-2 text-sm text-neutral-400 flex-wrap justify-center">
           <span className="px-2 py-1 bg-neutral-100 rounded-md">.csv</span>
           <span className="px-2 py-1 bg-neutral-100 rounded-md">.xlsx</span>
           <span className="px-2 py-1 bg-neutral-100 rounded-md">.xls</span>
           <span className="px-2 py-1 bg-neutral-100 rounded-md">.pdf</span>
+          <span className="px-2 py-1 bg-neutral-100 rounded-md">.shp</span>
+          <span className="px-2 py-1 bg-neutral-100 rounded-md">.zip</span>
         </div>
       </div>
     </div>
