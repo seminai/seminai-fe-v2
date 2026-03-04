@@ -133,7 +133,7 @@ export function useDosageAgentChat(
   }, []);
 
   const sendMessage = useCallback(
-    async (message: string, file?: File) => {
+    async (message: string, files?: File[]) => {
       if (!message.trim() || isLoading) {
         return;
       }
@@ -146,10 +146,15 @@ export function useDosageAgentChat(
       setPendingApproval(null);
       resetTransientState();
 
+      const fileLabel =
+        files && files.length > 0
+          ? `\n📎 ${files.map((f) => f.name).join(", ")}`
+          : "";
+
       const userMessage: DosageAgentMessage = {
         id: getNextMessageId("user"),
         role: "user",
-        content: file ? `${message}\n📎 ${file.name}` : message,
+        content: `${message}${fileLabel}`,
         timestamp: new Date(),
       };
 
@@ -180,7 +185,7 @@ export function useDosageAgentChat(
             modelName,
             ...(workspaceId ? { workspaceId } : {}),
           },
-          file,
+          files,
         );
 
         const reader = response.body?.getReader();

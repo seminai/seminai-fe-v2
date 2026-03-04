@@ -154,16 +154,16 @@ class DosageAgentChatApiService {
 
   async streamMessage(
     request: DosageAgentChatRequest,
-    file?: File,
+    files?: File[],
   ): Promise<Response> {
-    const isMultipart = !!file;
+    const hasFiles = files && files.length > 0;
 
     let body: BodyInit;
     const headers: Record<string, string> = {
       Accept: "text/event-stream",
     };
 
-    if (isMultipart) {
+    if (hasFiles) {
       const formData = new FormData();
       formData.append("threadId", request.threadId);
       formData.append("message", request.message);
@@ -171,7 +171,9 @@ class DosageAgentChatApiService {
       if (request.workspaceId)
         formData.append("workspaceId", request.workspaceId);
       if (request.jobId) formData.append("jobId", request.jobId);
-      formData.append("file", file);
+      for (const file of files) {
+        formData.append("files", file);
+      }
       body = formData;
     } else {
       headers["Content-Type"] = "application/json";

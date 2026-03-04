@@ -146,8 +146,10 @@ export default function DosageAgentChat() {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const audioRecorderRef = useRef<AudioRecorderService | null>(null);
-  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const {
     messages,
@@ -216,25 +218,85 @@ export default function DosageAgentChat() {
       messageToSend = `${contextBlock}\n\n${trimmed}`;
     }
 
-    sendMessage(messageToSend, attachedFile ?? undefined);
+    sendMessage(messageToSend, attachedFiles.length > 0 ? attachedFiles : undefined);
     setInput("");
     setContextChips([]);
-    setAttachedFile(null);
+    setAttachedFiles([]);
   };
 
+  const MAX_TOTAL_SIZE = 30 * 1024 * 1024; // 30 MB total
+
+  const addFiles = useCallback((newFiles: File[]) => {
+    setAttachedFiles((prev) => {
+      const combined = [...prev, ...newFiles];
+      const totalSize = combined.reduce((sum, f) => sum + f.size, 0);
+      if (totalSize > MAX_TOTAL_SIZE) {
+        toast.error("File troppo grandi", {
+          description: "La dimensione totale massima consentita e 30 MB",
+        });
+        return prev;
+      }
+      return combined;
+    });
+  }, []);
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
-    if (file.size > MAX_SIZE) {
-      toast.error("File troppo grande", {
-        description: "La dimensione massima consentita e 10 MB",
-      });
-      return;
-    }
-    setAttachedFile(file);
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    addFiles(files);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (folderInputRef.current) folderInputRef.current.value = "";
   };
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      const items = e.dataTransfer.items;
+      if (!items || items.length === 0) {
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length > 0) addFiles(files);
+        return;
+      }
+
+      const entries: FileSystemEntry[] = [];
+      for (let i = 0; i < items.length; i++) {
+        const entry = items[i].webkitGetAsEntry?.();
+        if (entry) entries.push(entry);
+      }
+
+      if (entries.length === 0) {
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length > 0) addFiles(files);
+        return;
+      }
+
+      const collectedFiles: File[] = [];
+      let pending = 0;
+
+      const resolveEntry = (entry: FileSystemEntry) => {
+        if (entry.isFile) {
+          pending++;
+          (entry as FileSystemFileEntry).file((file) => {
+            collectedFiles.push(file);
+            pending--;
+            if (pending === 0) addFiles(collectedFiles);
+          });
+        } else if (entry.isDirectory) {
+          pending++;
+          const reader = (entry as FileSystemDirectoryEntry).createReader();
+          reader.readEntries((subEntries) => {
+            pending--;
+            for (const sub of subEntries) resolveEntry(sub);
+            if (pending === 0 && collectedFiles.length > 0) {
+              addFiles(collectedFiles);
+            }
+          });
+        }
+      };
+
+      for (const entry of entries) resolveEntry(entry);
+    },
+    [addFiles],
+  );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -248,7 +310,7 @@ export default function DosageAgentChat() {
     clearMessages();
     setInput("");
     setContextChips([]);
-    setAttachedFile(null);
+    setAttachedFiles([]);
   };
 
   const handleLoadChat = async (chat: ChatSummary) => {
@@ -455,12 +517,20 @@ export default function DosageAgentChat() {
               ref={fileInputRef}
               type="file"
               className="hidden"
-              accept=".csv,.xlsx,.xls,.json,.txt,.pdf"
+              accept=".csv,.xlsx,.xls,.json,.txt,.pdf,.zip,.shp,.dbf,.shx,.prj,.cpg"
+              multiple
+              onChange={handleFileSelect}
+            />
+            <input
+              ref={folderInputRef}
+              type="file"
+              className="hidden"
+              {...({ webkitdirectory: "", directory: "" } as React.InputHTMLAttributes<HTMLInputElement>)}
               onChange={handleFileSelect}
             />
             <div className="p-4 max-w-3xl mx-auto space-y-3">
-              {/* Context chips + attached file chip */}
-              {(contextChips.length > 0 || attachedFile) && (
+              {/* Context chips + attached files chips */}
+              {(contextChips.length > 0 || attachedFiles.length > 0) && (
                 <div className="flex flex-wrap gap-1.5">
                   {contextChips.map((chip) => (
                     <Tooltip key={chip.id}>
@@ -490,32 +560,71 @@ export default function DosageAgentChat() {
                     </Tooltip>
                   ))}
 
-                  {attachedFile && (
-                    <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-md px-2 py-1 max-w-[250px]">
+                  {attachedFiles.map((file, idx) => (
+                    <div
+                      key={`${file.name}-${idx}`}
+                      className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-md px-2 py-1 max-w-[250px]"
+                    >
                       <Paperclip className="h-3 w-3 text-emerald-500 shrink-0" />
                       <span className="text-xs text-emerald-700 truncate">
-                        {attachedFile.name}
+                        {file.name}
                       </span>
                       <button
                         type="button"
-                        onClick={() => setAttachedFile(null)}
+                        onClick={() =>
+                          setAttachedFiles((prev) =>
+                            prev.filter((_, i) => i !== idx),
+                          )
+                        }
                         className="shrink-0 text-emerald-400 hover:text-emerald-600 transition-colors"
                       >
                         <X className="h-3 w-3" />
                       </button>
                     </div>
-                  )}
+                  ))}
                 </div>
               )}
 
-              <Textarea
-                placeholder="Chiedi all'agronomo AI..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isStreaming}
-                className="min-h-[80px] resize-none text-sm"
-              />
+              <div
+                className={cn(
+                  "relative rounded-md transition-colors",
+                  isDragOver && "ring-2 ring-emerald-400 bg-emerald-50/50",
+                )}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(true);
+                }}
+                onDragEnter={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(true);
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  if (
+                    e.currentTarget.contains(e.relatedTarget as Node)
+                  )
+                    return;
+                  setIsDragOver(false);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(false);
+                  handleDrop(e);
+                }}
+              >
+                <Textarea
+                  placeholder={
+                    isDragOver
+                      ? "Rilascia i file qui..."
+                      : "Chiedi all'agronomo AI..."
+                  }
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={isStreaming}
+                  className="min-h-[80px] resize-none text-sm"
+                />
+              </div>
               <div className="flex items-center justify-end gap-2">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -526,7 +635,7 @@ export default function DosageAgentChat() {
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isStreaming}
                       className={cn(
-                        attachedFile &&
+                        attachedFiles.length > 0 &&
                           "border-emerald-300 bg-emerald-50 text-emerald-600",
                       )}
                     >
@@ -534,6 +643,22 @@ export default function DosageAgentChat() {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">Allega file</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => folderInputRef.current?.click()}
+                      disabled={isStreaming}
+                    >
+                      <span className="text-xs">Cartella</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    Carica cartella (es. shapefile)
+                  </TooltipContent>
                 </Tooltip>
                 <Button
                   type="button"
