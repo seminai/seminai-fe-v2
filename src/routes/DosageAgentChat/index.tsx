@@ -14,6 +14,7 @@ import {
   Bot,
   Cpu,
   ChevronDown,
+  ChevronUp,
   ChevronRight,
   CheckCircle2,
   Circle,
@@ -596,6 +597,8 @@ export default function DosageAgentChat() {
 }
 
 // ─── Downloadable Table ──────────────────────────────────────
+const COLLAPSED_ROW_LIMIT = 5;
+
 function DownloadableTable({ children }: { children: React.ReactNode }) {
   const sourceRef = useRef<HTMLTableElement>(null);
   const [parsed, setParsed] = useState<{
@@ -609,6 +612,7 @@ function DownloadableTable({ children }: { children: React.ReactNode }) {
     col: number;
     dir: "asc" | "desc";
   } | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     const table = sourceRef.current;
@@ -668,8 +672,7 @@ function DownloadableTable({ children }: { children: React.ReactNode }) {
 
   const handleDownload = (format: "csv" | "xlsx") => {
     if (!parsed) return;
-    const rows = getFilteredRows();
-    const data = [parsed.headers, ...rows];
+    const data = [parsed.headers, ...parsed.rows];
     if (format === "csv") {
       const csv = data
         .map((row) =>
@@ -694,6 +697,10 @@ function DownloadableTable({ children }: { children: React.ReactNode }) {
   };
 
   const filteredRows = getFilteredRows();
+  const hasMore = filteredRows.length > COLLAPSED_ROW_LIMIT;
+  const visibleRows = isExpanded
+    ? filteredRows
+    : filteredRows.slice(0, COLLAPSED_ROW_LIMIT);
 
   return (
     <div className="my-3 min-w-0 overflow-x-auto">
@@ -735,7 +742,7 @@ function DownloadableTable({ children }: { children: React.ReactNode }) {
               </tr>
             </thead>
             <tbody>
-              {filteredRows.map((row, i) => (
+              {visibleRows.map((row, i) => (
                 <tr
                   key={i}
                   className="border-b border-slate-100 last:border-b-0"
@@ -762,6 +769,25 @@ function DownloadableTable({ children }: { children: React.ReactNode }) {
               )}
             </tbody>
           </table>
+          {hasMore && (
+            <button
+              type="button"
+              onClick={() => setIsExpanded((v) => !v)}
+              className="flex items-center gap-1 mt-1.5 text-[10px] text-slate-500 hover:text-slate-700 cursor-pointer transition-colors"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="h-3 w-3" />
+                  Chiudi ({filteredRows.length} righe)
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-3 w-3" />
+                  Mostra tutte le {filteredRows.length} righe
+                </>
+              )}
+            </button>
+          )}
           <div className="flex items-center gap-3 mt-1.5">
             <button
               type="button"
