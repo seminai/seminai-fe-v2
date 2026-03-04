@@ -216,12 +216,12 @@ export type CreateProductAndJobResponse = {
 
 export type CreateProductAndJobAsyncResponse = {
   status: "accepted";
-  data: { taskId: string; message: string };
+  data: { jobId: string; message: string };
 };
 
 export type CreateProductAndJobResult =
   | { kind: "sync"; data: CreateProductAndJobResponse }
-  | { kind: "async"; taskId: string; message: string };
+  | { kind: "async"; jobId: string; message: string };
 
 export type JobCreationTaskState =
   | "queued"
@@ -490,7 +490,7 @@ export async function createProductAndJob(
     const asyncBody = jsonData as CreateProductAndJobAsyncResponse;
     return {
       kind: "async",
-      taskId: asyncBody.data.taskId,
+      jobId: asyncBody.data.jobId,
       message: asyncBody.data.message,
     };
   }

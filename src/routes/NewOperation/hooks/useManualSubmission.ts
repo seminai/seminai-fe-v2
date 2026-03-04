@@ -143,7 +143,7 @@ export function useManualSubmission(
             description:
               "Le unità produttive verranno assegnate automaticamente. Segui il progresso nella pagina interventi.",
           });
-          navigate("/job", { state: { pendingTaskId: result.taskId } });
+          navigate("/job", { state: { pendingTaskId: result.jobId } });
         } else {
           await queryClient.invalidateQueries({
             queryKey: ["job-groups-summary"],
