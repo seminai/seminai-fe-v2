@@ -58,6 +58,11 @@ function DrawerProductImportPreview({
     ProductImportRowBuilder.build(products)
   );
 
+  const getRowId = useCallback(
+    (row: Record<string, unknown>) => (row as ProductImportPreviewRow).id,
+    [],
+  );
+
   const columns = useMemo(() => ProductImportColumnsFactory.create(), []);
 
   const handleSave = useCallback(
@@ -259,7 +264,7 @@ function DrawerProductImportPreview({
               onSave={handleSave}
               onDeleteSelected={handleDeleteSelected}
               showDeleteAction={true}
-              getRowId={(row) => (row as ProductImportPreviewRow).id}
+              getRowId={getRowId}
               className="h-full flex flex-col"
             />
           </div>

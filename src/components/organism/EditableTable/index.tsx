@@ -147,6 +147,15 @@ function getChildrenForSlot(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Stable default for getRowId – avoids a new reference on every render
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DEFAULT_GET_ROW_ID = (
+  _row: Record<string, unknown>,
+  index: number,
+): number => index;
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -163,7 +172,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       onAddClick,
       alwaysEdit = false,
       lastComponent,
-      getRowId = (_row, index) => index,
+      getRowId = DEFAULT_GET_ROW_ID,
       onSave,
       onDeleteSelected,
       deleteConfirmDescription,

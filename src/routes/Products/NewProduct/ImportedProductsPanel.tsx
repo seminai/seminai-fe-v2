@@ -197,6 +197,11 @@ export default function ImportedProductsPanel({
     [fitosanitariRecords],
   );
 
+  const getRowId = useCallback(
+    (row: Record<string, unknown>) => (row as ProductImportPreviewRow).id,
+    [],
+  );
+
   const columns = useMemo(() => ProductImportColumnsFactory.create(), []);
 
   useEffect(() => {
@@ -461,7 +466,7 @@ export default function ImportedProductsPanel({
             onSave={handleSave}
             onDeleteSelected={handleDeleteSelected}
             showDeleteAction={true}
-            getRowId={(row) => (row as ProductImportPreviewRow).id}
+            getRowId={getRowId}
             className="h-full flex flex-col"
           />
         </div>

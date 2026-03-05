@@ -41,17 +41,12 @@ import { OperationTable } from "./components/OperationTable";
 import { ImportToolbar } from "./components/ImportToolbar";
 import { AutoConfigPanel } from "./components/AutoConfigPanel";
 import { OperatorsAndMachinesSection } from "@/routes/DosageManager/steps/OperatorsAndMachinesSection";
-import { HistoryTab } from "./components/HistoryTab";
 import { BrogliacciImportDrawer } from "./components/BrogliacciImportDrawer";
-
-type TabView = "manage" | "history";
 
 export default function NewOperation() {
   const navigate = useNavigate();
   const location = useLocation();
   const jobIdFromState = (location.state as { jobId?: string } | null)?.jobId;
-
-  const [activeTab, setActiveTab] = useState<TabView>("manage");
 
   // Auto config state
   const [strategy, setStrategy] = useState<DosageStrategy>("avg");
@@ -311,36 +306,7 @@ export default function NewOperation() {
         {/* Table step */}
         {state.currentStep === "table" && state.operationMode && (
           <div className="p-4 sm:p-6 space-y-4">
-            {/* Tab switcher (only show history tab for automatic) */}
-            {state.operationMode === "automatic" && (
-              <div className="flex items-center gap-1 border-b border-neutral-200">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("manage")}
-                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === "manage"
-                      ? "border-neutral-900 text-neutral-900"
-                      : "border-transparent text-neutral-500 hover:text-neutral-700"
-                  }`}
-                >
-                  Gestisci
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("history")}
-                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === "history"
-                      ? "border-neutral-900 text-neutral-900"
-                      : "border-transparent text-neutral-500 hover:text-neutral-700"
-                  }`}
-                >
-                  Storico
-                </button>
-              </div>
-            )}
-
-            {activeTab === "manage" ? (
-              <div className="space-y-4">
+            <div className="space-y-4">
                 {/* Import toolbar (automatic mode) */}
                 {state.operationMode === "automatic" && (
                   <ImportToolbar
@@ -564,9 +530,6 @@ export default function NewOperation() {
                   </Button>
                 </div>
               </div>
-            ) : (
-              <HistoryTab />
-            )}
           </div>
         )}
       </div>

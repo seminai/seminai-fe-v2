@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { EditableColumn, InternalRow, EditableTableProps } from "../types";
 import { generateTempId, createEmptyRow, validateRow } from "../utils";
 
@@ -60,6 +60,11 @@ export function useTableState(
 ): UseTableStateReturn {
   const { rows: propsRows, columns, getRowId, newRowDefaults, onSave, createMode, onOpenDetails } = props;
 
+  // Keep a stable ref so effects/callbacks always use the latest getRowId
+  // without needing it in dependency arrays (avoids reset on every render).
+  const getRowIdRef = useRef(getRowId);
+  getRowIdRef.current = getRowId;
+
   const [rows, setRows] = useState<InternalRow[]>(() =>
     (propsRows || []).map((r, idx) => ({
       id: String(getRowId ? getRowId(r, idx) : idx),
@@ -81,10 +86,12 @@ export function useTableState(
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerRow, setDrawerRow] = useState<InternalRow | undefined>(undefined);
 
-  // Sync with props.rows
+  // Sync with props.rows (only when the actual data changes, not when
+  // getRowId reference changes — that would reset edits on every render).
   useEffect(() => {
+    const getId = getRowIdRef.current;
     const newRows: InternalRow[] = (propsRows || []).map((r, idx) => ({
-      id: String(getRowId ? getRowId(r, idx) : idx),
+      id: String(getId ? getId(r, idx) : idx),
       data: { ...r },
       isNew: false,
       isDirty: false,
@@ -103,7 +110,8 @@ export function useTableState(
     setTouched({});
     setIsEditMode(false);
     setDrawerRow(updatedDrawerRow);
-  }, [propsRows, getRowId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propsRows]);
 
   const hasDirtyRows = rows.some((r) => r.isDirty);
 
@@ -169,8 +177,9 @@ export function useTableState(
     setIsEditMode((prev) => {
       if (prev) {
         // Exiting edit mode - reset rows
+        const getId = getRowIdRef.current;
         const resetRows: InternalRow[] = (propsRows || []).map((r, idx) => ({
-          id: String(getRowId ? getRowId(r, idx) : idx),
+          id: String(getId ? getId(r, idx) : idx),
           data: { ...r },
           isNew: false,
           isDirty: false,
@@ -181,11 +190,12 @@ export function useTableState(
       }
       return true;
     });
-  }, [propsRows, getRowId]);
+  }, [propsRows]);
 
   const handleCancel = useCallback(() => {
+    const getId = getRowIdRef.current;
     const resetRows: InternalRow[] = (propsRows || []).map((r, idx) => ({
-      id: String(getRowId ? getRowId(r, idx) : idx),
+      id: String(getId ? getId(r, idx) : idx),
       data: { ...r },
       isNew: false,
       isDirty: false,
@@ -196,7 +206,7 @@ export function useTableState(
     setCreateRow(undefined);
     setCreateTouched({});
     setCreateDrawerOpen(false);
-  }, [propsRows, getRowId]);
+  }, [propsRows]);
 
   const handleSave = useCallback(async () => {
     if (!onSave) return;
