@@ -67,7 +67,8 @@ export default function WizardFooter({
   const nextDisabled =
     isNextDisabled ||
     isLoading ||
-    (isProductsStep && productsStepState?.isProductsLoading);
+    (isProductsStep && productsStepState?.isProductsLoading) ||
+    (isProductsStep && !productsStepState?.hasProductsToLoad);
 
   return (
     <div className="bg-white border-t border-neutral-200 py-4 px-6 shadow-sm">
