@@ -213,7 +213,10 @@ export default function DosageAgentChat() {
       <div className="flex h-full w-full overflow-hidden">
         {isMobile ? (
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-            <SheetContent side="left" className="w-[280px] p-0 gap-0">
+            <SheetContent
+              side="left"
+              className="w-[280px] p-0 gap-0 [&>button]:hidden"
+            >
               <SheetTitle className="sr-only">Cronologia chat</SheetTitle>
               {sidebarContent}
             </SheetContent>

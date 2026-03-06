@@ -68,11 +68,9 @@ export function ChatHistorySidebar({
             <Button variant="ghost" size="sm" onClick={onNewChat}>
               <Plus className="h-4 w-4" />
             </Button>
-            {!isMobile && (
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                <PanelLeftClose className="h-4 w-4" />
-              </Button>
-            )}
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <PanelLeftClose className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
