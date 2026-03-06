@@ -484,6 +484,27 @@ export function useDosageAgentChat(
         modelName,
       });
 
+      if (
+        response.status === "REQUIRES_APPROVAL" &&
+        response.pendingToolCalls &&
+        response.pendingToolCalls.length > 0
+      ) {
+        const nextTool = response.pendingToolCalls[0];
+        if (response.message) {
+          appendMessage({
+            id: getNextMessageId("assistant"),
+            role: "assistant",
+            content: response.message,
+            sources: response.sources,
+            timestamp: new Date(),
+          });
+        }
+        setPendingApproval({ toolCall: nextTool });
+        setStreamingStatus("idle");
+        scrollToBottom();
+        return;
+      }
+
       appendMessage({
         id: getNextMessageId("assistant"),
         role: "assistant",
@@ -542,6 +563,27 @@ export function useDosageAgentChat(
           reason,
           modelName,
         });
+
+        if (
+          response.status === "REQUIRES_APPROVAL" &&
+          response.pendingToolCalls &&
+          response.pendingToolCalls.length > 0
+        ) {
+          const nextTool = response.pendingToolCalls[0];
+          if (response.message) {
+            appendMessage({
+              id: getNextMessageId("assistant"),
+              role: "assistant",
+              content: response.message,
+              sources: response.sources,
+              timestamp: new Date(),
+            });
+          }
+          setPendingApproval({ toolCall: nextTool });
+          setStreamingStatus("idle");
+          scrollToBottom();
+          return;
+        }
 
         appendMessage({
           id: getNextMessageId("assistant"),
