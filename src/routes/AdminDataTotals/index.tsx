@@ -10,6 +10,7 @@ import {
   useAdminAccessStatusQuery,
   useAdminDashboardSummaryQuery,
   useAdminDeactivateUserMutation,
+  useAdminReactivateUserMutation,
   useAdminSetUserBlockedMutation,
   useAdminUnlockMutation,
 } from "@/hooks/useAdminDataTotals";
@@ -23,6 +24,7 @@ type PendingAction =
   | { type: "block"; user: AdminUserSummary }
   | { type: "unblock"; user: AdminUserSummary }
   | { type: "deactivate"; user: AdminUserSummary }
+  | { type: "reactivate"; user: AdminUserSummary }
   | null;
 
 function isForbiddenAdminError(error?: AdminApiError | null): boolean {
@@ -54,6 +56,7 @@ export default function AdminDataTotalsPage() {
   const unlockMutation = useAdminUnlockMutation();
   const blockMutation = useAdminSetUserBlockedMutation();
   const deactivateMutation = useAdminDeactivateUserMutation();
+  const reactivateMutation = useAdminReactivateUserMutation();
 
   const isUnlocked =
     Boolean(accessStatusQuery.data?.data.isUnlocked) &&
@@ -130,9 +133,12 @@ export default function AdminDataTotalsPage() {
             ? "Utente bloccato con successo"
             : "Utente sbloccato con successo",
         );
-      } else {
+      } else if (pendingAction.type === "deactivate") {
         await deactivateMutation.mutateAsync({ userId: pendingAction.user.userId });
         toast.success("Utente disattivato con successo");
+      } else {
+        await reactivateMutation.mutateAsync({ userId: pendingAction.user.userId });
+        toast.success("Utente riattivato con successo");
       }
       setPendingAction(null);
     } catch (error) {
@@ -145,6 +151,9 @@ export default function AdminDataTotalsPage() {
   const blockingUserId = blockMutation.isPending ? blockMutation.variables?.userId : undefined;
   const deactivatingUserId = deactivateMutation.isPending
     ? deactivateMutation.variables?.userId
+    : undefined;
+  const reactivatingUserId = reactivateMutation.isPending
+    ? reactivateMutation.variables?.userId
     : undefined;
 
   return (
@@ -202,6 +211,7 @@ export default function AdminDataTotalsPage() {
             selectedUserId={selectedUserId}
             blockingUserId={blockingUserId}
             deactivatingUserId={deactivatingUserId}
+            reactivatingUserId={reactivatingUserId}
             onSelectUser={setSelectedUserId}
             onToggleBlock={(user) =>
               setPendingAction({
@@ -210,6 +220,7 @@ export default function AdminDataTotalsPage() {
               })
             }
             onDeactivate={(user) => setPendingAction({ type: "deactivate", user })}
+            onReactivate={(user) => setPendingAction({ type: "reactivate", user })}
           />
           <AdminUserDetailsDrawer
             user={selectedUser}
@@ -231,7 +242,11 @@ export default function AdminDataTotalsPage() {
         title={getDialogTitle(pendingAction)}
         description={getDialogDescription(pendingAction)}
         confirmLabel={getDialogConfirmLabel(pendingAction)}
-        isSubmitting={blockMutation.isPending || deactivateMutation.isPending}
+        isSubmitting={
+          blockMutation.isPending ||
+          deactivateMutation.isPending ||
+          reactivateMutation.isPending
+        }
         onConfirm={handleConfirmAction}
       />
     </div>
@@ -253,6 +268,7 @@ function getDialogTitle(action: PendingAction): string {
   if (!action) return "";
   if (action.type === "block") return "Bloccare questo utente?";
   if (action.type === "unblock") return "Sbloccare questo utente?";
+  if (action.type === "reactivate") return "Riattivare questo utente?";
   return "Disattivare questo utente?";
 }
 
@@ -264,6 +280,9 @@ function getDialogDescription(action: PendingAction): string {
   if (action.type === "unblock") {
     return `L'utente ${action.user.email} tornerà ad accedere normalmente se non è disattivato.`;
   }
+  if (action.type === "reactivate") {
+    return `L'utente ${action.user.email} verrà riattivato e sbloccato per poter accedere nuovamente alla piattaforma.`;
+  }
   return `L'utente ${action.user.email} verrà disattivato in modo sicuro senza cancellazione fisica dal database.`;
 }
 
@@ -271,5 +290,6 @@ function getDialogConfirmLabel(action: PendingAction): string {
   if (!action) return "";
   if (action.type === "block") return "Blocca utente";
   if (action.type === "unblock") return "Sblocca utente";
+  if (action.type === "reactivate") return "Riattiva utente";
   return "Disattiva utente";
 }

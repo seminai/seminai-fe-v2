@@ -78,6 +78,10 @@ export type AdminDeactivateUserRequest = {
   userId: string;
 };
 
+export type AdminReactivateUserRequest = {
+  userId: string;
+};
+
 async function safeReadText(response: Response): Promise<string> {
   try {
     return await response.text();
@@ -164,6 +168,23 @@ export async function deactivateAdminUser(
 ): Promise<void> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/admin/users/${payload.userId}/deactivate`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    },
+  );
+  if (!response.ok) {
+    throw await parseAdminError(response);
+  }
+}
+
+export async function reactivateAdminUser(
+  payload: AdminReactivateUserRequest,
+  baseUrl: string = BASE_URL,
+): Promise<void> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/admin/users/${payload.userId}/reactivate`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

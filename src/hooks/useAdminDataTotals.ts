@@ -7,8 +7,10 @@ import {
   type AdminApiError,
   type AdminDashboardSummaryResponse,
   type AdminDeactivateUserRequest,
+  type AdminReactivateUserRequest,
   type AdminSetUserBlockedRequest,
   type AdminUnlockRequest,
+  reactivateAdminUser,
   setAdminUserBlockedStatus,
   unlockAdminAccess,
 } from "@/api/admin";
@@ -63,6 +65,16 @@ export function useAdminDeactivateUserMutation() {
   const queryClient = useQueryClient();
   return useMutation<void, AdminApiError, AdminDeactivateUserRequest>({
     mutationFn: (payload) => deactivateAdminUser(payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: adminKeys.summary() });
+    },
+  });
+}
+
+export function useAdminReactivateUserMutation() {
+  const queryClient = useQueryClient();
+  return useMutation<void, AdminApiError, AdminReactivateUserRequest>({
+    mutationFn: (payload) => reactivateAdminUser(payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: adminKeys.summary() });
     },

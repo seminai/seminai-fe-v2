@@ -17,9 +17,11 @@ type AdminUsersTableProps = {
   selectedUserId: string | null;
   blockingUserId?: string;
   deactivatingUserId?: string;
+  reactivatingUserId?: string;
   onSelectUser: (userId: string) => void;
   onToggleBlock: (user: AdminUserSummary) => void;
   onDeactivate: (user: AdminUserSummary) => void;
+  onReactivate: (user: AdminUserSummary) => void;
 };
 
 const dateTimeFormatter = new Intl.DateTimeFormat("it-IT", {
@@ -52,9 +54,11 @@ export function AdminUsersTable({
   selectedUserId,
   blockingUserId,
   deactivatingUserId,
+  reactivatingUserId,
   onSelectUser,
   onToggleBlock,
   onDeactivate,
+  onReactivate,
 }: AdminUsersTableProps) {
   return (
     <Card className="border-slate-200">
@@ -109,7 +113,7 @@ export function AdminUsersTable({
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled={user.isDeactivated || blockingUserId === user.userId}
+                      disabled={blockingUserId === user.userId}
                       onClick={() => onToggleBlock(user)}
                     >
                       {blockingUserId === user.userId
@@ -119,12 +123,24 @@ export function AdminUsersTable({
                           : "Blocca"}
                     </Button>
                     <Button
-                      variant="destructive"
+                      variant={user.isDeactivated ? "outline" : "destructive"}
                       size="sm"
-                      disabled={user.isDeactivated || deactivatingUserId === user.userId}
-                      onClick={() => onDeactivate(user)}
+                      disabled={
+                        user.isDeactivated
+                          ? reactivatingUserId === user.userId
+                          : deactivatingUserId === user.userId
+                      }
+                      onClick={() =>
+                        user.isDeactivated ? onReactivate(user) : onDeactivate(user)
+                      }
                     >
-                      {deactivatingUserId === user.userId ? "..." : "Disattiva"}
+                      {user.isDeactivated
+                        ? reactivatingUserId === user.userId
+                          ? "..."
+                          : "Riattiva"
+                        : deactivatingUserId === user.userId
+                          ? "..."
+                          : "Disattiva"}
                     </Button>
                   </div>
                 </TableCell>
