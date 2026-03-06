@@ -173,7 +173,7 @@ class SidebarVisibilityRules {
       hasCompanies &&
       !onlyCompanyButton &&
       (!restrictedRole || (hasFields && hasProductionUnits));
-    const allowProductsMenu = allowDosageManagerMenu;
+    const allowProductsMenu = hasCompanies && !onlyCompanyButton;
     const allowJobsMenu =
       hasCompanies &&
       !onlyCompanyButton &&
@@ -761,6 +761,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     location.pathname === "/operations" ||
     location.pathname.startsWith("/operations/");
   const dosageAgentChatActive = location.pathname === "/dosage-agent-chat";
+  const dosageAgentChatVisible = true;
 
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -812,7 +813,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   (canViewMenuItem("label", userRole) ||
                     jobVisible ||
                     fieldNotesVisible ||
-                    userRole === UserRole.ADMIN) && (
+                    dosageAgentChatVisible) && (
                     <Collapsible
                       open={toolsMenuOpen}
                       onOpenChange={setToolsMenuOpen}
@@ -897,7 +898,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
                             )}
-                            {userRole === UserRole.ADMIN && (
+                            {dosageAgentChatVisible && (
                               <SidebarMenuItem key="chat">
                                 <SidebarMenuButton
                                   asChild
@@ -1065,7 +1066,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   (canViewMenuItem("label", userRole) ||
                     jobVisible ||
                     fieldNotesVisible ||
-                    userRole === UserRole.ADMIN) && (
+                    dosageAgentChatVisible) && (
                     <SidebarMenuItem key="tools-collapsed">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -1114,7 +1115,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                               Note di Campo
                             </DropdownMenuItem>
                           )}
-                          {userRole === UserRole.ADMIN && (
+                          {dosageAgentChatVisible && (
                             <DropdownMenuItem
                               onClick={() => navigate("/dosage-agent-chat")}
                             >
