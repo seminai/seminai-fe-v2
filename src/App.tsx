@@ -32,6 +32,7 @@ import AcceptInvitation from "./routes/Workspace/AcceptInvitation";
 import BetaTesterAgreement from "./routes/BetaTesterAgreement";
 import BetaTesterAgreementSuccess from "./routes/BetaTesterAgreementSuccess";
 import DosageAgentChat from "./routes/DosageAgentChat";
+import AdminDataTotalsPage from "./routes/AdminDataTotals";
 
 function App() {
   return (
@@ -67,6 +68,7 @@ function App() {
         <Route path="/operations" element={<Operations />} />
         <Route path="/field-notes" element={<FieldNotes />} />
         <Route path="/dosage-agent-chat" element={<DosageAgentChat />} />
+        <Route path="/admin-data-totals" element={<AdminDataTotalsPage />} />
         <Route path="/products" element={<Products />} />
         <Route path="/new-product" element={<NewProduct />} />
         <Route

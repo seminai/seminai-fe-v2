@@ -85,8 +85,11 @@ function canAccessRoute(pathname: string, userRole?: UserRole): boolean {
   }
 
   if (userRole === UserRole.BASIC) {
-    // BASIC cannot access dosage-agent-chat (admin only)
-    if (pathname.startsWith("/dosage-agent-chat")) {
+    // BASIC cannot access admin-only routes
+    if (
+      pathname.startsWith("/dosage-agent-chat") ||
+      pathname.startsWith("/admin-data-totals")
+    ) {
       return false;
     }
     // BASIC can access everything else INCLUDING label routes (read-only)
