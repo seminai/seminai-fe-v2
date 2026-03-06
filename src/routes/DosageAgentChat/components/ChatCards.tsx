@@ -25,6 +25,24 @@ import type {
 import type { PlanStep } from "@/api/dosage-agent-chat";
 import { getToolLabel, DESTRUCTIVE_TOOL_DESCRIPTIONS } from "../constants";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const TOOLS_HIDING_ARGS = new Set(["approve_field_note", "reject_field_note"]);
+
+function hasVisibleArgs(args: Record<string, unknown>): boolean {
+  const keys = Object.keys(args);
+  return keys.length > 0;
+}
+
+function filterSensitiveArgs(args: Record<string, unknown>): Record<string, unknown> {
+  const filtered: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(args)) {
+    if (typeof value === "string" && UUID_REGEX.test(value)) continue;
+    if (key.toLowerCase().endsWith("id") && typeof value === "string") continue;
+    filtered[key] = value;
+  }
+  return filtered;
+}
+
 // ─── Treatment Plan Card ─────────────────────────────────────
 export function TreatmentPlanCard({ plan }: { plan: ActivePlan }) {
   const [isOpen, setIsOpen] = useState(true);
@@ -114,11 +132,18 @@ export function PendingActionCard({
       {destructiveDescription && (
         <p className="text-xs text-amber-700 bg-amber-100 rounded p-2">{destructiveDescription}</p>
       )}
-      {pendingApproval.toolCall.args && Object.keys(pendingApproval.toolCall.args).length > 0 && (
-        <pre className="text-[10px] bg-amber-100 rounded p-2 overflow-x-auto">
-          {JSON.stringify(pendingApproval.toolCall.args, null, 2)}
-        </pre>
-      )}
+      {pendingApproval.toolCall.args
+        && hasVisibleArgs(pendingApproval.toolCall.args)
+        && !TOOLS_HIDING_ARGS.has(toolName)
+        && (() => {
+          const cleaned = filterSensitiveArgs(pendingApproval.toolCall.args);
+          return Object.keys(cleaned).length > 0 ? (
+            <pre className="text-[10px] bg-amber-100 rounded p-2 overflow-x-auto">
+              {JSON.stringify(cleaned, null, 2)}
+            </pre>
+          ) : null;
+        })()
+      }
       {showRejectInput && (
         <Textarea placeholder="Motivo del rifiuto..." value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} className="min-h-[60px] resize-none text-xs bg-white" />
       )}

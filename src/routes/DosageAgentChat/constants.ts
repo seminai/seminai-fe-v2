@@ -31,6 +31,8 @@ export const TOOL_LABELS: Record<string, string> = {
   schedule_alert: "Pianificazione alert",
   plan_task: "Pianificazione task",
   delegate_to_field_note: "Delegazione note campo",
+  approve_field_note: "Salvataggio nota di campo",
+  reject_field_note: "Modifica nota di campo",
   run_conformity_check: "Verifica conformita job",
   confirm_conformity_check: "Conferma correzioni conformita",
 };
@@ -46,4 +48,6 @@ export const DESTRUCTIVE_TOOL_DESCRIPTIONS: Record<string, string> = {
     "Questa azione eseguira il piano di trattamento corrente, creando i job nel sistema.",
   confirm_conformity_check:
     "Questa azione applichera le correzioni di conformita ai job selezionati.",
+  approve_field_note:
+    "Questa azione salvera la nota di campo o il movimento di magazzino nel database. Verifica il riepilogo sopra prima di confermare.",
 };

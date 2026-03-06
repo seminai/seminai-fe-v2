@@ -74,7 +74,6 @@ type MobileBottomBarProps = {
   items: NavigationItem[];
   isMobile: boolean;
   manageVisibility: ManageMenuVisibility;
-  fieldNotesVisible: boolean;
   isActive: (item: NavigationItem) => boolean;
   hrefFor: (item: NavigationItem) => string;
   userRole?: UserRole;
@@ -122,6 +121,7 @@ type ManageMenuVisibility = {
   fields: boolean;
   productionUnit: boolean;
   products: boolean;
+  fieldNotes: boolean;
   jobs: boolean;
   operations: boolean;
 };
@@ -283,6 +283,12 @@ class ManageMenuController {
         icon: icons.getProductsIcon(),
       },
       {
+        key: "fieldNotes",
+        label: "Note di Campo",
+        path: "/field-notes",
+        icon: icons.getFieldNotesIcon(),
+      },
+      {
         key: "operations",
         label: "Qdca",
         path: "/operations",
@@ -314,7 +320,6 @@ function MobileBottomBar({
   isMobile,
   userRole,
   manageVisibility,
-  fieldNotesVisible,
 }: MobileBottomBarProps) {
   if (!isMobile) return null;
 
@@ -328,8 +333,7 @@ function MobileBottomBar({
   const productsActive = location.pathname.startsWith("/products");
   const fieldNotesActive = location.pathname.startsWith("/field-notes");
 
-  const hasManageItems =
-    Object.values(manageVisibility).some(Boolean) || fieldNotesVisible;
+  const hasManageItems = Object.values(manageVisibility).some(Boolean);
 
   const isManageActive =
     companyActive ||
@@ -411,7 +415,6 @@ function MobileBottomBar({
             <MobileManageMenu
               isActive={isManageActive}
               manageVisibility={manageVisibility}
-              fieldNotesVisible={fieldNotesVisible}
             />
           )}
           <MobileAccountMenu />
@@ -424,11 +427,9 @@ function MobileBottomBar({
 function MobileManageMenu({
   manageVisibility,
   isActive,
-  fieldNotesVisible,
 }: {
   manageVisibility: ManageMenuVisibility;
   isActive: boolean;
-  fieldNotesVisible: boolean;
 }) {
   const navigate = useNavigate();
 
@@ -490,7 +491,7 @@ function MobileManageMenu({
               Magazzino
             </DropdownMenuItem>
           )}
-          {fieldNotesVisible && (
+          {manageVisibility.fieldNotes && (
             <DropdownMenuItem onClick={() => navigate("/field-notes")}>
               <NotebookPen className="size-4 mr-2" />
               Note di Campo
@@ -714,6 +715,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       products:
         menuAvailability.allowProductsMenu &&
         canViewMenuItem("products", userRole),
+      fieldNotes: canViewMenuItem("field-notes", userRole),
       jobs: menuAvailability.allowJobsMenu && canViewMenuItem("job", userRole),
       operations:
         menuAvailability.allowJobsMenu &&
@@ -728,7 +730,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     ],
   );
   const jobVisible = manageVisibility.jobs;
-  const fieldNotesVisible = canViewMenuItem("field-notes", userRole);
   const manageMenuController = useMemo(
     () => new ManageMenuController(manageVisibility, sidebarIcons),
     [manageVisibility],
@@ -812,7 +813,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                 {sidebarOpen &&
                   (canViewMenuItem("label", userRole) ||
                     jobVisible ||
-                    fieldNotesVisible ||
                     dosageAgentChatVisible) && (
                     <Collapsible
                       open={toolsMenuOpen}
@@ -879,25 +879,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
                             )}
-                            {fieldNotesVisible && (
-                              <SidebarMenuItem key="field-notes">
-                                <SidebarMenuButton
-                                  asChild
-                                  isActive={fieldNotesActive}
-                                  tooltip="Note di Campo"
-                                  size="lg"
-                                  className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
-                                >
-                                  <Link
-                                    to="/field-notes"
-                                    className="flex items-center gap-3"
-                                  >
-                                    <NotebookPen className="size-5" />
-                                    <span>Note di Campo</span>
-                                  </Link>
-                                </SidebarMenuButton>
-                              </SidebarMenuItem>
-                            )}
                             {dosageAgentChatVisible && (
                               <SidebarMenuItem key="chat">
                                 <SidebarMenuButton
@@ -927,12 +908,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   )}
 
                 {/* Menu Gestisci - solo in modalità espansa */}
-                {sidebarOpen &&
-                  (manageVisibility.company ||
-                    manageVisibility.fields ||
-                    manageVisibility.productionUnit ||
-                    manageVisibility.products ||
-                    manageVisibility.operations) && (
+                {sidebarOpen && hasManageItems && (
                     <Collapsible
                       open={manageMenuOpen}
                       onOpenChange={setManageMenuOpen}
@@ -1033,6 +1009,25 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
                             )}
+                            {manageVisibility.fieldNotes && (
+                              <SidebarMenuItem key="field-notes">
+                                <SidebarMenuButton
+                                  asChild
+                                  isActive={fieldNotesActive}
+                                  tooltip="Note di Campo"
+                                  size="lg"
+                                  className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
+                                >
+                                  <Link
+                                    to="/field-notes"
+                                    className="flex items-center gap-3"
+                                  >
+                                    <NotebookPen className="size-5" />
+                                    <span>Note di Campo</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            )}
                             {manageVisibility.operations && (
                               <SidebarMenuItem key="operations">
                                 <SidebarMenuButton
@@ -1065,7 +1060,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                 {!sidebarOpen &&
                   (canViewMenuItem("label", userRole) ||
                     jobVisible ||
-                    fieldNotesVisible ||
                     dosageAgentChatVisible) && (
                     <SidebarMenuItem key="tools-collapsed">
                       <DropdownMenu>
@@ -1105,14 +1099,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                             <DropdownMenuItem onClick={() => navigate("/job")}>
                               <CheckCircle2 className="size-4 mr-2" size={16} />
                               Operazioni
-                            </DropdownMenuItem>
-                          )}
-                          {fieldNotesVisible && (
-                            <DropdownMenuItem
-                              onClick={() => navigate("/field-notes")}
-                            >
-                              <NotebookPen className="size-4 mr-2" size={16} />
-                              Note di Campo
                             </DropdownMenuItem>
                           )}
                           {dosageAgentChatVisible && (
@@ -1259,7 +1245,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
             items={items}
             isMobile={isMobile}
             manageVisibility={manageVisibility}
-            fieldNotesVisible={fieldNotesVisible}
             isActive={(i) =>
               model.isActive(location.pathname, location.search, i)
             }
