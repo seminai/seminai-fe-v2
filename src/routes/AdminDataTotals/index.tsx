@@ -16,6 +16,7 @@ import {
 import { AdminAccessGate } from "./AdminAccessGate";
 import { AdminSummaryCards } from "./AdminSummaryCards";
 import { AdminUserActionDialog } from "./AdminUserActionDialog";
+import { AdminUserDetailsDrawer } from "./AdminUserDetailsDrawer";
 import { AdminUsersTable } from "./AdminUsersTable";
 
 type PendingAction =
@@ -74,6 +75,9 @@ export default function AdminDataTotalsPage() {
       return haystacks.some((value) => value.toLowerCase().includes(normalizedSearch));
     });
   }, [search, summaryQuery.data?.data.users]);
+  const allUsers = summaryQuery.data?.data.users ?? [];
+  const selectedUser =
+    allUsers.find((user) => user.userId === selectedUserId) ?? null;
 
   if (isLoadingMe || accessStatusQuery.isLoading) {
     return (
@@ -206,6 +210,15 @@ export default function AdminDataTotalsPage() {
               })
             }
             onDeactivate={(user) => setPendingAction({ type: "deactivate", user })}
+          />
+          <AdminUserDetailsDrawer
+            user={selectedUser}
+            open={selectedUser !== null}
+            onOpenChange={(open) => {
+              if (!open) {
+                setSelectedUserId(null);
+              }
+            }}
           />
         </>
       )}

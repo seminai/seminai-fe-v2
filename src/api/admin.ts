@@ -48,6 +48,7 @@ export type AdminUserSummary = {
   totalRelevantCompaniesCount: number;
   jobGroupsCount: number;
   jobsCount: number;
+  unverifiedJobsCount: number;
   companies: AdminUserCompanyMetrics[];
 };
 

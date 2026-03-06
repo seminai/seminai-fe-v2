@@ -104,12 +104,16 @@ export default function ImportedProductsPanel({
   onImportingChange,
 }: ImportedProductsPanelProps) {
   const tableRef = useRef<EditableTableRef>(null);
+  const initialTableRows = useMemo(
+    () => ProductImportRowBuilder.build(products),
+    [products],
+  );
 
   // Step 1: "edit" — EditableTable; Step 2: "review" — ReviewTable
   const [step, setStep] = useState<"edit" | "review">("edit");
 
-  const [tableRows, setTableRows] = useState<ProductImportPreviewRow[]>(() =>
-    ProductImportRowBuilder.build(products),
+  const [tableRows, setTableRows] = useState<ProductImportPreviewRow[]>(
+    initialTableRows,
   );
   const [reviewRows, setReviewRows] = useState<ReviewRowState[]>([]);
 
@@ -131,6 +135,26 @@ export default function ImportedProductsPanel({
   const [deselectedRegistryRowIds, setDeselectedRegistryRowIds] = useState<
     Set<string>
   >(() => new Set());
+
+  const editableTableKey = useMemo(
+    () =>
+      `${importSource}-${products
+        .map(
+          (product, index) =>
+            `${product.name}-${product.registrationNumber ?? ""}-${product.quantity}-${index}`,
+        )
+        .join("|")}`,
+    [importSource, products],
+  );
+
+  useEffect(() => {
+    setTableRows(initialTableRows);
+    setReviewRows([]);
+    setStep("edit");
+    setImportError(null);
+    setSelectProductRowId(null);
+    setDeselectedRegistryRowIds(new Set());
+  }, [initialTableRows]);
 
   useEffect(() => {
     if (step !== "review") return;
@@ -457,6 +481,7 @@ export default function ImportedProductsPanel({
         {/* Tabella editabile */}
         <div className="flex-1 min-h-0 overflow-auto px-4 py-3">
           <EditableTable
+            key={editableTableKey}
             ref={tableRef}
             columns={columns}
             rows={tableRows}

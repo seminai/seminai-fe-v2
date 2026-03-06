@@ -34,10 +34,30 @@ class ImportPreviewDefaults {
   public static readonly fallbackCategory = "PESTICIDE";
 }
 
+function createProductImportRowId(
+  item: ProductImportItem,
+  index: number,
+): string {
+  const identitySeed = [
+    item.name,
+    item.registrationNumber ?? "no-reg",
+    item.ddtCode ?? item.invoiceCode ?? "no-doc",
+    index,
+  ].join("-");
+
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `${identitySeed}-${crypto.randomUUID()}`;
+  }
+
+  return `${identitySeed}-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+}
+
 export class ProductImportRowBuilder {
   public static build(items: ProductImportItem[]): ProductImportPreviewRow[] {
     return items.map((item, index) => ({
-      id: `${item.name}-${item.registrationNumber ?? "no-reg"}-${index}`,
+      id: createProductImportRowId(item, index),
       name: item.name,
       productNameExtracted: item.productNameExtracted ?? null,
       sku: item.sku ?? item.registrationNumber ?? item.name,
