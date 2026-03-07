@@ -28,9 +28,8 @@ class ProductStockCalculator {
 
   public calculateTotalStock(): number {
     return this.stocks.reduce((total, stock) => {
-      return stock.type === "IN"
-        ? total + stock.quantity
-        : total - stock.quantity;
+      const absQuantity = Math.abs(stock.quantity);
+      return stock.type === "IN" ? total + absQuantity : total - absQuantity;
     }, 0);
   }
 
