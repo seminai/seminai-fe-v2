@@ -61,6 +61,7 @@ export default function WizardFooter({
 }: WizardFooterProps): React.ReactElement | null {
   if (currentStep === "completion") return null;
 
+  const isChoosePathStep = currentStep === "choose-path";
   const isProductsStep = currentStep === "products";
   const productsLoading =
     isProductsStep && productsStepState?.isProductsLoading;
@@ -82,25 +83,27 @@ export default function WizardFooter({
           <IoArrowBack className="w-4 h-4" />
           {getBackLabel(currentStep)}
         </Button>
-        <div className="flex items-center gap-2">
-          {currentStep === "products" && onSkip && (
-            <Button
-              variant="ghost"
-              onClick={onSkip}
-              disabled={isLoading || productsLoading}
-              className="text-neutral-500"
-            >
-              Salta
+        {!isChoosePathStep && (
+          <div className="flex items-center gap-2">
+            {isProductsStep && onSkip && (
+              <Button
+                variant="ghost"
+                onClick={onSkip}
+                disabled={isLoading || productsLoading}
+                className="text-neutral-500"
+              >
+                Salta
+              </Button>
+            )}
+            <Button onClick={onNext} disabled={nextDisabled} className="gap-2">
+              {getNextLabel(currentStep, productsStepState)}
+              {currentStep !== "production-units" &&
+                currentStep !== "products" && (
+                  <IoArrowForward className="w-4 h-4" />
+                )}
             </Button>
-          )}
-          <Button onClick={onNext} disabled={nextDisabled} className="gap-2">
-            {getNextLabel(currentStep, productsStepState)}
-            {currentStep !== "production-units" &&
-              currentStep !== "products" && (
-                <IoArrowForward className="w-4 h-4" />
-              )}
-          </Button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

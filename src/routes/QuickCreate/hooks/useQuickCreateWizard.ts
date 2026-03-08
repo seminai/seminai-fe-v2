@@ -6,12 +6,12 @@ import {
   quickCreateApiService,
 } from "@/api/quick-create";
 import { useCompanies } from "@/hooks/useCompanies";
-import type { QuickCreateStep } from "../types";
-import { QUICK_CREATE_STEPS } from "../types";
+import type { QuickCreateStep, QuickCreatePath } from "../types";
 
 export interface QuickCreateWizardState {
   currentStep: QuickCreateStep;
   selectedCompanyId: string;
+  selectedPath: QuickCreatePath | null;
   selectedFile: File | null;
   fieldsData: ExtractedField[];
   productionUnitsData: ExtractedProductionUnit[];
@@ -23,6 +23,7 @@ export interface QuickCreateWizardActions {
   setCurrentStep: (step: QuickCreateStep) => void;
   goNext: () => void;
   goBack: () => void;
+  choosePath: (path: QuickCreatePath) => void;
   setSelectedCompanyId: (id: string) => void;
   setSelectedFile: (file: File | null) => void;
   setFieldsData: (data: ExtractedField[]) => void;
@@ -44,14 +45,15 @@ export interface UseQuickCreateWizardReturn {
   isProcessing: boolean;
 }
 
-const STEP_ORDER: QuickCreateStep[] = QUICK_CREATE_STEPS.map((s) => s.key);
-
 export function useQuickCreateWizard(): UseQuickCreateWizardReturn {
   const navigate = useNavigate();
 
   const [currentStep, setCurrentStep] =
     useState<QuickCreateStep>("company");
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  const [selectedPath, setSelectedPath] = useState<QuickCreatePath | null>(
+    null,
+  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fieldsData, setFieldsData] = useState<ExtractedField[]>([]);
   const [productionUnitsData, setProductionUnitsData] = useState<
@@ -60,27 +62,58 @@ export function useQuickCreateWizard(): UseQuickCreateWizardReturn {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const goNext = useCallback(() => {
-    const idx = STEP_ORDER.indexOf(currentStep);
-    if (idx < STEP_ORDER.length - 1) {
-      setError(null);
-      setCurrentStep(STEP_ORDER[idx + 1]);
-    }
-  }, [currentStep]);
-
   const companiesHook = useCompanies();
 
-  const goBack = useCallback(() => {
-    const idx = STEP_ORDER.indexOf(currentStep);
-    if (idx > 0) {
-      setError(null);
-      setCurrentStep(STEP_ORDER[idx - 1]);
+  const goNext = useCallback(() => {
+    setError(null);
+    switch (currentStep) {
+      case "company":
+        setCurrentStep("choose-path");
+        break;
+      case "choose-path":
+        setCurrentStep(selectedPath === "warehouse" ? "products" : "fields");
+        break;
+      case "fields":
+        setCurrentStep("production-units");
+        break;
+      case "products":
+        setCurrentStep("completion");
+        break;
+      default:
+        break;
     }
-  }, [currentStep]);
+  }, [currentStep, selectedPath]);
+
+  const goBack = useCallback(() => {
+    setError(null);
+    switch (currentStep) {
+      case "choose-path":
+        setCurrentStep("company");
+        break;
+      case "fields":
+        setCurrentStep("choose-path");
+        break;
+      case "production-units":
+        setCurrentStep("fields");
+        break;
+      case "products":
+        setCurrentStep(
+          selectedPath === "warehouse" ? "choose-path" : "production-units",
+        );
+        break;
+      default:
+        break;
+    }
+  }, [currentStep, selectedPath]);
+
+  const choosePath = useCallback((path: QuickCreatePath) => {
+    setError(null);
+    setSelectedPath(path);
+    setCurrentStep(path === "warehouse" ? "products" : "fields");
+  }, []);
 
   /**
    * Step 3 → 4: Bulk-create fields + production units via /onboarding/bulk-create.
-   * Sends the companyId + all fields + all PUs (potentially modified by user) to the backend.
    */
   const savePUs = useCallback(async () => {
     if (!selectedCompanyId) return;
@@ -134,6 +167,7 @@ export function useQuickCreateWizard(): UseQuickCreateWizardReturn {
     state: {
       currentStep,
       selectedCompanyId,
+      selectedPath,
       selectedFile,
       fieldsData,
       productionUnitsData,
@@ -144,6 +178,7 @@ export function useQuickCreateWizard(): UseQuickCreateWizardReturn {
       setCurrentStep,
       goNext,
       goBack,
+      choosePath,
       setSelectedCompanyId,
       setSelectedFile,
       setFieldsData,

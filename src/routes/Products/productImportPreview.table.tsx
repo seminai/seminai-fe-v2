@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 export interface ProductImportPreviewRow extends Record<string, unknown> {
   id: string;
+  sourceFileId?: string | null;
   name: string;
   productNameExtracted?: string | null;
   sku: string;
@@ -58,6 +59,7 @@ export class ProductImportRowBuilder {
   public static build(items: ProductImportItem[]): ProductImportPreviewRow[] {
     return items.map((item, index) => ({
       id: createProductImportRowId(item, index),
+      sourceFileId: item.sourceFileId ?? null,
       name: item.name,
       productNameExtracted: item.productNameExtracted ?? null,
       sku: item.sku ?? item.registrationNumber ?? item.name,
@@ -114,6 +116,7 @@ export class ProductImportRowBuilder {
         registrationNumber: row.registrationNumber || undefined,
         stock: {
           quantity: finalQuantity,
+          sourceFileId: row.sourceFileId ?? undefined,
           unitOfMeasureQuantity: finalUnit,
           price: row.price ?? undefined,
           unitOfMeasurePrice: row.unitOfMeasurePrice ?? undefined,

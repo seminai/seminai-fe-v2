@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { type BulkFieldInput, fieldsApiService } from "@/api/fields";
+import { filesApiService } from "@/api/files";
 import { type Company } from "@/api/companies";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,6 +72,24 @@ export function ImportFieldByCsv({
             selectedCompanyId,
             files[0],
           );
+      const primaryFile =
+        files.find((file) => file.name.toLowerCase().endsWith(".zip")) ??
+        files[0] ??
+        null;
+      let savedFile = null;
+      if (primaryFile) {
+        try {
+          savedFile = await filesApiService.uploadFile({
+            file: primaryFile,
+            companyId: selectedCompanyId,
+            path: "campi/import",
+            type: "field-import",
+          });
+        } catch (error) {
+          console.warn("Field source file upload failed:", error);
+        }
+      }
+      const sourceFileId = savedFile?.data.file.id ?? null;
 
       if (!response.data?.fields || response.data.fields.length === 0) {
         toast.error("Nessun campo estratto dal file");
@@ -81,6 +100,7 @@ export function ImportFieldByCsv({
       const mappedFields: BulkFieldInput[] = response.data.fields.map(
         (field) => ({
           companyId: field.companyId,
+          sourceFileId,
           name: field.name,
           address: field.address || "",
           sezione: field.sezione || "",

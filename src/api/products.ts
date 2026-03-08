@@ -1,4 +1,5 @@
 import { authenticatedHttpClient } from "./http";
+import type { CompanyFile } from "./files";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
 
@@ -12,6 +13,8 @@ async function safeReadText(response: Response): Promise<string> {
 
 export type StockEntry = {
   id: string;
+  sourceFileId?: string | null;
+  sourceFile?: CompanyFile | null;
   quantity: number;
   unitOfMeasureQuantity: string;
   unitOfMeasurePrice?: string | null;
@@ -113,6 +116,7 @@ export type CreateProductPayload = {
   category?: string;
   type?: string;
   stock?: {
+    sourceFileId?: string;
     quantity: number;
     unitOfMeasureQuantity: string;
     price?: number;
@@ -228,6 +232,7 @@ export type InvoiceExtractionResponse = {
 };
 
 export type BulkProductStockPayload = {
+  sourceFileId?: string;
   quantity: number;
   unitOfMeasureQuantity: string;
   price?: number;
@@ -295,6 +300,7 @@ export type ImportFromCsvExcelPayload = {
   file: File;
   companyId: string;
   warehouseId?: string;
+  sourceFileId?: string;
 };
 
 export type ImportFromCsvExcelResponse = {
@@ -682,6 +688,9 @@ export async function importFromCsvExcel(
   if (payload.warehouseId) {
     formData.append("warehouseId", payload.warehouseId);
   }
+  if (payload.sourceFileId) {
+    formData.append("sourceFileId", payload.sourceFileId);
+  }
 
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/products/import-from-csv-excel`,
@@ -717,6 +726,9 @@ export async function importFromCsvExcelPreview(
 
   if (payload.warehouseId) {
     formData.append("warehouseId", payload.warehouseId);
+  }
+  if (payload.sourceFileId) {
+    formData.append("sourceFileId", payload.sourceFileId);
   }
 
   const response = await authenticatedHttpClient.request(

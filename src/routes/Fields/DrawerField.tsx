@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { SourceFilePreviewButton } from "@/components/SourceFilePreviewButton";
 import {
   Select,
   SelectContent,
@@ -391,6 +392,33 @@ export function DrawerFieldContent({
             )}
           </div>
         </div>
+      </div>
+    );
+  };
+
+  const renderSourceDocument = (): React.ReactNode => {
+    return (
+      <div className="border-b border-gray-100 pb-6">
+        <h3 className="text-sm font-medium text-black mb-4">
+          Documento originale
+        </h3>
+        {field.sourceFile ? (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {field.sourceFile.name}
+              </p>
+              <p className="text-xs text-gray-500">
+                File associato all&apos;import del campo
+              </p>
+            </div>
+            <SourceFilePreviewButton file={field.sourceFile} />
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">
+            Nessun documento originale associato a questo campo.
+          </p>
+        )}
       </div>
     );
   };
@@ -949,6 +977,7 @@ export function DrawerFieldContent({
 
       {/* Contenuto */}
       <div className="space-y-6">
+        {renderSourceDocument()}
         {renderGeneralInfo()}
         {renderCadastralData()}
         {renderAgronomicData()}

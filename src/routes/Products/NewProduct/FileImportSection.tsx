@@ -277,7 +277,10 @@ export default function FileImportSection({
 
         const products = new CsvExcelPreviewMapper().map(
           previewResponse.data?.products ?? [],
-        );
+        ).map((product) => ({
+          ...product,
+          sourceFileId: savedFile?.id ?? null,
+        }));
         const errors = previewResponse.data?.errors ?? [];
 
         if (products.length === 0) {
@@ -316,11 +319,10 @@ export default function FileImportSection({
       setPreviewErrors([]);
 
       try {
-        // Upload all files for preview + extract products in parallel
-        const [savedFiles, ddtResponse] = await Promise.all([
-          uploadFilesToCompany(files),
-          productsApiService.importFromDdt(files),
-        ]);
+        const savedFiles = await uploadFilesToCompany(files);
+        const extractionResponses = await Promise.all(
+          files.map((file) => productsApiService.importFromDdt([file])),
+        );
 
         setUploadedFiles(savedFiles);
         setSelectedPreviewFileId((prev) => {
@@ -328,34 +330,37 @@ export default function FileImportSection({
           return savedFiles[0]?.id ?? null;
         });
 
-        if (!ddtResponse.data) {
-          throw new Error("Risposta vuota dal servizio DDT");
-        }
-
-        const allEntries: BulkFromDdtEntry[] = [];
-        if (ddtResponse.data.results) {
-          ddtResponse.data.results.forEach((r) => {
-            allEntries.push(...(r.entries ?? []));
-          });
-        } else if (ddtResponse.data.suggestedProducts) {
-          ddtResponse.data.suggestedProducts.forEach((p) => {
-            allEntries.push({
-              productName: p.productName,
-              productNameExtracted: p.productNameExtracted ?? undefined,
-              registrationNumber: p.registrationNumber ?? undefined,
-              quantity: p.quantity,
-              quantityUnitOfMeasure: p.quantityUnitOfMeasure,
-              quantityConverted: p.quantityConverted ?? undefined,
-              unitMeasureConverted: p.unitMeasureConverted ?? undefined,
-              supplierName: p.supplierName ?? undefined,
-              supplierVat: p.supplierVat ?? undefined,
-              ddtDate: p.ddtDate ?? undefined,
-              orderNumber: p.orderNumber ?? undefined,
+        const products = extractionResponses.flatMap((ddtResponse, index) => {
+          if (!ddtResponse.data) {
+            throw new Error("Risposta vuota dal servizio DDT");
+          }
+          const allEntries: BulkFromDdtEntry[] = [];
+          if (ddtResponse.data.results) {
+            ddtResponse.data.results.forEach((result) => {
+              allEntries.push(...(result.entries ?? []));
             });
-          });
-        }
-
-        const products = new DdtPreviewMapper().map(allEntries);
+          } else if (ddtResponse.data.suggestedProducts) {
+            ddtResponse.data.suggestedProducts.forEach((product) => {
+              allEntries.push({
+                productName: product.productName,
+                productNameExtracted: product.productNameExtracted ?? undefined,
+                registrationNumber: product.registrationNumber ?? undefined,
+                quantity: product.quantity,
+                quantityUnitOfMeasure: product.quantityUnitOfMeasure,
+                quantityConverted: product.quantityConverted ?? undefined,
+                unitMeasureConverted: product.unitMeasureConverted ?? undefined,
+                supplierName: product.supplierName ?? undefined,
+                supplierVat: product.supplierVat ?? undefined,
+                ddtDate: product.ddtDate ?? undefined,
+                orderNumber: product.orderNumber ?? undefined,
+              });
+            });
+          }
+          return new DdtPreviewMapper().map(allEntries).map((product) => ({
+            ...product,
+            sourceFileId: savedFiles[index]?.id ?? null,
+          }));
+        });
         setExtractedProducts(products);
         setImportSource("ddt");
         toast.success(`${products.length} prodotti estratti dai DDT`);
@@ -382,11 +387,10 @@ export default function FileImportSection({
       setPreviewErrors([]);
 
       try {
-        // Upload all files for preview + extract products in parallel
-        const [savedFiles, invoiceResponse] = await Promise.all([
-          uploadFilesToCompany(files),
-          productsApiService.importFromInvoice(files),
-        ]);
+        const savedFiles = await uploadFilesToCompany(files);
+        const extractionResponses = await Promise.all(
+          files.map((file) => productsApiService.importFromInvoice([file])),
+        );
 
         setUploadedFiles(savedFiles);
         setSelectedPreviewFileId((prev) => {
@@ -394,21 +398,26 @@ export default function FileImportSection({
           return savedFiles[0]?.id ?? null;
         });
 
-        if (invoiceResponse.status !== "success" || !invoiceResponse.data) {
-          throw new Error("Errore nell'estrazione dei dati dalla fattura");
-        }
-
-        const products = new InvoicePreviewMapper().map(
-          invoiceResponse.data.suggestedProducts ?? [],
-        );
+        const products = extractionResponses.flatMap((invoiceResponse, index) => {
+          if (invoiceResponse.status !== "success" || !invoiceResponse.data) {
+            throw new Error("Errore nell'estrazione dei dati dalla fattura");
+          }
+          return new InvoicePreviewMapper()
+            .map(invoiceResponse.data.suggestedProducts ?? [])
+            .map((product) => ({
+              ...product,
+              sourceFileId: savedFiles[index]?.id ?? null,
+            }));
+        });
 
         if (products.length === 0) {
           toast.warning("Nessun prodotto trovato nella fattura");
         } else {
           setExtractedProducts(products);
           setImportSource("invoice");
+          const processedFiles = extractionResponses.length;
           toast.success(
-            `${products.length} prodotti estratti da ${invoiceResponse.data.filesProcessed} fattura/e`,
+            `${products.length} prodotti estratti da ${processedFiles} fattura/e`,
           );
         }
       } catch (err) {

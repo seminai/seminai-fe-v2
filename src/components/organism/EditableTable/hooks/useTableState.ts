@@ -247,7 +247,12 @@ export function useTableState(
 
     try {
       await onSave({
-        created: created.map((r) => r.data),
+        // Include the internal id in created rows so that consumers can
+        // use getRowId to assign a unique key when re-rendering the table.
+        // Without this, getRowId returns undefined for all new rows and
+        // they all collapse to id="undefined", causing edits to one row
+        // to be applied to every other newly-created row simultaneously.
+        created: created.map((r) => ({ ...r.data, id: r.id })),
         updated: updated.map((r) => r.data),
       });
 

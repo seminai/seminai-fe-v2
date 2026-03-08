@@ -36,6 +36,7 @@ export interface ProductionUnitCycle {
  * Extracted field data from /onboarding/extract
  */
 export interface ExtractedField {
+  sourceFileId?: string | null;
   name: string;
   nation: string | null;
   region: string | null;

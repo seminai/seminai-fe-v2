@@ -60,6 +60,7 @@ import AddStock from "./AddStock";
 import { useProductDetail } from "@/hooks/useProductDetail";
 import { useCompanyWarehouses } from "@/hooks/useCompanyWarehouses";
 import { Spinner } from "@/components/ui/spinner";
+import { SourceFilePreviewButton } from "@/components/SourceFilePreviewButton";
 
 /** Categorie prodotto: enum Prisma (FERTILIZER, PESTICIDE, SEED, HARVEST, EQUIPMENT, PACKAGING) */
 const PRODUCT_CATEGORIES = [
@@ -1252,16 +1253,30 @@ function DrawerProduct({
                                       </span>
                                     </span>
                                   </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 shrink-0"
-                                    onClick={() => openStockEdit(stock)}
-                                    aria-label="Modifica dati movimento"
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <SourceFilePreviewButton
+                                      file={stock.sourceFile}
+                                      label="Documento"
+                                      className="hidden sm:inline-flex"
+                                    />
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 shrink-0"
+                                      onClick={() => openStockEdit(stock)}
+                                      aria-label="Modifica dati movimento"
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 </div>
+                                {stock.sourceFile && (
+                                  <SourceFilePreviewButton
+                                    file={stock.sourceFile}
+                                    label="Visualizza documento originale"
+                                    className="sm:hidden"
+                                  />
+                                )}
                                 {presenter.hasJob() &&
                                   operationDetails.length > 0 && (
                                     <Accordion type="single" collapsible>

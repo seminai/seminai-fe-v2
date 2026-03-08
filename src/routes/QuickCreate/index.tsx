@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuickCreateWizard } from "./hooks/useQuickCreateWizard";
 import WizardShell from "./components/WizardShell";
 import CompanyStep from "./components/CompanyStep";
+import ChoosePathStep from "./components/ChoosePathStep";
 import FieldsStep from "./components/FieldsStep";
 import ProductionUnitsStep from "./components/ProductionUnitsStep";
 import ProductsStep from "./components/ProductsStep";
@@ -32,24 +33,19 @@ export default function QuickCreatePage(): React.ReactElement {
     }
 
     if (state.currentStep === "fields") {
-      // Just go to PU step — no saving yet
       actions.goNext();
       return;
     }
 
     if (state.currentStep === "production-units") {
-      // Bulk-create fields + PUs via /onboarding/bulk-create
       actions.savePUs();
       return;
     }
 
     if (state.currentStep === "products") {
-      // Trigger the product import/create via the ref (file import or manual form).
-      // On success, onImportCompleted/onProductCreated → onProductsComplete is called automatically.
       if (productsImportRef.current) {
         await productsImportRef.current();
       } else {
-        // No trigger (e.g. still on choice screen) — just complete without loading products
         actions.onProductsComplete();
       }
       return;
@@ -87,8 +83,13 @@ export default function QuickCreatePage(): React.ReactElement {
     >
       {state.currentStep === "company" && <CompanyStep wizard={wizard} />}
 
+      {state.currentStep === "choose-path" && (
+        <ChoosePathStep onChoosePath={actions.choosePath} />
+      )}
+
       {state.currentStep === "fields" && (
         <FieldsStep
+          companyId={state.selectedCompanyId}
           fieldsData={state.fieldsData}
           onFieldsChange={actions.setFieldsData}
           onProductionUnitsExtracted={actions.setProductionUnitsData}

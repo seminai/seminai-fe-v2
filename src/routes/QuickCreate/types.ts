@@ -2,10 +2,13 @@ import type { EditableColumn } from "@/components/organism/EditableTable";
 
 export type QuickCreateStep =
   | "company"
+  | "choose-path"
   | "fields"
   | "production-units"
   | "products"
   | "completion";
+
+export type QuickCreatePath = "full" | "warehouse";
 
 export const QUICK_CREATE_STEPS: Array<{
   key: QuickCreateStep;

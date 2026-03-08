@@ -47,9 +47,11 @@ export default function WizardShell({
           </div>
         ) : (
           <div className="flex flex-col min-h-full p-6">
-            {currentStep !== "company" && currentStep !== "completion" && (
-              <StepperIndicator currentStep={currentStep} />
-            )}
+            {currentStep !== "company" &&
+              currentStep !== "choose-path" &&
+              currentStep !== "completion" && (
+                <StepperIndicator currentStep={currentStep} />
+              )}
             {children}
           </div>
         )}

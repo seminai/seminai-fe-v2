@@ -9,10 +9,12 @@ import type {
   ExtractedProductionUnit,
 } from "@/api/quick-create";
 import { quickCreateApiService } from "@/api/quick-create";
+import { filesApiService } from "@/api/files";
 import FileDropZone from "./FileDropZone";
 import { FIELDS_COLUMNS } from "../types";
 
 interface FieldsStepProps {
+  companyId: string;
   fieldsData: ExtractedField[];
   onFieldsChange: (fields: ExtractedField[]) => void;
   onProductionUnitsExtracted: (pus: ExtractedProductionUnit[]) => void;
@@ -23,6 +25,7 @@ interface FieldsStepProps {
 }
 
 export default function FieldsStep({
+  companyId,
   fieldsData,
   onFieldsChange,
   onProductionUnitsExtracted,
@@ -33,6 +36,11 @@ export default function FieldsStep({
 }: FieldsStepProps): React.ReactElement {
   const [isExtracting, setIsExtracting] = React.useState(false);
   const hasExtractedData = fieldsData.length > 0;
+  const selectPrimarySourceFile = React.useCallback((files: File[]): File | null => {
+    const preferredFile =
+      files.find((file) => file.name.toLowerCase().endsWith(".zip")) ?? files[0];
+    return preferredFile ?? null;
+  }, []);
 
   const handleFileSelect = React.useCallback(
     async (files: File[]) => {
@@ -42,9 +50,29 @@ export default function FieldsStep({
       setIsExtracting(true);
 
       try {
+        const primaryFile = selectPrimarySourceFile(files);
+        let savedFile = null;
+        if (companyId && primaryFile) {
+          try {
+            savedFile = await filesApiService.uploadFile({
+              file: primaryFile,
+              companyId,
+              path: "campi/import",
+              type: "field-import",
+            });
+          } catch (error) {
+            console.warn("Field source file upload failed:", error);
+          }
+        }
         const response = await quickCreateApiService.extractFromFile(files);
+        const sourceFileId = savedFile?.data.file.id ?? null;
 
-        onFieldsChange(response.data.fields);
+        onFieldsChange(
+          response.data.fields.map((field) => ({
+            ...field,
+            sourceFileId,
+          })),
+        );
         onProductionUnitsExtracted(response.data.productionUnits);
       } catch (err) {
         onError(
@@ -56,7 +84,14 @@ export default function FieldsStep({
         setIsExtracting(false);
       }
     },
-    [onFileSelected, onError, onFieldsChange, onProductionUnitsExtracted],
+    [
+      companyId,
+      onFileSelected,
+      onError,
+      onFieldsChange,
+      onProductionUnitsExtracted,
+      selectPrimarySourceFile,
+    ],
   );
 
   const handleFieldsSave = React.useCallback(

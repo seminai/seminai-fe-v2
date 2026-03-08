@@ -6,6 +6,7 @@ export type ImportPreviewError = {
 };
 
 export type ProductImportItem = {
+  sourceFileId?: string | null;
   name: string;
   productNameExtracted?: string | null;
   sku?: string | null;

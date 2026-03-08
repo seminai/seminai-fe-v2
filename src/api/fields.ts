@@ -1,4 +1,5 @@
 import { authenticatedHttpClient } from "./http";
+import type { CompanyFile } from "./files";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -35,6 +36,8 @@ export type Field = {
   id: string;
   companyId: string;
   companyName: string;
+  sourceFileId?: string | null;
+  sourceFile?: CompanyFile | null;
   name: string;
   coordinates: number[];
   latitude: number | null;
@@ -79,6 +82,7 @@ export type FieldsResponse = {
 
 export type BulkFieldInput = {
   companyId: string;
+  sourceFileId?: string | null;
   name: string;
   address: string;
   sezione: string;
@@ -398,6 +402,7 @@ export type FieldExtractionResponse = {
   data: {
     fields: Array<{
       companyId: string;
+      sourceFileId?: string | null;
       name: string;
       coordinates: number[];
       latitude: number | null;
