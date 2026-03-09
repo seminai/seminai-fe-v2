@@ -155,15 +155,15 @@ export function DrawerFieldContent({
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState<Partial<Field>>({
     name: field.name,
-    address: field.address,
+    address: field.address || "",
     city: field.city || "",
     cap: field.cap || "",
     region: field.region || "",
-    foglio: field.foglio,
-    particella: field.particella,
+    foglio: field.foglio || "",
+    particella: field.particella || "",
     subalterno: field.subalterno || "",
-    sezione: field.sezione,
-    superficieCatastaleMq: field.superficieCatastaleMq,
+    sezione: field.sezione || "",
+    superficieCatastaleMq: field.superficieCatastaleMq || 0,
     sauHa: field.sauHa || 0,
     gisHa: field.gisHa || 0,
     soilType: field.soilType || "",
@@ -185,15 +185,15 @@ export function DrawerFieldContent({
     if (!isEditing) {
       setEditedData({
         name: field.name,
-        address: field.address,
+        address: field.address || "",
         city: field.city || "",
         cap: field.cap || "",
         region: field.region || "",
-        foglio: field.foglio,
-        particella: field.particella,
+        foglio: field.foglio || "",
+        particella: field.particella || "",
         subalterno: field.subalterno || "",
-        sezione: field.sezione,
-        superficieCatastaleMq: field.superficieCatastaleMq,
+        sezione: field.sezione || "",
+        superficieCatastaleMq: field.superficieCatastaleMq || 0,
         sauHa: field.sauHa || 0,
         gisHa: field.gisHa || 0,
         soilType: field.soilType || "",
@@ -221,23 +221,23 @@ export function DrawerFieldContent({
 
     // Aggiungi solo i campi modificati
     if (editedData.name !== field.name) updateData.name = editedData.name;
-    if (editedData.address !== field.address)
-      updateData.address = editedData.address;
+    if (editedData.address !== (field.address || ""))
+      updateData.address = editedData.address || null;
     if (editedData.city !== (field.city || ""))
       updateData.city = editedData.city || null;
     if (editedData.cap !== (field.cap || ""))
       updateData.cap = editedData.cap || null;
     if (editedData.region !== (field.region || ""))
       updateData.region = editedData.region || null;
-    if (editedData.foglio !== field.foglio)
-      updateData.foglio = editedData.foglio;
-    if (editedData.particella !== field.particella)
-      updateData.particella = editedData.particella;
+    if (editedData.foglio !== (field.foglio || ""))
+      updateData.foglio = editedData.foglio || null;
+    if (editedData.particella !== (field.particella || ""))
+      updateData.particella = editedData.particella || null;
     if (editedData.subalterno !== (field.subalterno || ""))
       updateData.subalterno = editedData.subalterno || null;
-    if (editedData.sezione !== field.sezione)
-      updateData.sezione = editedData.sezione;
-    if (editedData.superficieCatastaleMq !== field.superficieCatastaleMq)
+    if (editedData.sezione !== (field.sezione || ""))
+      updateData.sezione = editedData.sezione || null;
+    if (editedData.superficieCatastaleMq !== (field.superficieCatastaleMq || 0))
       updateData.superficieCatastaleMq = editedData.superficieCatastaleMq;
     if (editedData.sauHa !== (field.sauHa || 0))
       updateData.sauHa = editedData.sauHa || null;
@@ -274,15 +274,15 @@ export function DrawerFieldContent({
   const handleCancel = (): void => {
     setEditedData({
       name: field.name,
-      address: field.address,
+      address: field.address || "",
       city: field.city || "",
       cap: field.cap || "",
       region: field.region || "",
-      foglio: field.foglio,
-      particella: field.particella,
+      foglio: field.foglio || "",
+      particella: field.particella || "",
       subalterno: field.subalterno || "",
-      sezione: field.sezione,
-      superficieCatastaleMq: field.superficieCatastaleMq,
+      sezione: field.sezione || "",
+      superficieCatastaleMq: field.superficieCatastaleMq || 0,
       sauHa: field.sauHa || 0,
       gisHa: field.gisHa || 0,
       soilType: field.soilType || "",
@@ -343,7 +343,7 @@ export function DrawerFieldContent({
                 placeholder="Indirizzo"
               />
             ) : (
-              <p className="text-sm text-gray-900">{field.address || "-"}</p>
+              <p className="text-sm text-gray-900">{field.address ?? "-"}</p>
             )}
           </div>
           <div>

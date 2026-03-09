@@ -1480,8 +1480,9 @@ export default function NewProductionUnit(): React.ReactElement {
                                       <div className="flex items-center gap-2 text-sm text-gray-600">
                                         <Ruler className="h-4 w-4 flex-shrink-0" />
                                         <span>
-                                          Foglio {baseField.foglio}, Part.{" "}
-                                          {baseField.particella}
+                                          {baseField.foglio || baseField.particella
+                                            ? `Foglio ${baseField.foglio ?? "-"}, Part. ${baseField.particella ?? "-"}`
+                                            : "Senza rif. catastali"}
                                         </span>
                                       </div>
                                     </div>

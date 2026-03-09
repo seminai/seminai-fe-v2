@@ -967,7 +967,9 @@ export const SingleProductionUnitForm: React.FC<
                           </span>
                           <span className="flex items-center gap-1">
                             <Ruler className="h-3 w-3" />
-                            Foglio {field.foglio}, Part. {field.particella}
+                            {field.foglio || field.particella
+                              ? `Foglio ${field.foglio ?? "-"}, Part. ${field.particella ?? "-"}`
+                              : "Senza rif. catastali"}
                           </span>
                         </div>
                         <p className="text-sm text-gray-500 mt-1">
