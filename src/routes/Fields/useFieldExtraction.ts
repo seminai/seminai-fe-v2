@@ -11,6 +11,40 @@ import { toast } from "sonner";
 const POLL_INTERVAL_MS = 5_000;
 const INTERPOLATION_INTERVAL_MS = 1_500;
 const INTERPOLATION_INCREMENT = 0.6;
+const STORAGE_KEY = "field_extraction_pending_job";
+
+interface PendingJob {
+  jobId: string;
+  sourceFileId: string | null;
+  fileName: string;
+  startedAt: number;
+}
+
+function savePendingJob(job: PendingJob): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(job));
+  } catch { /* quota exceeded — ignore */ }
+}
+
+function loadPendingJob(): PendingJob | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PendingJob;
+    const ageMs = Date.now() - parsed.startedAt;
+    if (ageMs > 3_600_000) {
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function clearPendingJob(): void {
+  localStorage.removeItem(STORAGE_KEY);
+}
 
 function mapFieldsToImport(
   fields: ExtractedFieldDto[],
@@ -58,6 +92,7 @@ export interface FieldExtractionState {
   elapsedMs: number;
   errors: string[];
   warnings: string[];
+  pendingJob: PendingJob | null;
 }
 
 interface UseFieldExtractionParams {
@@ -66,14 +101,15 @@ interface UseFieldExtractionParams {
 }
 
 export function useFieldExtraction({ onSuccess, onDone }: UseFieldExtractionParams) {
-  const [state, setState] = useState<FieldExtractionState>({
+  const [state, setState] = useState<FieldExtractionState>(() => ({
     isProcessing: false,
     progress: null,
     message: null,
     elapsedMs: 0,
     errors: [],
     warnings: [],
-  });
+    pendingJob: loadPendingJob(),
+  }));
   const abortControllerRef = useRef<AbortController | null>(null);
   const pollingRef = useRef(false);
   const startTimeRef = useRef<number | null>(null);
@@ -121,7 +157,7 @@ export function useFieldExtraction({ onSuccess, onDone }: UseFieldExtractionPara
   const resetProcessing = useCallback(() => {
     pollingRef.current = false;
     clearTimers();
-    setState((s) => ({ ...s, isProcessing: false, progress: null, message: null, elapsedMs: 0 }));
+    setState((s) => ({ ...s, isProcessing: false, progress: null, message: null, elapsedMs: 0, pendingJob: null }));
   }, [clearTimers]);
 
   const cancel = useCallback(() => {
@@ -134,12 +170,13 @@ export function useFieldExtraction({ onSuccess, onDone }: UseFieldExtractionPara
   const handleResult = useCallback(
     (fields: ExtractedFieldDto[], sourceFileId: string | null, count: number) => {
       clearTimers();
+      clearPendingJob();
       const mapped = mapFieldsToImport(fields, sourceFileId);
       onSuccess(mapped);
       toast.success(
         `${count} camp${count === 1 ? "o estratto" : "i estratti"} con successo`,
       );
-      setState({ isProcessing: false, progress: null, message: null, elapsedMs: 0, errors: [], warnings: [] });
+      setState({ isProcessing: false, progress: null, message: null, elapsedMs: 0, errors: [], warnings: [], pendingJob: null });
       onDone?.();
     },
     [clearTimers, onDone, onSuccess],
@@ -229,7 +266,7 @@ export function useFieldExtraction({ onSuccess, onDone }: UseFieldExtractionPara
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      setState({ isProcessing: true, progress: null, message: null, elapsedMs: 0, errors: [], warnings: [] });
+      setState({ isProcessing: true, progress: null, message: null, elapsedMs: 0, errors: [], warnings: [], pendingJob: null });
 
       try {
         const isShapefile = files.some((f) => {
@@ -264,6 +301,14 @@ export function useFieldExtraction({ onSuccess, onDone }: UseFieldExtractionPara
         setState((s) => ({ ...s, progress: 5, message: "Analisi PDF..." }));
 
         const sourceFileId = await uploadSourceFile(files, companyId);
+
+        savePendingJob({
+          jobId: result.jobId,
+          sourceFileId,
+          fileName: files[0].name,
+          startedAt: Date.now(),
+        });
+
         await pollJobUntilDone(result.jobId, controller.signal, sourceFileId);
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
@@ -277,5 +322,62 @@ export function useFieldExtraction({ onSuccess, onDone }: UseFieldExtractionPara
     [handleSyncResult, pollJobUntilDone, resetProcessing, startTimers, uploadSourceFile],
   );
 
-  return { state, startExtraction, cancel } as const;
+  const recoverPendingJob = useCallback(async () => {
+    const pending = state.pendingJob ?? loadPendingJob();
+    if (!pending) return;
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setState((s) => ({
+      ...s,
+      isProcessing: true,
+      progress: null,
+      message: "Recupero estrazione precedente...",
+      elapsedMs: 0,
+      pendingJob: null,
+    }));
+    startTimers();
+
+    try {
+      const status = await fieldsApiService.getFieldExtractionStatus(
+        pending.jobId, controller.signal,
+      );
+
+      if (status.status === "success") {
+        clearPendingJob();
+        if (status.data.fields.length === 0) {
+          resetProcessing();
+          toast.error("Nessun campo estratto dal file");
+          return;
+        }
+        handleResult(status.data.fields, pending.sourceFileId, status.data.extractedCount);
+        return;
+      }
+
+      if (status.status === "error") {
+        clearPendingJob();
+        resetProcessing();
+        toast.error(status.message || "L'estrazione precedente è fallita");
+        return;
+      }
+
+      toast.info(`Ripresa estrazione "${pending.fileName}"`, {
+        description: "L'operazione è ancora in corso...",
+      });
+      await pollJobUntilDone(pending.jobId, controller.signal, pending.sourceFileId);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      clearPendingJob();
+      resetProcessing();
+      toast.error("Impossibile recuperare l'estrazione precedente");
+    }
+  }, [clearTimers, handleResult, pollJobUntilDone, resetProcessing, startTimers, state.pendingJob]);
+
+  const dismissPendingJob = useCallback(() => {
+    clearPendingJob();
+    setState((s) => ({ ...s, pendingJob: null }));
+  }, []);
+
+  return { state, startExtraction, cancel, recoverPendingJob, dismissPendingJob } as const;
 }

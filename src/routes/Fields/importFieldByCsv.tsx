@@ -45,7 +45,7 @@ export function ImportFieldByCsv({
     }
   }, [embedded, onCloseParentDrawer]);
 
-  const { state, startExtraction, cancel } = useFieldExtraction({
+  const { state, startExtraction, cancel, recoverPendingJob, dismissPendingJob } = useFieldExtraction({
     onSuccess: onImportSuccess,
     onDone: handleDone,
   });
@@ -90,6 +90,9 @@ export function ImportFieldByCsv({
       processingProgress={state.progress}
       processingMessage={state.message}
       processingElapsedMs={state.elapsedMs}
+      pendingJobFileName={state.pendingJob?.fileName}
+      onRecoverPendingJob={recoverPendingJob}
+      onDismissPendingJob={dismissPendingJob}
       importErrors={state.errors}
       importWarnings={state.warnings}
       showSupportForm={showSupportForm}

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AlertCircle, Download } from "lucide-react";
+import { AlertCircle, Download, RotateCcw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -25,6 +25,9 @@ interface ImportFieldByCsvContentProps {
   processingProgress?: number | null;
   processingMessage?: string | null;
   processingElapsedMs?: number;
+  pendingJobFileName?: string | null;
+  onRecoverPendingJob?: () => void;
+  onDismissPendingJob?: () => void;
   importErrors: string[];
   importWarnings: string[];
   showSupportForm: boolean;
@@ -43,6 +46,9 @@ export function ImportFieldByCsvContent({
   processingProgress,
   processingMessage,
   processingElapsedMs = 0,
+  pendingJobFileName,
+  onRecoverPendingJob,
+  onDismissPendingJob,
   importErrors,
   importWarnings,
   showSupportForm,
@@ -63,6 +69,39 @@ export function ImportFieldByCsvContent({
           onChange={onCompanyChange}
         />
       </div>
+
+      {pendingJobFileName && onRecoverPendingJob && !isProcessing && (
+        <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+          <RotateCcw className="h-4 w-4 text-amber-600 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-amber-800">
+              Estrazione precedente disponibile
+            </p>
+            <p className="text-xs text-amber-600 truncate">
+              {pendingJobFileName}
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onDismissPendingJob}
+              className="h-7 text-xs"
+            >
+              Ignora
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={onRecoverPendingJob}
+              className="h-7 text-xs"
+            >
+              Recupera
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Area upload sotto alla selezione azienda */}
       <div
@@ -114,7 +153,11 @@ export function ImportFieldByCsvContent({
           {onCancelProcessing && (
             <button
               type="button"
-              onClick={onCancelProcessing}
+              onClick={() => {
+                if (window.confirm("Sei sicuro di voler annullare? L'estrazione in corso andrà persa, ma potrai recuperarla dalla prossima apertura.")) {
+                  onCancelProcessing();
+                }
+              }}
               className="text-xs text-red-500 hover:text-red-700 underline transition-colors"
             >
               Annulla estrazione
