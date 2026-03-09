@@ -78,18 +78,21 @@ export interface FieldNote {
   operationDate: string; // ISO 8601
   fieldId: string | null;
   fieldName?: string | null;
-  field?: {
-    id: string;
-    name: string;
-    companyId: string;
-    company?: {
-      id: string;
-      name: string;
-    };
-  } | Array<{
-    id: string;
-    name: string;
-  }> | null;
+  field?:
+    | {
+        id: string;
+        name: string;
+        companyId: string;
+        company?: {
+          id: string;
+          name: string;
+        };
+      }
+    | Array<{
+        id: string;
+        name: string;
+      }>
+    | null;
   productionUnitId: string | null;
   productionUnitName?: string | null;
   productionUnit?: {
@@ -266,7 +269,7 @@ class FieldNotesApiService {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(request),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -283,22 +286,25 @@ class FieldNotesApiService {
    */
   async getFieldNotes(filters?: FieldNoteFilters): Promise<FieldNote[]> {
     const params = new URLSearchParams();
-    
+
     if (filters) {
       if (filters.category) params.append("category", filters.category);
       if (filters.status) params.append("status", filters.status);
       if (filters.fieldId) params.append("fieldId", filters.fieldId);
-      if (filters.productionUnitId) params.append("productionUnitId", filters.productionUnitId);
+      if (filters.productionUnitId)
+        params.append("productionUnitId", filters.productionUnitId);
       if (filters.productId) params.append("productId", filters.productId);
       if (filters.startDate) params.append("startDate", filters.startDate);
       if (filters.endDate) params.append("endDate", filters.endDate);
-      if (filters.hasLocation !== undefined) params.append("hasLocation", String(filters.hasLocation));
-      if (filters.hasAttachments !== undefined) params.append("hasAttachments", String(filters.hasAttachments));
+      if (filters.hasLocation !== undefined)
+        params.append("hasLocation", String(filters.hasLocation));
+      if (filters.hasAttachments !== undefined)
+        params.append("hasAttachments", String(filters.hasAttachments));
     }
 
     const queryString = params.toString();
-    const url = queryString 
-      ? `${this.baseUrl}/field-notes?${queryString}` 
+    const url = queryString
+      ? `${this.baseUrl}/field-notes?${queryString}`
       : `${this.baseUrl}/field-notes`;
 
     const response = await authenticatedHttpClient.request(url, {
@@ -329,7 +335,7 @@ class FieldNotesApiService {
         headers: {
           Accept: "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -346,7 +352,7 @@ class FieldNotesApiService {
    */
   async updateFieldNote(
     id: string,
-    request: UpdateFieldNoteRequest
+    request: UpdateFieldNoteRequest,
   ): Promise<FieldNote> {
     const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/field-notes/${id}`,
@@ -357,7 +363,7 @@ class FieldNotesApiService {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(request),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -380,7 +386,7 @@ class FieldNotesApiService {
         headers: {
           Accept: "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -400,7 +406,7 @@ class FieldNotesApiService {
         headers: {
           Accept: "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -415,7 +421,9 @@ class FieldNotesApiService {
   /**
    * Aggiunge un attachment a una field note
    */
-  async addAttachment(request: AddAttachmentRequest): Promise<FieldNoteAttachment> {
+  async addAttachment(
+    request: AddAttachmentRequest,
+  ): Promise<FieldNoteAttachment> {
     const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/field-notes/attachments`,
       {
@@ -425,7 +433,7 @@ class FieldNotesApiService {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(request),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -455,7 +463,7 @@ class FieldNotesApiService {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(request),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -480,7 +488,7 @@ class FieldNotesApiService {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(request),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -505,7 +513,7 @@ class FieldNotesApiService {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(request),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -520,7 +528,9 @@ class FieldNotesApiService {
   /**
    * Ottiene lo stato della conversazione corrente
    */
-  async getConversationState(threadId: string): Promise<ConversationStateResponse> {
+  async getConversationState(
+    threadId: string,
+  ): Promise<ConversationStateResponse> {
     const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/field-note-agent/state/${threadId}`,
       {
@@ -528,7 +538,7 @@ class FieldNotesApiService {
         headers: {
           Accept: "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {

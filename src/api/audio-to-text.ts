@@ -23,7 +23,7 @@ class AudioToTextApiService {
   }
 
   async transcribeAudio(
-    request: TranscribeAudioRequest
+    request: TranscribeAudioRequest,
   ): Promise<AudioTranscriptionResponse> {
     const formData = new FormData();
     formData.append("file", request.file);
@@ -33,7 +33,7 @@ class AudioToTextApiService {
       {
         method: "POST",
         body: formData,
-      }
+      },
     );
 
     if (!response.ok) {

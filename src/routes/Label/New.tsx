@@ -70,13 +70,13 @@ class LabelCsvImporter {
               rowErrors.push(
                 `Riga ${
                   index + 2
-                }: campi obbligatori mancanti (nome prodotto, numero registrazione)`
+                }: campi obbligatori mancanti (nome prodotto, numero registrazione)`,
               );
               return;
             }
 
             parsedItems.push(
-              this.createLabelItem(nameValue, registrationValue)
+              this.createLabelItem(nameValue, registrationValue),
             );
           });
 
@@ -88,8 +88,8 @@ class LabelCsvImporter {
           if (parsedItems.length === 0) {
             reject(
               new Error(
-                "Nessuna etichetta valida trovata. Verifica il formato del file."
-              )
+                "Nessuna etichetta valida trovata. Verifica il formato del file.",
+              ),
             );
             return;
           }
@@ -108,11 +108,14 @@ class LabelCsvImporter {
   }
 
   private normalizeRow(row: LabelCsvRow): Record<string, string> {
-    return Object.entries(row).reduce((acc, [key, value]) => {
-      if (!key) return acc;
-      acc[this.normalizeKey(key)] = (value ?? "").toString();
-      return acc;
-    }, {} as Record<string, string>);
+    return Object.entries(row).reduce(
+      (acc, [key, value]) => {
+        if (!key) return acc;
+        acc[this.normalizeKey(key)] = (value ?? "").toString();
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
   }
 
   private createLabelItem(name: string, regNumber: string): LabelFormItem {
@@ -164,7 +167,7 @@ const buildLabelJobColumns = (): EditableColumn[] =>
       render: (value: unknown) => {
         const state = value as string;
         const getStateLabel = (
-          state: string
+          state: string,
         ): {
           text: string;
           variant: "default" | "secondary" | "destructive" | "outline";
@@ -216,10 +219,10 @@ const buildLabelJobColumns = (): EditableColumn[] =>
         const labelJob = row.labelJob;
         if (state === "completed" && labelJob.result?.results) {
           const successCount = labelJob.result.results.filter(
-            (r) => r.status === "extracted"
+            (r) => r.status === "extracted",
           ).length;
           const failCount = labelJob.result.results.filter(
-            (r) => r.status === "failed"
+            (r) => r.status === "failed",
           ).length;
           return (
             <div className="text-sm">
@@ -321,7 +324,7 @@ export default function NewLabel(): React.ReactElement {
             headers: {
               Accept: "application/json",
             },
-          }
+          },
         );
 
         if (!response.ok) {
@@ -348,7 +351,7 @@ export default function NewLabel(): React.ReactElement {
 
             if (jobData.state === "completed") {
               toast.success(
-                `Job ${jobId.slice(0, 8)}... completato con successo`
+                `Job ${jobId.slice(0, 8)}... completato con successo`,
               );
             } else {
               toast.error(`Job ${jobId.slice(0, 8)}... fallito`);
@@ -361,7 +364,7 @@ export default function NewLabel(): React.ReactElement {
         console.error(`Error polling job ${jobId}:`, error);
       }
     },
-    [BASE_URL, loadJobs]
+    [BASE_URL, loadJobs],
   );
 
   // Initialize IndexedDB and load jobs
@@ -402,7 +405,7 @@ export default function NewLabel(): React.ReactElement {
   // Update active jobs count
   useEffect(() => {
     const activeJobs = jobs.filter(
-      (job) => job.state === "waiting" || job.state === "active"
+      (job) => job.state === "waiting" || job.state === "active",
     );
     setActiveJobsCount(activeJobs.length);
     handleActiveJobsChange(activeJobs.length);
@@ -424,7 +427,7 @@ export default function NewLabel(): React.ReactElement {
     onSuccess: (response) => {
       const { processed, successful, failed } = response.data;
       toast.success(
-        `Elaborazione completata: ${successful}/${processed} successi, ${failed} falliti`
+        `Elaborazione completata: ${successful}/${processed} successi, ${failed} falliti`,
       );
       queryClient.invalidateQueries({ queryKey: ["labels", "summary"] });
       navigate("/label");
@@ -454,7 +457,7 @@ export default function NewLabel(): React.ReactElement {
         {
           method: "POST",
           body: formData,
-        }
+        },
       );
 
       if (!response.ok) {
@@ -517,7 +520,7 @@ export default function NewLabel(): React.ReactElement {
         {
           method: "POST",
           body: formData,
-        }
+        },
       );
 
       if (!response.ok) {
@@ -545,7 +548,7 @@ export default function NewLabel(): React.ReactElement {
         await indexDBManager.saveJob(job);
 
         toast.success(
-          `Job fertilizzanti creato con successo! ID: ${jobId.slice(0, 8)}...`
+          `Job fertilizzanti creato con successo! ID: ${jobId.slice(0, 8)}...`,
         );
 
         // Clear PDF files
@@ -559,7 +562,7 @@ export default function NewLabel(): React.ReactElement {
     },
     onError: (error: Error) => {
       toast.error(
-        `Errore durante l'estrazione PDF (Fertilizzanti): ${error.message}`
+        `Errore durante l'estrazione PDF (Fertilizzanti): ${error.message}`,
       );
     },
   });
@@ -577,10 +580,12 @@ export default function NewLabel(): React.ReactElement {
   const handleItemChange = (
     id: string,
     field: keyof BulkExtractItem,
-    value: string
+    value: string,
   ): void => {
     setItems(
-      items.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      items.map((item) =>
+        item.id === id ? { ...item, [field]: value } : item,
+      ),
     );
   };
 
@@ -609,7 +614,7 @@ export default function NewLabel(): React.ReactElement {
           });
 
           toast.success(
-            `Importazione completata: ${parsedItems.length} etichette aggiunte`
+            `Importazione completata: ${parsedItems.length} etichette aggiunte`,
           );
         })
         .catch((error: unknown) => {
@@ -624,7 +629,7 @@ export default function NewLabel(): React.ReactElement {
           input.value = "";
         });
     },
-    [csvImporter]
+    [csvImporter],
   );
 
   const validatePdfFile = (file: File): boolean => {
@@ -671,7 +676,7 @@ export default function NewLabel(): React.ReactElement {
   };
 
   const handleFileInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ): void => {
     if (e.target.files) {
       handlePdfFiles(e.target.files);
@@ -698,7 +703,7 @@ export default function NewLabel(): React.ReactElement {
 
     if (uploadMode === "manual") {
       const validItems = items.filter(
-        (item) => item.name.trim() !== "" && item.regNumber.trim() !== ""
+        (item) => item.name.trim() !== "" && item.regNumber.trim() !== "",
       );
 
       if (validItems.length === 0) {
@@ -790,7 +795,7 @@ export default function NewLabel(): React.ReactElement {
                   rows={jobs.map((job) => {
                     const successCount =
                       job.result?.results.filter(
-                        (r) => r.status === "extracted"
+                        (r) => r.status === "extracted",
                       ).length || 0;
                     const failCount =
                       job.result?.results.filter((r) => r.status === "failed")
@@ -799,8 +804,8 @@ export default function NewLabel(): React.ReactElement {
                       job.state === "completed"
                         ? `${successCount} successi${failCount > 0 ? ` / ${failCount} falliti` : ""}`
                         : job.state === "failed"
-                        ? job.error || "Errore sconosciuto"
-                        : "-";
+                          ? job.error || "Errore sconosciuto"
+                          : "-";
 
                     const row: LabelJobRow = {
                       id: job.id,
@@ -826,30 +831,29 @@ export default function NewLabel(): React.ReactElement {
                     const labelJob = (row as unknown as LabelJobRow).labelJob;
                     return (
                       <div className="flex justify-end gap-2">
-                        {labelJob.state === "completed" &&
-                          labelJob.result && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                if (!labelJob.result?.results) return;
-                                const successfulExtraction =
-                                  labelJob.result.results.find(
-                                    (r) => r.status === "extracted" && r.labelId
-                                  );
-                                if (
-                                  successfulExtraction &&
-                                  successfulExtraction.labelId
-                                ) {
-                                  const url = `${window.location.origin}/label/${successfulExtraction.labelId}`;
-                                  window.open(url, "_blank");
-                                }
-                              }}
-                            >
-                              <ExternalLink className="h-4 w-4 mr-2" />
-                              Vai all'etichetta
-                            </Button>
-                          )}
+                        {labelJob.state === "completed" && labelJob.result && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (!labelJob.result?.results) return;
+                              const successfulExtraction =
+                                labelJob.result.results.find(
+                                  (r) => r.status === "extracted" && r.labelId,
+                                );
+                              if (
+                                successfulExtraction &&
+                                successfulExtraction.labelId
+                              ) {
+                                const url = `${window.location.origin}/label/${successfulExtraction.labelId}`;
+                                window.open(url, "_blank");
+                              }
+                            }}
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Vai all'etichetta
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -882,322 +886,336 @@ export default function NewLabel(): React.ReactElement {
           <>
             {/* Type Toggle */}
             <div className="mb-6 flex justify-start">
-          <div className="inline-flex p-1 bg-gray-100/80 rounded-xl gap-1 backdrop-blur-sm">
-            <button
-              type="button"
-              onClick={() => setLabelType("fitofarmaci")}
-              disabled={isLoading}
-              className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                labelType === "fitofarmaci"
-                  ? "bg-white shadow-md text-gray-900"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Fitofarmaci
-            </button>
-            <button
-              type="button"
-              onClick={() => setLabelType("fertilizzanti")}
-              disabled={isLoading}
-              className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                labelType === "fertilizzanti"
-                  ? "bg-white shadow-md text-gray-900"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Fertilizzanti
-            </button>
-          </div>
-        </div>
-
-        {/* Mode Toggle - Only for Fitofarmaci */}
-        {labelType === "fitofarmaci" && (
-          <div className="mb-10 flex justify-start">
-            <div className="inline-flex p-1 bg-gray-100/80 rounded-xl gap-1 backdrop-blur-sm">
-              <button
-                type="button"
-                onClick={() => setUploadMode("manual")}
-                disabled={isLoading}
-                className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  uploadMode === "manual"
-                    ? "bg-white shadow-md text-gray-900"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                Carica numero di registrazione e nome
-              </button>
-              <button
-                type="button"
-                onClick={() => setUploadMode("pdf")}
-                disabled={isLoading}
-                className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  uploadMode === "pdf"
-                    ? "bg-white shadow-md text-gray-900"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                Carica PDF etichette
-              </button>
+              <div className="inline-flex p-1 bg-gray-100/80 rounded-xl gap-1 backdrop-blur-sm">
+                <button
+                  type="button"
+                  onClick={() => setLabelType("fitofarmaci")}
+                  disabled={isLoading}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    labelType === "fitofarmaci"
+                      ? "bg-white shadow-md text-gray-900"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Fitofarmaci
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLabelType("fertilizzanti")}
+                  disabled={isLoading}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    labelType === "fertilizzanti"
+                      ? "bg-white shadow-md text-gray-900"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Fertilizzanti
+                </button>
+              </div>
             </div>
-          </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {uploadMode === "manual" ? (
-            <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm">
-              <CardHeader className="pb-6">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <CardTitle className="text-lg font-medium">
-                    Etichette da Processare
-                  </CardTitle>
-                  <div className="flex flex-col gap-2 md:items-end">
-                    <input
-                      ref={csvFileInputRef}
-                      type="file"
-                      accept=".csv"
-                      className="hidden"
-                      onChange={handleCsvFileChange}
-                    />
+            {/* Mode Toggle - Only for Fitofarmaci */}
+            {labelType === "fitofarmaci" && (
+              <div className="mb-10 flex justify-start">
+                <div className="inline-flex p-1 bg-gray-100/80 rounded-xl gap-1 backdrop-blur-sm">
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode("manual")}
+                    disabled={isLoading}
+                    className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      uploadMode === "manual"
+                        ? "bg-white shadow-md text-gray-900"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    Carica numero di registrazione e nome
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode("pdf")}
+                    disabled={isLoading}
+                    className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      uploadMode === "pdf"
+                        ? "bg-white shadow-md text-gray-900"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    Carica PDF etichette
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {uploadMode === "manual" ? (
+                <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm">
+                  <CardHeader className="pb-6">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <CardTitle className="text-lg font-medium">
+                        Etichette da Processare
+                      </CardTitle>
+                      <div className="flex flex-col gap-2 md:items-end">
+                        <input
+                          ref={csvFileInputRef}
+                          type="file"
+                          accept=".csv"
+                          className="hidden"
+                          onChange={handleCsvFileChange}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleCsvImportClick}
+                          disabled={isLoading || isCsvImporting}
+                          className="gap-2 bg-transparent"
+                        >
+                          {isCsvImporting ? (
+                            <>
+                              <Spinner size={14} />
+                              Import in corso...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4" />
+                              Importa da CSV
+                            </>
+                          )}
+                        </Button>
+                        <p className="text-xs text-gray-500">
+                          Colonne richieste: nome prodotto, numero registrazione
+                        </p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {items.map((item) => (
+                      <div
+                        key={item.id}
+                        className={cn(
+                          "flex gap-6 items-start p-6 border border-gray-200/60 rounded-xl bg-gray-50/50 hover:bg-gray-50 transition-colors",
+                          duplicateItemIds.has(item.id) &&
+                            "border-red-300 bg-red-50/80 hover:bg-red-50",
+                        )}
+                      >
+                        <div className="flex-1 grid grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <Label htmlFor={`name-${item.id}`}>
+                              Nome Prodotto{" "}
+                              <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                              id={`name-${item.id}`}
+                              type="text"
+                              placeholder="es. REVOLUTION"
+                              value={item.name}
+                              className={cn(
+                                duplicateItemIds.has(item.id) &&
+                                  "border-red-500 focus-visible:ring-red-500",
+                              )}
+                              onChange={(e) =>
+                                handleItemChange(
+                                  item.id,
+                                  "name",
+                                  e.target.value,
+                                )
+                              }
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`regNumber-${item.id}`}>
+                              Numero Registrazione{" "}
+                              <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                              id={`regNumber-${item.id}`}
+                              type="text"
+                              placeholder="es. 16667"
+                              value={item.regNumber}
+                              className={cn(
+                                duplicateItemIds.has(item.id) &&
+                                  "border-red-500 focus-visible:ring-red-500",
+                              )}
+                              onChange={(e) =>
+                                handleItemChange(
+                                  item.id,
+                                  "regNumber",
+                                  e.target.value,
+                                )
+                              }
+                              required
+                            />
+                            {duplicateItemIds.has(item.id) && (
+                              <p className="text-xs text-red-500">
+                                Etichetta già presente
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveItem(item.id)}
+                          disabled={!canRemove}
+                          className="mt-8"
+                          title={
+                            canRemove
+                              ? "Rimuovi"
+                              : "Almeno un'etichetta richiesta"
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={handleCsvImportClick}
-                      disabled={isLoading || isCsvImporting}
-                      className="gap-2 bg-transparent"
+                      onClick={handleAddItem}
+                      className="w-full h-11 border-dashed border-2 bg-transparent hover:border-gray-400 hover:bg-gray-50"
                     >
-                      {isCsvImporting ? (
-                        <>
-                          <Spinner size={14} />
-                          Import in corso...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-4 w-4" />
-                          Importa da CSV
-                        </>
-                      )}
+                      <Plus className="h-4 w-4 mr-2" />
+                      Aggiungi Etichetta
                     </Button>
-                    <p className="text-xs text-gray-500">
-                      Colonne richieste: nome prodotto, numero registrazione
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm">
+                  <CardHeader className="pb-6">
+                    <CardTitle className="text-lg font-medium">
+                      Carica File PDF
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Drag & Drop Area */}
+                    <div
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={cn(
+                        "border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all",
+                        isDragging
+                          ? "border-primary bg-primary/5 scale-[1.02]"
+                          : "border-gray-300 hover:border-gray-400 hover:bg-gray-50/50",
+                      )}
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="application/pdf"
+                        multiple
+                        onChange={handleFileInputChange}
+                        className="hidden"
+                      />
+                      <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                      <p className="text-lg font-medium mb-2">
+                        Trascina i file PDF qui
+                      </p>
+                      <p className="text-sm text-gray-500 mb-1">
+                        oppure clicca per selezionare i file
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Ogni file può contenere massimo 6 pagine
+                      </p>
+                    </div>
+
+                    {/* File List */}
+                    {pdfFiles.length > 0 && (
+                      <div className="space-y-2">
+                        <Label>File caricati ({pdfFiles.length})</Label>
+                        <div className="space-y-2">
+                          {pdfFiles.map((pdfFile) => (
+                            <div
+                              key={pdfFile.id}
+                              className="flex items-center justify-between p-3 border rounded-lg bg-gray-50"
+                            >
+                              <div className="flex items-center gap-3">
+                                <FileText className="h-5 w-5 text-red-500" />
+                                <div>
+                                  <p className="text-sm font-medium">
+                                    {pdfFile.file.name}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {(pdfFile.file.size / 1024).toFixed(2)} KB
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRemovePdfFile(pdfFile.id)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm">
+                <CardHeader className="pb-6">
+                  <CardTitle className="text-lg font-medium">
+                    Impostazioni
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <Label
+                      htmlFor="concurrency"
+                      className="text-sm font-medium"
+                    >
+                      Concorrenza (numero di elaborazioni parallele)
+                    </Label>
+                    <Input
+                      id="concurrency"
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={concurrency}
+                      onChange={(e) => setConcurrency(Number(e.target.value))}
+                      className="max-w-xs h-11"
+                    />
+                    <p className="text-sm text-gray-500">
+                      Numero di etichette elaborate contemporaneamente (1-10)
                     </p>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    className={cn(
-                      "flex gap-6 items-start p-6 border border-gray-200/60 rounded-xl bg-gray-50/50 hover:bg-gray-50 transition-colors",
-                      duplicateItemIds.has(item.id) &&
-                        "border-red-300 bg-red-50/80 hover:bg-red-50"
-                    )}
-                  >
-                    <div className="flex-1 grid grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor={`name-${item.id}`}>
-                          Nome Prodotto <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id={`name-${item.id}`}
-                          type="text"
-                          placeholder="es. REVOLUTION"
-                          value={item.name}
-                          className={cn(
-                            duplicateItemIds.has(item.id) &&
-                              "border-red-500 focus-visible:ring-red-500"
-                          )}
-                          onChange={(e) =>
-                            handleItemChange(item.id, "name", e.target.value)
-                          }
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`regNumber-${item.id}`}>
-                          Numero Registrazione{" "}
-                          <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id={`regNumber-${item.id}`}
-                          type="text"
-                          placeholder="es. 16667"
-                          value={item.regNumber}
-                          className={cn(
-                            duplicateItemIds.has(item.id) &&
-                              "border-red-500 focus-visible:ring-red-500"
-                          )}
-                          onChange={(e) =>
-                            handleItemChange(
-                              item.id,
-                              "regNumber",
-                              e.target.value
-                            )
-                          }
-                          required
-                        />
-                        {duplicateItemIds.has(item.id) && (
-                          <p className="text-xs text-red-500">
-                            Etichetta già presente
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveItem(item.id)}
-                      disabled={!canRemove}
-                      className="mt-8"
-                      title={
-                        canRemove ? "Rimuovi" : "Almeno un'etichetta richiesta"
-                      }
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                </CardContent>
+              </Card>
 
+              <div className="flex gap-4 justify-end pt-4">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={handleAddItem}
-                  className="w-full h-11 border-dashed border-2 bg-transparent hover:border-gray-400 hover:bg-gray-50"
+                  onClick={() => navigate("/label")}
+                  disabled={isLoading}
+                  className="h-11 px-6 bg-transparent"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Aggiungi Etichetta
+                  Annulla
                 </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm">
-              <CardHeader className="pb-6">
-                <CardTitle className="text-lg font-medium">
-                  Carica File PDF
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Drag & Drop Area */}
-                <div
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={cn(
-                    "border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all",
-                    isDragging
-                      ? "border-primary bg-primary/5 scale-[1.02]"
-                      : "border-gray-300 hover:border-gray-400 hover:bg-gray-50/50"
-                  )}
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="h-11 px-6"
                 >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="application/pdf"
-                    multiple
-                    onChange={handleFileInputChange}
-                    className="hidden"
-                  />
-                  <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-lg font-medium mb-2">
-                    Trascina i file PDF qui
-                  </p>
-                  <p className="text-sm text-gray-500 mb-1">
-                    oppure clicca per selezionare i file
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    Ogni file può contenere massimo 6 pagine
-                  </p>
-                </div>
-
-                {/* File List */}
-                {pdfFiles.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>File caricati ({pdfFiles.length})</Label>
-                    <div className="space-y-2">
-                      {pdfFiles.map((pdfFile) => (
-                        <div
-                          key={pdfFile.id}
-                          className="flex items-center justify-between p-3 border rounded-lg bg-gray-50"
-                        >
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-5 w-5 text-red-500" />
-                            <div>
-                              <p className="text-sm font-medium">
-                                {pdfFile.file.name}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {(pdfFile.file.size / 1024).toFixed(2)} KB
-                              </p>
-                            </div>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRemovePdfFile(pdfFile.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm">
-            <CardHeader className="pb-6">
-              <CardTitle className="text-lg font-medium">
-                Impostazioni
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Label htmlFor="concurrency" className="text-sm font-medium">
-                  Concorrenza (numero di elaborazioni parallele)
-                </Label>
-                <Input
-                  id="concurrency"
-                  type="number"
-                  min={1}
-                  max={10}
-                  value={concurrency}
-                  onChange={(e) => setConcurrency(Number(e.target.value))}
-                  className="max-w-xs h-11"
-                />
-                <p className="text-sm text-gray-500">
-                  Numero di etichette elaborate contemporaneamente (1-10)
-                </p>
+                  {isLoading ? (
+                    <>
+                      <Spinner size={16} className="mr-2" />
+                      Elaborazione in corso...
+                    </>
+                  ) : (
+                    "Avvia Estrazione"
+                  )}
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex gap-4 justify-end pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate("/label")}
-              disabled={isLoading}
-              className="h-11 px-6 bg-transparent"
-            >
-              Annulla
-            </Button>
-            <Button type="submit" disabled={isLoading} className="h-11 px-6">
-              {isLoading ? (
-                <>
-                  <Spinner size={16} className="mr-2" />
-                  Elaborazione in corso...
-                </>
-              ) : (
-                "Avvia Estrazione"
-              )}
-            </Button>
-          </div>
-        </form>
+            </form>
           </>
         )}
       </div>

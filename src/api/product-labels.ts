@@ -46,7 +46,7 @@ export class ProductLabelsApiService {
   }
 
   public async getByProduct(
-    query: ProductLabelQuery
+    query: ProductLabelQuery,
   ): Promise<ProductLabelResponse> {
     const url = new URL(`${this.baseUrl}/labels/by-product`);
     url.searchParams.set("name", query.name);
@@ -76,4 +76,3 @@ export class ProductLabelsApiService {
 }
 
 export const productLabelsApiService = new ProductLabelsApiService(BASE_URL);
-

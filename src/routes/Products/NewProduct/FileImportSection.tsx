@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -128,6 +128,7 @@ export default function FileImportSection({
   const [warehouseId, setWarehouseId] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [panelImporting, setPanelImporting] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // File preview state
   const [uploadedFiles, setUploadedFiles] = useState<CompanyFile[]>([]);
@@ -243,6 +244,12 @@ export default function FileImportSection({
     [uploadFileToCompany],
   );
 
+  const handleCancelProcessing = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setIsProcessing(false);
+  }, []);
+
   const handleCsvFilesSelected = useCallback(
     async (files: File[]) => {
       if (files.length === 0 || !companyId) {
@@ -252,19 +259,22 @@ export default function FileImportSection({
         return;
       }
 
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       const file = files[0];
       setIsProcessing(true);
       setPreviewErrors([]);
 
       try {
-        // Upload to company files + extract products in parallel
         const [savedFile, previewResponse] = await Promise.all([
           uploadFileToCompany(file),
           productsApiService.importFromCsvExcelPreview({
             file,
             companyId,
             warehouseId: warehouseId || warehouses[0]?.id || undefined,
-          }),
+          }, controller.signal),
         ]);
 
         if (savedFile) {
@@ -297,6 +307,7 @@ export default function FileImportSection({
           toast.success(`${products.length} prodotti estratti dal file`);
         }
       } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         const msg = err instanceof Error ? err.message : "Errore";
         toast.error(msg);
       } finally {
@@ -315,13 +326,17 @@ export default function FileImportSection({
         return;
       }
 
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       setIsProcessing(true);
       setPreviewErrors([]);
 
       try {
         const savedFiles = await uploadFilesToCompany(files);
         const extractionResponses = await Promise.all(
-          files.map((file) => productsApiService.importFromDdt([file])),
+          files.map((file) => productsApiService.importFromDdt([file], controller.signal)),
         );
 
         setUploadedFiles(savedFiles);
@@ -365,6 +380,7 @@ export default function FileImportSection({
         setImportSource("ddt");
         toast.success(`${products.length} prodotti estratti dai DDT`);
       } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         const msg = err instanceof Error ? err.message : "Errore DDT";
         toast.error(msg);
       } finally {
@@ -383,13 +399,17 @@ export default function FileImportSection({
         return;
       }
 
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       setIsProcessing(true);
       setPreviewErrors([]);
 
       try {
         const savedFiles = await uploadFilesToCompany(files);
         const extractionResponses = await Promise.all(
-          files.map((file) => productsApiService.importFromInvoice([file])),
+          files.map((file) => productsApiService.importFromInvoice([file], controller.signal)),
         );
 
         setUploadedFiles(savedFiles);
@@ -421,6 +441,7 @@ export default function FileImportSection({
           );
         }
       } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         const msg =
           err instanceof Error ? err.message : "Errore estrazione fattura";
         toast.error(msg);
@@ -744,6 +765,7 @@ export default function FileImportSection({
                       ? handleInvoiceFilesSelected
                       : handleDdtFilesSelected
                 }
+                onCancel={handleCancelProcessing}
               />
               {!companyId && (
                 <Alert className="mt-4 border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">

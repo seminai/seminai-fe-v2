@@ -16,7 +16,7 @@ class FieldNoteAttachmentsApiService {
   }
 
   async uploadAttachment(
-    request: UploadFieldNoteAttachmentRequest
+    request: UploadFieldNoteAttachmentRequest,
   ): Promise<FieldNoteAttachment> {
     const formData = new FormData();
     formData.append("fieldNoteId", request.fieldNoteId);
@@ -27,7 +27,7 @@ class FieldNoteAttachmentsApiService {
       {
         method: "POST",
         body: formData,
-      }
+      },
     );
 
     if (!response.ok) {

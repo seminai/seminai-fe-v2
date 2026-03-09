@@ -51,6 +51,7 @@ import {
   MessageCircle,
   NotebookPen,
   Plug,
+  Plus,
   Settings2,
   Sprout,
   Tags,
@@ -789,6 +790,25 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           <SidebarGroup className="py-2">
             <SidebarGroupContent>
               <SidebarMenu className="gap-1.5">
+                {/* Crea rapido - solo per ruoli che vedono la dashboard generale */}
+                {canViewMenuItem("dashboard", userRole) &&
+                  userRole !== UserRole.LABEL_MANAGER && (
+                    <SidebarMenuItem key="quick-create">
+                      <SidebarMenuButton
+                        asChild
+                        tooltip="Crea rapido"
+                        size="lg"
+                        className="p-0 w-10 h-10 rounded-xl bg-neutral-200/80 hover:bg-neutral-300/80 text-neutral-800 data-[active=false]:bg-neutral-200/80"
+                      >
+                        <Link
+                          to="/create-company-field-production"
+                          className="flex items-center justify-center h-10 w-10 rounded-xl shrink-0 group-data-[collapsible=icon]:w-10"
+                        >
+                          <Plus className="size-5" />
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
                 {/* Dashboard */}
                 {canViewMenuItem("dashboard", userRole) && (
                   <SidebarMenuItem key="dashboard">

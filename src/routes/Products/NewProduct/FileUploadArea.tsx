@@ -9,11 +9,20 @@ const DDT_ACCEPT =
 const INVOICE_ACCEPT =
   ".pdf,.xml,image/png,image/jpeg,image/jpg,.png,.jpg,.jpeg";
 
+export interface FileUploadProgress {
+  readonly phase: string;
+  readonly progress: number;
+  readonly message: string;
+  readonly elapsedMs: number;
+}
+
 interface FileUploadAreaProps {
   mode: "csv" | "ddt" | "invoice";
   disabled?: boolean;
   isProcessing?: boolean;
+  processingProgress?: FileUploadProgress | null;
   onConfirmExtraction: (files: File[]) => void;
+  onCancel?: () => void;
 }
 
 class FileTypeValidator {
@@ -53,11 +62,20 @@ class FileTypeValidator {
   }
 }
 
+function formatElapsedCompact(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}m ${seconds % 60}s`;
+}
+
 export default function FileUploadArea({
   mode,
   disabled,
   isProcessing,
+  processingProgress,
   onConfirmExtraction,
+  onCancel,
 }: FileUploadAreaProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -175,7 +193,44 @@ export default function FileUploadArea({
 
   return (
     <div className="space-y-3">
-      {/* Drop zone */}
+      {/* Processing state — shown outside the drop zone so pointer-events work */}
+      {isProcessing ? (
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center opacity-80">
+          <div className="space-y-3 py-2">
+            <Spinner size={36} ariaLabel="Elaborazione file" />
+            {processingProgress ? (
+              <>
+                <p className="text-sm font-medium text-gray-700">
+                  {processingProgress.message || "Elaborazione in corso..."}
+                </p>
+                <div className="w-48 mx-auto bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="h-full bg-agri-green-600 rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${Math.min(processingProgress.progress, 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-400">
+                  {Math.round(processingProgress.progress)}% &middot; {formatElapsedCompact(processingProgress.elapsedMs)}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-gray-600">
+                Estrazione in corso... Potrebbe richiedere alcuni secondi.
+              </p>
+            )}
+            {onCancel && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onCancel}
+              >
+                Annulla
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : (
+      /* Drop zone — only rendered when NOT processing */
       <div
         className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-all ${
           hasFiles
@@ -183,7 +238,7 @@ export default function FileUploadArea({
             : dragActive
               ? "border-primary bg-primary/5"
               : "border-gray-300 hover:border-gray-400"
-        } ${disabled || isProcessing ? "opacity-50 pointer-events-none" : ""}`}
+        } ${disabled ? "opacity-50 pointer-events-none" : ""}`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
@@ -196,41 +251,31 @@ export default function FileUploadArea({
           multiple={supportsMultiple}
           onChange={handleInputChange}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          disabled={disabled || isProcessing}
+          disabled={disabled}
         />
 
         <div className="space-y-2">
-          {isProcessing ? (
-            <>
-              <Spinner size={36} ariaLabel="Elaborazione file" />
-              <p className="text-sm text-gray-600">
-                Estrazione in corso... Potrebbe richiedere alcuni secondi.
-              </p>
-            </>
-          ) : (
-            <>
-              <Upload className="h-8 w-8 text-gray-400 mx-auto" />
-              <p className="text-sm font-medium text-gray-700">
-                {mode === "csv"
-                  ? "Trascina qui il file CSV o Excel"
-                  : mode === "invoice"
-                    ? "Trascina qui le fatture (PDF, XML o immagini)"
-                    : "Trascina qui i file DDT (PDF o immagini)"}
-              </p>
-              <p className="text-xs text-gray-500">
-                oppure clicca per selezionare
-              </p>
-              <p className="text-xs text-gray-400">
-                {mode === "csv"
-                  ? "Formati: CSV, XLS, XLSX"
-                  : mode === "invoice"
-                    ? "Formati: PDF, XML, PNG, JPG, JPEG (max 10 file)"
-                    : "Formati: PDF, PNG, JPG, JPEG (max 10 file)"}
-              </p>
-            </>
-          )}
+            <Upload className="h-8 w-8 text-gray-400 mx-auto" />
+            <p className="text-sm font-medium text-gray-700">
+              {mode === "csv"
+                ? "Trascina qui il file CSV o Excel"
+                : mode === "invoice"
+                  ? "Trascina qui le fatture (PDF, XML o immagini)"
+                  : "Trascina qui i file DDT (PDF o immagini)"}
+            </p>
+            <p className="text-xs text-gray-500">
+              oppure clicca per selezionare
+            </p>
+            <p className="text-xs text-gray-400">
+              {mode === "csv"
+                ? "Formati: CSV, XLS, XLSX"
+                : mode === "invoice"
+                  ? "Formati: PDF, XML, PNG, JPG, JPEG (max 10 file)"
+                  : "Formati: PDF, PNG, JPG, JPEG (max 10 file)"}
+            </p>
         </div>
       </div>
+      )}
 
       {error && <p className="text-xs text-red-600">{error}</p>}
 

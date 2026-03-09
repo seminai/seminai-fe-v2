@@ -3,106 +3,89 @@ import authService from "@/utils/auth";
 
 const SERVER_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
 
-/**
- * Tipo per un log evento ricevuto dal socket
- */
-export interface DosageLogEvent {
-  jobId: string;
-  userId: string;
-  timestamp: string;
-  type: "match" | "info" | "warning" | "error" | "progress" | "complete";
+export type ExtractionPhase =
+  | "validating"
+  | "parsing_pdf"
+  | "parsing_csv"
+  | "parsing_shapefile"
+  | "extracting_fields"
+  | "extracting_production_units"
+  | "finalizing"
+  | "completed";
+
+export interface ExtractionProgressEvent {
+  version: number;
+  phase: ExtractionPhase;
+  progress: number;
   message: string;
-  metadata?: {
-    productName?: string;
-    productId?: string;
-    unitId?: string;
-    quantity?: number;
-    [key: string]: unknown;
-  };
+  updatedAt: string;
 }
 
-/**
- * Stato della connessione socket
- */
+export interface ExtractionCompletedEvent {
+  version: number;
+  jobId: string;
+  resultReady: boolean;
+}
+
+export interface ExtractionFailedEvent {
+  version: number;
+  jobId: string;
+  errorCode: string;
+  message: string;
+}
+
 export type SocketConnectionState =
   | "disconnected"
   | "connecting"
   | "connected"
   | "error";
 
-/**
- * Callback per eventi del socket
- */
-export interface DosageSocketCallbacks {
+export interface ExtractionSocketCallbacks {
   onConnect?: () => void;
   onDisconnect?: () => void;
   onError?: (error: Error) => void;
-  onJoined?: (room: string) => void;
-  onLog?: (event: DosageLogEvent) => void;
+  onProgress?: (event: ExtractionProgressEvent) => void;
+  onCompleted?: (event: ExtractionCompletedEvent) => void;
+  onFailed?: (event: ExtractionFailedEvent) => void;
 }
 
-/**
- * Servizio per gestire la connessione socket ai dosage jobs
- */
-class DosageJobSocketService {
+class ExtractionJobSocketService {
   private socket: Socket | null = null;
   private currentJobId: string | null = null;
-  private callbacks: DosageSocketCallbacks = {};
+  private callbacks: ExtractionSocketCallbacks = {};
   private connectionState: SocketConnectionState = "disconnected";
 
-  /**
-   * Ottiene lo stato corrente della connessione
-   */
   public getConnectionState(): SocketConnectionState {
     return this.connectionState;
   }
 
-  /**
-   * Verifica se il socket è connesso
-   */
   public isConnected(): boolean {
     return this.socket?.connected ?? false;
   }
 
-  /**
-   * Connette al socket e si unisce alla room del job specificato
-   */
-  public connect(jobId: string, callbacks: DosageSocketCallbacks): void {
-    // Se già connesso allo stesso job, non fare nulla
+  public connect(jobId: string, callbacks: ExtractionSocketCallbacks): void {
     if (this.socket?.connected && this.currentJobId === jobId) {
       return;
     }
-
-    // Disconnetti da eventuali connessioni precedenti
     this.disconnect();
 
-    // Prova a ottenere il token dalla memoria (impostato al login)
-    // Se non disponibile (es. page refresh), prova a connettersi con withCredentials
     const attemptConnection = (retryCount = 0): void => {
       const token = authService.getAuthToken();
-
-      // Se non c'è token in memoria e abbiamo ancora tentativi, riprova
-      // (il token potrebbe non essere ancora stato impostato subito dopo il login)
       if (!token && retryCount < 3) {
         setTimeout(
-          () => {
-            attemptConnection(retryCount + 1);
-          },
+          () => attemptConnection(retryCount + 1),
           100 * (retryCount + 1),
-        ); // Delay crescente: 100ms, 200ms, 300ms
+        );
         return;
       }
 
-      // Procedi con la connessione
       this.callbacks = callbacks;
       this.currentJobId = jobId;
       this.connectionState = "connecting";
 
-      // Configura Socket.IO con token (se disponibile) o solo withCredentials
-      // Il backend dovrebbe supportare entrambi i metodi di autenticazione
       this.socket = io(SERVER_URL, {
         ...(token ? { auth: { token } } : {}),
-        withCredentials: true, // Invia cookie httpOnly come fallback
+        withCredentials: true,
         transports: ["websocket", "polling"],
       });
 
@@ -112,17 +95,12 @@ class DosageJobSocketService {
     attemptConnection();
   }
 
-  /**
-   * Configura i listener per gli eventi del socket
-   */
   private setupEventListeners(): void {
     if (!this.socket) return;
 
     this.socket.on("connect", () => {
       this.connectionState = "connected";
       this.callbacks.onConnect?.();
-
-      // Join alla room del job
       if (this.currentJobId) {
         this.socket?.emit("join:job", this.currentJobId);
       }
@@ -138,18 +116,22 @@ class DosageJobSocketService {
       this.callbacks.onDisconnect?.();
     });
 
-    this.socket.on("joined:job", (data: { room: string }) => {
-      this.callbacks.onJoined?.(data.room);
+    this.socket.on("extraction:progress", (event: ExtractionProgressEvent) => {
+      this.callbacks.onProgress?.(event);
     });
 
-    this.socket.on("dosage:log", (event: DosageLogEvent) => {
-      this.callbacks.onLog?.(event);
+    this.socket.on(
+      "extraction:completed",
+      (event: ExtractionCompletedEvent) => {
+        this.callbacks.onCompleted?.(event);
+      },
+    );
+
+    this.socket.on("extraction:failed", (event: ExtractionFailedEvent) => {
+      this.callbacks.onFailed?.(event);
     });
   }
 
-  /**
-   * Disconnette dal socket e dalla room corrente
-   */
   public disconnect(): void {
     if (this.socket) {
       this.socket.removeAllListeners();
@@ -161,12 +143,9 @@ class DosageJobSocketService {
     this.callbacks = {};
   }
 
-  /**
-   * Ottiene l'ID del job correntemente connesso
-   */
   public getCurrentJobId(): string | null {
     return this.currentJobId;
   }
 }
 
-export const dosageJobSocketService = new DosageJobSocketService();
+export const extractionJobSocketService = new ExtractionJobSocketService();

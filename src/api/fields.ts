@@ -304,16 +304,25 @@ class FieldsApiService {
 
   public async startJobFieldExtraction(
     companyId: string,
-    file: File
-  ): Promise<FieldExtractionResponse> {
-    return await startJobFieldExtraction(companyId, file, this.baseUrl);
+    file: File,
+    signal?: AbortSignal,
+  ): Promise<StartFieldExtractionResult> {
+    return await startJobFieldExtraction(companyId, file, this.baseUrl, signal);
+  }
+
+  public async getFieldExtractionStatus(
+    jobId: string,
+    signal?: AbortSignal,
+  ): Promise<FieldExtractionStatusResponse> {
+    return await getFieldExtractionStatus(jobId, this.baseUrl, signal);
   }
 
   public async extractFromFiles(
     companyId: string,
-    files: File[]
+    files: File[],
+    signal?: AbortSignal,
   ): Promise<FieldExtractionResponse> {
-    return await extractFieldsFromFiles(companyId, files, this.baseUrl);
+    return await extractFieldsFromFiles(companyId, files, this.baseUrl, signal);
   }
 }
 
@@ -397,62 +406,92 @@ export async function getFieldsAvailability(
   return (await response.json()) as FieldsAvailabilityResponse;
 }
 
+export type ExtractedFieldDto = {
+  companyId: string;
+  sourceFileId?: string | null;
+  name: string;
+  coordinates: number[];
+  latitude: number | null;
+  longitude: number | null;
+  polygon: Record<string, unknown> | unknown[] | null;
+  gisHa: number | null;
+  sauHa: number | null;
+  ph: number | null;
+  nitrogen: number | null;
+  phosphorus: number | null;
+  potassium: number | null;
+  calcium: number | null;
+  magnesium: number | null;
+  soilType: string | null;
+  uso: string | null;
+  qualita: string | null;
+  superficieCatastaleMq: number;
+  sezione: string;
+  foglio: string;
+  particella: string;
+  subalterno: string | null;
+  nation: string | null;
+  region: string | null;
+  city: string | null;
+  address: string;
+  cap: string | null;
+  variazioneMq: string | null;
+  inizioConduzione: string | null;
+  fineConduzione: string | null;
+  bufferZoneNotes: string | null;
+};
+
 export type FieldExtractionResponse = {
   status: "success";
   data: {
-    fields: Array<{
-      companyId: string;
-      sourceFileId?: string | null;
-      name: string;
-      coordinates: number[];
-      latitude: number | null;
-      longitude: number | null;
-      polygon: Record<string, unknown> | unknown[] | null;
-      gisHa: number | null;
-      sauHa: number | null;
-      ph: number | null;
-      nitrogen: number | null;
-      phosphorus: number | null;
-      potassium: number | null;
-      calcium: number | null;
-      magnesium: number | null;
-      soilType: string | null;
-      uso: string | null;
-      qualita: string | null;
-      superficieCatastaleMq: number;
-      sezione: string;
-      foglio: string;
-      particella: string;
-      subalterno: string | null;
-      nation: string | null;
-      region: string | null;
-      city: string | null;
-      address: string;
-      cap: string | null;
-      variazioneMq: string | null;
-      inizioConduzione: string | null;
-      fineConduzione: string | null;
-      bufferZoneNotes: string | null;
-    }>;
+    fields: ExtractedFieldDto[];
     extractedCount: number;
   };
 };
 
+export type FieldExtractionAcceptedResponse = {
+  status: "accepted";
+  message: string;
+  data: { jobId: string };
+};
+
+export type FieldExtractionStatusResponse =
+  | {
+      status: "processing";
+      data: { state: string; progress: number; message?: string };
+    }
+  | {
+      status: "success";
+      data: {
+        state: "completed";
+        progress: number;
+        fields: ExtractedFieldDto[];
+        extractedCount: number;
+      };
+    }
+  | {
+      status: "error";
+      message: string;
+      data: { state: "failed"; progress: number };
+    };
+
+export type StartFieldExtractionResult =
+  | { kind: "completed"; response: FieldExtractionResponse }
+  | { kind: "accepted"; jobId: string };
+
 export async function startJobFieldExtraction(
   companyId: string,
   file: File,
-  baseUrl: string = BASE_URL
-): Promise<FieldExtractionResponse> {
+  baseUrl: string = BASE_URL,
+  signal?: AbortSignal,
+): Promise<StartFieldExtractionResult> {
   const formData = new FormData();
   formData.append("companyId", companyId);
   formData.append("file", file);
 
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/fields/start-job-field-extraction`,
-    {
-      method: "POST",
-      body: formData,
-    }
+    { method: "POST", body: formData, signal },
   );
 
   if (!response.ok) {
@@ -460,13 +499,38 @@ export async function startJobFieldExtraction(
     throw new Error(errorText || "Failed to extract fields from file");
   }
 
-  return (await response.json()) as FieldExtractionResponse;
+  if (response.status === 202) {
+    const body = (await response.json()) as FieldExtractionAcceptedResponse;
+    return { kind: "accepted", jobId: body.data.jobId };
+  }
+
+  const body = (await response.json()) as FieldExtractionResponse;
+  return { kind: "completed", response: body };
+}
+
+export async function getFieldExtractionStatus(
+  jobId: string,
+  baseUrl: string = BASE_URL,
+  signal?: AbortSignal,
+): Promise<FieldExtractionStatusResponse> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/fields/extraction-status/${jobId}`,
+    { method: "GET", signal },
+  );
+
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to get extraction status");
+  }
+
+  return (await response.json()) as FieldExtractionStatusResponse;
 }
 
 export async function extractFieldsFromFiles(
   companyId: string,
   files: File[],
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
+  signal?: AbortSignal,
 ): Promise<FieldExtractionResponse> {
   const formData = new FormData();
   formData.append("companyId", companyId);
@@ -476,10 +540,7 @@ export async function extractFieldsFromFiles(
 
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/fields/extract`,
-    {
-      method: "POST",
-      body: formData,
-    }
+    { method: "POST", body: formData, signal },
   );
 
   if (!response.ok) {

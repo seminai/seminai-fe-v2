@@ -122,7 +122,7 @@ async function safeReadText(response: Response): Promise<string> {
 }
 
 export async function getLabelsSummary(
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<LabelsSummaryResponse> {
   const response = await fetch(`${baseUrl}/labels/summary`, {
     method: "GET",
@@ -142,7 +142,7 @@ export async function getLabelsSummary(
 
 export async function getLabelById(
   id: string,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<LabelDetailResponse> {
   const response = await fetch(`${baseUrl}/labels/${encodeURIComponent(id)}`, {
     method: "GET",
@@ -160,7 +160,7 @@ export async function getLabelById(
 
 export async function bulkExtractLabels(
   request: BulkExtractRequest,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<BulkExtractResponse> {
   const response = await fetch(`${baseUrl}/labels/bulk-extract`, {
     method: "POST",
@@ -188,7 +188,7 @@ export type BulkDeleteResponse = {
 
 async function bulkDeleteLabels(
   ids: string[],
-  baseUrl: string
+  baseUrl: string,
 ): Promise<BulkDeleteResponse> {
   const response = await fetch(`${baseUrl}/labels/bulk`, {
     method: "DELETE",
@@ -228,7 +228,7 @@ export type UpdateLabelResponse = {
 async function updateLabel(
   id: string,
   payload: UpdateLabelPayload,
-  baseUrl: string
+  baseUrl: string,
 ): Promise<UpdateLabelResponse> {
   const response = await fetch(`${baseUrl}/labels/${encodeURIComponent(id)}`, {
     method: "PUT",
@@ -260,7 +260,7 @@ export type VerifyLabelResponse = {
 async function verifyLabel(
   id: string,
   payload: VerifyLabelPayload,
-  baseUrl: string
+  baseUrl: string,
 ): Promise<VerifyLabelResponse> {
   const response = await fetch(
     `${baseUrl}/labels/verify-label/${encodeURIComponent(id)}`,
@@ -272,7 +272,7 @@ async function verifyLabel(
       },
       credentials: "include",
       body: JSON.stringify(payload),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -285,7 +285,7 @@ async function verifyLabel(
 
 async function updateLabelOverwrite(
   id: string,
-  baseUrl: string
+  baseUrl: string,
 ): Promise<UpdateLabelResponse> {
   const response = await fetch(
     `${baseUrl}/labels/update-label/${encodeURIComponent(id)}`,
@@ -295,7 +295,7 @@ async function updateLabelOverwrite(
         Accept: "application/json",
       },
       credentials: "include",
-    }
+    },
   );
 
   if (!response.ok) {
@@ -308,7 +308,7 @@ async function updateLabelOverwrite(
 
 async function extractWithMistral(
   id: string,
-  baseUrl: string
+  baseUrl: string,
 ): Promise<LabelDetailResponse> {
   const response = await fetch(
     `${baseUrl}/labels/extract-with-mistral/${encodeURIComponent(id)}`,
@@ -318,7 +318,7 @@ async function extractWithMistral(
         Accept: "application/json",
       },
       credentials: "include",
-    }
+    },
   );
 
   if (!response.ok) {
@@ -331,7 +331,7 @@ async function extractWithMistral(
 
 async function extractWithGpt(
   id: string,
-  baseUrl: string
+  baseUrl: string,
 ): Promise<LabelDetailResponse> {
   const response = await fetch(
     `${baseUrl}/labels/extract-with-gpt/${encodeURIComponent(id)}`,
@@ -342,7 +342,7 @@ async function extractWithGpt(
         "Content-Type": "application/json",
       },
       credentials: "include",
-    }
+    },
   );
 
   if (!response.ok) {
@@ -384,7 +384,7 @@ export type LabelRollbackResponse = {
 
 async function getLabelHistory(
   labelExtractionId: string,
-  baseUrl: string
+  baseUrl: string,
 ): Promise<LabelHistoryResponse> {
   const response = await fetch(
     `${baseUrl}/labels/${encodeURIComponent(labelExtractionId)}/history`,
@@ -392,7 +392,7 @@ async function getLabelHistory(
       method: "GET",
       headers: { Accept: "application/json" },
       credentials: "include",
-    }
+    },
   );
 
   if (!response.ok) {
@@ -405,7 +405,7 @@ async function getLabelHistory(
 
 async function rollbackLabel(
   historyId: string,
-  baseUrl: string
+  baseUrl: string,
 ): Promise<LabelRollbackResponse> {
   const response = await fetch(
     `${baseUrl}/labels/rollback/${encodeURIComponent(historyId)}`,
@@ -413,7 +413,7 @@ async function rollbackLabel(
       method: "POST",
       headers: { Accept: "application/json" },
       credentials: "include",
-    }
+    },
   );
 
   if (!response.ok) {
@@ -439,7 +439,7 @@ class LabelsApiService {
   }
 
   public async bulkExtract(
-    request: BulkExtractRequest
+    request: BulkExtractRequest,
   ): Promise<BulkExtractResponse> {
     return await bulkExtractLabels(request, this.baseUrl);
   }
@@ -450,14 +450,14 @@ class LabelsApiService {
 
   public async update(
     id: string,
-    payload: UpdateLabelPayload
+    payload: UpdateLabelPayload,
   ): Promise<UpdateLabelResponse> {
     return await updateLabel(id, payload, this.baseUrl);
   }
 
   public async verify(
     id: string,
-    payload: VerifyLabelPayload
+    payload: VerifyLabelPayload,
   ): Promise<VerifyLabelResponse> {
     return await verifyLabel(id, payload, this.baseUrl);
   }
@@ -475,7 +475,7 @@ class LabelsApiService {
   }
 
   public async getHistory(
-    labelExtractionId: string
+    labelExtractionId: string,
   ): Promise<LabelHistoryResponse> {
     return await getLabelHistory(labelExtractionId, this.baseUrl);
   }

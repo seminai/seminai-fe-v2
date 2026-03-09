@@ -15,7 +15,7 @@ class FieldNoteChatApiService {
   }
 
   async sendMessageWithAttachment(
-    request: ChatMessageWithAttachmentRequest
+    request: ChatMessageWithAttachmentRequest,
   ): Promise<AgentResponse> {
     const formData = this.buildFormData(request);
 
@@ -24,7 +24,7 @@ class FieldNoteChatApiService {
       {
         method: "POST",
         body: formData,
-      }
+      },
     );
 
     if (!response.ok) {
@@ -37,7 +37,7 @@ class FieldNoteChatApiService {
   }
 
   async streamMessageWithAttachment(
-    request: ChatMessageWithAttachmentRequest
+    request: ChatMessageWithAttachmentRequest,
   ): Promise<void> {
     const formData = this.buildFormData(request);
 
@@ -46,7 +46,7 @@ class FieldNoteChatApiService {
       {
         method: "POST",
         body: formData,
-      }
+      },
     );
 
     if (!response.ok) {

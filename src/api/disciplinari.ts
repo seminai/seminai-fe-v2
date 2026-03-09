@@ -191,7 +191,11 @@ export interface ExtractJobResult {
   cost?: ExtractJobCost;
 }
 
-export type DisciplinariJobState = "active" | "waiting" | "completed" | "failed";
+export type DisciplinariJobState =
+  | "active"
+  | "waiting"
+  | "completed"
+  | "failed";
 
 export interface DisciplinariJobStatusActive {
   id: string;
@@ -265,7 +269,7 @@ class DisciplinariApiService {
         headers: {
           Accept: "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -287,7 +291,7 @@ class DisciplinariApiService {
         headers: {
           Accept: "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -303,7 +307,7 @@ class DisciplinariApiService {
    */
   public async extractFromPdf(
     files: File[],
-    options: { concurrency?: number; forceReExtract?: boolean } = {}
+    options: { concurrency?: number; forceReExtract?: boolean } = {},
   ): Promise<ExtractJobStartResponse> {
     const { concurrency = 3, forceReExtract = false } = options;
 
@@ -317,7 +321,7 @@ class DisciplinariApiService {
       {
         method: "POST",
         body: formData,
-      }
+      },
     );
 
     if (!response.ok) {
@@ -339,7 +343,7 @@ class DisciplinariApiService {
         headers: {
           Accept: "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -360,7 +364,7 @@ class DisciplinariApiService {
       intervalMs?: number;
       timeoutMs?: number;
       onProgress?: (progress: number, state: DisciplinariJobState) => void;
-    } = {}
+    } = {},
   ): Promise<DisciplinariJobStatus> {
     const { intervalMs = 2000, timeoutMs = 300000, onProgress } = options;
     const startTime = Date.now();
@@ -400,7 +404,7 @@ class DisciplinariApiService {
         headers: {
           Accept: "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -422,7 +426,7 @@ class DisciplinariApiService {
         headers: {
           Accept: "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -451,7 +455,7 @@ class DisciplinariApiService {
         headers: {
           Accept: "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -475,7 +479,7 @@ class DisciplinariApiService {
           Accept: "application/json",
         },
         body: JSON.stringify({ ids }),
-      }
+      },
     );
 
     if (!response.ok) {

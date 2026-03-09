@@ -9,7 +9,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       position="top-right"
-      duration={2500}
+      duration={5000}
+      closeButton
       style={
         {
           "--normal-bg": "#ffffff",

@@ -1,153 +1,26 @@
 import { authenticatedHttpClient } from "./http";
+import type {
+  ExtractFromFileResponse,
+  BulkCreateInput,
+  BulkCreateResponse,
+  StartExtractResponse,
+  ExtractJobStatusResponse,
+} from "./quick-create.types";
+
+export type {
+  ExtractedFieldAllocation,
+  ProductionUnitCycle,
+  ExtractedField,
+  ExtractedProductionUnit,
+  ExtractFromFileResponse,
+  BulkCreateInput,
+  BulkCreateResponse,
+  StartExtractResponse,
+  ExtractJobStatusResponse,
+} from "./quick-create.types";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-/**
- * Field allocation within a production unit
- */
-export interface ExtractedFieldAllocation {
-  fieldName: string;
-  sezione: string | null;
-  foglio: string | null;
-  particella: string | null;
-  subalterno: string | null;
-  areaHa: number;
-}
-
-/**
- * Production unit cycle
- */
-export interface ProductionUnitCycle {
-  cycleIndex: number;
-  cropName: string | null;
-  cropType: string | null;
-  cropCode: string | null;
-  variety: string | null;
-  occupazione: string | null;
-  destinazione: string | null;
-  protectionStructure: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  floweringDate: string | null;
-  harvestingDate: string | null;
-}
-
-/**
- * Extracted field data from /onboarding/extract
- */
-export interface ExtractedField {
-  sourceFileId?: string | null;
-  name: string;
-  nation: string | null;
-  region: string | null;
-  city: string | null;
-  address: string | null;
-  cap: string | null;
-  foglio: string | null;
-  particella: string | null;
-  subalterno: string | null;
-  sezione: string | null;
-  superficieCatastaleMq: number | null;
-  gisHa: number | null;
-  sauHa: number | null;
-  variazioneMq: number | null;
-  uso: string | null;
-  qualita: string | null;
-  soilType: string | null;
-  ph: number | null;
-  nitrogen: number | null;
-  phosphorus: number | null;
-  potassium: number | null;
-  calcium: number | null;
-  magnesium: number | null;
-  latitude: number | null;
-  longitude: number | null;
-  inizioConduzione: string | null;
-  fineConduzione: string | null;
-}
-
-/**
- * Extracted production unit data from /onboarding/extract
- */
-export interface ExtractedProductionUnit {
-  name: string;
-  cropName: string | null;
-  cropType: string | null;
-  variety: string | null;
-  protocoll: string | null;
-  protectionStructure: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  floweringDate: string | null;
-  harvestingDate: string | null;
-  occupazione: string | null;
-  destinazioneDiUso: string | null;
-  areaHa: number;
-  cycles: ProductionUnitCycle[];
-  fieldAllocations: ExtractedFieldAllocation[];
-}
-
-/**
- * Response from POST /onboarding/extract
- */
-export interface ExtractFromFileResponse {
-  status: "success";
-  data: {
-    fields: ExtractedField[];
-    productionUnits: ExtractedProductionUnit[];
-    fieldCount: number;
-    productionUnitCount: number;
-  };
-}
-
-/**
- * Input for POST /onboarding/bulk-create
- */
-export interface BulkCreateInput {
-  companyId: string;
-  fields: ExtractedField[];
-  productionUnits: ExtractedProductionUnit[];
-}
-
-/**
- * Response from POST /onboarding/bulk-create
- */
-export interface BulkCreateResponse {
-  status: "success";
-  data: {
-    fields: Array<{
-      id: string;
-      companyId: string;
-      name: string;
-      foglio: string | null;
-      particella: string | null;
-      superficieCatastaleMq: number | null;
-      sauHa: number | null;
-      region: string | null;
-      city: string | null;
-      createdAt: string;
-      updatedAt: string;
-    }>;
-    productionUnits: Array<{
-      id: string;
-      cycleId: string;
-      name: string;
-      cropName: string | null;
-      cropType: string | null;
-      variety: string | null;
-      areaHa: number;
-      startDate: string | null;
-      endDate: string | null;
-      createdAt: string;
-    }>;
-    fieldCount: number;
-    productionUnitCount: number;
-  };
-}
-
-/**
- * Helper function to safely read response text
- */
 async function safeReadText(response: Response): Promise<string> {
   try {
     return await response.text();
@@ -157,8 +30,7 @@ async function safeReadText(response: Response): Promise<string> {
 }
 
 /**
- * Extracts fields and production units from an uploaded file
- * POST /onboarding/extract
+ * POST /onboarding/extract (sync)
  */
 export async function extractFromFile(
   files: File | File[],
@@ -169,25 +41,18 @@ export async function extractFromFile(
   for (const file of fileArray) {
     formData.append("file", file);
   }
-
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/onboarding/extract`,
-    {
-      method: "POST",
-      body: formData,
-    },
+    { method: "POST", body: formData },
   );
-
   if (!response.ok) {
     const errorText = await safeReadText(response);
     throw new Error(errorText || "Failed to extract data from file");
   }
-
   return (await response.json()) as ExtractFromFileResponse;
 }
 
 /**
- * Bulk creates fields and production units for a company
  * POST /onboarding/bulk-create
  */
 export async function bulkCreate(
@@ -198,20 +63,96 @@ export async function bulkCreate(
     `${baseUrl}/onboarding/bulk-create`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify(input),
     },
   );
-
   if (!response.ok) {
     const errorText = await safeReadText(response);
     throw new Error(errorText || "Failed to bulk create data");
   }
-
   return (await response.json()) as BulkCreateResponse;
+}
+
+/**
+ * POST /onboarding/extract/start (async)
+ */
+export async function startExtract(
+  files: File | File[],
+  baseUrl: string = BASE_URL,
+): Promise<StartExtractResponse> {
+  const formData = new FormData();
+  const fileArray = Array.isArray(files) ? files : [files];
+  for (const file of fileArray) {
+    formData.append("file", file);
+  }
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/onboarding/extract/start`,
+    { method: "POST", body: formData },
+  );
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to start extraction job");
+  }
+  return (await response.json()) as StartExtractResponse;
+}
+
+/**
+ * GET /onboarding/extract/status/:jobId
+ */
+export async function getExtractStatus(
+  jobId: string,
+  baseUrl: string = BASE_URL,
+): Promise<ExtractJobStatusResponse> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/onboarding/extract/status/${encodeURIComponent(jobId)}`,
+    { method: "GET", headers: { Accept: "application/json" } },
+  );
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to get extraction status");
+  }
+  return (await response.json()) as ExtractJobStatusResponse;
+}
+
+/**
+ * GET /onboarding/extract/result/:jobId
+ */
+export async function getExtractResult(
+  jobId: string,
+  baseUrl: string = BASE_URL,
+): Promise<ExtractFromFileResponse> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/onboarding/extract/result/${encodeURIComponent(jobId)}`,
+    { method: "GET", headers: { Accept: "application/json" } },
+  );
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to get extraction result");
+  }
+  return (await response.json()) as ExtractFromFileResponse;
+}
+
+/**
+ * DELETE /onboarding/extract/:jobId
+ */
+export async function cancelExtract(
+  jobId: string,
+  baseUrl: string = BASE_URL,
+): Promise<{ cancelled: boolean; previousState: string }> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/onboarding/extract/${encodeURIComponent(jobId)}`,
+    { method: "DELETE", headers: { Accept: "application/json" } },
+  );
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to cancel extraction job");
+  }
+  const result = (await response.json()) as {
+    status: string;
+    data: { cancelled: boolean; previousState: string };
+  };
+  return result.data;
 }
 
 /**
@@ -228,6 +169,30 @@ export class QuickCreateApiService {
     files: File | File[],
   ): Promise<ExtractFromFileResponse> {
     return extractFromFile(files, this.baseUrl);
+  }
+
+  public async startExtract(
+    files: File | File[],
+  ): Promise<StartExtractResponse> {
+    return startExtract(files, this.baseUrl);
+  }
+
+  public async getExtractStatus(
+    jobId: string,
+  ): Promise<ExtractJobStatusResponse> {
+    return getExtractStatus(jobId, this.baseUrl);
+  }
+
+  public async getExtractResult(
+    jobId: string,
+  ): Promise<ExtractFromFileResponse> {
+    return getExtractResult(jobId, this.baseUrl);
+  }
+
+  public async cancelExtract(
+    jobId: string,
+  ): Promise<{ cancelled: boolean; previousState: string }> {
+    return cancelExtract(jobId, this.baseUrl);
   }
 
   public async bulkCreate(

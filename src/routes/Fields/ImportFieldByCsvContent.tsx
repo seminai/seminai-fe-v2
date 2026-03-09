@@ -8,12 +8,23 @@ import { SupportRequestForm } from "@/components/organism/SupportRequestForm";
 import { type Company } from "@/api/companies";
 import { CompanySearchSelect } from "./CompanySearchSelect";
 
+function formatElapsed(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}m ${seconds % 60}s`;
+}
+
 interface ImportFieldByCsvContentProps {
   companies: Company[];
   selectedCompanyId: string;
   onCompanyChange: (value: string) => void;
   onFileSelect: (files: File[]) => void;
   isProcessing: boolean;
+  onCancelProcessing?: () => void;
+  processingProgress?: number | null;
+  processingMessage?: string | null;
+  processingElapsedMs?: number;
   importErrors: string[];
   importWarnings: string[];
   showSupportForm: boolean;
@@ -28,6 +39,10 @@ export function ImportFieldByCsvContent({
   onCompanyChange,
   onFileSelect,
   isProcessing,
+  onCancelProcessing,
+  processingProgress,
+  processingMessage,
+  processingElapsedMs = 0,
   importErrors,
   importWarnings,
   showSupportForm,
@@ -58,6 +73,7 @@ export function ImportFieldByCsvContent({
         <CsvFieldImporter
           onFileSelect={onFileSelect}
           isProcessing={isProcessing}
+          onCancel={onCancelProcessing}
         />
       </div>
 
@@ -68,11 +84,42 @@ export function ImportFieldByCsvContent({
       )}
 
       {isProcessing && (
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Spinner size={20} ariaLabel="Elaborazione file" />
-          <span>
-            Estrazione campi in corso... (potrebbe richiedere alcuni minuti)
-          </span>
+        <div className="space-y-3 rounded-lg border border-agri-green-100 bg-agri-green-50/30 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Spinner size={18} ariaLabel="Elaborazione file" />
+              <span>{processingMessage || "Estrazione campi in corso..."}</span>
+            </div>
+            {processingElapsedMs > 0 && (
+              <span className="text-xs tabular-nums text-gray-400">
+                {formatElapsed(processingElapsedMs)}
+              </span>
+            )}
+          </div>
+
+          {typeof processingProgress === "number" && processingProgress > 0 && (
+            <div className="space-y-1">
+              <div className="w-full bg-gray-200/70 rounded-full h-2.5 overflow-hidden">
+                <div
+                  className="h-full bg-agri-green-600 rounded-full transition-all duration-700 ease-out"
+                  style={{ width: `${Math.min(processingProgress, 100)}%` }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 text-right tabular-nums">
+                {Math.round(processingProgress)}%
+              </p>
+            </div>
+          )}
+
+          {onCancelProcessing && (
+            <button
+              type="button"
+              onClick={onCancelProcessing}
+              className="text-xs text-red-500 hover:text-red-700 underline transition-colors"
+            >
+              Annulla estrazione
+            </button>
+          )}
         </div>
       )}
 

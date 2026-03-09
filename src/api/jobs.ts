@@ -239,7 +239,11 @@ export type JobCreationTaskStatus = {
   result?: {
     jobs: JobWithRelations[];
     jobProductLinks: unknown[];
-    warnings?: { productName: string; registrationNumber: string; reason: string }[];
+    warnings?: {
+      productName: string;
+      registrationNumber: string;
+      reason: string;
+    }[];
   };
   failedReason?: string;
   stopPolling?: boolean;

@@ -140,7 +140,7 @@ class ChatsApiService {
         headers: {
           Accept: "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -168,7 +168,7 @@ class ChatsApiService {
         headers: {
           Accept: "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {

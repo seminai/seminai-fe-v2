@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -343,6 +343,7 @@ export const ProductionUnitCsvImporter: React.FC<
   >(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
   const [showSupportForm, setShowSupportForm] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (openSignal) {
@@ -378,12 +379,22 @@ export const ProductionUnitCsvImporter: React.FC<
     toast.success("Richiesta inviata. Ti risponderemo al più presto.");
   };
 
+  const handleCancelProcessing = React.useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setIsLoading(false);
+  }, []);
+
   const handleFileSelect = async (files: File[]): Promise<void> => {
     if (!selectedCompanyId) {
       toast.error("Seleziona un'azienda prima di importare il file");
       return;
     }
     if (files.length === 0) return;
+
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     setIsLoading(true);
     setValidationErrors([]);
@@ -394,7 +405,12 @@ export const ProductionUnitCsvImporter: React.FC<
         description: "L'operazione potrebbe richiedere alcuni secondi",
       });
 
-      const extracted = await extractProductionUnits(selectedCompanyId, files[0]);
+      const extracted = await extractProductionUnits(
+        selectedCompanyId,
+        files[0],
+        undefined,
+        controller.signal,
+      );
 
       if (!extracted || extracted.length === 0) {
         setValidationErrors(["Nessuna unità produttiva trovata nel file."]);
@@ -403,6 +419,7 @@ export const ProductionUnitCsvImporter: React.FC<
 
       setExtractedUnits(extracted);
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
       console.error("Errore nell'importazione del file:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Errore sconosciuto";
@@ -641,6 +658,7 @@ export const ProductionUnitCsvImporter: React.FC<
         <CsvFieldImporter
           onFileSelect={handleFileSelect}
           isProcessing={isLoading}
+          onCancel={handleCancelProcessing}
         />
       </div>
 

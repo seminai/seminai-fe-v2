@@ -58,7 +58,7 @@ export function LabelJobsTable({
             headers: {
               Accept: "application/json",
             },
-          }
+          },
         );
 
         if (!response.ok) {
@@ -85,7 +85,7 @@ export function LabelJobsTable({
 
             if (jobData.state === "completed") {
               toast.success(
-                `Job ${jobId.slice(0, 8)}... completato con successo`
+                `Job ${jobId.slice(0, 8)}... completato con successo`,
               );
             } else {
               toast.error(`Job ${jobId.slice(0, 8)}... fallito`);
@@ -98,7 +98,7 @@ export function LabelJobsTable({
         console.error(`Error polling job ${jobId}:`, error);
       }
     },
-    [BASE_URL, loadJobs]
+    [BASE_URL, loadJobs],
   );
 
   // Initialize polling for active jobs
@@ -159,7 +159,7 @@ export function LabelJobsTable({
   };
 
   const getStateLabel = (
-    state: string
+    state: string,
   ): {
     text: string;
     variant: "default" | "secondary" | "destructive" | "outline";
@@ -183,7 +183,7 @@ export function LabelJobsTable({
 
     // Find first successfully extracted label with ID
     const successfulExtraction = result.results.find(
-      (r) => r.status === "extracted" && r.labelId
+      (r) => r.status === "extracted" && r.labelId,
     );
 
     if (successfulExtraction && successfulExtraction.labelId) {
@@ -194,10 +194,10 @@ export function LabelJobsTable({
   };
 
   const activeJobs = jobs.filter(
-    (job) => job.state === "waiting" || job.state === "active"
+    (job) => job.state === "waiting" || job.state === "active",
   );
   const completedJobs = jobs.filter(
-    (job) => job.state === "completed" || job.state === "failed"
+    (job) => job.state === "completed" || job.state === "failed",
   );
 
   // Notify parent about active jobs count changes

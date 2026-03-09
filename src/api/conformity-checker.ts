@@ -124,7 +124,7 @@ class ConformityCheckerApiService {
    */
   public async startJob(
     jobGroupId: string,
-    notes?: string
+    notes?: string,
   ): Promise<StartJobResponse> {
     const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/start-job`,
@@ -137,13 +137,13 @@ class ConformityCheckerApiService {
           jobGroupId,
           notes: notes || "",
         }),
-      }
+      },
     );
 
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(
-        `Failed to start conformity job: ${response.status} - ${errorText}`
+        `Failed to start conformity job: ${response.status} - ${errorText}`,
       );
     }
 
@@ -162,13 +162,13 @@ class ConformityCheckerApiService {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(
-        `Failed to get job status: ${response.status} - ${errorText}`
+        `Failed to get job status: ${response.status} - ${errorText}`,
       );
     }
 
@@ -181,7 +181,7 @@ class ConformityCheckerApiService {
    */
   public async confirmProposals(
     jobGroupId: string,
-    proposals: ConformityProposal[]
+    proposals: ConformityProposal[],
   ): Promise<void> {
     const response = await authenticatedHttpClient.request(
       `${this.baseUrl}/confirm`,
@@ -194,13 +194,13 @@ class ConformityCheckerApiService {
           jobGroupId,
           proposals,
         }),
-      }
+      },
     );
 
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(
-        `Failed to confirm proposals: ${response.status} - ${errorText}`
+        `Failed to confirm proposals: ${response.status} - ${errorText}`,
       );
     }
   }
@@ -214,7 +214,7 @@ class ConformityCheckerApiService {
       intervalMs?: number;
       timeoutMs?: number;
       onProgress?: (progress: number, state: ConformityJobState) => void;
-    } = {}
+    } = {},
   ): Promise<ConformityJobStatus> {
     const { intervalMs = 2000, timeoutMs = 300000, onProgress } = options;
     const startTime = Date.now();
@@ -238,4 +238,3 @@ class ConformityCheckerApiService {
 }
 
 export const conformityCheckerApiService = new ConformityCheckerApiService();
-

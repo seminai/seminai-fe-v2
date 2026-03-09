@@ -2,14 +2,14 @@ import * as React from "react";
 import {
   EditableTable,
 } from "@/components/organism/EditableTable";
-import { Spinner } from "@/components/ui/spinner";
 import { IoCheckmarkCircle } from "react-icons/io5";
 import type {
   ExtractedField,
   ExtractedProductionUnit,
 } from "@/api/quick-create";
-import { quickCreateApiService } from "@/api/quick-create";
 import { filesApiService } from "@/api/files";
+import { useExtractionProgress } from "@/hooks/useExtractionProgress";
+import ExtractionProgressPanel from "@/components/molecules/ExtractionProgressPanel";
 import FileDropZone from "./FileDropZone";
 import { FIELDS_COLUMNS } from "../types";
 
@@ -34,64 +34,62 @@ export default function FieldsStep({
   error,
   onError,
 }: FieldsStepProps): React.ReactElement {
-  const [isExtracting, setIsExtracting] = React.useState(false);
+  const { state: extractionState, startExtraction, cancelExtraction } = useExtractionProgress();
   const hasExtractedData = fieldsData.length > 0;
+  const sourceFileIdRef = React.useRef<string | null>(null);
+
   const selectPrimarySourceFile = React.useCallback((files: File[]): File | null => {
     const preferredFile =
       files.find((file) => file.name.toLowerCase().endsWith(".zip")) ?? files[0];
     return preferredFile ?? null;
   }, []);
 
+  React.useEffect(() => {
+    if (extractionState.result && !hasExtractedData) {
+      const sourceFileId = sourceFileIdRef.current;
+      onFieldsChange(
+        extractionState.result.fields.map((field) => ({
+          ...field,
+          sourceFileId,
+        })),
+      );
+      onProductionUnitsExtracted(
+        extractionState.result.productionUnits as ExtractedProductionUnit[],
+      );
+    }
+  }, [extractionState.result, hasExtractedData, onFieldsChange, onProductionUnitsExtracted]);
+
+  React.useEffect(() => {
+    if (extractionState.error) {
+      onError(extractionState.error);
+    }
+  }, [extractionState.error, onError]);
+
   const handleFileSelect = React.useCallback(
     async (files: File[]) => {
       if (files.length === 0) return;
       onFileSelected(files[0]);
       onError(null);
-      setIsExtracting(true);
 
-      try {
-        const primaryFile = selectPrimarySourceFile(files);
-        let savedFile = null;
-        if (companyId && primaryFile) {
-          try {
-            savedFile = await filesApiService.uploadFile({
-              file: primaryFile,
-              companyId,
-              path: "campi/import",
-              type: "field-import",
-            });
-          } catch (error) {
-            console.warn("Field source file upload failed:", error);
-          }
+      const primaryFile = selectPrimarySourceFile(files);
+      if (companyId && primaryFile) {
+        try {
+          const savedFile = await filesApiService.uploadFile({
+            file: primaryFile,
+            companyId,
+            path: "campi/import",
+            type: "field-import",
+          });
+          sourceFileIdRef.current = savedFile?.data.file.id ?? null;
+        } catch (uploadError) {
+          console.warn("Field source file upload failed:", uploadError);
+          sourceFileIdRef.current = null;
         }
-        const response = await quickCreateApiService.extractFromFile(files);
-        const sourceFileId = savedFile?.data.file.id ?? null;
-
-        onFieldsChange(
-          response.data.fields.map((field) => ({
-            ...field,
-            sourceFileId,
-          })),
-        );
-        onProductionUnitsExtracted(response.data.productionUnits);
-      } catch (err) {
-        onError(
-          err instanceof Error
-            ? err.message
-            : "Errore durante l'elaborazione del file",
-        );
-      } finally {
-        setIsExtracting(false);
       }
+
+      await startExtraction(files);
     },
-    [
-      companyId,
-      onFileSelected,
-      onError,
-      onFieldsChange,
-      onProductionUnitsExtracted,
-      selectPrimarySourceFile,
-    ],
+    [companyId, onFileSelected, onError, selectPrimarySourceFile, startExtraction],
   );
 
   const handleFieldsSave = React.useCallback(
@@ -110,18 +108,8 @@ export default function FieldsStep({
     [onFieldsChange],
   );
 
-  // Show loading spinner while extracting
-  if (isExtracting) {
-    return (
-      <div className="flex items-center justify-center flex-1">
-        <div className="flex flex-col items-center gap-6">
-          <Spinner size={80} speed="normal" />
-          <p className="text-lg text-neutral-600 font-medium">
-            Elaborazione file in corso...
-          </p>
-        </div>
-      </div>
-    );
+  if (extractionState.isExtracting) {
+    return <ExtractionProgressPanel state={extractionState} onCancel={cancelExtraction} />;
   }
 
   // Show file drop zone if no data extracted yet

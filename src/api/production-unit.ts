@@ -435,7 +435,8 @@ export async function bulkDeleteProductionUnits(
 export async function extractProductionUnits(
   companyId: string,
   file: File,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
+  signal?: AbortSignal,
 ): Promise<ExtractedProductionUnit[]> {
   const formData = new FormData();
   formData.append("file", file);
@@ -444,10 +445,7 @@ export async function extractProductionUnits(
     `${baseUrl}/production-units/extract?companyId=${encodeURIComponent(
       companyId
     )}`,
-    {
-      method: "POST",
-      body: formData,
-    }
+    { method: "POST", body: formData, signal },
   );
 
   const rawText = await safeReadText(response);

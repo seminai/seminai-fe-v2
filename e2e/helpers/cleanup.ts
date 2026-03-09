@@ -12,7 +12,10 @@ type Product = EntityWithId & {
 type Field = EntityWithId & { companyId: string };
 type ProductionUnit = EntityWithId & { companyId: string };
 
-async function parseJsonOrThrow<T>(response: Response, fallback: string): Promise<T> {
+async function parseJsonOrThrow<T>(
+  response: Response,
+  fallback: string,
+): Promise<T> {
   if (!response.ok) {
     const text = await response.text();
     throw new Error(text || fallback);
@@ -20,7 +23,9 @@ async function parseJsonOrThrow<T>(response: Response, fallback: string): Promis
   return (await response.json()) as T;
 }
 
-export async function fetchCompanies(request: APIRequestContext): Promise<Company[]> {
+export async function fetchCompanies(
+  request: APIRequestContext,
+): Promise<Company[]> {
   const response = await request.get(`${API_BASE_URL}/companies`);
   const payload = await parseJsonOrThrow<{ data?: { companies?: Company[] } }>(
     response,
@@ -29,7 +34,9 @@ export async function fetchCompanies(request: APIRequestContext): Promise<Compan
   return payload.data?.companies ?? [];
 }
 
-export async function fetchFields(request: APIRequestContext): Promise<Field[]> {
+export async function fetchFields(
+  request: APIRequestContext,
+): Promise<Field[]> {
   const response = await request.get(`${API_BASE_URL}/fields`);
   const payload = await parseJsonOrThrow<{ data?: { fields?: Field[] } }>(
     response,
@@ -64,8 +71,8 @@ export async function fetchWarehousesByCompany(
   if (Array.isArray(payload)) {
     return payload as Warehouse[];
   }
-  return ((payload as { data?: { warehouses?: Warehouse[] } }).data?.warehouses ??
-    []) as Warehouse[];
+  return ((payload as { data?: { warehouses?: Warehouse[] } }).data
+    ?.warehouses ?? []) as Warehouse[];
 }
 
 export async function fetchProductsByCompanyName(
@@ -117,16 +124,22 @@ async function deleteProductionUnits(
   ids: string[],
 ): Promise<void> {
   if (!ids.length) return;
-  const response = await request.delete(`${API_BASE_URL}/production-units/bulk`, {
-    data: { ids },
-  });
+  const response = await request.delete(
+    `${API_BASE_URL}/production-units/bulk`,
+    {
+      data: { ids },
+    },
+  );
   if (!response.ok) {
     const text = await response.text();
     throw new Error(text || "Failed to delete production units");
   }
 }
 
-async function deleteFields(request: APIRequestContext, ids: string[]): Promise<void> {
+async function deleteFields(
+  request: APIRequestContext,
+  ids: string[],
+): Promise<void> {
   if (!ids.length) return;
   const response = await request.delete(`${API_BASE_URL}/fields/bulk`, {
     data: { ids },
@@ -152,7 +165,9 @@ export async function cleanupTestData(
     }
   };
 
-  await run(() => deleteProducts(request, context.companyId!, context.productIds));
+  await run(() =>
+    deleteProducts(request, context.companyId!, context.productIds),
+  );
   await run(() => deleteWarehouses(request, context.warehouseIds));
   await run(() => deleteProductionUnits(request, context.productionUnitIds));
   await run(() => deleteFields(request, context.fieldIds));

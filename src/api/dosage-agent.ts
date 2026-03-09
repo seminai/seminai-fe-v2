@@ -218,7 +218,7 @@ export interface ListDosageJobsResponse {
 }
 
 export async function listDosageJobs(
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<ListDosageJobsResponse> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/dosage-agent/jobs`,
@@ -228,7 +228,7 @@ export async function listDosageJobs(
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-    }
+    },
   );
 
   if (!response.ok) {
@@ -250,7 +250,7 @@ async function safeReadText(response: Response): Promise<string> {
 // Start a new dosage calculation job
 export async function startDosageJob(
   request: StartDosageJobRequest,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<StartDosageJobResponse> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/dosage-agent/start-job`,
@@ -261,7 +261,7 @@ export async function startDosageJob(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(request),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -275,7 +275,7 @@ export async function startDosageJob(
 // Get status of a dosage job
 export async function getDosageJobStatus(
   jobId: string,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<DosageJobStatusResponse> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/dosage-agent/job-status/${jobId}`,
@@ -285,7 +285,7 @@ export async function getDosageJobStatus(
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-    }
+    },
   );
 
   if (!response.ok) {
@@ -298,7 +298,7 @@ export async function getDosageJobStatus(
 
 export async function cancelDosageJobs(
   payload: CancelDosageJobsRequest,
-  baseUrl: string = BASE_URL
+  baseUrl: string = BASE_URL,
 ): Promise<CancelDosageJobsResponse> {
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/jobs/bulk`,
@@ -309,7 +309,7 @@ export async function cancelDosageJobs(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -335,7 +335,7 @@ class DosageAgentApiService {
   }
 
   public async startJob(
-    request: StartDosageJobRequest
+    request: StartDosageJobRequest,
   ): Promise<StartDosageJobResponse> {
     return await startDosageJob(request, this.baseUrl);
   }

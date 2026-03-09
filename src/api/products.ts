@@ -207,7 +207,15 @@ export type InvoiceProduct = {
   productName: string;
   productNameExtracted?: string | null;
   registrationNumber?: string | null;
-  productCategory?: "FERTILIZER" | "PESTICIDE" | "SEED" | "HARVEST" | "EQUIPMENT" | "PACKAGING" | string | null;
+  productCategory?:
+    | "FERTILIZER"
+    | "PESTICIDE"
+    | "SEED"
+    | "HARVEST"
+    | "EQUIPMENT"
+    | "PACKAGING"
+    | string
+    | null;
   administrativeStatus?: string | null;
   quantity: number | null;
   quantityUnitOfMeasure: string | null;
@@ -517,6 +525,7 @@ export async function updateProduct(
 export async function importProductsFromDdt(
   files: File[],
   baseUrl: string = BASE_URL,
+  signal?: AbortSignal,
 ): Promise<BulkFromDdtToProductListResponse> {
   if (!Array.isArray(files) || files.length === 0) {
     throw new Error("At least one DDT file is required to import products");
@@ -529,10 +538,7 @@ export async function importProductsFromDdt(
 
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/products/bulk-from-ddt-to-product-list`,
-    {
-      method: "POST",
-      body: formData,
-    },
+    { method: "POST", body: formData, signal },
   );
 
   if (!response.ok) {
@@ -546,6 +552,7 @@ export async function importProductsFromDdt(
 export async function importProductsFromInvoice(
   files: File[],
   baseUrl: string = BASE_URL,
+  signal?: AbortSignal,
 ): Promise<InvoiceExtractionResponse> {
   if (!Array.isArray(files) || files.length === 0) {
     throw new Error("At least one invoice file is required");
@@ -562,10 +569,7 @@ export async function importProductsFromInvoice(
 
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/products/bulk-from-invoice-to-product-list`,
-    {
-      method: "POST",
-      body: formData,
-    },
+    { method: "POST", body: formData, signal },
   );
 
   if (!response.ok) {
@@ -711,6 +715,7 @@ export async function importFromCsvExcel(
 export async function importFromCsvExcelPreview(
   payload: ImportFromCsvExcelPayload,
   baseUrl: string = BASE_URL,
+  signal?: AbortSignal,
 ): Promise<ImportFromCsvExcelPreviewResponse> {
   if (!payload?.companyId) {
     throw new Error("Company identifier is required");
@@ -733,10 +738,7 @@ export async function importFromCsvExcelPreview(
 
   const response = await authenticatedHttpClient.request(
     `${baseUrl}/products/import-from-csv-excel?preview=true`,
-    {
-      method: "POST",
-      body: formData,
-    },
+    { method: "POST", body: formData, signal },
   );
 
   if (!response.ok) {
@@ -857,14 +859,16 @@ class ProductsApiService {
 
   public async importFromDdt(
     files: File[],
+    signal?: AbortSignal,
   ): Promise<BulkFromDdtToProductListResponse> {
-    return await importProductsFromDdt(files, this.baseUrl);
+    return await importProductsFromDdt(files, this.baseUrl, signal);
   }
 
   public async importFromInvoice(
     files: File[],
+    signal?: AbortSignal,
   ): Promise<InvoiceExtractionResponse> {
-    return await importProductsFromInvoice(files, this.baseUrl);
+    return await importProductsFromInvoice(files, this.baseUrl, signal);
   }
 
   public async bulkImport(
@@ -887,8 +891,9 @@ class ProductsApiService {
 
   public async importFromCsvExcelPreview(
     payload: ImportFromCsvExcelPayload,
+    signal?: AbortSignal,
   ): Promise<ImportFromCsvExcelPreviewResponse> {
-    return await importFromCsvExcelPreview(payload, this.baseUrl);
+    return await importFromCsvExcelPreview(payload, this.baseUrl, signal);
   }
 
   public async updateAdministrativeStatus(): Promise<UpdateAdministrativeStatusResponse> {

@@ -10,7 +10,13 @@ export interface FieldNoteChatEvent {
   threadId: string;
   userId: string;
   timestamp: string;
-  type: "token" | "tool_call" | "requires_approval" | "complete" | "error" | "info";
+  type:
+    | "token"
+    | "tool_call"
+    | "requires_approval"
+    | "complete"
+    | "error"
+    | "info";
   content?: string; // Per i token del pensiero AI
   toolCall?: {
     name: string;
@@ -100,9 +106,12 @@ class FieldNoteSocketService {
       // Se non c'è token in memoria e abbiamo ancora tentativi, riprova
       // (il token potrebbe non essere ancora stato impostato subito dopo il login)
       if (!token && retryCount < 3) {
-        setTimeout(() => {
-          attemptConnection(retryCount + 1);
-        }, 100 * (retryCount + 1)); // Delay crescente: 100ms, 200ms, 300ms
+        setTimeout(
+          () => {
+            attemptConnection(retryCount + 1);
+          },
+          100 * (retryCount + 1),
+        ); // Delay crescente: 100ms, 200ms, 300ms
         return;
       }
 
@@ -167,9 +176,12 @@ class FieldNoteSocketService {
       this.callbacks.onEvent?.(event);
     });
 
-    this.socket.on("field-note:requires-approval", (event: FieldNoteChatEvent) => {
-      this.callbacks.onEvent?.(event);
-    });
+    this.socket.on(
+      "field-note:requires-approval",
+      (event: FieldNoteChatEvent) => {
+        this.callbacks.onEvent?.(event);
+      },
+    );
 
     this.socket.on("field-note:complete", (event: FieldNoteChatEvent) => {
       this.callbacks.onEvent?.(event);

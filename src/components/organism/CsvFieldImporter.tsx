@@ -21,6 +21,7 @@ function isShapefileComponent(file: File): boolean {
 interface CsvFieldImporterProps {
   onFileSelect: (files: File[]) => void;
   isProcessing?: boolean;
+  onCancel?: () => void;
   className?: string;
 }
 
@@ -30,6 +31,7 @@ interface CsvFieldImporterProps {
 export function CsvFieldImporter({
   onFileSelect,
   isProcessing = false,
+  onCancel,
   className,
 }: CsvFieldImporterProps): React.ReactElement {
   const [isDragging, setIsDragging] = useState(false);
@@ -190,6 +192,14 @@ export function CsvFieldImporter({
             </Button>
           )}
         </Alert>
+      )}
+
+      {isProcessing && onCancel && (
+        <div className="flex justify-center">
+          <Button variant="outline" size="sm" onClick={onCancel}>
+            Annulla
+          </Button>
+        </div>
       )}
 
       {error && (

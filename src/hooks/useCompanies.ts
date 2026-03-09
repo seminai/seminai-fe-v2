@@ -27,6 +27,11 @@ export function useCompanies(options?: UseCompaniesOptions) {
     queryFn: async () => {
       return await companiesApiService.getAll();
     },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false,
   });
 
   // Mutation per creare companies in bulk

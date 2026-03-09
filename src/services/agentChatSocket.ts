@@ -80,10 +80,7 @@ class AgentChatSocketService {
     return this.socket?.connected ?? false;
   }
 
-  public connect(
-    threadId: string,
-    callbacks: AgentChatSocketCallbacks,
-  ): void {
+  public connect(threadId: string, callbacks: AgentChatSocketCallbacks): void {
     if (this.socket?.connected && this.currentThreadId === threadId) return;
     if (this.isConnecting && this.currentThreadId === threadId) return;
 
@@ -96,7 +93,10 @@ class AgentChatSocketService {
 
       const token = authService.getAuthToken();
       if (!token && retryCount < 3) {
-        setTimeout(() => attemptConnection(retryCount + 1), 100 * (retryCount + 1));
+        setTimeout(
+          () => attemptConnection(retryCount + 1),
+          100 * (retryCount + 1),
+        );
         return;
       }
 
@@ -165,8 +165,10 @@ class AgentChatSocketService {
     this.socket.on("agent:task_update", (e: AgentSocketTaskUpdate) =>
       this.callbacks.onTaskUpdate?.(e),
     );
-    this.socket.on("agent:subagent_progress", (e: AgentSocketSubagentProgress) =>
-      this.callbacks.onSubagentProgress?.(e),
+    this.socket.on(
+      "agent:subagent_progress",
+      (e: AgentSocketSubagentProgress) =>
+        this.callbacks.onSubagentProgress?.(e),
     );
     this.socket.on("agent:outer_loop_alert", (e: AgentSocketAlert) =>
       this.callbacks.onOuterLoopAlert?.(e),
