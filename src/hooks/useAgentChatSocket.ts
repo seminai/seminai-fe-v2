@@ -7,15 +7,23 @@ import {
   type AgentSocketTaskUpdate,
   type AgentSocketSubagentProgress,
   type AgentSocketAlert,
+  type AgentSocketExtractionComplete,
+  type AgentSocketExtractionFailed,
+  type AgentSocketExtractionProgress,
   type SocketConnectionState,
 } from "@/services/agentChatSocket";
 
 export interface AgentActivityItem {
   readonly id: string;
-  readonly type: "tool_call" | "memory" | "task" | "subagent" | "alert";
+  readonly type: "tool_call" | "memory" | "task" | "subagent" | "alert" | "extraction";
   readonly label: string;
   readonly detail?: string;
   readonly timestamp: number;
+}
+
+export interface AgentChatSocketOptions {
+  /** Called when async file extraction completes, use to trigger a follow-up agent message */
+  readonly onExtractionComplete?: (event: AgentSocketExtractionComplete) => void;
 }
 
 export interface TaskItem {
@@ -26,7 +34,11 @@ export interface TaskItem {
 
 const MAX_ACTIVITY_ITEMS = 50;
 
-export function useAgentChatSocket(threadId: string, enabled: boolean) {
+export function useAgentChatSocket(
+  threadId: string,
+  enabled: boolean,
+  options?: AgentChatSocketOptions,
+) {
   const [connectionState, setConnectionState] =
     useState<SocketConnectionState>("disconnected");
   const [activityLog, setActivityLog] = useState<AgentActivityItem[]>([]);
@@ -37,6 +49,10 @@ export function useAgentChatSocket(threadId: string, enabled: boolean) {
   const [subagentProgress, setSubagentProgress] = useState<
     Map<string, { progress: number; step: string }>
   >(new Map());
+  const [extractionProgress, setExtractionProgress] = useState<{
+    progress: number;
+    step: string;
+  } | null>(null);
 
   const activityIdRef = useRef(0);
   const enabledRef = useRef(enabled);
@@ -66,6 +82,7 @@ export function useAgentChatSocket(threadId: string, enabled: boolean) {
     setTaskList([]);
     setMemoryKeys(new Map());
     setSubagentProgress(new Map());
+    setExtractionProgress(null);
   }, []);
 
   useEffect(() => {
@@ -132,12 +149,36 @@ export function useAgentChatSocket(threadId: string, enabled: boolean) {
           duration: 8000,
         });
       },
+
+      onExtractionProgress: (event: AgentSocketExtractionProgress) => {
+        setExtractionProgress({ progress: event.progress, step: event.step });
+      },
+
+      onExtractionComplete: (event: AgentSocketExtractionComplete) => {
+        setExtractionProgress(null);
+        pushActivity("extraction", "Estrazione completata", event.summary);
+        toast.success("File elaborato", {
+          description: event.summary,
+          duration: 6000,
+        });
+        options?.onExtractionComplete?.(event);
+      },
+
+      onExtractionFailed: (event: AgentSocketExtractionFailed) => {
+        setExtractionProgress(null);
+        pushActivity("extraction", "Estrazione fallita", event.error);
+        toast.error("Errore elaborazione file", {
+          description: event.error,
+          duration: 8000,
+        });
+      },
     });
 
     return () => {
       agentChatSocketService.disconnect();
       setConnectionState("disconnected");
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- options callbacks are stable refs
   }, [threadId, enabled, pushActivity]);
 
   return {
@@ -146,6 +187,7 @@ export function useAgentChatSocket(threadId: string, enabled: boolean) {
     taskList,
     memoryKeys,
     subagentProgress,
+    extractionProgress,
     clearActivity,
   };
 }

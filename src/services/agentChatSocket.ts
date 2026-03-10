@@ -46,6 +46,25 @@ export type SocketConnectionState =
   | "connected"
   | "error";
 
+export interface AgentSocketExtractionComplete {
+  readonly jobId: string;
+  readonly summary: string;
+  readonly timestamp: number;
+}
+
+export interface AgentSocketExtractionFailed {
+  readonly jobId: string;
+  readonly error: string;
+  readonly timestamp: number;
+}
+
+export interface AgentSocketExtractionProgress {
+  readonly jobId: string;
+  readonly progress: number;
+  readonly step: string;
+  readonly timestamp: number;
+}
+
 export interface AgentChatSocketCallbacks {
   onConnect?: () => void;
   onDisconnect?: () => void;
@@ -55,6 +74,9 @@ export interface AgentChatSocketCallbacks {
   onTaskUpdate?: (event: AgentSocketTaskUpdate) => void;
   onSubagentProgress?: (event: AgentSocketSubagentProgress) => void;
   onOuterLoopAlert?: (event: AgentSocketAlert) => void;
+  onExtractionComplete?: (event: AgentSocketExtractionComplete) => void;
+  onExtractionFailed?: (event: AgentSocketExtractionFailed) => void;
+  onExtractionProgress?: (event: AgentSocketExtractionProgress) => void;
   onComplete?: (event: Record<string, unknown>) => void;
   onAgentError?: (event: Record<string, unknown>) => void;
   onLoopWarning?: (event: Record<string, unknown>) => void;
@@ -196,6 +218,21 @@ class AgentChatSocketService {
     );
     this.socket.on("agent:questionnaire", (e: Record<string, unknown>) =>
       this.callbacks.onQuestionnaire?.(e),
+    );
+    this.socket.on(
+      "agent:extraction_complete",
+      (e: AgentSocketExtractionComplete) =>
+        this.callbacks.onExtractionComplete?.(e),
+    );
+    this.socket.on(
+      "agent:extraction_failed",
+      (e: AgentSocketExtractionFailed) =>
+        this.callbacks.onExtractionFailed?.(e),
+    );
+    this.socket.on(
+      "agent:extraction_progress",
+      (e: AgentSocketExtractionProgress) =>
+        this.callbacks.onExtractionProgress?.(e),
     );
   }
 }

@@ -32,6 +32,7 @@ import {
   SelectionFloatingButton,
   AgentActivityPanel,
   ChatInputArea,
+  ExtractionProgressIndicator,
 } from "./components";
 
 export default function DosageAgentChat() {
@@ -66,7 +67,13 @@ export default function DosageAgentChat() {
     submitQuestionnaire, loadMessages, clearMessages, messagesEndRef,
   } = useDosageAgentChat(threadId, { modelName, workspaceId: currentWorkspace?.id });
 
-  const socketState = useAgentChatSocket(threadId, isStreaming);
+  const handleExtractionComplete = useCallback(() => {
+    sendMessage("Estrazione completata, mostra i risultati.");
+  }, [sendMessage]);
+
+  const socketState = useAgentChatSocket(threadId, true, {
+    onExtractionComplete: handleExtractionComplete,
+  });
 
   const updateThreadId = useCallback(
     (newThreadId: string) => {
@@ -255,6 +262,12 @@ export default function DosageAgentChat() {
               {activeQuestionnaire && <QuestionnaireCard questionnaire={activeQuestionnaire} onSubmit={submitQuestionnaire} disabled={isStreaming} />}
               {pendingApproval && <PendingActionCard pendingApproval={pendingApproval} isBusy={isStreaming} onApprove={approveAction} onReject={rejectAction} />}
               {isStreaming && <StreamingIndicator streamingStatus={streamingStatus} activeTool={activeTool} toolCount={toolCount} />}
+              {socketState.extractionProgress && (
+                <ExtractionProgressIndicator
+                  progress={socketState.extractionProgress.progress}
+                  step={socketState.extractionProgress.step}
+                />
+              )}
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>

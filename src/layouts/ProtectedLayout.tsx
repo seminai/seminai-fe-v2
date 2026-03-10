@@ -777,12 +777,30 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           <div className="flex w-full flex-col gap-2">
             <WorkspaceSwitcher collapsed={!sidebarOpen} />
             {!isMobile && (
-              <div className="flex justify-center group-data-[collapsible=icon]:mt-2">
-                <SidebarToggleButton
-                  isOpen={sidebarOpen}
-                  onToggle={handleSidebarToggle}
-                />
-              </div>
+              <>
+                {sidebarOpen && canViewMenuItem("dashboard", userRole) && userRole !== UserRole.LABEL_MANAGER ? (
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to="/create-company-field-production"
+                      className="flex flex-1 items-center gap-2 h-10 rounded-xl bg-neutral-200/80 hover:bg-neutral-300/80 text-neutral-800 px-3"
+                    >
+                      <Plus className="size-5 shrink-0" />
+                      <span className="text-sm font-medium">Aggiungi</span>
+                    </Link>
+                    <SidebarToggleButton
+                      isOpen={sidebarOpen}
+                      onToggle={handleSidebarToggle}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex justify-center group-data-[collapsible=icon]:mt-2">
+                    <SidebarToggleButton
+                      isOpen={sidebarOpen}
+                      onToggle={handleSidebarToggle}
+                    />
+                  </div>
+                )}
+              </>
             )}
           </div>
         </SidebarHeader>
@@ -790,19 +808,19 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           <SidebarGroup className="py-2">
             <SidebarGroupContent>
               <SidebarMenu className="gap-1.5">
-                {/* Crea rapido - solo per ruoli che vedono la dashboard generale */}
+                {/* Crea rapido - solo icona quando sidebar è collassata */}
                 {canViewMenuItem("dashboard", userRole) &&
-                  userRole !== UserRole.LABEL_MANAGER && (
+                  userRole !== UserRole.LABEL_MANAGER && !sidebarOpen && (
                     <SidebarMenuItem key="quick-create">
                       <SidebarMenuButton
                         asChild
-                        tooltip="Crea rapido"
+                        tooltip="Aggiungi"
                         size="lg"
                         className="p-0 w-10 h-10 rounded-xl bg-neutral-200/80 hover:bg-neutral-300/80 text-neutral-800 data-[active=false]:bg-neutral-200/80"
                       >
                         <Link
                           to="/create-company-field-production"
-                          className="flex items-center justify-center h-10 w-10 rounded-xl shrink-0 group-data-[collapsible=icon]:w-10"
+                          className="flex items-center justify-center h-10 w-10 rounded-xl shrink-0"
                         >
                           <Plus className="size-5" />
                         </Link>

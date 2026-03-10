@@ -7,3 +7,4 @@ export { EmptyState } from "./EmptyState";
 export { SelectionFloatingButton } from "./SelectionFloatingButton";
 export { AgentActivityPanel } from "./AgentActivityPanel";
 export { ChatInputArea } from "./ChatInputArea";
+export { ExtractionProgressIndicator } from "./ExtractionProgressIndicator";
