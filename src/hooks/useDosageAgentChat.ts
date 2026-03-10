@@ -74,6 +74,7 @@ export function useDosageAgentChat(
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentModelInfoRef = useRef<ModelInfo | null>(null);
   const currentPlanRef = useRef<ActivePlan | null>(null);
+  const approvalInFlightRef = useRef(false);
 
   const isLoading = streamingStatus !== "idle";
 
@@ -376,10 +377,6 @@ export function useDosageAgentChat(
               }
 
               case "loop_warning": {
-                toast.warning("Attenzione", {
-                  description:
-                    event.content || "Troppi tool call consecutivi",
-                });
                 break;
               }
 
@@ -464,7 +461,8 @@ export function useDosageAgentChat(
   );
 
   const approveAction = useCallback(async () => {
-    if (isLoading) return;
+    if (isLoading || approvalInFlightRef.current) return;
+    approvalInFlightRef.current = true;
 
     setPendingApproval(null);
     setStreamingStatus("streaming");
@@ -483,6 +481,20 @@ export function useDosageAgentChat(
         threadId,
         modelName,
       });
+
+        if (response.status === "ERROR") {
+          const errorMessage = response.error || "Errore durante l'approvazione";
+          appendMessage({
+            id: getNextMessageId("error"),
+            role: "assistant",
+            content: `Errore: ${errorMessage}`,
+            timestamp: new Date(),
+          });
+          toast.error("Errore approvazione", {
+            description: errorMessage,
+          });
+          return;
+        }
 
       if (
         response.status === "REQUIRES_APPROVAL" &&
@@ -526,6 +538,7 @@ export function useDosageAgentChat(
         description: errorMessage,
       });
     } finally {
+      approvalInFlightRef.current = false;
       setStreamingStatus("idle");
       scrollToBottom();
     }
@@ -541,9 +554,10 @@ export function useDosageAgentChat(
 
   const rejectAction = useCallback(
     async (reason: string) => {
-      if (!reason.trim() || isLoading) {
+      if (!reason.trim() || isLoading || approvalInFlightRef.current) {
         return;
       }
+      approvalInFlightRef.current = true;
 
       setPendingApproval(null);
       setStreamingStatus("streaming");
@@ -563,6 +577,20 @@ export function useDosageAgentChat(
           reason,
           modelName,
         });
+
+        if (response.status === "ERROR") {
+          const errorMessage = response.error || "Errore durante il rifiuto";
+          appendMessage({
+            id: getNextMessageId("error"),
+            role: "assistant",
+            content: `Errore: ${errorMessage}`,
+            timestamp: new Date(),
+          });
+          toast.error("Errore rifiuto", {
+            description: errorMessage,
+          });
+          return;
+        }
 
         if (
           response.status === "REQUIRES_APPROVAL" &&
@@ -606,6 +634,7 @@ export function useDosageAgentChat(
           description: errorMessage,
         });
       } finally {
+        approvalInFlightRef.current = false;
         setStreamingStatus("idle");
         scrollToBottom();
       }

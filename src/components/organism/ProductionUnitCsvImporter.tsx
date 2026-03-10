@@ -18,7 +18,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { Upload, AlertCircle, CheckCircle, Download } from "lucide-react";
 import {
   extractProductionUnits,
+  extractProductionUnitsWithProgress,
   type ExtractedProductionUnit,
+  type ExtractionProgressEvent,
 } from "@/api/production-unit";
 import { toast } from "sonner";
 import { CsvFieldImporter } from "@/components/organism/CsvFieldImporter";
@@ -337,6 +339,7 @@ export const ProductionUnitCsvImporter: React.FC<
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [extractionProgress, setExtractionProgress] = useState<ExtractionProgressEvent | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [extractedUnits, setExtractedUnits] = useState<
     ExtractedProductionUnit[] | null
@@ -399,18 +402,32 @@ export const ProductionUnitCsvImporter: React.FC<
     setIsLoading(true);
     setValidationErrors([]);
     setExtractedUnits(null);
+    setExtractionProgress(null);
+
+    const isPdf = files[0].type === "application/pdf" ||
+      files[0].name.toLowerCase().endsWith(".pdf");
 
     try {
       toast.info("Estrazione unità produttive in corso...", {
-        description: "L'operazione potrebbe richiedere alcuni secondi",
+        description: isPdf
+          ? "Analisi PDF in corso, potrebbe richiedere un minuto"
+          : "L'operazione potrebbe richiedere alcuni secondi",
       });
 
-      const extracted = await extractProductionUnits(
-        selectedCompanyId,
-        files[0],
-        undefined,
-        controller.signal,
-      );
+      const extracted = isPdf
+        ? await extractProductionUnitsWithProgress(
+            selectedCompanyId,
+            files[0],
+            (progress) => setExtractionProgress(progress),
+            undefined,
+            controller.signal,
+          )
+        : await extractProductionUnits(
+            selectedCompanyId,
+            files[0],
+            undefined,
+            controller.signal,
+          );
 
       if (!extracted || extracted.length === 0) {
         setValidationErrors(["Nessuna unità produttiva trovata nel file."]);
@@ -426,6 +443,7 @@ export const ProductionUnitCsvImporter: React.FC<
       setValidationErrors([errorMessage]);
     } finally {
       setIsLoading(false);
+      setExtractionProgress(null);
     }
   };
 
@@ -669,12 +687,23 @@ export const ProductionUnitCsvImporter: React.FC<
       )}
 
       {isLoading && (
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Spinner size={20} ariaLabel="Elaborazione file" />
-          <span>
-            Estrazione unità produttive in corso... (potrebbe richiedere alcuni
-            secondi)
-          </span>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Spinner size={20} ariaLabel="Elaborazione file" />
+            <span>
+              {extractionProgress
+                ? `Estrazione PDF in corso... ${extractionProgress.progress}% (${extractionProgress.completed + 1}/${extractionProgress.total} blocchi)`
+                : "Estrazione unità produttive in corso..."}
+            </span>
+          </div>
+          {extractionProgress && (
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-agri-green-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${extractionProgress.progress}%` }}
+              />
+            </div>
+          )}
         </div>
       )}
 

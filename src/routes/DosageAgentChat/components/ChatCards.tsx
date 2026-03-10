@@ -34,13 +34,115 @@ function hasVisibleArgs(args: Record<string, unknown>): boolean {
 }
 
 function filterSensitiveArgs(args: Record<string, unknown>): Record<string, unknown> {
-  const filtered: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(args)) {
-    if (typeof value === "string" && UUID_REGEX.test(value)) continue;
-    if (key.toLowerCase().endsWith("id") && typeof value === "string") continue;
-    filtered[key] = value;
+  const sanitizeValue = (
+    value: unknown,
+    parentKey?: string,
+  ): unknown => {
+    if (parentKey && parentKey.toLowerCase().endsWith("id")) {
+      return undefined;
+    }
+    if (typeof value === "string" && UUID_REGEX.test(value)) {
+      return undefined;
+    }
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => sanitizeValue(item))
+        .filter((item) => item !== undefined);
+    }
+    if (value && typeof value === "object") {
+      const entries = Object.entries(value).flatMap(([key, nestedValue]) => {
+        const sanitizedValue = sanitizeValue(nestedValue, key);
+        if (sanitizedValue === undefined) {
+          return [];
+        }
+        return [[key, sanitizedValue] as const];
+      });
+      return Object.fromEntries(entries);
+    }
+    return value;
+  };
+
+  const sanitized = sanitizeValue(args);
+  return sanitized && typeof sanitized === "object" && !Array.isArray(sanitized)
+    ? (sanitized as Record<string, unknown>)
+    : {};
+}
+
+function renderDateChangeRow(
+  label: string,
+  currentValue: unknown,
+  nextValue: unknown,
+) {
+  if (!nextValue || currentValue === nextValue) {
+    return null;
   }
-  return filtered;
+  return (
+    <div key={label} className="grid grid-cols-[78px_1fr] gap-2 text-[11px]">
+      <span className="font-medium text-amber-900">{label}</span>
+      <span className="text-amber-800">
+        {String(currentValue || "non impostata")} {" -> "} {String(nextValue)}
+      </span>
+    </div>
+  );
+}
+
+function renderUpdateProductionUnitsPreview(args: Record<string, unknown>) {
+  const updates = Array.isArray(args.updates)
+    ? args.updates.filter(
+        (update): update is Record<string, unknown> =>
+          !!update && typeof update === "object",
+      )
+    : [];
+  if (updates.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-2">
+      {typeof args.reason === "string" && args.reason.trim() && (
+        <div className="rounded bg-amber-100 p-2 text-[11px] text-amber-900">
+          <span className="font-medium">Motivo:</span> {args.reason}
+        </div>
+      )}
+      {updates.map((update, index) => {
+        const title = String(update.productionUnitName || `Unità ${index + 1}`);
+        const subtitle = [update.cropName, update.variety]
+          .filter(Boolean)
+          .join(" - ");
+        const dateRows = [
+          renderDateChangeRow(
+            "Inizio",
+            update.currentStartDate,
+            update.newStartDate,
+          ),
+          renderDateChangeRow(
+            "Fioritura",
+            update.currentFloweringDate,
+            update.newFloweringDate,
+          ),
+          renderDateChangeRow(
+            "Raccolta",
+            update.currentHarvestingDate,
+            update.newHarvestingDate,
+          ),
+          renderDateChangeRow("Fine", update.currentEndDate, update.newEndDate),
+        ].filter(Boolean);
+
+        return (
+          <div
+            key={`${title}-${index}`}
+            className="rounded bg-amber-100 p-2 text-[11px] text-amber-900 space-y-1.5"
+          >
+            <div>
+              <p className="font-medium">{title}</p>
+              {subtitle && <p className="text-amber-800">{subtitle}</p>}
+            </div>
+            <div className="space-y-1">{dateRows}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 // ─── Treatment Plan Card ─────────────────────────────────────
@@ -137,11 +239,17 @@ export function PendingActionCard({
         && !TOOLS_HIDING_ARGS.has(toolName)
         && (() => {
           const cleaned = filterSensitiveArgs(pendingApproval.toolCall.args);
-          return Object.keys(cleaned).length > 0 ? (
+          if (Object.keys(cleaned).length === 0) {
+            return null;
+          }
+          if (toolName === "update_production_units") {
+            return renderUpdateProductionUnitsPreview(cleaned);
+          }
+          return (
             <pre className="text-[10px] bg-amber-100 rounded p-2 overflow-x-auto">
               {JSON.stringify(cleaned, null, 2)}
             </pre>
-          ) : null;
+          );
         })()
       }
       {showRejectInput && (

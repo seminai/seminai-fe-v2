@@ -127,6 +127,7 @@ export type DosageAgentResponse = {
   message?: string;
   sources?: DosageAgentSourceCitation[];
   pendingToolCalls?: DosageAgentToolCall[];
+  error?: string;
 };
 
 export type DosageAgentApproveRequest = {

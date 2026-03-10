@@ -467,6 +467,101 @@ export async function extractProductionUnits(
   }
 }
 
+export type ExtractionProgressEvent = {
+  type: "progress";
+  completed: number;
+  total: number;
+  progress: number;
+};
+
+export type ExtractionResultEvent = {
+  type: "result";
+  data: { productionUnits: unknown; extractedCount: number; diagnostics: unknown };
+};
+
+export type ExtractionErrorEvent = {
+  type: "error";
+  message: string;
+};
+
+type ExtractionSSEEvent = ExtractionProgressEvent | ExtractionResultEvent | ExtractionErrorEvent;
+
+/**
+ * Extracts production units from a file with SSE progress streaming (used for PDFs).
+ * Falls back to the standard synchronous extraction for non-PDF files.
+ */
+export async function extractProductionUnitsWithProgress(
+  companyId: string,
+  file: File,
+  onProgress: (event: ExtractionProgressEvent) => void,
+  baseUrl: string = BASE_URL,
+  signal?: AbortSignal,
+): Promise<ExtractedProductionUnit[]> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/production-units/extract?companyId=${encodeURIComponent(companyId)}`,
+    { method: "POST", body: formData, signal },
+  );
+
+  if (!response.ok) {
+    const text = await safeReadText(response);
+    throw new Error(text || "Failed to extract production units");
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+
+  // Non-SSE response (CSV/Excel): parse as JSON
+  if (!contentType.includes("text/event-stream")) {
+    const rawText = await safeReadText(response);
+    if (!rawText || rawText.trim() === "") return [];
+    try {
+      return normalizeExtractedProductionUnits(JSON.parse(rawText));
+    } catch {
+      return [];
+    }
+  }
+
+  // SSE response (PDF): read stream and emit progress events
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("Response body is not readable");
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let result: ExtractedProductionUnit[] = [];
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const jsonStr = line.slice(6).trim();
+      if (!jsonStr) continue;
+
+      try {
+        const event = JSON.parse(jsonStr) as ExtractionSSEEvent;
+        if (event.type === "progress") {
+          onProgress(event);
+        } else if (event.type === "result") {
+          result = normalizeExtractedProductionUnits(event.data);
+        } else if (event.type === "error") {
+          throw new Error(event.message);
+        }
+      } catch (e) {
+        if (e instanceof Error && e.message !== jsonStr) throw e;
+      }
+    }
+  }
+
+  return result;
+}
+
 class ProductionUnitApiService {
   private readonly baseUrl: string;
 
