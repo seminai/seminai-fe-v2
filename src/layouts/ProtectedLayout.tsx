@@ -325,7 +325,6 @@ function MobileBottomBar({
   if (!isMobile) return null;
 
   const labelActive = location.pathname.startsWith("/label");
-  const labelDashboard = location.pathname.startsWith("/dashboard");
   const chatActive = location.pathname.startsWith("/dosage-agent-chat");
   const fieldsActive = location.pathname.startsWith("/fields");
   const companyActive = location.pathname.startsWith("/company");
@@ -351,26 +350,30 @@ function MobileBottomBar({
     >
       <div className="m-3 rounded-2xl backdrop-blur-xl bg-white/20 supports-backdrop-blur:bg-white/30 border border-white/25 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25),0_8px_32px_0_rgba(31,38,135,0.2)]">
         <ul className="flex items-center justify-center gap-1">
-          {canViewMenuItem("dashboard", userRole) && (
-            <li key="dashboard">
-              <Link
-                to="/dashboard"
-                className={cn(
-                  "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
-                  labelDashboard && "text-gray-900 font-medium",
-                )}
-              >
-                <LayoutDashboard
+          {canViewMenuItem("dashboard", userRole) &&
+            userRole !== UserRole.LABEL_MANAGER && (
+              <li key="aggiungi">
+                <Link
+                  to="/create-company-field-production"
                   className={cn(
-                    "size-5",
-                    labelDashboard ? "text-gray-900" : "text-gray-700/90",
+                    "flex flex-col items-center justify-center p-2.5 text-[11px] text-gray-800/80",
+                    location.pathname === "/create-company-field-production" &&
+                      "text-gray-900 font-medium",
                   )}
-                  size={20}
-                />
-                <span className="mt-1">Home</span>
-              </Link>
-            </li>
-          )}
+                >
+                  <Plus
+                    className={cn(
+                      "size-5",
+                      location.pathname === "/create-company-field-production"
+                        ? "text-gray-900"
+                        : "text-gray-700/90",
+                    )}
+                    size={20}
+                  />
+                  <span className="mt-1">Aggiungi</span>
+                </Link>
+              </li>
+            )}
           {userRole === UserRole.ADMIN && (
             <li key="chat">
               <Link
@@ -740,9 +743,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
 
   const labelActive =
     location.pathname === "/label" || location.pathname.startsWith("/label/");
-  const labelDashboard =
-    location.pathname === "/dashboard" ||
-    location.pathname.startsWith("/dashboard/");
   const fieldsActive =
     location.pathname === "/fields" || location.pathname.startsWith("/fields/");
   const companyActive =
@@ -827,20 +827,23 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   )}
-                {/* Dashboard */}
-                {canViewMenuItem("dashboard", userRole) && (
-                  <SidebarMenuItem key="dashboard">
+                {/* Chat */}
+                {dosageAgentChatVisible && (
+                  <SidebarMenuItem key="chat">
                     <SidebarMenuButton
                       asChild
-                      isActive={labelDashboard}
-                      tooltip="Dashboard"
+                      isActive={dosageAgentChatActive}
+                      tooltip="Chat"
                       size="lg"
                       className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                     >
-                      <Link to="/dashboard" className="flex items-center gap-3">
-                        <LayoutDashboard className="size-5" size={20} />
+                      <Link
+                        to="/dosage-agent-chat"
+                        className="flex items-center gap-3"
+                      >
+                        <MessageCircle className="size-5" size={20} />
                         <span className="group-data-[collapsible=icon]:hidden">
-                          Dashboard
+                          Chat
                         </span>
                       </Link>
                     </SidebarMenuButton>
@@ -849,9 +852,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
 
                 {/* Menu Strumenti - solo in modalità espansa */}
                 {sidebarOpen &&
-                  (canViewMenuItem("label", userRole) ||
-                    jobVisible ||
-                    dosageAgentChatVisible) && (
+                  (canViewMenuItem("label", userRole) || jobVisible) && (
                     <Collapsible
                       open={toolsMenuOpen}
                       onOpenChange={setToolsMenuOpen}
@@ -913,28 +914,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                       size={20}
                                     />
                                     <span>Operazioni</span>
-                                  </Link>
-                                </SidebarMenuButton>
-                              </SidebarMenuItem>
-                            )}
-                            {dosageAgentChatVisible && (
-                              <SidebarMenuItem key="chat">
-                                <SidebarMenuButton
-                                  asChild
-                                  isActive={dosageAgentChatActive}
-                                  tooltip="Chat"
-                                  size="lg"
-                                  className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
-                                >
-                                  <Link
-                                    to="/dosage-agent-chat"
-                                    className="flex items-center gap-3"
-                                  >
-                                    <MessageCircle
-                                      className="size-5"
-                                      size={20}
-                                    />
-                                    <span>Chat</span>
                                   </Link>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>

@@ -17,6 +17,7 @@ import { IoOpenOutline } from "react-icons/io5";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import DrawerProduct from "./DrawerProduct";
+import { SplitDrawerLayout } from "@/components/molecules/SplitDrawerLayout";
 import { getAdministrativeStatusMap } from "@/services/fitosanitariRegistry";
 
 class ProductStockCalculator {
@@ -610,52 +611,64 @@ function ProductsPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <PageHeader title="Prodotti" className="hidden md:block" />
-
-      <div className="flex-1 min-h-0 px-6 pb-6">
-        <EditableTable
-          columns={tableColumns}
-          rows={tableRows}
-          isModify={true}
-          addButton={true}
-          onAddClick={() => navigate("/new-product")}
-          onSave={handleSave}
-          onDeleteSelected={handleDeleteSelected}
-          onAlignSelected={handleAlignSelected}
-          alignButtonLabel="Unisci"
-          isAlignLoading={isAlignLoading}
-          getRowId={(row) => (row as ProductTableRow).id}
-          exportFileName="prodotti"
-          lastComponent={(row) => {
-            const data = row as ProductTableRow;
-            return (
-              <div className="flex justify-end px-2 py-1 bg-white group-hover:bg-agri-green-50 transition-colors">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-xs whitespace-nowrap cursor-pointer hover:rounded-full"
-                  onClick={() => handleProductClick(data.product)}
-                >
-                  <span className="hidden sm:inline sm:mr-1">
-                    {data.movementsCount} moviment
-                    {data.movementsCount === 1 ? "o" : "i"}
-                  </span>
-                  <IoOpenOutline className="h-3 w-3" />
-                </Button>
-              </div>
-            );
-          }}
+    <SplitDrawerLayout
+      className="flex flex-col h-full"
+      main={
+        <>
+          <PageHeader title="Prodotti" className="hidden md:block" />
+          <div className="flex-1 min-h-0 px-6 pb-6">
+            <EditableTable
+              columns={tableColumns}
+              rows={tableRows}
+              isModify={true}
+              addButton={true}
+              onAddClick={() => navigate("/new-product")}
+              onSave={handleSave}
+              onDeleteSelected={handleDeleteSelected}
+              onAlignSelected={handleAlignSelected}
+              alignButtonLabel="Unisci"
+              isAlignLoading={isAlignLoading}
+              getRowId={(row) => (row as ProductTableRow).id}
+              exportFileName="prodotti"
+              lastComponent={(row) => {
+                const data = row as ProductTableRow;
+                return (
+                  <div className="flex justify-end px-2 py-1 bg-white group-hover:bg-agri-green-50 transition-colors">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs whitespace-nowrap cursor-pointer hover:rounded-full"
+                      onClick={() => handleProductClick(data.product)}
+                    >
+                      <span className="hidden sm:inline sm:mr-1">
+                        {data.movementsCount} moviment
+                        {data.movementsCount === 1 ? "o" : "i"}
+                      </span>
+                      <IoOpenOutline className="h-3 w-3" />
+                    </Button>
+                  </div>
+                );
+              }}
+            />
+          </div>
+        </>
+      }
+      drawerContent={
+        <DrawerProduct
+          contentOnly
+          productId={selectedProductId}
+          previewProduct={selectedProductPreview}
+          open={drawerOpen}
+          onOpenChange={handleDrawerOpenChange}
         />
-      </div>
-
-      <DrawerProduct
-        productId={selectedProductId}
-        previewProduct={selectedProductPreview}
-        open={drawerOpen}
-        onOpenChange={handleDrawerOpenChange}
-      />
-    </div>
+      }
+      open={drawerOpen}
+      onOpenChange={handleDrawerOpenChange}
+      defaultDrawerWidth={480}
+      minDrawerWidth={320}
+      maxDrawerWidth={900}
+      storageKey="seminai-products-drawer-width"
+    />
   );
 }
 

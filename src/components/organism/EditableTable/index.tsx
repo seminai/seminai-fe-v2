@@ -647,7 +647,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
     // Horizontal Layout
     // ─────────────────────────────────────────────────────────────────────────
 
-    return (
+    const tableContent = (
       <div
         data-slot="table-wrapper"
         className={cn(
@@ -767,14 +767,6 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
           </div>
         )}
 
-        <DetailsDrawer
-          open={tableState.drawerOpen}
-          onOpenChange={tableState.closeDetails}
-          row={tableState.drawerRow}
-          title={detailsTitle}
-          detailsRenderer={detailsRenderer}
-        />
-
         <EditableTableFiltersPanel
           open={filters.filterDrawerOpen}
           columns={columns}
@@ -843,6 +835,18 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
           renderInput={renderInput}
         />
       </div>
+    );
+
+    return (
+      <DetailsDrawer
+        open={tableState.drawerOpen}
+        onOpenChange={tableState.closeDetails}
+        row={tableState.drawerRow}
+        title={detailsTitle}
+        detailsRenderer={detailsRenderer}
+      >
+        {tableContent}
+      </DetailsDrawer>
     );
   },
 );

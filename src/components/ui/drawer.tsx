@@ -85,6 +85,30 @@ function DrawerContent({
   );
 }
 
+/**
+ * Wrapper for drawer content when rendered in a split panel (e.g. SplitDrawerLayout).
+ * Applies the same visual style as DrawerContent without Portal/Vaul.
+ */
+function DrawerPanelContent({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="drawer-panel-content"
+      className={cn(
+        "bg-white flex flex-col flex-1 min-h-0 overflow-hidden",
+        "border-l border-neutral-200 shadow-2xl",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
 function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -138,6 +162,7 @@ export {
   DrawerTrigger,
   DrawerClose,
   DrawerContent,
+  DrawerPanelContent,
   DrawerHeader,
   DrawerFooter,
   DrawerTitle,

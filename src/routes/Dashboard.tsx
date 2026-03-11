@@ -18,6 +18,7 @@ import BottleAgriIcon from "@/components/icons/BottleAgriIcon";
 import TagAgriIcon from "@/components/icons/TagAgriIcon";
 import { IoChevronForwardOutline } from "react-icons/io5";
 import { Mail, ArrowRight, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { LabelSummary } from "@/api/labels";

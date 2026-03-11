@@ -77,6 +77,8 @@ interface DrawerProductProps {
   previewProduct: Product | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** When true, render only the panel content (no Sheet). For use inside SplitDrawerLayout. */
+  contentOnly?: boolean;
 }
 
 class StockFormatter {
@@ -427,6 +429,7 @@ function DrawerProduct({
   previewProduct,
   open,
   onOpenChange,
+  contentOnly = false,
 }: DrawerProductProps) {
   const queryClient = useQueryClient();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -680,10 +683,8 @@ function DrawerProduct({
   const formattedTotalIn = StockFormatter.formatQuantity(totalIn);
   const formattedTotalOut = StockFormatter.formatQuantity(totalOut);
 
-  return (
+  const detailPanelContent = (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="w-screen max-w-full sm:w-full sm:max-w-[50vw] overflow-y-auto bg-white p-2">
           {isDetailLoading && (
             <div className="flex items-center gap-3 border border-blue-100 bg-blue-50 rounded-lg px-4 py-2 mb-4">
               <Spinner size={24} />
@@ -704,37 +705,73 @@ function DrawerProduct({
             </Alert>
           )}
 
-          <SheetHeader>
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-3">
-                <SheetTitle className="text-2xl">{product.name}</SheetTitle>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleOpenEditDialog}
-                  className="shrink-0"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
-                <SheetDescription className="mb-0">
-                  Codice magazzino (SKU): {product.sku}
-                </SheetDescription>
-                <Badge
-                  variant={
-                    totalStock > 50
-                      ? "default"
-                      : totalStock > 0
-                        ? "secondary"
-                        : "destructive"
-                  }
-                >
-                  Stock: {formattedTotalStock} {unit}
-                </Badge>
+          {contentOnly ? (
+            <div className="flex flex-col gap-1.5 p-4" data-slot="panel-header">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-foreground font-semibold text-2xl">
+                    {product.name}
+                  </h2>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleOpenEditDialog}
+                    className="shrink-0"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className="text-muted-foreground text-sm mb-0">
+                    Codice magazzino (SKU): {product.sku}
+                  </p>
+                  <Badge
+                    variant={
+                      totalStock > 50
+                        ? "default"
+                        : totalStock > 0
+                          ? "secondary"
+                          : "destructive"
+                    }
+                  >
+                    Stock: {formattedTotalStock} {unit}
+                  </Badge>
+                </div>
               </div>
             </div>
-          </SheetHeader>
+          ) : (
+            <SheetHeader>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <SheetTitle className="text-2xl">{product.name}</SheetTitle>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleOpenEditDialog}
+                    className="shrink-0"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <SheetDescription className="mb-0">
+                    Codice magazzino (SKU): {product.sku}
+                  </SheetDescription>
+                  <Badge
+                    variant={
+                      totalStock > 50
+                        ? "default"
+                        : totalStock > 0
+                          ? "secondary"
+                          : "destructive"
+                    }
+                  >
+                    Stock: {formattedTotalStock} {unit}
+                  </Badge>
+                </div>
+              </div>
+            </SheetHeader>
+          )}
 
           <div className="mt-6 space-y-6">
             {/* Informazioni del prodotto */}
@@ -1483,8 +1520,22 @@ function DrawerProduct({
               </TabsContent>
             </Tabs>
           </div>
-        </SheetContent>
-      </Sheet>
+    </>
+  );
+
+  return (
+    <>
+      {contentOnly ? (
+        <div className="flex flex-col h-full overflow-y-auto bg-white p-2 min-h-0">
+          {detailPanelContent}
+        </div>
+      ) : (
+        <Sheet open={open} onOpenChange={onOpenChange}>
+          <SheetContent className="w-screen max-w-full sm:w-full sm:max-w-[50vw] overflow-y-auto bg-white p-2">
+            {detailPanelContent}
+          </SheetContent>
+        </Sheet>
+      )}
 
       {/* Drawer per modifica prodotto */}
       <Sheet open={editDialogOpen} onOpenChange={setEditDialogOpen}>

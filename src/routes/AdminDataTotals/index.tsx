@@ -199,39 +199,40 @@ export default function AdminDataTotalsPage() {
           </Alert>
         </>
       ) : (
-        <>
-          <AdminSummaryCards totals={summaryQuery.data?.data.totals ?? emptyTotals} />
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Cerca per utente, email o azienda"
-          />
-          <AdminUsersTable
-            users={filteredUsers}
-            selectedUserId={selectedUserId}
-            blockingUserId={blockingUserId}
-            deactivatingUserId={deactivatingUserId}
-            reactivatingUserId={reactivatingUserId}
-            onSelectUser={setSelectedUserId}
-            onToggleBlock={(user) =>
-              setPendingAction({
-                type: user.isBlocked ? "unblock" : "block",
-                user,
-              })
+        <AdminUserDetailsDrawer
+          user={selectedUser}
+          open={selectedUser !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedUserId(null);
             }
-            onDeactivate={(user) => setPendingAction({ type: "deactivate", user })}
-            onReactivate={(user) => setPendingAction({ type: "reactivate", user })}
-          />
-          <AdminUserDetailsDrawer
-            user={selectedUser}
-            open={selectedUser !== null}
-            onOpenChange={(open) => {
-              if (!open) {
-                setSelectedUserId(null);
+          }}
+        >
+          <div className="space-y-6">
+            <AdminSummaryCards totals={summaryQuery.data?.data.totals ?? emptyTotals} />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Cerca per utente, email o azienda"
+            />
+            <AdminUsersTable
+              users={filteredUsers}
+              selectedUserId={selectedUserId}
+              blockingUserId={blockingUserId}
+              deactivatingUserId={deactivatingUserId}
+              reactivatingUserId={reactivatingUserId}
+              onSelectUser={setSelectedUserId}
+              onToggleBlock={(user) =>
+                setPendingAction({
+                  type: user.isBlocked ? "unblock" : "block",
+                  user,
+                })
               }
-            }}
-          />
-        </>
+              onDeactivate={(user) => setPendingAction({ type: "deactivate", user })}
+              onReactivate={(user) => setPendingAction({ type: "reactivate", user })}
+            />
+          </div>
+        </AdminUserDetailsDrawer>
       )}
 
       <AdminUserActionDialog

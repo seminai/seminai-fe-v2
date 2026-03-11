@@ -9,6 +9,7 @@ import {
   Wifi,
   WifiOff,
   Activity,
+  FileSearch,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -46,6 +47,7 @@ const ACTIVITY_ICON: Record<AgentActivityItem["type"], React.ReactNode> = {
   task: <ListChecks className="h-3 w-3 text-sky-600" />,
   subagent: <Cpu className="h-3 w-3 text-teal-600" />,
   alert: <Bell className="h-3 w-3 text-rose-600" />,
+  extraction: <FileSearch className="h-3 w-3 text-emerald-600" />,
 };
 
 function formatTime(ts: number): string {
