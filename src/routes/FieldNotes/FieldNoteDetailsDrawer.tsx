@@ -31,6 +31,8 @@ interface FieldNoteDetailsDrawerProps {
   fields: Array<{ id: string; name: string }>;
   products: Array<{ id: string; name: string }>;
   onSave: (id: string, data: Record<string, unknown>) => Promise<void>;
+  /** When true, render only the panel content (no Drawer wrapper). For use inside SplitDrawerLayout. */
+  contentOnly?: boolean;
 }
 
 export function FieldNoteDetailsDrawer({
@@ -42,6 +44,7 @@ export function FieldNoteDetailsDrawer({
   fields: _fields,
   products,
   onSave,
+  contentOnly = false,
 }: FieldNoteDetailsDrawerProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [attachments, setAttachments] = useState<FieldNoteAttachment[]>([]);
@@ -159,6 +162,61 @@ export function FieldNoteDetailsDrawer({
     return null;
   }
 
+  const panelContent = (
+    <>
+      <FieldNoteDetailsDrawerContent
+        fieldNote={fieldNote}
+        formState={formState}
+        formActions={formActions}
+        formOptions={formOptions}
+        formDerived={formDerived}
+        attachments={attachments}
+        onUploadAttachment={handleUploadAttachment}
+        isUploadingAttachment={isUploadingAttachment}
+      />
+
+      <div className="flex flex-row items-center justify-end gap-2 border-t border-border/50 px-4 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <Button
+          variant="ghost"
+          onClick={() => onOpenChange(false)}
+          className="h-11 sm:h-10 px-4 sm:px-3"
+        >
+          Annulla
+        </Button>
+        <Button
+          onClick={handleSave}
+          disabled={!canSave || isSaving}
+          className="h-11 sm:h-10 px-5 sm:px-4"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Salvataggio...
+            </>
+          ) : (
+            "Salva"
+          )}
+        </Button>
+      </div>
+    </>
+  );
+
+  if (contentOnly) {
+    return (
+      <div className="flex flex-col h-full overflow-y-auto bg-white">
+        <div className="flex flex-col gap-1.5 px-4 sm:px-6 py-4">
+          <h2 className="text-foreground font-semibold text-lg sm:text-xl">
+            Dettagli Nota di Campo
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Visualizza e modifica i dettagli della nota di campo
+          </p>
+        </div>
+        {panelContent}
+      </div>
+    );
+  }
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent
@@ -171,41 +229,7 @@ export function FieldNoteDetailsDrawer({
             Visualizza e modifica i dettagli della nota di campo
           </DrawerDescription>
         </DrawerHeader>
-
-        <FieldNoteDetailsDrawerContent
-          fieldNote={fieldNote}
-          formState={formState}
-          formActions={formActions}
-          formOptions={formOptions}
-          formDerived={formDerived}
-          attachments={attachments}
-          onUploadAttachment={handleUploadAttachment}
-          isUploadingAttachment={isUploadingAttachment}
-        />
-
-        <DrawerFooter className="flex flex-row items-center justify-end gap-2 border-t border-border/50 px-4 sm:px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="h-11 sm:h-10 px-4 sm:px-3"
-          >
-            Annulla
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!canSave || isSaving}
-            className="h-11 sm:h-10 px-5 sm:px-4"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Salvataggio...
-              </>
-            ) : (
-              "Salva"
-            )}
-          </Button>
-        </DrawerFooter>
+        {panelContent}
       </DrawerContent>
     </Drawer>
   );

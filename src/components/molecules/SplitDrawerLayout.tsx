@@ -3,7 +3,7 @@ import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { useIsDesktop } from "@/hooks/useMediaQuery";
 import { useResizePanel } from "@/hooks/useResizePanel";
 import { cn } from "@/lib/utils";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const DEFAULT_DRAWER_WIDTH = 400;
@@ -92,9 +92,19 @@ export function SplitDrawerLayout({
             </Button>
           </div>
           <div
-            className="flex flex-col flex-shrink-0 overflow-hidden bg-white border-l border-neutral-200 shadow-2xl"
+            className="relative flex flex-col flex-shrink-0 overflow-hidden bg-white border-l border-neutral-200 shadow-2xl"
             style={{ width: `${width}px` }}
           >
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute top-3 right-3 z-10 h-7 w-7 rounded-sm text-muted-foreground hover:text-foreground"
+              onClick={() => onOpenChange(false)}
+              aria-label="Close drawer"
+            >
+              <X className="h-4 w-4" />
+            </Button>
             {drawerContent}
           </div>
         </>

@@ -3,8 +3,6 @@ import {
   Drawer,
   DrawerContent,
   DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
 } from "@/components/ui/drawer";
 import { SplitDrawerLayout } from "@/components/molecules/SplitDrawerLayout";
 import { InternalRow } from "../types";
@@ -35,10 +33,10 @@ export function DetailsDrawer({
     <>
       {title && (
         <DrawerHeader className="px-4 sm:px-6">
-          <DrawerTitle className="text-lg sm:text-xl">{title}</DrawerTitle>
-          <DrawerDescription className="text-sm">
+          <h2 className="text-foreground font-semibold text-lg sm:text-xl">{title}</h2>
+          <p className="text-muted-foreground text-sm">
             Visualizza e modifica i dettagli dell'elemento selezionato
-          </DrawerDescription>
+          </p>
         </DrawerHeader>
       )}
       <div

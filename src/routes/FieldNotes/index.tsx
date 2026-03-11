@@ -9,6 +9,7 @@ import type { FieldNote, FieldNoteRowData } from "./types";
 import FieldNotesView from "./FieldNotesView";
 import { CreateFieldNoteDrawer } from "./CreateFieldNoteDrawer";
 import { FieldNoteDetailsDrawer } from "./FieldNoteDetailsDrawer";
+import { SplitDrawerLayout } from "@/components/molecules/SplitDrawerLayout";
 import { useFields } from "@/hooks/useFields";
 import { useProducts } from "@/hooks/useProducts";
 import { useCompanies } from "@/hooks/useCompanies";
@@ -676,59 +677,71 @@ export default function FieldNotesPage() {
   }, [userId]);
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 h-[calc(100svh-56px-96px)] md:h-svh overflow-hidden">
-      <PageHeader
-        title="Note di Campo"
-        className="hidden md:block"
-      ></PageHeader>
+    <SplitDrawerLayout
+      main={
+        <div className="flex flex-col flex-1 min-h-0 h-[calc(100svh-56px-96px)] md:h-svh overflow-hidden">
+          <PageHeader
+            title="Note di Campo"
+            className="hidden md:block"
+          ></PageHeader>
 
-      <FieldNotesView
-        error={error}
-        isLoading={isLoading}
-        fieldNotesLength={fieldNotes.length}
-        columns={columns}
-        rows={rows}
-        onSave={handleSave}
-        onDeleteSelected={handleDeleteSelected}
-        isRightSidebarOpen={isRightSidebarOpen}
-        onToggleRightSidebar={setIsRightSidebarOpen}
-        rightSidebarWidth={rightSidebarWidth}
-        onResizeStart={handleResizeStart}
-        isResizing={isResizing}
-        showAddButton={true}
-        onAddClick={() => setIsCreateDrawerOpen(true)}
-        newRowDefaults={{
-          category: FieldNoteCategory.OPERATION,
-          status: FieldNoteStatus.PENDING,
-          operationDate: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-        }}
-        onFieldNoteSaved={handleFieldNoteSaved}
-        onOpenDetails={handleOpenDetails}
-        onBulkVerifySelected={handleBulkVerifySelected}
-        isBulkVerifying={isBulkVerifying}
-      />
+          <FieldNotesView
+            error={error}
+            isLoading={isLoading}
+            fieldNotesLength={fieldNotes.length}
+            columns={columns}
+            rows={rows}
+            onSave={handleSave}
+            onDeleteSelected={handleDeleteSelected}
+            isRightSidebarOpen={isRightSidebarOpen}
+            onToggleRightSidebar={setIsRightSidebarOpen}
+            rightSidebarWidth={rightSidebarWidth}
+            onResizeStart={handleResizeStart}
+            isResizing={isResizing}
+            showAddButton={true}
+            onAddClick={() => setIsCreateDrawerOpen(true)}
+            newRowDefaults={{
+              category: FieldNoteCategory.OPERATION,
+              status: FieldNoteStatus.PENDING,
+              operationDate: new Date().toISOString(),
+              createdAt: new Date().toISOString(),
+            }}
+            onFieldNoteSaved={handleFieldNoteSaved}
+            onOpenDetails={handleOpenDetails}
+            onBulkVerifySelected={handleBulkVerifySelected}
+            isBulkVerifying={isBulkVerifying}
+          />
 
-      <CreateFieldNoteDrawer
-        open={isCreateDrawerOpen}
-        onOpenChange={setIsCreateDrawerOpen}
-        companies={companies}
-        productionUnits={productionUnits}
-        fields={Array.isArray(fields) ? fields : []}
-        products={Array.isArray(products) ? products : []}
-        onSave={handleCreateFromDrawer}
-      />
-
-      <FieldNoteDetailsDrawer
-        open={isDetailsDrawerOpen}
-        onOpenChange={setIsDetailsDrawerOpen}
-        fieldNote={selectedFieldNoteForDetails}
-        companies={companies}
-        productionUnits={productionUnits}
-        fields={Array.isArray(fields) ? fields : []}
-        products={Array.isArray(products) ? products : []}
-        onSave={handleUpdateFieldNote}
-      />
-    </div>
+          <CreateFieldNoteDrawer
+            open={isCreateDrawerOpen}
+            onOpenChange={setIsCreateDrawerOpen}
+            companies={companies}
+            productionUnits={productionUnits}
+            fields={Array.isArray(fields) ? fields : []}
+            products={Array.isArray(products) ? products : []}
+            onSave={handleCreateFromDrawer}
+          />
+        </div>
+      }
+      drawerContent={
+        <FieldNoteDetailsDrawer
+          contentOnly
+          open={isDetailsDrawerOpen}
+          onOpenChange={setIsDetailsDrawerOpen}
+          fieldNote={selectedFieldNoteForDetails}
+          companies={companies}
+          productionUnits={productionUnits}
+          fields={Array.isArray(fields) ? fields : []}
+          products={Array.isArray(products) ? products : []}
+          onSave={handleUpdateFieldNote}
+        />
+      }
+      open={isDetailsDrawerOpen}
+      onOpenChange={setIsDetailsDrawerOpen}
+      defaultDrawerWidth={480}
+      minDrawerWidth={320}
+      maxDrawerWidth={800}
+      storageKey="seminai-field-notes-details-drawer-width"
+    />
   );
 }

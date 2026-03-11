@@ -612,9 +612,8 @@ function ProductsPage() {
 
   return (
     <SplitDrawerLayout
-      className="flex flex-col h-full"
       main={
-        <>
+        <div className="flex flex-col h-full">
           <PageHeader title="Prodotti" className="hidden md:block" />
           <div className="flex-1 min-h-0 px-6 pb-6">
             <EditableTable
@@ -651,7 +650,7 @@ function ProductsPage() {
               }}
             />
           </div>
-        </>
+        </div>
       }
       drawerContent={
         <DrawerProduct
