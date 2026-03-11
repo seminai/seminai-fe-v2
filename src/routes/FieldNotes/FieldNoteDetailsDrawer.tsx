@@ -5,7 +5,6 @@ import {
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
-  DrawerFooter,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -13,9 +12,7 @@ import { toast } from "sonner";
 import type { FieldNote, FieldNoteAttachment } from "@/api/field-notes";
 import { FieldNoteCategory, FieldNoteStatus } from "@/api/field-notes";
 import { FieldNoteDetailsDrawerContent } from "./FieldNoteDetailsDrawerContent";
-import {
-  useFieldNoteDetailsForm,
-} from "./useFieldNoteDetailsForm";
+import { useFieldNoteDetailsForm } from "./useFieldNoteDetailsForm";
 import { useUploadFieldNoteAttachmentMutation } from "@/hooks/useFieldNoteAttachments";
 
 interface FieldNoteDetailsDrawerProps {
@@ -41,7 +38,6 @@ export function FieldNoteDetailsDrawer({
   fieldNote,
   companies,
   productionUnits,
-  fields: _fields,
   products,
   onSave,
   contentOnly = false,
@@ -64,7 +60,9 @@ export function FieldNoteDetailsDrawer({
 
   useEffect(() => {
     if (fieldNote) {
-      setAttachments(Array.isArray(fieldNote.attachments) ? fieldNote.attachments : []);
+      setAttachments(
+        Array.isArray(fieldNote.attachments) ? fieldNote.attachments : [],
+      );
     }
   }, [fieldNote]);
 
@@ -74,10 +72,13 @@ export function FieldNoteDetailsDrawer({
       hasRequestedLocationForDetails.current = false;
       return;
     }
-    if (!fieldNote || !navigator.geolocation || hasRequestedLocationForDetails.current) return;
-    const hasCoords =
-      fieldNote.latitude != null &&
-      fieldNote.longitude != null;
+    if (
+      !fieldNote ||
+      !navigator.geolocation ||
+      hasRequestedLocationForDetails.current
+    )
+      return;
+    const hasCoords = fieldNote.latitude != null && fieldNote.longitude != null;
     if (hasCoords) return;
     hasRequestedLocationForDetails.current = true;
     navigator.geolocation.getCurrentPosition(
@@ -86,7 +87,7 @@ export function FieldNoteDetailsDrawer({
         formActions.setLongitude(position.coords.longitude);
       },
       () => {},
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
     );
   }, [open, fieldNote, formActions]);
 
@@ -127,8 +128,8 @@ export function FieldNoteDetailsDrawer({
           formState.selectedFieldIds.length === 1
             ? formState.selectedFieldIds[0]
             : formState.selectedFieldIds.length > 1
-            ? formState.selectedFieldIds[0]
-            : null,
+              ? formState.selectedFieldIds[0]
+              : null,
         fieldIds:
           formState.selectedFieldIds.length > 0
             ? formState.selectedFieldIds
@@ -137,8 +138,8 @@ export function FieldNoteDetailsDrawer({
           formState.selectedProductionUnitIds.length === 1
             ? formState.selectedProductionUnitIds[0]
             : formState.selectedProductionUnitIds.length > 1
-            ? formState.selectedProductionUnitIds[0]
-            : null,
+              ? formState.selectedProductionUnitIds[0]
+              : null,
         productionUnitIds:
           formState.selectedProductionUnitIds.length > 0
             ? formState.selectedProductionUnitIds
@@ -224,7 +225,9 @@ export function FieldNoteDetailsDrawer({
         className="!w-[95vw] !max-w-[95vw] sm:!w-1/2 sm:!max-w-[50vw] overflow-x-hidden"
       >
         <DrawerHeader className="px-4 sm:px-6">
-          <DrawerTitle className="text-lg sm:text-xl">Dettagli Nota di Campo</DrawerTitle>
+          <DrawerTitle className="text-lg sm:text-xl">
+            Dettagli Nota di Campo
+          </DrawerTitle>
           <DrawerDescription className="text-sm mt-1.5">
             Visualizza e modifica i dettagli della nota di campo
           </DrawerDescription>
