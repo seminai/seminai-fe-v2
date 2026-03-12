@@ -27,11 +27,7 @@ export function useCompanies(options?: UseCompaniesOptions) {
     queryFn: async () => {
       return await companiesApiService.getAll();
     },
-    staleTime: 0,
     refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    refetchInterval: 5000,
-    refetchIntervalInBackground: false,
   });
 
   // Mutation per creare companies in bulk
@@ -59,9 +55,8 @@ export function useCompanies(options?: UseCompaniesOptions) {
         }
       }
 
-      // Invalidate and refetch to ensure server consistency
-      await queryClient.invalidateQueries({ queryKey: ["companies"] });
-      await companiesQuery.refetch();
+      // Background sync with server (non-blocking)
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
 
       // Gestione sicura della risposta per il toast
       const count = response?.data?.companies?.length ?? 0;
@@ -87,19 +82,16 @@ export function useCompanies(options?: UseCompaniesOptions) {
     mutationFn: async (companyIds: string[]) => {
       return await companiesApiService.bulkDelete({ companyIds });
     },
-    onSuccess: async (_response, companyIds) => {
-      await queryClient.invalidateQueries({ queryKey: ["companies"] });
-      await companiesQuery.refetch();
+    onSuccess: (_response, companyIds) => {
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
       const count = companyIds.length;
       toast.success(
         `${count} aziend${count === 1 ? "a eliminata" : "e eliminate"} con successo`
       );
     },
-    onError: async (error: Error) => {
+    onError: (error: Error) => {
       console.error("Errore eliminazione companies:", error);
       toast.error(`Errore durante l'eliminazione: ${error.message}`);
-      await queryClient.invalidateQueries({ queryKey: ["companies"] });
-      await companiesQuery.refetch();
     },
   });
 
@@ -140,9 +132,8 @@ export function useCompanies(options?: UseCompaniesOptions) {
         }
       }
 
-      // Invalida e refetch per sincronizzare con il server
-      await queryClient.invalidateQueries({ queryKey: ["companies"] });
-      await companiesQuery.refetch();
+      // Background sync with server (non-blocking)
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
 
       // Gestione sicura della risposta per il toast
       const count = response?.data?.companies?.length ?? 0;
