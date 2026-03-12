@@ -3,7 +3,7 @@ import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { useIsDesktop } from "@/hooks/useMediaQuery";
 import { useResizePanel } from "@/hooks/useResizePanel";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const DEFAULT_DRAWER_WIDTH = 400;
@@ -72,38 +72,26 @@ export function SplitDrawerLayout({
             aria-label="Resize drawer"
             tabIndex={0}
             className={cn(
-              "flex flex-shrink-0 w-2 cursor-col-resize select-none",
+              "flex flex-shrink-0 w-1.5 cursor-col-resize select-none",
               "flex flex-col items-center justify-center",
-              "bg-neutral-100 hover:bg-neutral-200 border-l border-neutral-200",
-              "transition-colors",
+              "hover:bg-neutral-200/60 transition-colors",
               isResizing && "bg-primary/10"
             )}
             onMouseDown={getResizeHandlers().onMouseDown}
-          >
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 rounded-sm"
-              onClick={() => onOpenChange(false)}
-              aria-label="Close drawer"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          </div>
+          />
           <div
-            className="relative flex flex-col flex-shrink-0 overflow-hidden bg-white border-l border-neutral-200 shadow-2xl"
+            className="relative flex flex-col flex-shrink-0 overflow-hidden rounded-l-2xl bg-neutral-50/80 border border-neutral-200/60 shadow-[0_0_40px_-12px_rgba(0,0,0,0.12)]"
             style={{ width: `${width}px` }}
           >
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="absolute top-3 right-3 z-10 h-7 w-7 rounded-sm text-muted-foreground hover:text-foreground"
+              className="absolute top-3 right-3 z-10 h-7 w-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-neutral-200/60"
               onClick={() => onOpenChange(false)}
               aria-label="Close drawer"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </Button>
             {drawerContent}
           </div>

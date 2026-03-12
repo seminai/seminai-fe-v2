@@ -927,18 +927,11 @@ export function DrawerFieldContent({
 
   return (
     <div className="space-y-6">
-      {/* Header con pulsante modifica */}
+      {/* Header con nome campo e pulsante modifica */}
       <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-        <div>
-          <h2 className="text-lg font-medium text-gray-900">
-            {isEditing ? "Modifica Campo" : "Dettagli Campo"}
-          </h2>
-          {!isEditing && (
-            <p className="text-xs text-gray-500 mt-1">
-              Tocca la matita per modificare
-            </p>
-          )}
-        </div>
+        <h2 className="text-lg font-semibold text-gray-900 truncate pr-3">
+          {field.name}
+        </h2>
         {!isEditing && onUpdate && (
           <Button
             variant="ghost"

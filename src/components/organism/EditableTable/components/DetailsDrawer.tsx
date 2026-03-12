@@ -2,7 +2,6 @@ import * as React from "react";
 import {
   Drawer,
   DrawerContent,
-  DrawerHeader,
 } from "@/components/ui/drawer";
 import { SplitDrawerLayout } from "@/components/molecules/SplitDrawerLayout";
 import { InternalRow } from "../types";
@@ -30,23 +29,25 @@ export function DetailsDrawer({
   }
 
   const drawerContent = (
-    <>
+    <div className="flex flex-col h-full overflow-y-auto bg-neutral-50/80">
       {title && (
-        <DrawerHeader className="px-4 sm:px-6">
-          <h2 className="text-foreground font-semibold text-lg sm:text-xl">{title}</h2>
-          <p className="text-muted-foreground text-sm">
+        <div className="flex flex-col gap-1 px-5 pt-4 pb-3">
+          <h2 className="text-foreground font-semibold text-lg tracking-tight pr-8">{title}</h2>
+          <p className="text-muted-foreground text-xs">
             Visualizza e modifica i dettagli dell'elemento selezionato
           </p>
-        </DrawerHeader>
+        </div>
       )}
       <div
-        className={`p-4 sm:p-6 overflow-y-auto flex-1 min-h-0 ${
-          title ? "max-h-[calc(100vh-120px)]" : "max-h-[calc(100vh-20px)]"
+        className={`px-4 pb-4 overflow-y-auto flex-1 min-h-0 ${
+          title ? "max-h-[calc(100vh-100px)]" : "max-h-[calc(100vh-20px)]"
         }`}
       >
-        {row ? detailsRenderer(row.data) : null}
+        <div className="rounded-2xl bg-white p-4 sm:p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          {row ? detailsRenderer(row.data) : null}
+        </div>
       </div>
-    </>
+    </div>
   );
 
   if (children !== undefined) {

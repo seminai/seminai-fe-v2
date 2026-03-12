@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import {
   type ProductionUnit,
   type ProductionUnitUpdateInput,
@@ -42,15 +42,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
 import { useProductionUnitCycles } from "@/hooks/useProductionUnitCycles";
 import { KanbanTimelineView } from "./KanbanTimelineView";
+import { SplitDrawerLayout } from "@/components/molecules/SplitDrawerLayout";
 
 // Helper function to format dates as DD-MM-YYYY
 const formatDateDDMMYYYY = (dateStr: string | null | undefined): string => {
@@ -1237,8 +1231,11 @@ const buildProductionUnitColumns = (
 
 export default function ProductionUnit(): React.ReactElement {
   const [activeView, setActiveView] = useState<string>("table");
-  const [timelineDetailUnit, setTimelineDetailUnit] =
-    useState<ProductionUnit | null>(null);
+  const [selectedPURow, setSelectedPURow] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
+  const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -1265,6 +1262,29 @@ export default function ProductionUnit(): React.ReactElement {
     () => companyDirectory?.getCompanyOptions() ?? [],
     [companyDirectory],
   );
+
+  const handleOpenTableDetails = useCallback(
+    (row: Record<string, unknown>) => {
+      setSelectedPURow(row);
+      setDetailsDrawerOpen(true);
+    },
+    [],
+  );
+
+  const handleTimelineRowClick = useCallback(
+    (pu: ProductionUnit) => {
+      setSelectedPURow({ productionUnit: pu });
+      setDetailsDrawerOpen(true);
+    },
+    [],
+  );
+
+  const handleDetailsDrawerChange = useCallback((open: boolean) => {
+    setDetailsDrawerOpen(open);
+    if (!open) {
+      setSelectedPURow(null);
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -1613,19 +1633,17 @@ export default function ProductionUnit(): React.ReactElement {
 
     return (
       <div className="p-4 space-y-4">
-        {/* Header con pulsante edit */}
+        {/* Header con nome unità produttiva e pulsante edit */}
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">
-            {isEditing
-              ? "Modifica Unità Produttiva"
-              : "Dettagli Unità Produttiva"}
+          <h3 className="text-lg font-semibold truncate pr-3">
+            {pu.name}
           </h3>
           {!isEditing && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleEdit(productionUnit)}
-              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 flex-shrink-0"
             >
               <Pencil className="w-4 h-4 mr-2" />
               Modifica
@@ -1979,72 +1997,30 @@ export default function ProductionUnit(): React.ReactElement {
   );
 
   return (
-    <Tabs
-      value={activeView}
-      onValueChange={setActiveView}
-      className="flex flex-col h-full"
-    >
-      <PageHeader title="Unità Produttive" className="hidden md:block">
-        <TabsList>
-          <TabsTrigger value="table">Tabella</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-        </TabsList>
-      </PageHeader>
+    <SplitDrawerLayout
+      main={
+        <Tabs
+          value={activeView}
+          onValueChange={setActiveView}
+          className="flex flex-col h-full"
+        >
+          <PageHeader title="Unità Produttive" className="hidden md:block">
+            <TabsList>
+              <TabsTrigger value="table">Tabella</TabsTrigger>
+              <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            </TabsList>
+          </PageHeader>
 
-      {/* Area contenuto */}
-      <div className="flex-1 overflow-hidden flex flex-col">
-        {isLoading ? (
-          <div className="flex items-center gap-2 text-sm text-gray-500 px-6 py-4">
-            <Spinner size={20} ariaLabel="Caricamento dati" />
-            <span>Caricamento dati…</span>
-          </div>
-        ) : error ? (
-          <div className="px-6 py-8">
-            <div className="text-center py-8 text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-sm font-medium">
-                Nessuna unità produttiva disponibile
-              </p>
-              <p className="text-xs mt-1 text-gray-500">
-                Al momento non ci sono unità produttive da visualizzare
-              </p>
-            </div>
-          </div>
-        ) : (
-          <>
-            <TabsContent
-              value="table"
-              className="flex-1 min-h-0 px-6 pb-6 mt-0"
-            >
-              <EditableTable
-                columns={columns}
-                rows={rows}
-                isModify={true}
-                addButton={false}
-                getRowId={(row, index) =>
-                  (typeof row.id === "string" && row.id) || index
-                }
-                onSave={handleBulkSave}
-                onDeleteSelected={handleDeleteSelected}
-                showDeleteAction={true}
-                exportFileName="unitaproduttive"
-                detailsRenderer={renderDetails}
-                detailsTitle="Dettagli Unità Produttiva"
-                className="bg-background"
-              >
-                <Button
-                  data-table-slot="right"
-                  variant="ghost"
-                  className="order-last gap-2 cursor-pointer text-gray-600 hover:text-gray-600"
-                  asChild
-                >
-                  <Link to="/new-production-unit">
-                    <Plus className="w-4 h-4" />
-                    Aggiungi
-                  </Link>
-                </Button>
-              </EditableTable>
-              {productionUnits.length === 0 && (
-                <div className="mt-4 text-center py-8 text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
+          {/* Area contenuto */}
+          <div className="flex-1 overflow-hidden flex flex-col">
+            {isLoading ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500 px-6 py-4">
+                <Spinner size={20} ariaLabel="Caricamento dati" />
+                <span>Caricamento dati…</span>
+              </div>
+            ) : error ? (
+              <div className="px-6 py-8">
+                <div className="text-center py-8 text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
                   <p className="text-sm font-medium">
                     Nessuna unità produttiva disponibile
                   </p>
@@ -2052,71 +2028,109 @@ export default function ProductionUnit(): React.ReactElement {
                     Al momento non ci sono unità produttive da visualizzare
                   </p>
                 </div>
-              )}
-            </TabsContent>
+              </div>
+            ) : (
+              <>
+                <TabsContent
+                  value="table"
+                  className="flex-1 min-h-0 px-6 pb-6 mt-0"
+                >
+                  <EditableTable
+                    columns={columns}
+                    rows={rows}
+                    isModify={true}
+                    addButton={false}
+                    getRowId={(row, index) =>
+                      (typeof row.id === "string" && row.id) || index
+                    }
+                    onSave={handleBulkSave}
+                    onDeleteSelected={handleDeleteSelected}
+                    showDeleteAction={true}
+                    exportFileName="unitaproduttive"
+                    onOpenDetails={handleOpenTableDetails}
+                    className="bg-background"
+                  >
+                    <Button
+                      data-table-slot="right"
+                      variant="ghost"
+                      className="order-last gap-2 cursor-pointer text-gray-600 hover:text-gray-600"
+                      asChild
+                    >
+                      <Link to="/new-production-unit">
+                        <Plus className="w-4 h-4" />
+                        Aggiungi
+                      </Link>
+                    </Button>
+                  </EditableTable>
+                  {productionUnits.length === 0 && (
+                    <div className="mt-4 text-center py-8 text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
+                      <p className="text-sm font-medium">
+                        Nessuna unità produttiva disponibile
+                      </p>
+                      <p className="text-xs mt-1 text-gray-500">
+                        Al momento non ci sono unità produttive da visualizzare
+                      </p>
+                    </div>
+                  )}
+                </TabsContent>
 
-            <TabsContent
-              value="timeline"
-              className="flex-1 overflow-auto px-6 pb-6 mt-0"
-            >
-              <KanbanTimelineView
-                productionUnits={productionUnits}
-                companyOptions={companyOptions}
-                onUpdatePeriod={handleUpdatePeriod}
-                onRowClick={setTimelineDetailUnit}
-              />
-            </TabsContent>
-          </>
-        )}
-      </div>
+                <TabsContent
+                  value="timeline"
+                  className="flex-1 overflow-auto px-6 pb-6 mt-0"
+                >
+                  <KanbanTimelineView
+                    productionUnits={productionUnits}
+                    companyOptions={companyOptions}
+                    onUpdatePeriod={handleUpdatePeriod}
+                    onRowClick={handleTimelineRowClick}
+                  />
+                </TabsContent>
+              </>
+            )}
+          </div>
 
-      {/* Drawer dettagli dalla timeline */}
-      <Sheet
-        open={timelineDetailUnit !== null}
-        onOpenChange={(open) => {
-          if (!open) setTimelineDetailUnit(null);
-        }}
-      >
-        <SheetContent
-          side="right"
-          className="sm:max-w-2xl w-full overflow-y-auto"
-        >
-          <SheetHeader>
-            <SheetTitle>Dettagli Unità Produttiva</SheetTitle>
-            <SheetDescription>
-              {timelineDetailUnit?.productionUnit.name}
-            </SheetDescription>
-          </SheetHeader>
-          {timelineDetailUnit &&
-            renderDetails({ productionUnit: timelineDetailUnit })}
-        </SheetContent>
-      </Sheet>
-
-      {/* Dialog di conferma eliminazione */}
-      <AlertDialog
-        open={deletingId !== null}
-        onOpenChange={(open) => !open && setDeletingId(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
-            <AlertDialogDescription>
-              Sei sicuro di voler eliminare questa unità produttiva? Questa
-              azione non può essere annullata.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Annulla</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deletingId && handleDelete(deletingId)}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isDeleting ? "Eliminazione..." : "Elimina"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </Tabs>
+          {/* Dialog di conferma eliminazione */}
+          <AlertDialog
+            open={deletingId !== null}
+            onOpenChange={(open) => !open && setDeletingId(null)}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Sei sicuro di voler eliminare questa unità produttiva? Questa
+                  azione non può essere annullata.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeleting}>
+                  Annulla
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => deletingId && handleDelete(deletingId)}
+                  disabled={isDeleting}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {isDeleting ? "Eliminazione..." : "Elimina"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </Tabs>
+      }
+      drawerContent={
+        selectedPURow ? (
+          <div className="flex flex-col h-full overflow-y-auto bg-neutral-50/80 p-4 min-h-0">
+            {renderDetails(selectedPURow)}
+          </div>
+        ) : null
+      }
+      open={detailsDrawerOpen}
+      onOpenChange={handleDetailsDrawerChange}
+      defaultDrawerWidth={480}
+      minDrawerWidth={320}
+      maxDrawerWidth={800}
+      storageKey="seminai-production-unit-details-drawer-width"
+    />
   );
 }

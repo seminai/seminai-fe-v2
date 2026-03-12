@@ -10,7 +10,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -521,7 +520,9 @@ function DrawerProduct({
     setProductDescription(product.description || "");
     setProductBarcode(product.barcode || "");
     setProductCategory(
-      product.category === "PHYTOSANITARY" ? "PESTICIDE" : product.category ?? "",
+      product.category === "PHYTOSANITARY"
+        ? "PESTICIDE"
+        : (product.category ?? ""),
     );
     setProductType(product.type ?? "");
     setProductAdministrativeStatus(product.administrativeStatus ?? "");
@@ -557,9 +558,10 @@ function DrawerProduct({
       let labelMetadata: Record<string, unknown> | undefined;
       if (metadataTrimmed) {
         try {
-          labelMetadata = JSON.parse(
-            metadataTrimmed,
-          ) as Record<string, unknown>;
+          labelMetadata = JSON.parse(metadataTrimmed) as Record<
+            string,
+            unknown
+          >;
         } catch {
           toast.error("Label metadata non è JSON valido");
           setIsUpdating(false);
@@ -573,10 +575,8 @@ function DrawerProduct({
         barcode: productBarcode.trim() || undefined,
         category: productCategory.trim() || undefined,
         type: productType.trim() || undefined,
-        administrativeStatus:
-          productAdministrativeStatus.trim() || undefined,
-        registrationNumber:
-          productRegistrationNumber.trim() || undefined,
+        administrativeStatus: productAdministrativeStatus.trim() || undefined,
+        registrationNumber: productRegistrationNumber.trim() || undefined,
         labelUrl: productLabelUrl.trim() || undefined,
         labelMetadata,
         warehouseId: productWarehouseId.trim() || undefined,
@@ -685,848 +685,842 @@ function DrawerProduct({
 
   const detailPanelContent = (
     <>
-          {isDetailLoading && (
-            <div className="flex items-center gap-3 border border-blue-100 bg-blue-50 rounded-lg px-4 py-2 mb-4">
-              <Spinner size={24} />
-              <span className="text-sm text-blue-700">
-                Caricamento dettagli prodotto...
+      {isDetailLoading && (
+        <div className="flex items-center gap-3 border border-blue-100 bg-blue-50 rounded-lg px-4 py-2 mb-4">
+          <Spinner size={24} />
+          <span className="text-sm text-blue-700">
+            Caricamento dettagli prodotto...
+          </span>
+        </div>
+      )}
+
+      {isDetailError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Errore caricamento</AlertTitle>
+          <AlertDescription>
+            {detailError instanceof Error
+              ? detailError.message
+              : "Impossibile recuperare i dettagli del prodotto"}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {contentOnly ? (
+        <div
+          className="flex flex-col gap-2 px-1 pt-1 pb-2"
+          data-slot="panel-header"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="text-foreground font-semibold text-xl tracking-tight leading-tight pr-8">
+              {product.name}
+            </h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleOpenEditDialog}
+              className="shrink-0 h-8 w-8 rounded-full hover:bg-neutral-200/60"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-muted-foreground text-xs">
+              SKU: {product.sku}
+            </span>
+            <Badge
+              className="rounded-full text-xs"
+              variant={
+                totalStock > 50
+                  ? "default"
+                  : totalStock > 0
+                    ? "secondary"
+                    : "destructive"
+              }
+            >
+              Stock: {formattedTotalStock} {unit}
+            </Badge>
+          </div>
+        </div>
+      ) : (
+        <SheetHeader>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <SheetTitle className="text-2xl">{product.name}</SheetTitle>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleOpenEditDialog}
+                className="shrink-0"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <SheetDescription className="mb-0">
+                Codice magazzino (SKU): {product.sku}
+              </SheetDescription>
+              <Badge
+                variant={
+                  totalStock > 50
+                    ? "default"
+                    : totalStock > 0
+                      ? "secondary"
+                      : "destructive"
+                }
+              >
+                Stock: {formattedTotalStock} {unit}
+              </Badge>
+            </div>
+          </div>
+        </SheetHeader>
+      )}
+
+      <div className="mt-4 space-y-4">
+        {/* Informazioni del prodotto */}
+        <div className="rounded-2xl bg-white p-4 space-y-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Informazioni
+          </h3>
+          <div className="space-y-1.5">
+            {product.category && (
+              <div className="flex items-center gap-2.5 text-sm">
+                <Tag className="h-4 w-4 text-neutral-400 shrink-0" />
+                <span className="text-muted-foreground">Categoria:</span>
+                <span className="font-medium">
+                  {PRODUCT_CATEGORIES.find((c) => c.value === product.category)
+                    ?.label ?? product.category}
+                </span>
+              </div>
+            )}
+            {product.type && (
+              <div className="flex items-center gap-2.5 text-sm">
+                <Package className="h-4 w-4 text-neutral-400 shrink-0" />
+                <span className="text-muted-foreground">Tipo:</span>
+                <span className="font-medium">{product.type}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2.5 text-sm">
+              <Warehouse className="h-4 w-4 text-neutral-400 shrink-0" />
+              <span className="text-muted-foreground">Magazzino:</span>
+              <span className="font-medium">{product.warehouse.name}</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-sm">
+              <Package className="h-4 w-4 text-neutral-400 shrink-0" />
+              <span className="text-muted-foreground">Azienda:</span>
+              <span className="font-medium">
+                {product.warehouse.company.name}
               </span>
             </div>
-          )}
-
-          {isDetailError && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertTitle>Errore caricamento</AlertTitle>
-              <AlertDescription>
-                {detailError instanceof Error
-                  ? detailError.message
-                  : "Impossibile recuperare i dettagli del prodotto"}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {contentOnly ? (
-            <div className="flex flex-col gap-1.5 p-4" data-slot="panel-header">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-foreground font-semibold text-2xl">
-                    {product.name}
-                  </h2>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleOpenEditDialog}
-                    className="shrink-0"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex items-center gap-2">
-                  <p className="text-muted-foreground text-sm mb-0">
-                    Codice magazzino (SKU): {product.sku}
-                  </p>
-                  <Badge
-                    variant={
-                      totalStock > 50
-                        ? "default"
-                        : totalStock > 0
-                          ? "secondary"
-                          : "destructive"
-                    }
-                  >
-                    Stock: {formattedTotalStock} {unit}
-                  </Badge>
-                </div>
+            {product.description && (
+              <div className="flex items-start gap-2.5 text-sm pt-1">
+                <span className="text-muted-foreground">Descrizione:</span>
+                <span className="font-medium">{product.description}</span>
               </div>
+            )}
+            {product.barcode && (
+              <div className="flex items-center gap-2.5 text-sm">
+                <span className="text-muted-foreground">Barcode:</span>
+                <span className="font-medium font-mono">{product.barcode}</span>
+              </div>
+            )}
+            {product.administrativeStatus && (
+              <div className="flex items-center gap-2.5 text-sm">
+                <span className="text-muted-foreground">
+                  Stato amministrativo:
+                </span>
+                <span className="font-medium">
+                  {product.administrativeStatus}
+                </span>
+              </div>
+            )}
+            {product.registrationNumber && (
+              <div className="flex items-center gap-2.5 text-sm">
+                <span className="text-muted-foreground">N. registrazione:</span>
+                <span className="font-medium font-mono">
+                  {product.registrationNumber}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Riepilogo movimenti */}
+        <div className="rounded-2xl bg-white p-4 space-y-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Riepilogo Movimenti
+          </h3>
+          <div className="grid grid-cols-3 gap-2.5">
+            <div className="bg-emerald-50/80 p-3 rounded-xl">
+              <div className="flex items-center gap-1.5 text-emerald-600 mb-1">
+                <TrendingUp className="h-3.5 w-3.5" />
+                <span className="text-[11px] font-medium">Carichi</span>
+              </div>
+              <p className="text-lg font-bold text-emerald-900">
+                {formattedTotalIn}
+                <span className="text-xs font-normal ml-0.5">{unit}</span>
+              </p>
             </div>
-          ) : (
-            <SheetHeader>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-3">
-                  <SheetTitle className="text-2xl">{product.name}</SheetTitle>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleOpenEditDialog}
-                    className="shrink-0"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex items-center gap-2">
-                  <SheetDescription className="mb-0">
-                    Codice magazzino (SKU): {product.sku}
-                  </SheetDescription>
-                  <Badge
-                    variant={
-                      totalStock > 50
-                        ? "default"
-                        : totalStock > 0
-                          ? "secondary"
-                          : "destructive"
-                    }
-                  >
-                    Stock: {formattedTotalStock} {unit}
-                  </Badge>
-                </div>
+            <div className="bg-red-50/80 p-3 rounded-xl">
+              <div className="flex items-center gap-1.5 text-red-600 mb-1">
+                <TrendingDown className="h-3.5 w-3.5" />
+                <span className="text-[11px] font-medium">Scarichi</span>
               </div>
-            </SheetHeader>
+              <p className="text-lg font-bold text-red-900">
+                {formattedTotalOut}
+                <span className="text-xs font-normal ml-0.5">{unit}</span>
+              </p>
+            </div>
+            <div className="bg-blue-50/80 p-3 rounded-xl">
+              <div className="flex items-center gap-1.5 text-blue-600 mb-1">
+                <Package className="h-3.5 w-3.5" />
+                <span className="text-[11px] font-medium">Disponibile</span>
+              </div>
+              <p className="text-lg font-bold text-blue-900">
+                {formattedTotalStock}
+                <span className="text-xs font-normal ml-0.5">{unit}</span>
+              </p>
+            </div>
+          </div>
+          {hasMixedUnits && (
+            <p className="text-xs text-amber-700">
+              Totali e grafico sono calcolati in {unit}. Controlla i movimenti
+              per le altre unità disponibili.
+            </p>
           )}
+        </div>
 
-          <div className="mt-6 space-y-6">
-            {/* Informazioni del prodotto */}
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold">Informazioni</h3>
-              <div className="space-y-2">
-                {product.category && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Tag className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">Categoria:</span>
-                    <span className="text-gray-600">
-                      {PRODUCT_CATEGORIES.find((c) => c.value === product.category)
-                        ?.label ?? product.category}
-                    </span>
-                  </div>
-                )}
-                {product.type && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Package className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">Tipo:</span>
-                    <span className="text-gray-600">{product.type}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 text-sm">
-                  <Warehouse className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">Magazzino:</span>
-                  <span className="text-gray-600">
-                    {product.warehouse.name}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Package className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">Azienda:</span>
-                  <span className="text-gray-600">
-                    {product.warehouse.company.name}
-                  </span>
-                </div>
-                {product.description && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <span className="font-medium">Descrizione:</span>
-                    <span className="text-gray-600">{product.description}</span>
-                  </div>
-                )}
-                {product.barcode && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium">Barcode:</span>
-                    <span className="text-gray-600 font-mono">
-                      {product.barcode}
-                    </span>
-                  </div>
-                )}
-                {product.administrativeStatus && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium">Stato amministrativo:</span>
-                    <span className="text-gray-600">
-                      {product.administrativeStatus}
-                    </span>
-                  </div>
-                )}
-                {product.registrationNumber && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium">N. registrazione:</span>
-                    <span className="text-gray-600 font-mono">
-                      {product.registrationNumber}
-                    </span>
-                  </div>
-                )}
-              </div>
+        <div className="rounded-2xl bg-white p-4 space-y-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <Tabs
+            value={detailView}
+            onValueChange={(value) =>
+              setDetailView(
+                value === "chart" ? "chart" : ("movements" as const),
+              )
+            }
+            className="space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Movimenti e Vista Grafica
+              </h3>
+              <TabsList className="grid grid-cols-2 w-44 h-8 rounded-lg">
+                <TabsTrigger value="movements" className="text-xs rounded-md">
+                  Movimenti
+                </TabsTrigger>
+                <TabsTrigger value="chart" className="text-xs rounded-md">
+                  Grafico
+                </TabsTrigger>
+              </TabsList>
             </div>
-
-            <Separator />
-
-            {/* Riepilogo movimenti con pulsante aggiungi */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Riepilogo Movimenti</h3>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <div className="flex items-center gap-2 text-green-700 mb-1">
-                    <TrendingUp className="h-4 w-4" />
-                    <span className="text-xs font-medium">Carichi</span>
-                  </div>
-                  <p className="text-2xl font-bold text-green-900">
-                    {formattedTotalIn}
-                    <span className="text-sm font-normal ml-1">{unit}</span>
-                  </p>
-                </div>
-                <div className="bg-red-50 p-4 rounded-lg">
-                  <div className="flex items-center gap-2 text-red-700 mb-1">
-                    <TrendingDown className="h-4 w-4" />
-                    <span className="text-xs font-medium">Scarichi</span>
-                  </div>
-                  <p className="text-2xl font-bold text-red-900">
-                    {formattedTotalOut}
-                    <span className="text-sm font-normal ml-1">{unit}</span>
-                  </p>
-                </div>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="flex items-center gap-2 text-blue-700 mb-1">
-                    <Package className="h-4 w-4" />
-                    <span className="text-xs font-medium">Disponibile</span>
-                  </div>
-                  <p className="text-2xl font-bold text-blue-900">
-                    {formattedTotalStock}
-                    <span className="text-sm font-normal ml-1">{unit}</span>
-                  </p>
-                </div>
-              </div>
-              {hasMixedUnits && (
-                <p className="text-xs text-amber-700">
-                  Totali e grafico sono calcolati in {unit}. Controlla i
-                  movimenti per le altre unità disponibili.
-                </p>
-              )}
-            </div>
-
-            <Separator />
-
-            <Tabs
-              value={detailView}
-              onValueChange={(value) =>
-                setDetailView(
-                  value === "chart" ? "chart" : ("movements" as const),
-                )
-              }
-              className="space-y-3"
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">
-                  Movimenti e Vista Grafica
-                </h3>
-                <TabsList className="grid grid-cols-2 w-48">
-                  <TabsTrigger value="movements">Movimenti</TabsTrigger>
-                  <TabsTrigger value="chart">Grafico</TabsTrigger>
-                </TabsList>
-              </div>
-              {hasMixedUnits && (
-                <Alert className="bg-amber-50 border-amber-200 text-amber-900">
-                  <Info className="h-4 w-4" />
-                  <AlertTitle>Unità differenti rilevate</AlertTitle>
-                  <AlertDescription>
-                    Il grafico considera solo i movimenti in {unit}.
-                    {secondaryUnits.length > 0
-                      ? ` Altre unità presenti: ${secondaryUnits.join(", ")}.`
-                      : null}
-                  </AlertDescription>
-                </Alert>
-              )}
-              <TabsContent value="movements" className="space-y-3 mt-0">
-                <AddStock
-                  product={product}
-                  onStockCreated={handleStockCreated}
-                />
-                {product.stocks.length > 0 ? (
-                  <div className="space-y-3">
-                    {product.stocks.map((stock) => {
-                      const isEditing = editingStock?.id === stock.id;
-                      const presenter = new JobDetailsPresenter(stock.job);
-                      const operationDetails = presenter.getDetails();
-                      const recordedDate = dateFormatter.format(
-                        stock.createdAt ?? null,
-                      );
-                      const operationDate = presenter.getOperationDate();
-                      return (
-                        <Card
-                          key={stock.id}
-                          className="border border-gray-200 shadow-none "
-                        >
-                          <CardContent className="p-4 space-y-3">
-                            {isEditing ? (
-                              <>
-                                <h4 className="text-sm font-semibold">
-                                  Modifica dati movimento
-                                </h4>
-                                <div className="grid gap-3">
-                                  <div className="grid gap-1.5">
-                                    <Label
-                                      htmlFor={`edit-type-${stock.id}`}
-                                      className="text-xs"
-                                    >
-                                      Tipologia movimento
-                                    </Label>
-                                    <Select
-                                      value={stockEditForm.type}
-                                      onValueChange={(value: "IN" | "OUT") =>
-                                        setStockEditForm((prev) => ({
-                                          ...prev,
-                                          type: value,
-                                        }))
-                                      }
-                                    >
-                                      <SelectTrigger
-                                        id={`edit-type-${stock.id}`}
-                                      >
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="IN">
-                                          Carico (IN)
-                                        </SelectItem>
-                                        <SelectItem value="OUT">
-                                          Scarico (OUT)
-                                        </SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div className="grid gap-1.5">
-                                      <Label
-                                        htmlFor={`edit-quantity-${stock.id}`}
-                                        className="text-xs"
-                                      >
-                                        Quantità
-                                      </Label>
-                                      <Input
-                                        id={`edit-quantity-${stock.id}`}
-                                        type="number"
-                                        step="any"
-                                        min="0"
-                                        value={stockEditForm.quantity}
-                                        onChange={(e) =>
-                                          setStockEditForm((prev) => ({
-                                            ...prev,
-                                            quantity: e.target.value,
-                                          }))
-                                        }
-                                        placeholder="0"
-                                      />
-                                    </div>
-                                    <div className="grid gap-1.5">
-                                      <Label
-                                        htmlFor={`edit-uom-${stock.id}`}
-                                        className="text-xs"
-                                      >
-                                        Unità di misura
-                                      </Label>
-                                      <Input
-                                        id={`edit-uom-${stock.id}`}
-                                        value={
-                                          stockEditForm.unitOfMeasureQuantity
-                                        }
-                                        onChange={(e) =>
-                                          setStockEditForm((prev) => ({
-                                            ...prev,
-                                            unitOfMeasureQuantity:
-                                              e.target.value,
-                                          }))
-                                        }
-                                        placeholder="es. kg, L"
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="grid gap-1.5">
-                                    <Label
-                                      htmlFor={`edit-ddt-date-${stock.id}`}
-                                      className="text-xs"
-                                    >
-                                      Data DDT
-                                    </Label>
-                                    <Input
-                                      id={`edit-ddt-date-${stock.id}`}
-                                      type="date"
-                                      value={stockEditForm.ddtDate}
-                                      onChange={(e) =>
-                                        setStockEditForm((prev) => ({
-                                          ...prev,
-                                          ddtDate: e.target.value,
-                                        }))
-                                      }
-                                    />
-                                  </div>
-                                  <div className="grid gap-1.5">
-                                    <Label
-                                      htmlFor={`edit-ddt-code-${stock.id}`}
-                                      className="text-xs"
-                                    >
-                                      Codice DDT
-                                    </Label>
-                                    <Input
-                                      id={`edit-ddt-code-${stock.id}`}
-                                      value={stockEditForm.ddtCode}
-                                      onChange={(e) =>
-                                        setStockEditForm((prev) => ({
-                                          ...prev,
-                                          ddtCode: e.target.value,
-                                        }))
-                                      }
-                                      placeholder="Codice DDT"
-                                    />
-                                  </div>
-                                  <div className="grid gap-1.5">
-                                    <Label
-                                      htmlFor={`edit-invoice-code-${stock.id}`}
-                                      className="text-xs"
-                                    >
-                                      Codice fatture
-                                    </Label>
-                                    <Input
-                                      id={`edit-invoice-code-${stock.id}`}
-                                      value={stockEditForm.invoiceCode}
-                                      onChange={(e) =>
-                                        setStockEditForm((prev) => ({
-                                          ...prev,
-                                          invoiceCode: e.target.value,
-                                        }))
-                                      }
-                                      placeholder="Codice fattura"
-                                    />
-                                  </div>
-                                  <div className="grid gap-1.5">
-                                    <Label
-                                      htmlFor={`edit-invoice-due-date-${stock.id}`}
-                                      className="text-xs"
-                                    >
-                                      Scadenza fattura
-                                    </Label>
-                                    <Input
-                                      id={`edit-invoice-due-date-${stock.id}`}
-                                      type="date"
-                                      value={stockEditForm.invoiceDueDate}
-                                      onChange={(e) =>
-                                        setStockEditForm((prev) => ({
-                                          ...prev,
-                                          invoiceDueDate: e.target.value,
-                                        }))
-                                      }
-                                    />
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div className="grid gap-1.5">
-                                      <Label
-                                        htmlFor={`edit-price-${stock.id}`}
-                                        className="text-xs"
-                                      >
-                                        {stockEditForm.type === "IN"
-                                          ? "Prezzo acquisto"
-                                          : "Prezzo vendita"}
-                                      </Label>
-                                      <Input
-                                        id={`edit-price-${stock.id}`}
-                                        type="number"
-                                        step="0.01"
-                                        value={stockEditForm.price}
-                                        onChange={(e) =>
-                                          setStockEditForm((prev) => ({
-                                            ...prev,
-                                            price: e.target.value,
-                                          }))
-                                        }
-                                        placeholder="0.00"
-                                      />
-                                    </div>
-                                    <div className="grid gap-1.5">
-                                      <Label
-                                        htmlFor={`edit-price-unit-${stock.id}`}
-                                        className="text-xs"
-                                      >
-                                        Valuta
-                                      </Label>
-                                      <Input
-                                        id={`edit-price-unit-${stock.id}`}
-                                        value={stockEditForm.unitOfMeasurePrice}
-                                        onChange={(e) =>
-                                          setStockEditForm((prev) => ({
-                                            ...prev,
-                                            unitOfMeasurePrice: e.target.value,
-                                          }))
-                                        }
-                                        placeholder="EUR"
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="grid gap-1.5">
-                                    <Label
-                                      htmlFor={`edit-date-${stock.id}`}
-                                      className="text-xs"
-                                    >
-                                      Data
-                                    </Label>
-                                    <Input
-                                      id={`edit-date-${stock.id}`}
-                                      type="date"
-                                      value={stockEditForm.date}
-                                      onChange={(e) =>
-                                        setStockEditForm((prev) => ({
-                                          ...prev,
-                                          date: e.target.value,
-                                        }))
-                                      }
-                                    />
-                                  </div>
-                                </div>
-                                <div className="flex gap-2 pt-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={closeStockEdit}
-                                    disabled={isUpdatingStock}
+            {hasMixedUnits && (
+              <Alert className="bg-amber-50 border-amber-200 text-amber-900">
+                <Info className="h-4 w-4" />
+                <AlertTitle>Unità differenti rilevate</AlertTitle>
+                <AlertDescription>
+                  Il grafico considera solo i movimenti in {unit}.
+                  {secondaryUnits.length > 0
+                    ? ` Altre unità presenti: ${secondaryUnits.join(", ")}.`
+                    : null}
+                </AlertDescription>
+              </Alert>
+            )}
+            <TabsContent value="movements" className="space-y-3 mt-0">
+              <AddStock product={product} onStockCreated={handleStockCreated} />
+              {product.stocks.length > 0 ? (
+                <div className="space-y-3">
+                  {product.stocks.map((stock) => {
+                    const isEditing = editingStock?.id === stock.id;
+                    const presenter = new JobDetailsPresenter(stock.job);
+                    const operationDetails = presenter.getDetails();
+                    const recordedDate = dateFormatter.format(
+                      stock.createdAt ?? null,
+                    );
+                    const operationDate = presenter.getOperationDate();
+                    return (
+                      <Card
+                        key={stock.id}
+                        className="border border-gray-200 shadow-none "
+                      >
+                        <CardContent className="p-4 space-y-3">
+                          {isEditing ? (
+                            <>
+                              <h4 className="text-sm font-semibold">
+                                Modifica dati movimento
+                              </h4>
+                              <div className="grid gap-3">
+                                <div className="grid gap-1.5">
+                                  <Label
+                                    htmlFor={`edit-type-${stock.id}`}
+                                    className="text-xs"
                                   >
-                                    Annulla
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    onClick={handleSaveStockEdit}
-                                    disabled={isUpdatingStock}
+                                    Tipologia movimento
+                                  </Label>
+                                  <Select
+                                    value={stockEditForm.type}
+                                    onValueChange={(value: "IN" | "OUT") =>
+                                      setStockEditForm((prev) => ({
+                                        ...prev,
+                                        type: value,
+                                      }))
+                                    }
                                   >
-                                    {isUpdatingStock
-                                      ? "Salvataggio..."
-                                      : "Salva"}
-                                  </Button>
+                                    <SelectTrigger id={`edit-type-${stock.id}`}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="IN">
+                                        Carico (IN)
+                                      </SelectItem>
+                                      <SelectItem value="OUT">
+                                        Scarico (OUT)
+                                      </SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                 </div>
-                              </>
-                            ) : (
-                              <>
-                                <div className="flex items-start justify-between gap-4">
-                                  <div className="flex items-start gap-3">
-                                    {stock.type === "IN" ? (
-                                      <TrendingUp className="h-5 w-5 text-green-600" />
-                                    ) : (
-                                      <TrendingDown className="h-5 w-5 text-red-600" />
-                                    )}
-                                    <div>
-                                      <p className="font-medium text-sm">
-                                        {stock.type === "IN"
-                                          ? "Carico"
-                                          : "Scarico"}
-                                      </p>
-                                      <p className="text-xs text-gray-500">
-                                        {presenter.hasJob()
-                                          ? `Operazione: ${presenter.getOperationName()}`
-                                          : "Operazione non collegata"}
-                                      </p>
-                                      {operationDate && (
-                                        <p className="text-xs text-muted-foreground">
-                                          {operationDate}
-                                        </p>
-                                      )}
-                                      {stock.job?.isVerified && (
-                                        <Badge
-                                          variant="outline"
-                                          className="mt-1 text-xs py-0"
-                                        >
-                                          Verificato
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <p
-                                      className={`font-bold ${
-                                        stock.type === "IN"
-                                          ? "text-green-600"
-                                          : "text-red-600"
-                                      }`}
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="grid gap-1.5">
+                                    <Label
+                                      htmlFor={`edit-quantity-${stock.id}`}
+                                      className="text-xs"
                                     >
-                                      {stock.type === "IN" ? "+" : "-"}
-                                      {StockFormatter.formatQuantity(
-                                        Number.isFinite(stock.quantity)
-                                          ? Math.abs(stock.quantity)
-                                          : 0,
-                                      )}{" "}
-                                      {stock.unitOfMeasureQuantity}
-                                    </p>
-                                    {recordedDate && (
-                                      <p className="text-xs text-gray-500">
-                                        Registrato il {recordedDate}
-                                      </p>
-                                    )}
+                                      Quantità
+                                    </Label>
+                                    <Input
+                                      id={`edit-quantity-${stock.id}`}
+                                      type="number"
+                                      step="any"
+                                      min="0"
+                                      value={stockEditForm.quantity}
+                                      onChange={(e) =>
+                                        setStockEditForm((prev) => ({
+                                          ...prev,
+                                          quantity: e.target.value,
+                                        }))
+                                      }
+                                      placeholder="0"
+                                    />
+                                  </div>
+                                  <div className="grid gap-1.5">
+                                    <Label
+                                      htmlFor={`edit-uom-${stock.id}`}
+                                      className="text-xs"
+                                    >
+                                      Unità di misura
+                                    </Label>
+                                    <Input
+                                      id={`edit-uom-${stock.id}`}
+                                      value={
+                                        stockEditForm.unitOfMeasureQuantity
+                                      }
+                                      onChange={(e) =>
+                                        setStockEditForm((prev) => ({
+                                          ...prev,
+                                          unitOfMeasureQuantity: e.target.value,
+                                        }))
+                                      }
+                                      placeholder="es. kg, L"
+                                    />
                                   </div>
                                 </div>
-                                <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
-                                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-4 gap-y-1 text-xs">
-                                    <span className="text-gray-500">
-                                      Data DDT:
-                                      <span className="ml-1 text-gray-900">
-                                        {dateFormatter.format(
-                                          stock.ddtDate ?? null,
-                                        ) ?? "—"}
-                                      </span>
-                                    </span>
-                                    <span className="text-gray-500">
-                                      Codice DDT:
-                                      <span className="ml-1 text-gray-900">
-                                        {stock.ddtCode ?? "—"}
-                                      </span>
-                                    </span>
-                                    <span className="text-gray-500">
-                                      Codice fattura:
-                                      <span className="ml-1 text-gray-900">
-                                        {stock.invoiceCode ?? "—"}
-                                      </span>
-                                    </span>
-                                    <span className="text-gray-500">
-                                      Scadenza fattura:
-                                      <span className="ml-1 text-gray-900">
-                                        {dateFormatter.format(
-                                          stock.invoiceDueDate ?? null,
-                                        ) ?? "—"}
-                                      </span>
-                                    </span>
-                                    <span className="text-gray-500">
+                                <div className="grid gap-1.5">
+                                  <Label
+                                    htmlFor={`edit-ddt-date-${stock.id}`}
+                                    className="text-xs"
+                                  >
+                                    Data DDT
+                                  </Label>
+                                  <Input
+                                    id={`edit-ddt-date-${stock.id}`}
+                                    type="date"
+                                    value={stockEditForm.ddtDate}
+                                    onChange={(e) =>
+                                      setStockEditForm((prev) => ({
+                                        ...prev,
+                                        ddtDate: e.target.value,
+                                      }))
+                                    }
+                                  />
+                                </div>
+                                <div className="grid gap-1.5">
+                                  <Label
+                                    htmlFor={`edit-ddt-code-${stock.id}`}
+                                    className="text-xs"
+                                  >
+                                    Codice DDT
+                                  </Label>
+                                  <Input
+                                    id={`edit-ddt-code-${stock.id}`}
+                                    value={stockEditForm.ddtCode}
+                                    onChange={(e) =>
+                                      setStockEditForm((prev) => ({
+                                        ...prev,
+                                        ddtCode: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="Codice DDT"
+                                  />
+                                </div>
+                                <div className="grid gap-1.5">
+                                  <Label
+                                    htmlFor={`edit-invoice-code-${stock.id}`}
+                                    className="text-xs"
+                                  >
+                                    Codice fatture
+                                  </Label>
+                                  <Input
+                                    id={`edit-invoice-code-${stock.id}`}
+                                    value={stockEditForm.invoiceCode}
+                                    onChange={(e) =>
+                                      setStockEditForm((prev) => ({
+                                        ...prev,
+                                        invoiceCode: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="Codice fattura"
+                                  />
+                                </div>
+                                <div className="grid gap-1.5">
+                                  <Label
+                                    htmlFor={`edit-invoice-due-date-${stock.id}`}
+                                    className="text-xs"
+                                  >
+                                    Scadenza fattura
+                                  </Label>
+                                  <Input
+                                    id={`edit-invoice-due-date-${stock.id}`}
+                                    type="date"
+                                    value={stockEditForm.invoiceDueDate}
+                                    onChange={(e) =>
+                                      setStockEditForm((prev) => ({
+                                        ...prev,
+                                        invoiceDueDate: e.target.value,
+                                      }))
+                                    }
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="grid gap-1.5">
+                                    <Label
+                                      htmlFor={`edit-price-${stock.id}`}
+                                      className="text-xs"
+                                    >
+                                      {stockEditForm.type === "IN"
+                                        ? "Prezzo acquisto"
+                                        : "Prezzo vendita"}
+                                    </Label>
+                                    <Input
+                                      id={`edit-price-${stock.id}`}
+                                      type="number"
+                                      step="0.01"
+                                      value={stockEditForm.price}
+                                      onChange={(e) =>
+                                        setStockEditForm((prev) => ({
+                                          ...prev,
+                                          price: e.target.value,
+                                        }))
+                                      }
+                                      placeholder="0.00"
+                                    />
+                                  </div>
+                                  <div className="grid gap-1.5">
+                                    <Label
+                                      htmlFor={`edit-price-unit-${stock.id}`}
+                                      className="text-xs"
+                                    >
+                                      Valuta
+                                    </Label>
+                                    <Input
+                                      id={`edit-price-unit-${stock.id}`}
+                                      value={stockEditForm.unitOfMeasurePrice}
+                                      onChange={(e) =>
+                                        setStockEditForm((prev) => ({
+                                          ...prev,
+                                          unitOfMeasurePrice: e.target.value,
+                                        }))
+                                      }
+                                      placeholder="EUR"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="grid gap-1.5">
+                                  <Label
+                                    htmlFor={`edit-date-${stock.id}`}
+                                    className="text-xs"
+                                  >
+                                    Data
+                                  </Label>
+                                  <Input
+                                    id={`edit-date-${stock.id}`}
+                                    type="date"
+                                    value={stockEditForm.date}
+                                    onChange={(e) =>
+                                      setStockEditForm((prev) => ({
+                                        ...prev,
+                                        date: e.target.value,
+                                      }))
+                                    }
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex gap-2 pt-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={closeStockEdit}
+                                  disabled={isUpdatingStock}
+                                >
+                                  Annulla
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={handleSaveStockEdit}
+                                  disabled={isUpdatingStock}
+                                >
+                                  {isUpdatingStock ? "Salvataggio..." : "Salva"}
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex items-start gap-3">
+                                  {stock.type === "IN" ? (
+                                    <TrendingUp className="h-5 w-5 text-green-600" />
+                                  ) : (
+                                    <TrendingDown className="h-5 w-5 text-red-600" />
+                                  )}
+                                  <div>
+                                    <p className="font-medium text-sm">
                                       {stock.type === "IN"
-                                        ? "Prezzo acquisto:"
-                                        : "Prezzo vendita:"}
-                                      <span className="ml-1 text-gray-900">
-                                        {stock.price != null
-                                          ? `${stock.price.toFixed(2)} ${stock.unitOfMeasurePrice ?? "EUR"}`
-                                          : "—"}
-                                      </span>
-                                    </span>
-                                    <span className="text-gray-500">
-                                      Data:
-                                      <span className="ml-1 text-gray-900">
-                                        {recordedDate ?? "—"}
-                                      </span>
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2 shrink-0">
-                                    <SourceFilePreviewButton
-                                      file={stock.sourceFile}
-                                      label="Documento"
-                                      className="hidden sm:inline-flex"
-                                    />
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 shrink-0"
-                                      onClick={() => openStockEdit(stock)}
-                                      aria-label="Modifica dati movimento"
-                                    >
-                                      <Pencil className="h-4 w-4" />
-                                    </Button>
+                                        ? "Carico"
+                                        : "Scarico"}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {presenter.hasJob()
+                                        ? `Operazione: ${presenter.getOperationName()}`
+                                        : "Operazione non collegata"}
+                                    </p>
+                                    {operationDate && (
+                                      <p className="text-xs text-muted-foreground">
+                                        {operationDate}
+                                      </p>
+                                    )}
+                                    {stock.job?.isVerified && (
+                                      <Badge
+                                        variant="outline"
+                                        className="mt-1 text-xs py-0"
+                                      >
+                                        Verificato
+                                      </Badge>
+                                    )}
                                   </div>
                                 </div>
-                                {stock.sourceFile && (
+                                <div className="text-right">
+                                  <p
+                                    className={`font-bold ${
+                                      stock.type === "IN"
+                                        ? "text-green-600"
+                                        : "text-red-600"
+                                    }`}
+                                  >
+                                    {stock.type === "IN" ? "+" : "-"}
+                                    {StockFormatter.formatQuantity(
+                                      Number.isFinite(stock.quantity)
+                                        ? Math.abs(stock.quantity)
+                                        : 0,
+                                    )}{" "}
+                                    {stock.unitOfMeasureQuantity}
+                                  </p>
+                                  {recordedDate && (
+                                    <p className="text-xs text-gray-500">
+                                      Registrato il {recordedDate}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
+                                <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-4 gap-y-1 text-xs">
+                                  <span className="text-gray-500">
+                                    Data DDT:
+                                    <span className="ml-1 text-gray-900">
+                                      {dateFormatter.format(
+                                        stock.ddtDate ?? null,
+                                      ) ?? "—"}
+                                    </span>
+                                  </span>
+                                  <span className="text-gray-500">
+                                    Codice DDT:
+                                    <span className="ml-1 text-gray-900">
+                                      {stock.ddtCode ?? "—"}
+                                    </span>
+                                  </span>
+                                  <span className="text-gray-500">
+                                    Codice fattura:
+                                    <span className="ml-1 text-gray-900">
+                                      {stock.invoiceCode ?? "—"}
+                                    </span>
+                                  </span>
+                                  <span className="text-gray-500">
+                                    Scadenza fattura:
+                                    <span className="ml-1 text-gray-900">
+                                      {dateFormatter.format(
+                                        stock.invoiceDueDate ?? null,
+                                      ) ?? "—"}
+                                    </span>
+                                  </span>
+                                  <span className="text-gray-500">
+                                    {stock.type === "IN"
+                                      ? "Prezzo acquisto:"
+                                      : "Prezzo vendita:"}
+                                    <span className="ml-1 text-gray-900">
+                                      {stock.price != null
+                                        ? `${stock.price.toFixed(2)} ${stock.unitOfMeasurePrice ?? "EUR"}`
+                                        : "—"}
+                                    </span>
+                                  </span>
+                                  <span className="text-gray-500">
+                                    Data:
+                                    <span className="ml-1 text-gray-900">
+                                      {recordedDate ?? "—"}
+                                    </span>
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
                                   <SourceFilePreviewButton
                                     file={stock.sourceFile}
-                                    label="Visualizza documento originale"
-                                    className="sm:hidden"
+                                    label="Documento"
+                                    className="hidden sm:inline-flex"
                                   />
-                                )}
-                                {presenter.hasJob() &&
-                                  operationDetails.length > 0 && (
-                                    <Accordion type="single" collapsible>
-                                      <AccordionItem
-                                        value={`job-${stock.id}`}
-                                        className="p-2 rounded-md"
-                                      >
-                                        <AccordionTrigger className="text-sm">
-                                          Dettagli operazione
-                                        </AccordionTrigger>
-                                        <AccordionContent>
-                                          <div className="space-y-2 ">
-                                            {operationDetails.map((detail) => (
-                                              <div
-                                                key={`${stock.id}-${detail.label}`}
-                                                className="text-xs"
-                                              >
-                                                <span className="text-gray-500">
-                                                  {detail.label}
-                                                </span>
-                                                <p className="font-medium text-gray-900">
-                                                  {detail.value}
-                                                </p>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </AccordionContent>
-                                      </AccordionItem>
-                                    </Accordion>
-                                  )}
-                              </>
-                            )}
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">
-                    Nessun movimento registrato
-                  </p>
-                )}
-              </TabsContent>
-              <TabsContent value="chart" className="mt-0">
-                {chartData.length > 0 ? (
-                  <div className="w-full h-[350px]">
-                    <ChartContainer config={chartConfig}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart
-                          data={chartData}
-                          margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
-                        >
-                          <defs>
-                            <linearGradient
-                              id="stockGradient"
-                              x1="0"
-                              y1="0"
-                              x2="0"
-                              y2="1"
-                            >
-                              <stop
-                                offset="5%"
-                                stopColor="hsl(220, 70%, 50%)"
-                                stopOpacity={0.3}
-                              />
-                              <stop
-                                offset="95%"
-                                stopColor="hsl(220, 70%, 50%)"
-                                stopOpacity={0}
-                              />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            opacity={0.3}
-                            vertical={false}
-                          />
-                          <XAxis
-                            dataKey="label"
-                            tickLine={false}
-                            tickMargin={12}
-                            axisLine={true}
-                            style={{ fontSize: "11px", fontWeight: 500 }}
-                            label={{
-                              value: "Movimenti nel Periodo",
-                              position: "insideBottom",
-                              offset: -10,
-                              style: {
-                                fontSize: "12px",
-                                fontWeight: 600,
-                                fill: "#666",
-                              },
-                            }}
-                          />
-                          <YAxis
-                            tickLine={false}
-                            axisLine={true}
-                            style={{ fontSize: "11px", fontWeight: 500 }}
-                            tickFormatter={(value) =>
-                              StockFormatter.formatQuantity(Number(value))
-                            }
-                            label={{
-                              value: `Stock (${unit})`,
-                              angle: -90,
-                              position: "insideLeft",
-                              style: {
-                                fontSize: "12px",
-                                fontWeight: 600,
-                                fill: "#666",
-                              },
-                            }}
-                            domain={["dataMin - 5", "dataMax + 5"]}
-                          />
-                          <ChartTooltip
-                            content={
-                              <ChartTooltipContent
-                                formatter={(value, _name, props) => {
-                                  const numValue = Number(value);
-                                  const dataPoint = props.payload as {
-                                    label: string;
-                                    timestamp?: string | null;
-                                    type: "IN" | "OUT";
-                                    operationName?: string;
-                                  };
-                                  const formattedTimestamp = dataPoint.timestamp
-                                    ? dateFormatter.format(dataPoint.timestamp)
-                                    : null;
-                                  return (
-                                    <div className="flex flex-col gap-1">
-                                      <span className="text-xs text-gray-500">
-                                        {formattedTimestamp ?? dataPoint.label}
-                                      </span>
-                                      <span className="font-bold text-blue-600 text-base">
-                                        {StockFormatter.formatQuantity(
-                                          numValue,
-                                        )}{" "}
-                                        {unit}
-                                      </span>
-                                      {dataPoint.operationName && (
-                                        <span className="text-xs text-gray-600">
-                                          {dataPoint.operationName}
-                                        </span>
-                                      )}
-                                      {dataPoint.type === "IN" && (
-                                        <span className="text-xs text-green-600">
-                                          ↑ Carico
-                                        </span>
-                                      )}
-                                      {dataPoint.type === "OUT" && (
-                                        <span className="text-xs text-red-600">
-                                          ↓ Scarico
-                                        </span>
-                                      )}
-                                    </div>
-                                  );
-                                }}
-                              />
-                            }
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="stock"
-                            stroke="hsl(220, 70%, 50%)"
-                            strokeWidth={3}
-                            fill="url(#stockGradient)"
-                            dot={(props: {
-                              cx?: number;
-                              cy?: number;
-                              payload?: { type: "IN" | "OUT" };
-                            }) => {
-                              const { cx, cy, payload } = props;
-                              return (
-                                <circle
-                                  cx={cx}
-                                  cy={cy}
-                                  r={5}
-                                  fill={
-                                    payload?.type === "IN"
-                                      ? "hsl(142, 76%, 36%)"
-                                      : "hsl(0, 84%, 60%)"
-                                  }
-                                  stroke="white"
-                                  strokeWidth={2}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 shrink-0"
+                                    onClick={() => openStockEdit(stock)}
+                                    aria-label="Modifica dati movimento"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                              {stock.sourceFile && (
+                                <SourceFilePreviewButton
+                                  file={stock.sourceFile}
+                                  label="Visualizza documento originale"
+                                  className="sm:hidden"
                                 />
-                              );
-                            }}
-                            activeDot={{
-                              r: 7,
-                              strokeWidth: 2,
-                              stroke: "white",
-                            }}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500 text-center py-8">
-                    {hasMixedUnits
-                      ? `Nessun movimento in ${unit} disponibile per il grafico`
-                      : "Nessun movimento registrato"}
-                  </p>
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
+                              )}
+                              {presenter.hasJob() &&
+                                operationDetails.length > 0 && (
+                                  <Accordion type="single" collapsible>
+                                    <AccordionItem
+                                      value={`job-${stock.id}`}
+                                      className="p-2 rounded-md"
+                                    >
+                                      <AccordionTrigger className="text-sm">
+                                        Dettagli operazione
+                                      </AccordionTrigger>
+                                      <AccordionContent>
+                                        <div className="space-y-2 ">
+                                          {operationDetails.map((detail) => (
+                                            <div
+                                              key={`${stock.id}-${detail.label}`}
+                                              className="text-xs"
+                                            >
+                                              <span className="text-gray-500">
+                                                {detail.label}
+                                              </span>
+                                              <p className="font-medium text-gray-900">
+                                                {detail.value}
+                                              </p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </AccordionContent>
+                                    </AccordionItem>
+                                  </Accordion>
+                                )}
+                            </>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  Nessun movimento registrato
+                </p>
+              )}
+            </TabsContent>
+            <TabsContent value="chart" className="mt-0">
+              {chartData.length > 0 ? (
+                <div className="w-full h-[350px]">
+                  <ChartContainer config={chartConfig}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={chartData}
+                        margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+                      >
+                        <defs>
+                          <linearGradient
+                            id="stockGradient"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop
+                              offset="5%"
+                              stopColor="hsl(220, 70%, 50%)"
+                              stopOpacity={0.3}
+                            />
+                            <stop
+                              offset="95%"
+                              stopColor="hsl(220, 70%, 50%)"
+                              stopOpacity={0}
+                            />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          opacity={0.3}
+                          vertical={false}
+                        />
+                        <XAxis
+                          dataKey="label"
+                          tickLine={false}
+                          tickMargin={12}
+                          axisLine={true}
+                          style={{ fontSize: "11px", fontWeight: 500 }}
+                          label={{
+                            value: "Movimenti nel Periodo",
+                            position: "insideBottom",
+                            offset: -10,
+                            style: {
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              fill: "#666",
+                            },
+                          }}
+                        />
+                        <YAxis
+                          tickLine={false}
+                          axisLine={true}
+                          style={{ fontSize: "11px", fontWeight: 500 }}
+                          tickFormatter={(value) =>
+                            StockFormatter.formatQuantity(Number(value))
+                          }
+                          label={{
+                            value: `Stock (${unit})`,
+                            angle: -90,
+                            position: "insideLeft",
+                            style: {
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              fill: "#666",
+                            },
+                          }}
+                          domain={["dataMin - 5", "dataMax + 5"]}
+                        />
+                        <ChartTooltip
+                          content={
+                            <ChartTooltipContent
+                              formatter={(value, _name, props) => {
+                                const numValue = Number(value);
+                                const dataPoint = props.payload as {
+                                  label: string;
+                                  timestamp?: string | null;
+                                  type: "IN" | "OUT";
+                                  operationName?: string;
+                                };
+                                const formattedTimestamp = dataPoint.timestamp
+                                  ? dateFormatter.format(dataPoint.timestamp)
+                                  : null;
+                                return (
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-xs text-gray-500">
+                                      {formattedTimestamp ?? dataPoint.label}
+                                    </span>
+                                    <span className="font-bold text-blue-600 text-base">
+                                      {StockFormatter.formatQuantity(numValue)}{" "}
+                                      {unit}
+                                    </span>
+                                    {dataPoint.operationName && (
+                                      <span className="text-xs text-gray-600">
+                                        {dataPoint.operationName}
+                                      </span>
+                                    )}
+                                    {dataPoint.type === "IN" && (
+                                      <span className="text-xs text-green-600">
+                                        ↑ Carico
+                                      </span>
+                                    )}
+                                    {dataPoint.type === "OUT" && (
+                                      <span className="text-xs text-red-600">
+                                        ↓ Scarico
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              }}
+                            />
+                          }
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="stock"
+                          stroke="hsl(220, 70%, 50%)"
+                          strokeWidth={3}
+                          fill="url(#stockGradient)"
+                          dot={(props: {
+                            cx?: number;
+                            cy?: number;
+                            payload?: { type: "IN" | "OUT" };
+                          }) => {
+                            const { cx, cy, payload } = props;
+                            return (
+                              <circle
+                                cx={cx}
+                                cy={cy}
+                                r={5}
+                                fill={
+                                  payload?.type === "IN"
+                                    ? "hsl(142, 76%, 36%)"
+                                    : "hsl(0, 84%, 60%)"
+                                }
+                                stroke="white"
+                                strokeWidth={2}
+                              />
+                            );
+                          }}
+                          activeDot={{
+                            r: 7,
+                            strokeWidth: 2,
+                            stroke: "white",
+                          }}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-8">
+                  {hasMixedUnits
+                    ? `Nessun movimento in ${unit} disponibile per il grafico`
+                    : "Nessun movimento registrato"}
+                </p>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </>
   );
 
   return (
     <>
       {contentOnly ? (
-        <div className="flex flex-col h-full overflow-y-auto bg-white p-2 min-h-0">
+        <div className="flex flex-col h-full overflow-y-auto bg-neutral-50/80 p-4 min-h-0">
           {detailPanelContent}
         </div>
       ) : (
@@ -1623,9 +1617,7 @@ function DrawerProduct({
               <Input
                 id="product-administrative-status"
                 value={productAdministrativeStatus}
-                onChange={(e) =>
-                  setProductAdministrativeStatus(e.target.value)
-                }
+                onChange={(e) => setProductAdministrativeStatus(e.target.value)}
                 placeholder="es. Attivo"
               />
             </div>
@@ -1636,9 +1628,7 @@ function DrawerProduct({
               <Input
                 id="product-registration-number"
                 value={productRegistrationNumber}
-                onChange={(e) =>
-                  setProductRegistrationNumber(e.target.value)
-                }
+                onChange={(e) => setProductRegistrationNumber(e.target.value)}
                 placeholder="es. 12345"
               />
             </div>
@@ -1660,7 +1650,7 @@ function DrawerProduct({
                 id="product-label-metadata"
                 value={productLabelMetadataJson}
                 onChange={(e) => setProductLabelMetadataJson(e.target.value)}
-                placeholder='{}'
+                placeholder="{}"
                 rows={3}
                 className="font-mono text-xs"
               />

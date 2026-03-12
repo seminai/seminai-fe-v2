@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import {
   type Field,
   type BulkFieldInput,
@@ -19,6 +19,7 @@ import { useCompanies } from "@/hooks/useCompanies";
 import { toast } from "sonner";
 import { type Company } from "@/api/companies";
 import { PageHeader } from "@/components/organism/Header";
+import { SplitDrawerLayout } from "@/components/molecules/SplitDrawerLayout";
 
 class FieldProductionUnitInspector {
   private readonly units: ProductionUnit[];
@@ -197,6 +198,8 @@ const buildFieldsEditColumns = (companies: Company[]): EditableColumn[] => {
 
 export default function Fields(): React.ReactElement {
   const tableRef = useRef<EditableTableRef>(null);
+  const [selectedField, setSelectedField] = useState<Field | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const {
     fields,
@@ -217,29 +220,36 @@ export default function Fields(): React.ReactElement {
     }));
   }, [fields]);
 
-  const renderDetails = (row: Record<string, unknown>): React.ReactNode => {
-    const fieldId = typeof row.id === "string" ? row.id : String(row.id);
+  const handleOpenDetails = useCallback(
+    (row: Record<string, unknown>) => {
+      const fieldId = typeof row.id === "string" ? row.id : String(row.id);
+      const field =
+        fields.find((f) => f.id === fieldId) || (row as unknown as Field);
+      setSelectedField(field);
+      setDrawerOpen(true);
+    },
+    [fields],
+  );
 
-    // Trova sempre il campo più recente dalla lista aggiornata
-    const field =
-      fields.find((f) => f.id === fieldId) || (row as unknown as Field);
+  const handleDrawerOpenChange = useCallback((open: boolean) => {
+    setDrawerOpen(open);
+    if (!open) {
+      setSelectedField(null);
+    }
+  }, []);
 
-    const handleUpdate = (update: BulkFieldUpdateInput): void => {
+  const handleFieldUpdate = useCallback(
+    (update: BulkFieldUpdateInput): void => {
       updateFieldsAsync([update]);
-    };
+    },
+    [updateFieldsAsync],
+  );
 
-    // Usa updatedAt come key per forzare il re-render quando i dati cambiano
-    const key = `${field.id}-${field.updatedAt || Date.now()}`;
-
-    return (
-      <DrawerFieldContent
-        key={key}
-        field={field}
-        onUpdate={handleUpdate}
-        isUpdating={isUpdating}
-      />
-    );
-  };
+  // Keep selectedField in sync with latest data
+  const currentField = useMemo(() => {
+    if (!selectedField) return null;
+    return fields.find((f) => f.id === selectedField.id) || selectedField;
+  }, [fields, selectedField]);
 
   /**
    * Gestisce l'importazione dei campi da CSV
@@ -412,70 +422,94 @@ export default function Fields(): React.ReactElement {
   const columns = buildFieldsEditColumns(companies);
 
   return (
-    <div className="flex flex-col h-full">
-      <PageHeader title="Campi" className="hidden md:block" />
+    <SplitDrawerLayout
+      main={
+        <div className="flex flex-col h-full">
+          <PageHeader title="Campi" className="hidden md:block" />
 
-      <div className="flex-1 min-h-0 px-6 pb-6">
-        {isLoading || isLoadingCompanies ? (
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Spinner size={20} ariaLabel="Caricamento dati" />
-            <span>Caricamento dati…</span>
+          <div className="flex-1 min-h-0 px-6 pb-6">
+            {isLoading || isLoadingCompanies ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Spinner size={20} ariaLabel="Caricamento dati" />
+                <span>Caricamento dati…</span>
+              </div>
+            ) : error ? (
+              <div className="text-sm text-red-600">
+                Impossibile caricare i campi. Errore:{" "}
+                {error instanceof Error ? error.message : "Errore sconosciuto"}
+              </div>
+            ) : companies.length === 0 ? (
+              <div className="text-center py-8 text-yellow-600 bg-yellow-50 rounded-lg border border-yellow-200">
+                <p className="text-sm font-medium">
+                  Nessuna azienda disponibile
+                </p>
+                <p className="text-xs mt-1">
+                  Devi prima creare un&apos;azienda prima di poter aggiungere
+                  campi
+                </p>
+              </div>
+            ) : (
+              <EditableTable
+                ref={tableRef}
+                columns={columns}
+                rows={rowsWithActiveUnits}
+                isModify={true}
+                addButton={true}
+                getRowId={(row, index) =>
+                  (typeof row.id === "string" && row.id) || index
+                }
+                onSave={handleSave}
+                onDeleteSelected={handleDeleteSelected}
+                showDeleteAction={true}
+                exportFileName="campi"
+                createDrawerImportTitle="Importa file"
+                createDrawerImportDescription="Supporta il template AGEA (CSV, XLS, XLSX, PDF) e Shapefile (.shp + .dbf + .shx) con coordinate geografiche. Seleziona l'azienda e carica un file; i dati verranno estratti automaticamente."
+                newRowDefaults={{
+                  companyName: "",
+                  name: "",
+                  address: "",
+                  sezione: "",
+                  foglio: "",
+                  particella: "",
+                  superficieCatastaleMq: "",
+                  city: "",
+                  sauHa: "",
+                  uso: "",
+                  soilType: "",
+                  currentProductionUnitLabel: 0,
+                }}
+                onOpenDetails={handleOpenDetails}
+                className="bg-background"
+              >
+                <ImportFieldByCsv
+                  slot="create-drawer"
+                  embedded
+                  companies={companies}
+                  onImportSuccess={handleImportFromCsv}
+                />
+              </EditableTable>
+            )}
           </div>
-        ) : error ? (
-          <div className="text-sm text-red-600">
-            Impossibile caricare i campi. Errore:{" "}
-            {error instanceof Error ? error.message : "Errore sconosciuto"}
-          </div>
-        ) : companies.length === 0 ? (
-          <div className="text-center py-8 text-yellow-600 bg-yellow-50 rounded-lg border border-yellow-200">
-            <p className="text-sm font-medium">Nessuna azienda disponibile</p>
-            <p className="text-xs mt-1">
-              Devi prima creare un'azienda prima di poter aggiungere campi
-            </p>
-          </div>
-        ) : (
-          <EditableTable
-            ref={tableRef}
-            columns={columns}
-            rows={rowsWithActiveUnits}
-            isModify={true}
-            addButton={true}
-            getRowId={(row, index) =>
-              (typeof row.id === "string" && row.id) || index
-            }
-            onSave={handleSave}
-            onDeleteSelected={handleDeleteSelected}
-            showDeleteAction={true}
-            exportFileName="campi"
-            createDrawerImportTitle="Importa file"
-            createDrawerImportDescription="Supporta il template AGEA (CSV, XLS, XLSX, PDF) e Shapefile (.shp + .dbf + .shx) con coordinate geografiche. Seleziona l'azienda e carica un file; i dati verranno estratti automaticamente."
-            newRowDefaults={{
-              companyName: "",
-              name: "",
-              address: "",
-              sezione: "",
-              foglio: "",
-              particella: "",
-              superficieCatastaleMq: "",
-              city: "",
-              sauHa: "",
-              uso: "",
-              soilType: "",
-              currentProductionUnitLabel: 0,
-            }}
-            detailsRenderer={renderDetails}
-            detailsTitle="Dettagli Campo"
-            className="bg-background"
-          >
-            <ImportFieldByCsv
-              slot="create-drawer"
-              embedded
-              companies={companies}
-              onImportSuccess={handleImportFromCsv}
+        </div>
+      }
+      drawerContent={
+        currentField ? (
+          <div className="flex flex-col h-full overflow-y-auto bg-neutral-50/80 p-4 min-h-0">
+            <DrawerFieldContent
+              key={`${currentField.id}-${currentField.updatedAt || Date.now()}`}
+              field={currentField}
+              onUpdate={handleFieldUpdate}
+              isUpdating={isUpdating}
             />
-          </EditableTable>
-        )}
-      </div>
-    </div>
+          </div>
+        ) : null
+      }
+      open={drawerOpen}
+      onOpenChange={handleDrawerOpenChange}
+      defaultDrawerWidth={480}
+      minDrawerWidth={320}
+      maxDrawerWidth={800}
+      storageKey="seminai-fields-details-drawer-width"
+    />
   );
 }

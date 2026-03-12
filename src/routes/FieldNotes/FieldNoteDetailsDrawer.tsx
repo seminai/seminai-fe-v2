@@ -204,16 +204,20 @@ export function FieldNoteDetailsDrawer({
 
   if (contentOnly) {
     return (
-      <div className="flex flex-col h-full overflow-y-auto bg-white">
-        <div className="flex flex-col gap-1.5 px-4 sm:px-6 py-4">
-          <h2 className="text-foreground font-semibold text-lg sm:text-xl">
+      <div className="flex flex-col h-full overflow-y-auto bg-neutral-50/80">
+        <div className="flex flex-col gap-1 px-5 pt-4 pb-3">
+          <h2 className="text-foreground font-semibold text-lg tracking-tight pr-8">
             Dettagli Nota di Campo
           </h2>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-xs">
             Visualizza e modifica i dettagli della nota di campo
           </p>
         </div>
-        {panelContent}
+        <div className="px-4 pb-4 flex-1 min-h-0">
+          <div className="rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            {panelContent}
+          </div>
+        </div>
       </div>
     );
   }
