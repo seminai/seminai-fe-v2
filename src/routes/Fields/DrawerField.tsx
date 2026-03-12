@@ -928,7 +928,7 @@ export function DrawerFieldContent({
   return (
     <div className="space-y-6">
       {/* Header con nome campo e pulsante modifica */}
-      <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+      <div className="flex items-center justify-between pb-4 border-b border-gray-100 pr-8">
         <h2 className="text-lg font-semibold text-gray-900 truncate pr-3">
           {field.name}
         </h2>

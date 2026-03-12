@@ -1634,7 +1634,7 @@ export default function ProductionUnit(): React.ReactElement {
     return (
       <div className="p-4 space-y-4">
         {/* Header con nome unità produttiva e pulsante edit */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-4 pr-8">
           <h3 className="text-lg font-semibold truncate pr-3">
             {pu.name}
           </h3>
