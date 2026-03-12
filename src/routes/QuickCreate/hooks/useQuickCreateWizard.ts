@@ -1,8 +1,10 @@
 import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   type ExtractedField,
   type ExtractedProductionUnit,
+  type PhenologyPredictionInput,
   quickCreateApiService,
 } from "@/api/quick-create";
 import { useCompanies } from "@/hooks/useCompanies";
@@ -16,6 +18,7 @@ export interface QuickCreateWizardState {
   fieldsData: ExtractedField[];
   productionUnitsData: ExtractedProductionUnit[];
   isSaving: boolean;
+  isPredicting: boolean;
   error: string | null;
 }
 
@@ -60,11 +63,100 @@ export function useQuickCreateWizard(): UseQuickCreateWizardReturn {
     ExtractedProductionUnit[]
   >([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPredicting, setIsPredicting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const queryClient = useQueryClient();
   const companiesHook = useCompanies();
 
-  const goNext = useCallback(() => {
+  /**
+   * Predict missing flowering/harvesting dates for PUs that have cropName.
+   * Merges predictions into productionUnitsData (only fills null fields).
+   */
+  const predictMissingPhenologyDates = useCallback(async () => {
+    const pusNeedingPrediction = productionUnitsData
+      .map((pu, i) => ({ pu, i }))
+      .filter(
+        ({ pu }) =>
+          pu.cropName?.trim() &&
+          (!pu.floweringDate || !pu.harvestingDate),
+      );
+
+    if (pusNeedingPrediction.length === 0) return;
+
+    // Derive location from fields
+    const location =
+      fieldsData.find((f) => f.city)?.city ??
+      fieldsData.find((f) => f.region)?.region ??
+      undefined;
+
+    const inputs: PhenologyPredictionInput[] = pusNeedingPrediction.map(
+      ({ pu, i }) => ({
+        index: i,
+        cropName: pu.cropName!,
+        cropType: pu.cropType ?? undefined,
+        variety: pu.variety ?? undefined,
+        location,
+        startDate: pu.startDate ?? undefined,
+        endDate: pu.endDate ?? undefined,
+      }),
+    );
+
+    setIsPredicting(true);
+    try {
+      const response = await quickCreateApiService.predictPhenology(inputs);
+      const predictions = response.data.predictions;
+
+      if (predictions.length > 0) {
+        const predictionMap = new Map(predictions.map((p) => [p.index, p]));
+
+        setProductionUnitsData((prev) =>
+          prev.map((pu, i) => {
+            const pred = predictionMap.get(i);
+            if (!pred) return pu;
+
+            const updated = { ...pu };
+            if (!updated.floweringDate) {
+              updated.floweringDate = pred.floweringDate;
+            }
+            if (!updated.harvestingDate) {
+              updated.harvestingDate = pred.harvestingDate;
+            }
+            // Append additional cycles for tree/multi-harvest crops
+            if (pred.additionalCycles?.length) {
+              const existingMaxIndex = Math.max(
+                0,
+                ...updated.cycles.map((c) => c.cycleIndex),
+              );
+              const newCycles = pred.additionalCycles.map((ac) => ({
+                cycleIndex: existingMaxIndex + ac.cycleIndex,
+                cropName: ac.cropName,
+                cropType: updated.cropType,
+                cropCode: null,
+                variety: updated.variety,
+                occupazione: null,
+                destinazione: null,
+                protectionStructure: null,
+                startDate: updated.startDate,
+                endDate: updated.endDate,
+                floweringDate: ac.floweringDate,
+                harvestingDate: ac.harvestingDate,
+              }));
+              updated.cycles = [...updated.cycles, ...newCycles];
+            }
+            return updated;
+          }),
+        );
+      }
+    } catch (err) {
+      // Non-blocking: log but don't prevent navigation
+      console.warn("Phenology prediction failed:", err);
+    } finally {
+      setIsPredicting(false);
+    }
+  }, [productionUnitsData, fieldsData]);
+
+  const goNext = useCallback(async () => {
     setError(null);
     switch (currentStep) {
       case "company":
@@ -74,6 +166,7 @@ export function useQuickCreateWizard(): UseQuickCreateWizardReturn {
         setCurrentStep(selectedPath === "warehouse" ? "products" : "fields");
         break;
       case "fields":
+        await predictMissingPhenologyDates();
         setCurrentStep("production-units");
         break;
       case "products":
@@ -82,7 +175,7 @@ export function useQuickCreateWizard(): UseQuickCreateWizardReturn {
       default:
         break;
     }
-  }, [currentStep, selectedPath]);
+  }, [currentStep, selectedPath, predictMissingPhenologyDates]);
 
   const goBack = useCallback(() => {
     setError(null);
@@ -127,6 +220,8 @@ export function useQuickCreateWizard(): UseQuickCreateWizardReturn {
         fields: fieldsData,
         productionUnits: productionUnitsData,
       });
+      queryClient.invalidateQueries({ queryKey: ["fields"] });
+      queryClient.invalidateQueries({ queryKey: ["production-units"] });
       setCurrentStep("products");
     } catch (err) {
       setError(
@@ -161,7 +256,7 @@ export function useQuickCreateWizard(): UseQuickCreateWizardReturn {
     return false;
   }, [currentStep, selectedCompanyId, fieldsData, productionUnitsData]);
 
-  const isProcessing = isSaving;
+  const isProcessing = isSaving || isPredicting;
 
   return {
     state: {
@@ -172,6 +267,7 @@ export function useQuickCreateWizard(): UseQuickCreateWizardReturn {
       fieldsData,
       productionUnitsData,
       isSaving,
+      isPredicting,
       error,
     },
     actions: {

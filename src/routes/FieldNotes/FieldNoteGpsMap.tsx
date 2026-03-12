@@ -8,17 +8,14 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-
-const DEFAULT_CENTER: [number, number] = [41.9, 12.5];
-const DEFAULT_ZOOM = 6;
-
-const ESRI_IMAGERY_URL =
-  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
-const ESRI_IMAGERY_ATTRIBUTION =
-  "Tiles &copy; Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community";
-const ESRI_REFERENCE_URL =
-  "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Reference_Overlay/MapServer/tile/{z}/{y}/{x}";
-const ESRI_REFERENCE_ATTRIBUTION = "Tiles &copy; Esri";
+import {
+  ESRI_IMAGERY_URL,
+  ESRI_IMAGERY_ATTRIBUTION,
+  ESRI_REFERENCE_URL,
+  ESRI_REFERENCE_ATTRIBUTION,
+  DEFAULT_CENTER,
+  DEFAULT_ZOOM,
+} from "@/utils/map-config";
 
 /** Custom marker icon (no default Leaflet icons). */
 function createMarkerIcon(): L.DivIcon {

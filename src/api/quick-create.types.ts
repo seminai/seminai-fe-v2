@@ -152,6 +152,44 @@ export interface StartExtractResponse {
 }
 
 /**
+ * Input item for POST /onboarding/predict-phenology
+ */
+export interface PhenologyPredictionInput {
+  index: number;
+  cropName: string;
+  cropType?: string;
+  variety?: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+/**
+ * Single prediction result from phenology endpoint
+ */
+export interface PhenologyPredictionResult {
+  index: number;
+  floweringDate: string;
+  harvestingDate: string;
+  additionalCycles?: Array<{
+    cycleIndex: number;
+    cropName: string;
+    floweringDate: string;
+    harvestingDate: string;
+  }>;
+}
+
+/**
+ * Response from POST /onboarding/predict-phenology
+ */
+export interface PredictPhenologyResponse {
+  status: "success";
+  data: {
+    predictions: PhenologyPredictionResult[];
+  };
+}
+
+/**
  * Response from GET /onboarding/extract/status/:jobId
  */
 export interface ExtractJobStatusResponse {

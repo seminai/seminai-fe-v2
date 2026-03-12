@@ -17,6 +17,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Pencil, Check, X } from "lucide-react";
+import { useCallback } from "react";
+import { FieldPolygonMap } from "./FieldPolygonMap";
+import type { GeoJsonPolygon } from "@/utils/geo-utils";
 
 interface DrawerFieldContentProps {
   field: Field;
@@ -178,6 +181,10 @@ export function DrawerFieldContent({
     inizioConduzione: field.inizioConduzione || "",
     fineConduzione: field.fineConduzione || "",
     bufferZoneNotes: field.bufferZoneNotes || "",
+    polygon: field.polygon,
+    latitude: field.latitude,
+    longitude: field.longitude,
+    coordinates: field.coordinates,
   });
 
   // Aggiorna i dati quando il field cambia (dopo un update)
@@ -208,6 +215,10 @@ export function DrawerFieldContent({
         inizioConduzione: field.inizioConduzione || "",
         fineConduzione: field.fineConduzione || "",
         bufferZoneNotes: field.bufferZoneNotes || "",
+        polygon: field.polygon,
+        latitude: field.latitude,
+        longitude: field.longitude,
+        coordinates: field.coordinates,
       });
     }
   }, [field, isEditing]);
@@ -266,6 +277,17 @@ export function DrawerFieldContent({
       updateData.fineConduzione = editedData.fineConduzione || null;
     if (editedData.bufferZoneNotes !== (field.bufferZoneNotes || ""))
       updateData.bufferZoneNotes = editedData.bufferZoneNotes || null;
+    if (editedData.polygon !== field.polygon)
+      updateData.polygon = editedData.polygon as
+        | Record<string, unknown>
+        | null
+        | undefined;
+    if (editedData.latitude !== field.latitude)
+      updateData.latitude = editedData.latitude;
+    if (editedData.longitude !== field.longitude)
+      updateData.longitude = editedData.longitude;
+    if (editedData.coordinates !== field.coordinates)
+      updateData.coordinates = editedData.coordinates;
 
     onUpdate(updateData);
     setIsEditing(false);
@@ -297,9 +319,29 @@ export function DrawerFieldContent({
       inizioConduzione: field.inizioConduzione || "",
       fineConduzione: field.fineConduzione || "",
       bufferZoneNotes: field.bufferZoneNotes || "",
+      polygon: field.polygon,
+      latitude: field.latitude,
+      longitude: field.longitude,
+      coordinates: field.coordinates,
     });
     setIsEditing(false);
   };
+
+  const handlePolygonChange = useCallback(
+    (
+      polygon: GeoJsonPolygon,
+      centroid: { latitude: number; longitude: number },
+    ) => {
+      setEditedData((prev) => ({
+        ...prev,
+        polygon: polygon as unknown as Record<string, unknown>,
+        latitude: centroid.latitude,
+        longitude: centroid.longitude,
+        coordinates: [centroid.longitude, centroid.latitude],
+      }));
+    },
+    [],
+  );
 
   const renderGeneralInfo = (): React.ReactNode => {
     return (
@@ -971,6 +1013,31 @@ export function DrawerFieldContent({
       {/* Contenuto */}
       <div className="space-y-6">
         {renderSourceDocument()}
+
+        {/* Mappa del campo */}
+        <div className="border-b border-gray-100 pb-6">
+          <h3 className="text-sm font-medium text-black mb-4">Posizione</h3>
+          <FieldPolygonMap
+            latitude={
+              isEditing
+                ? (editedData.latitude ?? field.latitude)
+                : field.latitude
+            }
+            longitude={
+              isEditing
+                ? (editedData.longitude ?? field.longitude)
+                : field.longitude
+            }
+            polygon={
+              isEditing
+                ? (editedData.polygon ?? field.polygon)
+                : field.polygon
+            }
+            isEditing={isEditing}
+            onPolygonChange={handlePolygonChange}
+          />
+        </div>
+
         {renderGeneralInfo()}
         {renderCadastralData()}
         {renderAgronomicData()}

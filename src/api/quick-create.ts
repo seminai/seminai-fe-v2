@@ -5,6 +5,8 @@ import type {
   BulkCreateResponse,
   StartExtractResponse,
   ExtractJobStatusResponse,
+  PhenologyPredictionInput,
+  PredictPhenologyResponse,
 } from "./quick-create.types";
 
 export type {
@@ -17,6 +19,9 @@ export type {
   BulkCreateResponse,
   StartExtractResponse,
   ExtractJobStatusResponse,
+  PhenologyPredictionInput,
+  PhenologyPredictionResult,
+  PredictPhenologyResponse,
 } from "./quick-create.types";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -156,6 +161,28 @@ export async function cancelExtract(
 }
 
 /**
+ * POST /onboarding/predict-phenology
+ */
+export async function predictPhenology(
+  productionUnits: PhenologyPredictionInput[],
+  baseUrl: string = BASE_URL,
+): Promise<PredictPhenologyResponse> {
+  const response = await authenticatedHttpClient.request(
+    `${baseUrl}/onboarding/predict-phenology`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ productionUnits }),
+    },
+  );
+  if (!response.ok) {
+    const errorText = await safeReadText(response);
+    throw new Error(errorText || "Failed to predict phenology dates");
+  }
+  return (await response.json()) as PredictPhenologyResponse;
+}
+
+/**
  * Service class for quick create operations
  */
 export class QuickCreateApiService {
@@ -199,6 +226,12 @@ export class QuickCreateApiService {
     input: BulkCreateInput,
   ): Promise<BulkCreateResponse> {
     return bulkCreate(input, this.baseUrl);
+  }
+
+  public async predictPhenology(
+    productionUnits: PhenologyPredictionInput[],
+  ): Promise<PredictPhenologyResponse> {
+    return predictPhenology(productionUnits, this.baseUrl);
   }
 }
 

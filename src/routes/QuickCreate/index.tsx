@@ -64,7 +64,9 @@ export default function QuickCreatePage(): React.ReactElement {
 
   const loadingMessage = state.isSaving
     ? "Salvataggio in corso..."
-    : "Elaborazione in corso...";
+    : state.isPredicting
+      ? "Predizione date fenologiche..."
+      : "Elaborazione in corso...";
 
   return (
     <WizardShell
