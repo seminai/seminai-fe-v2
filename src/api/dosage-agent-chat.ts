@@ -120,6 +120,7 @@ export type DosageAgentStreamEvent = {
   modelInfo?: ModelInfo;
   workingMemoryKey?: string;
   questionnaire?: Questionnaire;
+  riskLevel?: "low" | "medium" | "high";
 };
 
 export type DosageAgentResponse = {

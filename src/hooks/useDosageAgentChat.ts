@@ -26,6 +26,7 @@ export type DosageAgentMessage = {
 
 export type DosageAgentPendingApproval = {
   toolCall: DosageAgentToolCall;
+  riskLevel?: "low" | "medium" | "high";
 };
 
 export type StreamingStatus =
@@ -261,7 +262,7 @@ export function useDosageAgentChat(
 
               case "requires_approval": {
                 if (event.toolCall) {
-                  setPendingApproval({ toolCall: event.toolCall });
+                  setPendingApproval({ toolCall: event.toolCall, riskLevel: event.riskLevel });
                 }
                 setStreamingStatus("idle");
                 setActiveTool(null);

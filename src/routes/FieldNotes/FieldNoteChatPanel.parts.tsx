@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import { Bot, Check, Paperclip, User, X } from "lucide-react";
+import { Bot, Paperclip, User, X } from "lucide-react";
+import { ApprovalCard } from "@/components/hitl/ApprovalCard";
 import type { AgentToolCall } from "@/api/field-notes";
 import type { ChatMessage } from "@/hooks/useFieldNoteChat";
 
@@ -177,6 +177,107 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
   );
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  OPERATION: "Operazione",
+  OBSERVATION: "Osservazione",
+  MEASUREMENT: "Misurazione",
+  HARVEST: "Raccolta",
+  MAINTENANCE: "Manutenzione",
+  OTHER: "Altro",
+};
+
+function FieldNoteToolArgs({ args }: { args: Record<string, unknown> }) {
+  const info = useMemo(() => {
+    const extractedData = args.extractedData as Record<string, unknown> | undefined;
+    const result: {
+      content?: string;
+      category?: string;
+      field?: string;
+      product?: string;
+      quantity?: string;
+      confidence?: number;
+    } = {};
+    if (args.rawContent) result.content = String(args.rawContent);
+    if (args.category) {
+      const cat = String(args.category);
+      result.category = CATEGORY_LABELS[cat] || cat;
+    }
+    if (extractedData?.recognizedFields) {
+      const fields = extractedData.recognizedFields as Array<{ name?: string }>;
+      if (fields.length > 0 && fields[0].name) result.field = fields[0].name;
+    }
+    if (extractedData?.recognizedProducts) {
+      const products = extractedData.recognizedProducts as Array<{
+        name?: string; quantity?: number; unit?: string;
+      }>;
+      if (products.length > 0) {
+        const p = products[0];
+        if (p.name) result.product = p.name;
+        if (p.quantity && p.unit) result.quantity = `${p.quantity} ${p.unit}`;
+      }
+    }
+    if (args.aiConfidenceScore !== undefined) result.confidence = Number(args.aiConfidenceScore);
+    return result;
+  }, [args]);
+
+  return (
+    <div className="space-y-2 text-sm">
+      {info.content && (
+        <div className="flex items-start gap-2">
+          <span className="text-blue-600">📝</span>
+          <div>
+            <span className="font-medium text-slate-700">Contenuto:</span>
+            <p className="text-slate-600 italic">"{info.content}"</p>
+          </div>
+        </div>
+      )}
+      {info.category && (
+        <div className="flex items-center gap-2">
+          <span className="text-blue-600">📋</span>
+          <div>
+            <span className="font-medium text-slate-700">Categoria: </span>
+            <span className="text-slate-600">{info.category}</span>
+          </div>
+        </div>
+      )}
+      {info.field && (
+        <div className="flex items-center gap-2">
+          <span className="text-blue-600">🏭</span>
+          <div>
+            <span className="font-medium text-slate-700">Campo: </span>
+            <span className="text-slate-600">{info.field}</span>
+          </div>
+        </div>
+      )}
+      {info.product && (
+        <div className="flex items-center gap-2">
+          <span className="text-blue-600">💊</span>
+          <div>
+            <span className="font-medium text-slate-700">Prodotto: </span>
+            <span className="text-slate-600">{info.product}</span>
+            {info.quantity && <span className="text-slate-600"> - {info.quantity}</span>}
+          </div>
+        </div>
+      )}
+      {info.confidence !== undefined && (
+        <div className="flex items-center gap-2">
+          <span className="text-blue-600">📊</span>
+          <div>
+            <span className="font-medium text-slate-700">Affidabilità AI: </span>
+            <span className={cn(
+              "font-semibold",
+              info.confidence >= 0.8 ? "text-emerald-600"
+                : info.confidence >= 0.5 ? "text-amber-600" : "text-red-600",
+            )}>
+              {Math.round(info.confidence * 100)}%
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ApprovalDialog({
   toolCall,
   onApprove,
@@ -186,209 +287,20 @@ export function ApprovalDialog({
   onApprove: () => void;
   onReject: (feedback: string) => void;
 }) {
-  const [rejectFeedback, setRejectFeedback] = useState("");
-  const [showRejectInput, setShowRejectInput] = useState(false);
-
-  const handleReject = () => {
-    if (showRejectInput) {
-      if (rejectFeedback.trim()) {
-        onReject(rejectFeedback);
-        setRejectFeedback("");
-        setShowRejectInput(false);
-      }
-    } else {
-      setShowRejectInput(true);
-    }
-  };
-
-  const userFriendlyInfo = useMemo(() => {
-    const args = toolCall.args || {};
-    const extractedData = args.extractedData as Record<string, unknown> | undefined;
-    const info: {
-      content?: string;
-      category?: string;
-      field?: string;
-      productionUnit?: string;
-      product?: string;
-      quantity?: string;
-      confidence?: number;
-    } = {};
-
-    if (args.rawContent) {
-      info.content = String(args.rawContent);
-    }
-
-    if (args.category) {
-      const category = String(args.category);
-      const categoryLabels: Record<string, string> = {
-        OPERATION: "Operazione",
-        OBSERVATION: "Osservazione",
-        MEASUREMENT: "Misurazione",
-        HARVEST: "Raccolta",
-        MAINTENANCE: "Manutenzione",
-        OTHER: "Altro",
-      };
-      info.category = categoryLabels[category] || category;
-    }
-
-    if (extractedData?.recognizedFields) {
-      const fields = extractedData.recognizedFields as Array<{ name?: string }>;
-      if (fields.length > 0 && fields[0].name) {
-        info.field = fields[0].name;
-      }
-    }
-
-    if (extractedData?.recognizedProducts) {
-      const products = extractedData.recognizedProducts as Array<{
-        name?: string;
-        quantity?: number;
-        unit?: string;
-      }>;
-      if (products.length > 0) {
-        const product = products[0];
-        if (product.name) {
-          info.product = product.name;
-        }
-        if (product.quantity && product.unit) {
-          info.quantity = `${product.quantity} ${product.unit}`;
-        }
-      }
-    }
-
-    if (args.aiConfidenceScore !== undefined) {
-      info.confidence = Number(args.aiConfidenceScore);
-    }
-
-    return info;
-  }, [toolCall.args]);
-
   return (
-    <div className="w-full max-w-sm bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
-      <div className="flex items-start gap-2">
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-          <Check className="h-4 w-4 text-blue-600" />
-        </div>
-        <div className="flex-1">
-          <h4 className="text-sm font-semibold text-blue-900 mb-2">
-            Conferma Salvataggio
-          </h4>
-          <p className="text-xs text-blue-800 mb-3">
-            Vuoi salvare questa nota di campo?
-          </p>
-
-          <div className="space-y-2 text-sm">
-            {userFriendlyInfo.content && (
-              <div className="flex items-start gap-2">
-                <span className="text-blue-600">📝</span>
-                <div>
-                  <span className="font-medium text-slate-700">Contenuto:</span>
-                  <p className="text-slate-600 italic">
-                    "{userFriendlyInfo.content}"
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {userFriendlyInfo.category && (
-              <div className="flex items-center gap-2">
-                <span className="text-blue-600">📋</span>
-                <div>
-                  <span className="font-medium text-slate-700">Categoria: </span>
-                  <span className="text-slate-600">
-                    {userFriendlyInfo.category}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {userFriendlyInfo.field && (
-              <div className="flex items-center gap-2">
-                <span className="text-blue-600">🏭</span>
-                <div>
-                  <span className="font-medium text-slate-700">Campo: </span>
-                  <span className="text-slate-600">{userFriendlyInfo.field}</span>
-                </div>
-              </div>
-            )}
-
-            {userFriendlyInfo.product && (
-              <div className="flex items-center gap-2">
-                <span className="text-blue-600">💊</span>
-                <div>
-                  <span className="font-medium text-slate-700">Prodotto: </span>
-                  <span className="text-slate-600">
-                    {userFriendlyInfo.product}
-                  </span>
-                  {userFriendlyInfo.quantity && (
-                    <span className="text-slate-600">
-                      {" "}
-                      - {userFriendlyInfo.quantity}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {userFriendlyInfo.confidence !== undefined && (
-              <div className="flex items-center gap-2">
-                <span className="text-blue-600">📊</span>
-                <div>
-                  <span className="font-medium text-slate-700">
-                    Affidabilità AI:{" "}
-                  </span>
-                  <span
-                    className={cn(
-                      "font-semibold",
-                      userFriendlyInfo.confidence >= 0.8
-                        ? "text-emerald-600"
-                        : userFriendlyInfo.confidence >= 0.5
-                        ? "text-amber-600"
-                        : "text-red-600"
-                    )}
-                  >
-                    {Math.round(userFriendlyInfo.confidence * 100)}%
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {showRejectInput && (
-        <div className="space-y-2 pt-2 border-t border-blue-200">
-          <label className="text-xs font-medium text-blue-800">
-            Cosa vuoi correggere?
-          </label>
-          <Input
-            value={rejectFeedback}
-            onChange={(e) => setRejectFeedback(e.target.value)}
-            placeholder="Es: il campo era vigneto sud, non nord"
-            className="text-sm bg-white"
-            autoFocus
-          />
-        </div>
-      )}
-
-      <div className="flex items-center gap-2 pt-2">
-        <Button
-          onClick={onApprove}
-          size="sm"
-          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-        >
-          <Check className="h-4 w-4 mr-1" />
-          Approva
-        </Button>
-        <Button
-          onClick={handleReject}
-          size="sm"
-          variant="outline"
-          className="flex-1 border-blue-300 text-blue-700 hover:bg-blue-50"
-        >
-          <X className="h-4 w-4 mr-1" />
-          {showRejectInput ? "Invia Correzione" : "Correggi"}
-        </Button>
-      </div>
+    <div className="w-full max-w-sm">
+      <ApprovalCard
+        toolCall={toolCall}
+        onApprove={onApprove}
+        onReject={onReject}
+        theme="blue"
+        title="Conferma Salvataggio"
+        subtitle="Vuoi salvare questa nota di campo?"
+        rejectPlaceholder="Es: il campo era vigneto sud, non nord"
+        rejectButtonLabel="Invia Correzione"
+        rejectToggleLabel="Correggi"
+        renderToolArgs={(args) => <FieldNoteToolArgs args={args} />}
+      />
     </div>
   );
 }

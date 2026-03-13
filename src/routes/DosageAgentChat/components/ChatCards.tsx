@@ -7,8 +7,6 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Progress } from "@/components/ui/progress";
@@ -18,6 +16,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { ApprovalCard } from "@/components/hitl/ApprovalCard";
 import type {
   DosageAgentPendingApproval,
   ActivePlan,
@@ -211,55 +210,34 @@ export function PendingActionCard({
   onApprove: () => void;
   onReject: (reason: string) => void;
 }) {
-  const [rejectReason, setRejectReason] = useState("");
-  const [showRejectInput, setShowRejectInput] = useState(false);
   const toolName = pendingApproval.toolCall.name;
   const destructiveDescription = DESTRUCTIVE_TOOL_DESCRIPTIONS[toolName];
 
-  const handleReject = () => {
-    if (showRejectInput) {
-      if (rejectReason.trim()) { onReject(rejectReason.trim()); setRejectReason(""); setShowRejectInput(false); }
-    } else { setShowRejectInput(true); }
+  const renderDosageToolArgs = (args: Record<string, unknown>) => {
+    if (!hasVisibleArgs(args) || TOOLS_HIDING_ARGS.has(toolName)) return null;
+    const cleaned = filterSensitiveArgs(args);
+    if (Object.keys(cleaned).length === 0) return null;
+    if (toolName === "update_production_units") {
+      return renderUpdateProductionUnitsPreview(cleaned);
+    }
+    return (
+      <pre className="text-[10px] bg-amber-100 rounded p-2 overflow-x-auto">
+        {JSON.stringify(cleaned, null, 2)}
+      </pre>
+    );
   };
 
   return (
-    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 space-y-3">
-      <div className="flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
-        <p className="font-medium">Azione in attesa di approvazione</p>
-      </div>
-      <p className="text-xs text-amber-800">
-        L'agente vuole eseguire: <strong>{getToolLabel(toolName)}</strong>
-      </p>
-      {destructiveDescription && (
-        <p className="text-xs text-amber-700 bg-amber-100 rounded p-2">{destructiveDescription}</p>
-      )}
-      {pendingApproval.toolCall.args
-        && hasVisibleArgs(pendingApproval.toolCall.args)
-        && !TOOLS_HIDING_ARGS.has(toolName)
-        && (() => {
-          const cleaned = filterSensitiveArgs(pendingApproval.toolCall.args);
-          if (Object.keys(cleaned).length === 0) {
-            return null;
-          }
-          if (toolName === "update_production_units") {
-            return renderUpdateProductionUnitsPreview(cleaned);
-          }
-          return (
-            <pre className="text-[10px] bg-amber-100 rounded p-2 overflow-x-auto">
-              {JSON.stringify(cleaned, null, 2)}
-            </pre>
-          );
-        })()
-      }
-      {showRejectInput && (
-        <Textarea placeholder="Motivo del rifiuto..." value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} className="min-h-[60px] resize-none text-xs bg-white" />
-      )}
-      <div className="flex items-center gap-2">
-        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={onApprove} disabled={isBusy}>Approva</Button>
-        <Button size="sm" variant="outline" onClick={handleReject} disabled={isBusy}>{showRejectInput ? "Conferma rifiuto" : "Rifiuta"}</Button>
-        {showRejectInput && <Button size="sm" variant="ghost" onClick={() => { setShowRejectInput(false); setRejectReason(""); }}>Annulla</Button>}
-      </div>
-    </div>
+    <ApprovalCard
+      toolCall={pendingApproval.toolCall}
+      riskLevel={pendingApproval.riskLevel}
+      onApprove={onApprove}
+      onReject={onReject}
+      disabled={isBusy}
+      theme="amber"
+      toolLabel={getToolLabel(toolName)}
+      description={destructiveDescription}
+      renderToolArgs={renderDosageToolArgs}
+    />
   );
 }

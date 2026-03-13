@@ -10,7 +10,8 @@ export function isGeoJsonPolygon(value: unknown): value is GeoJsonPolygon {
   const obj = value as Record<string, unknown>;
   if (obj.type !== "Polygon" || !Array.isArray(obj.coordinates)) return false;
   const coords = obj.coordinates as unknown[];
-  return coords.length > 0 && Array.isArray(coords[0]);
+  if (coords.length === 0 || !Array.isArray(coords[0])) return false;
+  return (coords[0] as unknown[]).length >= 3;
 }
 
 /**

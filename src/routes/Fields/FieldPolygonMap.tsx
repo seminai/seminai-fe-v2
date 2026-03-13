@@ -227,13 +227,14 @@ export function FieldPolygonMap({
 
   const polygonPositions = useMemo<[number, number][] | null>(() => {
     if (!parsedPolygon) return null;
-    return parsedPolygon.coordinates[0].map(
+    const positions = parsedPolygon.coordinates[0].map(
       (coord) => [coord[1], coord[0]] as [number, number],
     );
+    return positions.length >= 3 ? positions : null;
   }, [parsedPolygon]);
 
   const hasCoordinates = latitude != null && longitude != null;
-  const hasPolygon = parsedPolygon !== null;
+  const hasPolygon = polygonPositions !== null;
 
   const center = useMemo<[number, number]>(() => {
     if (hasCoordinates) return [latitude, longitude];
