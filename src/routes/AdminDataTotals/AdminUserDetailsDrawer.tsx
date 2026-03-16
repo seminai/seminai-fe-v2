@@ -31,19 +31,35 @@ type AdminUserDetailsDrawerProps = {
 function AdminUserDetailsDrawerContent({
   user,
   onClose,
+  asPanel = false,
 }: {
   user: AdminUserSummary | null;
   onClose: () => void;
+  /** When true, use plain HTML instead of DrawerTitle/DrawerDescription (e.g. when rendered in SplitDrawerLayout without a Drawer context). */
+  asPanel?: boolean;
 }) {
+  const titleContent = "Dettaglio utente";
+  const descriptionContent =
+    "Metriche per utente, aziende collegate e stato operativo.";
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <DrawerHeader className="border-b border-slate-200">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <DrawerTitle>Dettaglio utente</DrawerTitle>
-            <DrawerDescription>
-              Metriche per utente, aziende collegate e stato operativo.
-            </DrawerDescription>
+            {asPanel ? (
+              <>
+                <h2 className="text-foreground font-semibold">{titleContent}</h2>
+                <p className="text-muted-foreground text-sm">
+                  {descriptionContent}
+                </p>
+              </>
+            ) : (
+              <>
+                <DrawerTitle>{titleContent}</DrawerTitle>
+                <DrawerDescription>{descriptionContent}</DrawerDescription>
+              </>
+            )}
           </div>
           <Button
             type="button"
@@ -135,6 +151,7 @@ export function AdminUserDetailsDrawer({
     <AdminUserDetailsDrawerContent
       user={user}
       onClose={() => onOpenChange(false)}
+      asPanel={children !== undefined}
     />
   );
 
