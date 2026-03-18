@@ -51,7 +51,7 @@ export function useGoogleLogin() {
 }
 
 export function useRegister() {
-  return useMutation<RegisterResponse, Error, RegisterRequest>({
+  return useMutation<RegisterResponse, AuthApiError, RegisterRequest>({
     mutationFn: async (payload: RegisterRequest) => {
       const result = await registerRequest(payload);
       return result;

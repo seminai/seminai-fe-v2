@@ -37,24 +37,6 @@ import createAuthPollingService, {
   type AuthPollingService,
 } from "@/utils/auth_polling";
 
-class RegistrationUnlockService {
-  private static readonly envCode =
-    import.meta.env.VITE_REGISTRATION_CODE ??
-    import.meta.env.VITE_REGISTRATION_CODE ??
-    "";
-
-  public static isCodeValid(code: string): boolean {
-    if (!RegistrationUnlockService.envCode) {
-      return false;
-    }
-
-    return (
-      code.trim().toLowerCase() ===
-      RegistrationUnlockService.envCode.trim().toLowerCase()
-    );
-  }
-}
-
 export default function LoginRegister() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -134,9 +116,9 @@ export default function LoginRegister() {
   const [fiscalCode, setFiscalCode] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
+  const [registerInviteError, setRegisterInviteError] = useState("");
   const [betaTermsAccepted, setBetaTermsAccepted] = useState(false);
-  const [isRegistrationDisabled, setIsRegistrationDisabled] = useState(true);
-  const [unlockCode, setUnlockCode] = useState("");
 
   async function handleLoginSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -187,6 +169,14 @@ export default function LoginRegister() {
 
   async function handleRegisterSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setRegisterInviteError("");
+
+    const inviteCodeValue = inviteCode.trim();
+    if (!inviteCodeValue) {
+      setRegisterInviteError("Inserisci un codice invito valido.");
+      return;
+    }
+
     if (!betaTermsAccepted) {
       toast.error("Devi accettare i termini commerciali per i Beta Tester.");
       return;
@@ -196,6 +186,7 @@ export default function LoginRegister() {
         email,
         password,
         name,
+        inviteCode: inviteCodeValue,
         surname,
         fiscalCode,
         phoneNumber,
@@ -218,33 +209,28 @@ export default function LoginRegister() {
       setSurname("");
       setEmail("");
       setPassword("");
+      setInviteCode("");
       setFiscalCode("");
       setPhoneNumber("");
       setAddress("");
       setBetaTermsAccepted(false);
+      setRegisterInviteError("");
 
       toast.info(
         "Ora puoi eseguire login. L'email è già inserita, inserisci solo la password.",
       );
     } catch (error: unknown) {
+      const authError = error as AuthApiError;
+      if (authError.code === "INVALID_INVITE_CODE") {
+        setRegisterInviteError(
+          "Codice invito non valido. Controlla il codice ricevuto e riprova.",
+        );
+        return;
+      }
       const message =
         error instanceof Error ? error.message : "Registrazione non riuscita";
       toast.error(message);
     }
-  }
-
-  function handleUnlockRegistration(e: React.FormEvent) {
-    e.preventDefault();
-    const isValid = RegistrationUnlockService.isCodeValid(unlockCode);
-
-    if (!isValid) {
-      toast.error("Codice di sblocco non valido");
-      return;
-    }
-
-    setIsRegistrationDisabled(false);
-    setUnlockCode("");
-    toast.success("Registrazione sbloccata con successo");
   }
 
   async function sendBetaTesterAgreementEmail(data: {
@@ -413,6 +399,10 @@ Il PDF dell'accordo e' allegato a questa email.`;
               un incontro con il nostro team dedicato. Organizziamo insieme una
               breve call per guidarti nella fase di onboarding.
             </p>
+            <p>
+              Al termine riceverai un codice invito da inserire nel campo
+              dedicato nel form di registrazione.
+            </p>
             <Dialog>
               <DialogTrigger asChild>
                 <Button
@@ -438,166 +428,152 @@ Il PDF dell'accordo e' allegato a questa email.`;
             </Dialog>
           </AlertDescription>
         </Alert>
-        {isRegistrationDisabled ? (
-          <section className="pt-4 border-t border-slate-200 space-y-3">
-            <p className="text-sm font-semibold text-slate-700 text-center uppercase tracking-wide">
-              Sblocca la registrazione
-            </p>
-            <p className="text-xs text-slate-500 text-center">
-              Inserisci il codice condiviso dal team SeminAI per abilitare il
-              form.
-            </p>
-            <form
-              onSubmit={handleUnlockRegistration}
-              className="flex flex-col sm:flex-row gap-3"
-            >
+        <div className="space-y-2 text-center">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+            Crea un account
+          </h1>
+          <p className="text-sm text-slate-500">
+            Inserisci i tuoi dati per registrarti
+          </p>
+        </div>
+
+        {registerInviteError && (
+          <Alert variant="destructive">
+            <AlertTitle>Codice invito non valido</AlertTitle>
+            <AlertDescription>{registerInviteError}</AlertDescription>
+          </Alert>
+        )}
+
+        <form onSubmit={handleRegisterSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">
+              Codice invito <span className="text-red-500">*</span>
+            </label>
+            <Input
+              placeholder="Inserisci il codice invito ricevuto"
+              value={inviteCode}
+              onChange={(e) => {
+                setInviteCode(e.target.value);
+                if (registerInviteError) {
+                  setRegisterInviteError("");
+                }
+              }}
+              required
+              className="h-11"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">
+                Nome <span className="text-red-500">*</span>
+              </label>
               <Input
-                placeholder="Inserisci il codice ricevuto"
-                value={unlockCode}
-                onChange={(e) => setUnlockCode(e.target.value)}
+                placeholder="Nome"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
                 className="h-11"
               />
-              <Button
-                type="submit"
-                variant="outline"
-                className="h-11 border-agri-green-400 text-black hover:bg-agri-green-100"
-              >
-                Conferma
-              </Button>
-            </form>
-          </section>
-        ) : (
-          <div className="pt-4 border-t border-slate-200 text-center text-sm text-black font-medium">
-            Registrazione sbloccata! Compila ora il modulo sottostante.
-          </div>
-        )}
-
-        {!isRegistrationDisabled && (
-          <>
-            <div className="space-y-2 text-center">
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-                Crea un account
-              </h1>
-              <p className="text-sm text-slate-500">
-                Inserisci i tuoi dati per registrarti
-              </p>
             </div>
-
-            <form onSubmit={handleRegisterSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">
-                    Nome <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    placeholder="Nome"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">
-                    Cognome <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    placeholder="Cognome"
-                    value={surname}
-                    onChange={(e) => setSurname(e.target.value)}
-                    required
-                    className="h-11"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
-                  Email <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  type="email"
-                  placeholder="nome@esempio.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-11"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
-                  Password <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  type="password"
-                  placeholder="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="h-11"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
-                  Codice Fiscale <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  placeholder="Codice Fiscale"
-                  value={fiscalCode}
-                  onChange={(e) => setFiscalCode(e.target.value)}
-                  required
-                  className="h-11"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
-                  Telefono <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  placeholder="Telefono"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  required
-                  className="h-11"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
-                  Indirizzo <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  placeholder="Indirizzo"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  required
-                  className="h-11"
-                />
-              </div>
-
-              <BetaTesterAgreementCheckbox
-                checked={betaTermsAccepted}
-                onCheckedChange={setBetaTermsAccepted}
-                formData={{
-                  name,
-                  surname,
-                  email,
-                  fiscalCode,
-                  address,
-                }}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">
+                Cognome <span className="text-red-500">*</span>
+              </label>
+              <Input
+                placeholder="Cognome"
+                value={surname}
+                onChange={(e) => setSurname(e.target.value)}
+                required
+                className="h-11"
               />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">
+              Email <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="email"
+              placeholder="nome@esempio.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="h-11"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">
+              Password <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="password"
+              placeholder="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="h-11"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">
+              Codice Fiscale <span className="text-red-500">*</span>
+            </label>
+            <Input
+              placeholder="Codice Fiscale"
+              value={fiscalCode}
+              onChange={(e) => setFiscalCode(e.target.value)}
+              required
+              className="h-11"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">
+              Telefono <span className="text-red-500">*</span>
+            </label>
+            <Input
+              placeholder="Telefono"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              required
+              className="h-11"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">
+              Indirizzo <span className="text-red-500">*</span>
+            </label>
+            <Input
+              placeholder="Indirizzo"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              required
+              className="h-11"
+            />
+          </div>
 
-              <Button
-                type="submit"
-                disabled={registerMutation.isPending || !betaTermsAccepted}
-                className="w-full h-11 bg-agri-green-600 hover:bg-agri-green-700"
-              >
-                {registerMutation.isPending
-                  ? "Registrazione..."
-                  : "Registrati con Email"}
-              </Button>
-            </form>
-          </>
-        )}
+          <BetaTesterAgreementCheckbox
+            checked={betaTermsAccepted}
+            onCheckedChange={setBetaTermsAccepted}
+            formData={{
+              name,
+              surname,
+              email,
+              fiscalCode,
+              address,
+            }}
+          />
+
+          <Button
+            type="submit"
+            disabled={registerMutation.isPending || !betaTermsAccepted}
+            className="w-full h-11 bg-agri-green-600 hover:bg-agri-green-700"
+          >
+            {registerMutation.isPending
+              ? "Registrazione..."
+              : "Registrati con Email"}
+          </Button>
+        </form>
         {/* TODO: registrazione con google */}
         {/* <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">

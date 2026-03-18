@@ -32,6 +32,7 @@ export type RegisterRequest = {
   email: string;
   password: string;
   name: string;
+  inviteCode: string;
   surname: string;
   fiscalCode: string;
   phoneNumber: string;
@@ -157,8 +158,7 @@ export async function register(
   });
 
   if (!response.ok) {
-    const errorText = await safeReadText(response);
-    throw new Error(errorText || "Registration failed");
+    throw await parseErrorResponse(response);
   }
 
   return (await response.json()) as RegisterResponse;
