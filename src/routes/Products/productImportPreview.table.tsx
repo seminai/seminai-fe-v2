@@ -96,7 +96,12 @@ export class ProductImportRowBuilder {
     useConvertedIds?: Set<string>,
   ): BulkProductPayload[] {
     return rows.map((row) => {
-      const useConverted = useConvertedIds?.has(row.id) ?? false;
+      const hasConversion =
+        row.quantityConverted != null && row.unitMeasureConverted != null;
+      const useConverted =
+        useConvertedIds != null
+          ? useConvertedIds.has(row.id)
+          : hasConversion;
       const finalQuantity =
         useConverted && row.quantityConverted != null
           ? row.quantityConverted
