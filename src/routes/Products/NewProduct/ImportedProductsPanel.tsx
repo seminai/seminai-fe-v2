@@ -316,6 +316,22 @@ export default function ImportedProductsPanel({
     );
   }, []);
 
+  const updateReviewConvertedQuantity = useCallback(
+    (id: string, quantityConverted: number | null) => {
+      setReviewRows((prev) =>
+        prev.map((r) => {
+          if (r.id !== id) return r;
+          const nextRatio =
+            quantityConverted != null && r.quantity > 0
+              ? quantityConverted / r.quantity
+              : null;
+          return { ...r, quantityConverted, conversionRatio: nextRatio };
+        }),
+      );
+    },
+    [],
+  );
+
   const handleSelectFromRegistry = useCallback(
     (rowId: string, record: FitosanitariDatasetRecord) => {
       setReviewRows((prev) =>
@@ -577,7 +593,7 @@ export default function ImportedProductsPanel({
             <div>Categoria</div>
             <div>Quantità</div>
             <div>U.M.</div>
-            {hasAnyConverted && <div>Qtà conv.</div>}
+            {hasAnyConverted && <div>Qtà conv. / U.M.</div>}
             <div>{importSource === "invoice" ? "N. Fattura" : "Cod. DDT"}</div>
             <div>
               {importSource === "invoice" ? "Data fattura" : "Data DDT"}
@@ -596,6 +612,7 @@ export default function ImportedProductsPanel({
                 onToggleAccepted={toggleAccepted}
                 onUpdateField={updateReviewField}
                 onUpdateQuantity={updateReviewQuantity}
+                onUpdateConvertedQuantity={updateReviewConvertedQuantity}
                 nameMatchesRegistry={fitosanitariProductNamesSet.has(
                   row.name?.trim().toLowerCase() ?? "",
                 )}
@@ -661,6 +678,7 @@ interface ReviewRowProps {
     value: unknown,
   ) => void;
   onUpdateQuantity: (id: string, quantity: number) => void;
+  onUpdateConvertedQuantity: (id: string, quantity: number | null) => void;
   nameMatchesRegistry: boolean;
   isDeselected: boolean;
   isSelectMode: boolean;
@@ -686,6 +704,7 @@ function ReviewRow({
   onToggleAccepted,
   onUpdateField,
   onUpdateQuantity,
+  onUpdateConvertedQuantity,
   nameMatchesRegistry,
   isDeselected,
   isSelectMode,
@@ -892,14 +911,27 @@ function ReviewRow({
 
       {/* Col 7 — Quantità convertita (opzionale) */}
       {hasAnyConverted && (
-        <div className="flex flex-col gap-1 pt-0.5">
-          {hasConverted ? (
-            <span className="text-xs tabular-nums font-medium text-gray-600">
-              {row.quantityConverted} {row.unitMeasureConverted ?? ""}
-            </span>
-          ) : (
-            <span className="text-xs text-muted-foreground">—</span>
-          )}
+        <div className="flex items-center gap-1">
+          <Input
+            type="text"
+            inputMode="decimal"
+            value={row.quantityConverted != null ? String(row.quantityConverted) : ""}
+            onChange={(e) =>
+              onUpdateConvertedQuantity(row.id, parseDecimal(e.target.value) ?? null)
+            }
+            disabled={isRejected}
+            className="h-7 text-xs w-[70px]"
+            placeholder="—"
+          />
+          <Input
+            value={row.unitMeasureConverted ?? ""}
+            onChange={(e) =>
+              onUpdateField(row.id, "unitMeasureConverted", e.target.value || null)
+            }
+            disabled={isRejected}
+            className="h-7 text-xs w-[55px]"
+            placeholder="U.M."
+          />
         </div>
       )}
 
