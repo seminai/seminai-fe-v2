@@ -718,7 +718,6 @@ function ReviewRow({
   onOpenSelect,
 }: ReviewRowProps) {
   const isRejected = !row.accepted;
-  const hasConverted = row.quantityConverted != null;
 
   const docCode = importSource === "invoice" ? row.invoiceCode : row.ddtCode;
   const docDate = importSource === "invoice" ? row.invoiceDate : row.ddtDate;
