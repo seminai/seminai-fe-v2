@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FileText, Minus, Plus } from "lucide-react";
+import { ExternalLink, FileText, Minus, Plus } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -167,6 +167,20 @@ export default function FilePreviewPanel({
           )}
           {isPdf && (
             <div className="ml-auto flex items-center gap-1 shrink-0">
+              {fileUrl && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => {
+                    window.open(fileUrl, "_blank", "noopener,noreferrer");
+                  }}
+                  aria-label="Apri PDF in una nuova scheda"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="outline"
