@@ -3,6 +3,7 @@ import { Navigate, useSearchParams } from "react-router-dom";
 import { PanelLeft, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Tooltip,
   TooltipTrigger,
@@ -12,7 +13,6 @@ import {
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { useMe } from "@/hooks/useAuth";
-import { UserRole } from "@/api/auth";
 import { useWorkspaceContext } from "@/contexts/WorkspaceContext";
 import { chatsApiService } from "@/api/chats";
 import type { ChatSummary } from "@/api/chats";
@@ -208,8 +208,15 @@ export default function DosageAgentChat() {
 
   useEffect(() => { return () => { audioRecorderRef.current?.cancel(); }; }, []);
 
-  if (meLoading) return null;
-  if (!meData || meData.role !== UserRole.ADMIN) return <Navigate to="/dashboard" replace />;
+  if (meLoading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <Spinner size={28} ariaLabel="Caricamento chat" className="text-slate-600" />
+      </div>
+    );
+  }
+
+  if (!meData) return <Navigate to="/auth" replace />;
 
   const sidebarContent = (
     <ChatHistorySidebar onSelectChat={handleLoadChat} onNewChat={handleNewChat} onClose={() => setSidebarOpen(false)} activeThreadId={threadId} isMobile={isMobile} />

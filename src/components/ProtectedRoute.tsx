@@ -75,21 +75,19 @@ function canAccessRoute(pathname: string, userRole?: UserRole): boolean {
   }
 
   if (userRole === UserRole.LABEL_MANAGER) {
-    // LABEL_MANAGER can ONLY access label routes and dashboard
+    // LABEL_MANAGER can access label routes, dashboard and chat
     return (
       pathname === "/dashboard" ||
       pathname.startsWith("/label") ||
       pathname === "/new-label" ||
-      pathname === "/settings"
+      pathname === "/settings" ||
+      pathname.startsWith("/dosage-agent-chat")
     );
   }
 
   if (userRole === UserRole.BASIC) {
     // BASIC cannot access admin-only routes
-    if (
-      pathname.startsWith("/dosage-agent-chat") ||
-      pathname.startsWith("/admin-data-totals")
-    ) {
+    if (pathname.startsWith("/admin-data-totals")) {
       return false;
     }
     // BASIC can access everything else INCLUDING label routes (read-only)

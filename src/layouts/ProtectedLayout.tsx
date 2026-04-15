@@ -89,8 +89,10 @@ function canViewMenuItem(menuItem: string, userRole?: UserRole): boolean {
   }
 
   if (userRole === UserRole.LABEL_MANAGER) {
-    // LABEL_MANAGER can ONLY see Labels and Dashboard
-    return menuItem === "label" || menuItem === "dashboard";
+    // LABEL_MANAGER can only see Labels, Dashboard and Chat
+    return (
+      menuItem === "label" || menuItem === "dashboard" || menuItem === "chat"
+    );
   }
 
   if (userRole === UserRole.BASIC) {
@@ -334,6 +336,7 @@ function MobileBottomBar({
   const fieldNotesActive = location.pathname.startsWith("/field-notes");
 
   const hasManageItems = Object.values(manageVisibility).some(Boolean);
+  const dosageAgentChatVisible = canViewMenuItem("chat", userRole);
 
   const isManageActive =
     companyActive ||
@@ -374,7 +377,7 @@ function MobileBottomBar({
                 </Link>
               </li>
             )}
-          {userRole === UserRole.ADMIN && (
+          {dosageAgentChatVisible && (
             <li key="chat">
               <Link
                 to="/dosage-agent-chat"
@@ -763,7 +766,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     location.pathname === "/operations" ||
     location.pathname.startsWith("/operations/");
   const dosageAgentChatActive = location.pathname === "/dosage-agent-chat";
-  const dosageAgentChatVisible = true;
+  const dosageAgentChatVisible = canViewMenuItem("chat", userRole);
 
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
