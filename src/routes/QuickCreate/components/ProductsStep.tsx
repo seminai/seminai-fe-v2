@@ -11,6 +11,13 @@ interface ProductsStepProps {
   onComplete: () => void;
   /** Ref to store the import trigger function for external invocation (from wizard footer) */
   importTriggerRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+  /** Ref to store the extraction trigger (pre-extraction primary CTA in footer) */
+  extractionTriggerRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+  /**
+   * Ref populated with "go back to edit" while the import panel is on the
+   * review step. Allows the wizard footer to intercept the back action.
+   */
+  importBackTriggerRef?: React.MutableRefObject<(() => void) | null>;
   /** Called when products step loading/ready state changes (for footer label and disabled) */
   onProductsStepStateChange?: (state: ProductsStepState) => void;
 }
@@ -19,12 +26,16 @@ export default function ProductsStep({
   companyId,
   onComplete,
   importTriggerRef,
+  extractionTriggerRef,
+  importBackTriggerRef,
   onProductsStepStateChange,
 }: ProductsStepProps): React.ReactElement {
   const [mode, setMode] = useState<null | "import" | "manual">(null);
   const [_stepState, setStepState] = useState<ProductsStepState>({
     isProductsLoading: false,
     hasProductsToLoad: false,
+    needsExtraction: false,
+    importStep: "edit",
   });
 
   const handleBackToChoice = useCallback(() => {
@@ -53,17 +64,51 @@ export default function ProductsStep({
     [onProductsStepStateChange],
   );
 
+  const notifyNeedsExtraction = useCallback(
+    (needs: boolean) => {
+      setStepState((prev) => {
+        if (prev.needsExtraction === needs) return prev;
+        const next = { ...prev, needsExtraction: needs };
+        onProductsStepStateChange?.(next);
+        return next;
+      });
+    },
+    [onProductsStepStateChange],
+  );
+
+  const notifyImportStep = useCallback(
+    (importStep: "edit" | "review") => {
+      setStepState((prev) => {
+        if (prev.importStep === importStep) return prev;
+        const next = { ...prev, importStep };
+        onProductsStepStateChange?.(next);
+        return next;
+      });
+    },
+    [onProductsStepStateChange],
+  );
+
   // When on choice screen: no loading, no products to load; clear ref
   useEffect(() => {
     if (mode !== null) return;
-    const reset = {
+    const reset: ProductsStepState = {
       isProductsLoading: false,
       hasProductsToLoad: false,
+      needsExtraction: false,
+      importStep: "edit",
     };
     setStepState(reset);
     onProductsStepStateChange?.(reset);
     if (importTriggerRef) importTriggerRef.current = null;
-  }, [mode, onProductsStepStateChange, importTriggerRef]);
+    if (extractionTriggerRef) extractionTriggerRef.current = null;
+    if (importBackTriggerRef) importBackTriggerRef.current = null;
+  }, [
+    mode,
+    onProductsStepStateChange,
+    importTriggerRef,
+    extractionTriggerRef,
+    importBackTriggerRef,
+  ]);
 
   if (mode === "import") {
     return (
@@ -83,8 +128,12 @@ export default function ProductsStep({
           onImportCompleted={onComplete}
           hideImportButton={!!importTriggerRef}
           importTriggerRef={importTriggerRef}
+          extractionTriggerRef={extractionTriggerRef}
+          importBackTriggerRef={importBackTriggerRef}
           onLoadingChange={notifyLoading}
           onHasProductsToLoadChange={notifyHasProducts}
+          onNeedsExtractionChange={notifyNeedsExtraction}
+          onImportStepChange={notifyImportStep}
         />
       </div>
     );

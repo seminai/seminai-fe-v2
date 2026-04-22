@@ -1,11 +1,16 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { IoArrowBack, IoArrowForward } from "react-icons/io5";
+import { Search } from "lucide-react";
 import type { QuickCreateStep } from "../types";
 
 export interface ProductsStepState {
   isProductsLoading: boolean;
   hasProductsToLoad: boolean;
+  /** True when files are selected but not yet extracted. */
+  needsExtraction: boolean;
+  /** Current internal step of the import panel. */
+  importStep: "edit" | "review";
 }
 
 interface WizardFooterProps {
@@ -24,7 +29,12 @@ function getNextLabel(
 ): string {
   if (step === "products" && productsStepState) {
     if (productsStepState.isProductsLoading) return "Caricamento...";
-    if (productsStepState.hasProductsToLoad) return "Carica";
+    if (productsStepState.needsExtraction) return "Estrai prodotti";
+    if (productsStepState.hasProductsToLoad) {
+      return productsStepState.importStep === "edit"
+        ? "Continua"
+        : "Carica prodotti";
+    }
     return "Carica prodotti";
   }
   switch (step) {
@@ -65,11 +75,15 @@ export default function WizardFooter({
   const isProductsStep = currentStep === "products";
   const productsLoading =
     isProductsStep && productsStepState?.isProductsLoading;
+  const showExtractCta =
+    isProductsStep && !!productsStepState?.needsExtraction;
   const nextDisabled =
     isNextDisabled ||
     isLoading ||
     (isProductsStep && productsStepState?.isProductsLoading) ||
-    (isProductsStep && !productsStepState?.hasProductsToLoad);
+    (isProductsStep &&
+      !productsStepState?.hasProductsToLoad &&
+      !productsStepState?.needsExtraction);
 
   return (
     <div className="bg-white border-t border-neutral-200 py-4 px-6 shadow-sm">
@@ -95,7 +109,16 @@ export default function WizardFooter({
                 Salta
               </Button>
             )}
-            <Button onClick={onNext} disabled={nextDisabled} className="gap-2">
+            <Button
+              onClick={onNext}
+              disabled={nextDisabled}
+              className={
+                showExtractCta
+                  ? "gap-2 bg-agri-green-600 text-white hover:bg-agri-green-700"
+                  : "gap-2"
+              }
+            >
+              {showExtractCta && <Search className="w-4 h-4" />}
               {getNextLabel(currentStep, productsStepState)}
               {currentStep !== "production-units" &&
                 currentStep !== "products" && (

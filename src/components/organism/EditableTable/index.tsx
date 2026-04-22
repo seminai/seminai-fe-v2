@@ -174,6 +174,8 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       lastComponent,
       getRowId = DEFAULT_GET_ROW_ID,
       onSave,
+      onRowsChange,
+      hideInternalSaveActions = false,
       onDeleteSelected,
       deleteConfirmDescription,
       deleteConfirmRequiredText,
@@ -214,6 +216,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       getRowId,
       newRowDefaults,
       onSave,
+      onRowsChange,
       alwaysEdit,
       createMode,
       onOpenDetails,
@@ -246,8 +249,9 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
     // Computed Values
     // ─────────────────────────────────────────────────────────────────────────
 
-    const showEditActions =
-      alwaysEdit || tableState.isEditMode || tableState.hasDirtyRows;
+    const showEditActions = hideInternalSaveActions
+      ? false
+      : alwaysEdit || tableState.isEditMode || tableState.hasDirtyRows;
     const hasDetails = Boolean(detailsRenderer || onOpenDetails);
     const hasLast = Boolean(lastComponent);
     const { left: leftActions, right: rightActions } =
@@ -316,13 +320,18 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
         onDeleteSelected(removed.map((r) => r.data));
       }
 
-      tableState.setRows((prev) => prev.filter((r) => !ids.has(r.id)));
+      tableState.setRows((prev) => {
+        const next = prev.filter((r) => !ids.has(r.id));
+        if (onRowsChange) onRowsChange(next.map((r) => r.data));
+        return next;
+      });
       selection.clearSelection();
       setConfirmDialogOpen(false);
     }, [
       selection.selectedIds,
       tableState.rows,
       onDeleteSelected,
+      onRowsChange,
       tableState.setRows,
       selection,
     ]);
@@ -730,6 +739,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
                 touched={tableState.touched}
                 isModify={isModify}
                 isEditMode={tableState.isEditMode}
+                alwaysEdit={alwaysEdit}
                 hasDetails={hasDetails}
                 hasLast={hasLast}
                 lastComponent={lastComponent}

@@ -13,6 +13,8 @@ import type { ProductsStepState } from "./components/WizardFooter";
 const INITIAL_PRODUCTS_STEP_STATE: ProductsStepState = {
   isProductsLoading: false,
   hasProductsToLoad: false,
+  needsExtraction: false,
+  importStep: "edit",
 };
 
 export default function QuickCreatePage(): React.ReactElement {
@@ -22,6 +24,12 @@ export default function QuickCreatePage(): React.ReactElement {
 
   // Ref to trigger product import/create from the wizard footer's main button
   const productsImportRef = React.useRef<(() => Promise<void>) | null>(null);
+  // Ref to trigger product extraction (pre-extraction primary CTA)
+  const productsExtractionRef = React.useRef<(() => Promise<void>) | null>(
+    null,
+  );
+  // Ref to go back from review to edit within the import panel
+  const productsBackRef = React.useRef<(() => void) | null>(null);
 
   const [productsStepState, setProductsStepState] =
     React.useState<ProductsStepState>(INITIAL_PRODUCTS_STEP_STATE);
@@ -43,6 +51,10 @@ export default function QuickCreatePage(): React.ReactElement {
     }
 
     if (state.currentStep === "products") {
+      if (productsStepState.needsExtraction && productsExtractionRef.current) {
+        await productsExtractionRef.current();
+        return;
+      }
       if (productsImportRef.current) {
         await productsImportRef.current();
       } else {
@@ -52,15 +64,23 @@ export default function QuickCreatePage(): React.ReactElement {
     }
 
     actions.goNext();
-  }, [state.currentStep, actions]);
+  }, [state.currentStep, actions, productsStepState.needsExtraction]);
 
   const handleBack = React.useCallback(() => {
     if (state.currentStep === "company") {
       navigate(-1);
       return;
     }
+    if (
+      state.currentStep === "products" &&
+      productsBackRef.current &&
+      productsStepState.importStep === "review"
+    ) {
+      productsBackRef.current();
+      return;
+    }
     actions.goBack();
-  }, [state.currentStep, actions, navigate]);
+  }, [state.currentStep, actions, navigate, productsStepState.importStep]);
 
   const loadingMessage = state.isSaving
     ? "Salvataggio in corso..."
@@ -117,6 +137,8 @@ export default function QuickCreatePage(): React.ReactElement {
           companyId={state.selectedCompanyId}
           onComplete={actions.onProductsComplete}
           importTriggerRef={productsImportRef}
+          extractionTriggerRef={productsExtractionRef}
+          importBackTriggerRef={productsBackRef}
           onProductsStepStateChange={setProductsStepState}
         />
       )}

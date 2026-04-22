@@ -1,6 +1,9 @@
 import type { EditableColumn } from "@/components/organism/EditableTable";
 import type { BulkProductPayload } from "@/api/products";
-import type { ProductImportItem } from "./productImportPreview.types";
+import type {
+  ProductImportItem,
+  ProductImportSource,
+} from "./productImportPreview.types";
 import type { ReactNode } from "react";
 
 export interface ProductImportPreviewRow extends Record<string, unknown> {
@@ -14,6 +17,12 @@ export interface ProductImportPreviewRow extends Record<string, unknown> {
   unitOfMeasureQuantity: string;
   quantityConverted?: number | null;
   unitMeasureConverted?: string | null;
+  /**
+   * Cached ratio (quantityConverted / quantity) captured at row creation.
+   * Used to keep the converted value consistent when the user edits the
+   * original quantity (or vice-versa) in the simil-Excel grid.
+   */
+  conversionRatio?: number | null;
   ddtCode: string;
   supplierName: string;
   ddtDate: string;
@@ -57,7 +66,12 @@ function createProductImportRowId(
 
 export class ProductImportRowBuilder {
   public static build(items: ProductImportItem[]): ProductImportPreviewRow[] {
-    return items.map((item, index) => ({
+    return items.map((item, index) => {
+      const initialRatio =
+        item.quantityConverted != null && item.quantity > 0
+          ? item.quantityConverted / item.quantity
+          : null;
+      return {
       id: createProductImportRowId(item, index),
       sourceFileId: item.sourceFileId ?? null,
       name: item.name,
@@ -69,6 +83,7 @@ export class ProductImportRowBuilder {
         item.unitOfMeasureQuantity || ImportPreviewDefaults.quantityUnit,
       quantityConverted: item.quantityConverted ?? null,
       unitMeasureConverted: item.unitMeasureConverted ?? null,
+      conversionRatio: initialRatio,
       ddtCode: item.ddtCode ?? "",
       supplierName: item.supplierName ?? "",
       ddtDate:
@@ -88,7 +103,8 @@ export class ProductImportRowBuilder {
       addressSupplier: item.addressSupplier ?? undefined,
       invoiceCode: item.invoiceCode ?? undefined,
       invoiceDueDate: item.invoiceDueDate ?? undefined,
-    }));
+      };
+    });
   }
 
   public static toBulkPayload(
@@ -156,14 +172,65 @@ function formatDate(value: unknown): ReactNode {
   }
 }
 
+function roundTwo(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+/**
+ * When the user edits the original quantity, scale the converted quantity by the
+ * ratio cached at row creation (`conversionRatio`). This keeps the physical meaning
+ * of the conversion consistent with the original extraction.
+ */
+function recomputeOnQuantityChange(args: {
+  value: unknown;
+  rowData: Record<string, unknown>;
+}): Record<string, unknown> | undefined {
+  const row = args.rowData as ProductImportPreviewRow;
+  const nextQty = Number(args.value);
+  if (!Number.isFinite(nextQty)) return undefined;
+  const ratio = row.conversionRatio;
+  if (ratio == null || !Number.isFinite(ratio)) return undefined;
+  return { quantityConverted: roundTwo(nextQty * ratio) };
+}
+
+/**
+ * When the user edits the converted quantity directly, update the cached ratio
+ * so that subsequent quantity edits scale correctly. We intentionally do NOT
+ * change the original quantity here — the user explicitly wants to override
+ * the converted value.
+ */
+function recomputeOnConvertedQuantityChange(args: {
+  value: unknown;
+  rowData: Record<string, unknown>;
+}): Record<string, unknown> | undefined {
+  const row = args.rowData as ProductImportPreviewRow;
+  const nextConverted = Number(args.value);
+  const qty = Number(row.quantity);
+  if (!Number.isFinite(nextConverted) || !Number.isFinite(qty) || qty <= 0) {
+    return undefined;
+  }
+  return { conversionRatio: nextConverted / qty };
+}
+
+const DDT_ONLY_COLUMNS = new Set(["invoiceCode", "invoiceDate", "invoiceDueDate"]);
+const INVOICE_ONLY_COLUMNS = new Set(["ddtCode", "ddtDate"]);
+
 export class ProductImportColumnsFactory {
-  public static create(): EditableColumn[] {
-    return [
+  public static create(source?: ProductImportSource): EditableColumn[] {
+    const allColumns: EditableColumn[] = [
       {
-        id: "productNameExtracted",
+        id: "name",
         title: "Nome prodotto",
         type: "text",
+        required: true,
         width: "220px",
+      },
+      {
+        id: "productNameExtracted",
+        title: "Nome estratto",
+        type: "text",
+        width: "200px",
+        readOnly: true,
         render: (value): ReactNode => {
           if (!value || value === "" || value === null || value === undefined) {
             return (
@@ -186,6 +253,7 @@ export class ProductImportColumnsFactory {
         type: "number",
         required: true,
         width: "100px",
+        onValueChange: recomputeOnQuantityChange,
       },
       {
         id: "unitOfMeasureQuantity",
@@ -199,6 +267,7 @@ export class ProductImportColumnsFactory {
         title: "Qtà conv.",
         type: "number",
         width: "120px",
+        onValueChange: recomputeOnConvertedQuantityChange,
         render: (value, row): ReactNode => {
           const r = row as ProductImportPreviewRow | undefined;
           if (value == null || value === "") {
@@ -210,6 +279,12 @@ export class ProductImportColumnsFactory {
             </span>
           );
         },
+      },
+      {
+        id: "unitMeasureConverted",
+        title: "U.M. conv.",
+        type: "text",
+        width: "90px",
       },
       {
         id: "ddtCode",
@@ -262,13 +337,6 @@ export class ProductImportColumnsFactory {
           return <span>{Number(value).toFixed(2)}</span>;
         },
       },
-      // {
-      //   id: "sku",
-      //   title: "SKU",
-      //   type: "text",
-      //   required: true,
-      //   width: "120px",
-      // },
       {
         id: "registrationNumber",
         title: "N. Registrazione",
@@ -282,5 +350,11 @@ export class ProductImportColumnsFactory {
         width: "180px",
       },
     ];
+
+    return allColumns.filter((column) => {
+      if (source === "ddt" && DDT_ONLY_COLUMNS.has(column.id)) return false;
+      if (source === "invoice" && INVOICE_ONLY_COLUMNS.has(column.id)) return false;
+      return true;
+    });
   }
 }

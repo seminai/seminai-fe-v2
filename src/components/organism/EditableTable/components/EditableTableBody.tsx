@@ -20,6 +20,7 @@ export interface EditableTableBodyProps {
   touched: Record<string, Record<string, boolean>>;
   isModify?: boolean;
   isEditMode: boolean;
+  alwaysEdit?: boolean;
   hasDetails: boolean;
   hasLast: boolean;
   lastComponent?:
@@ -77,6 +78,7 @@ export function EditableTableBody({
   touched,
   isModify,
   isEditMode,
+  alwaysEdit,
   hasDetails,
   hasLast,
   lastComponent,
@@ -280,7 +282,7 @@ export function EditableTableBody({
                     c.type !== "text" && "whitespace-nowrap"
                   )}
                 >
-                  {isModify && (row.isNew || isEditMode) && !c.readOnly ? (
+                  {isModify && (row.isNew || isEditMode || alwaysEdit) && !c.readOnly ? (
                     <EditableTableCell
                       row={row}
                       column={c}

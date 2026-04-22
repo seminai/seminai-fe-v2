@@ -53,12 +53,29 @@ export function useTableState(
     | "getRowId"
     | "newRowDefaults"
     | "onSave"
+    | "onRowsChange"
     | "alwaysEdit"
     | "createMode"
     | "onOpenDetails"
   >
 ): UseTableStateReturn {
-  const { rows: propsRows, columns, getRowId, newRowDefaults, onSave, createMode, onOpenDetails } = props;
+  const { rows: propsRows, columns, getRowId, newRowDefaults, onSave, onRowsChange, createMode, onOpenDetails } = props;
+
+  // Stable ref to onRowsChange so we don't cause effect re-runs when the parent
+  // passes a new function reference on every render.
+  const onRowsChangeRef = useRef(onRowsChange);
+  onRowsChangeRef.current = onRowsChange;
+
+  // Tracks when a propsRows update is the echo of our own onRowsChange emission,
+  // so the sync effect can skip resetting internal state (touched, isEditMode, rows).
+  const suppressSyncRef = useRef(false);
+
+  const emitRowsChange = useCallback((nextRows: InternalRow[]) => {
+    const cb = onRowsChangeRef.current;
+    if (!cb) return;
+    suppressSyncRef.current = true;
+    cb(nextRows.map((r) => r.data));
+  }, []);
 
   // Keep a stable ref so effects/callbacks always use the latest getRowId
   // without needing it in dependency arrays (avoids reset on every render).
@@ -89,6 +106,14 @@ export function useTableState(
   // Sync with props.rows (only when the actual data changes, not when
   // getRowId reference changes — that would reset edits on every render).
   useEffect(() => {
+    // Skip one sync cycle right after we emit onRowsChange: the parent has
+    // simply echoed our own data back and we would otherwise reset touched
+    // state and lose input focus during live editing.
+    if (suppressSyncRef.current) {
+      suppressSyncRef.current = false;
+      return;
+    }
+
     const getId = getRowIdRef.current;
     const newRows: InternalRow[] = (propsRows || []).map((r, idx) => ({
       id: String(getId ? getId(r, idx) : idx),
@@ -128,8 +153,8 @@ export function useTableState(
 
   const setCellValue = useCallback(
     (rowId: string, colId: string, value: unknown, extraUpdates?: Record<string, unknown>) => {
-      setRows((prev) =>
-        prev.map((r) => {
+      setRows((prev) => {
+        const next = prev.map((r) => {
           if (r.id !== rowId) return r;
           const mergedData = {
             ...r.data,
@@ -137,8 +162,10 @@ export function useTableState(
             ...(extraUpdates ?? {}),
           };
           return { ...r, isDirty: true, data: mergedData };
-        })
-      );
+        });
+        emitRowsChange(next);
+        return next;
+      });
 
       setTouched((prev) => {
         const touchedForRow = {
@@ -153,7 +180,7 @@ export function useTableState(
         return { ...prev, [rowId]: touchedForRow };
       });
     },
-    []
+    [emitRowsChange]
   );
 
   const handleCellChange = useCallback(
@@ -275,7 +302,11 @@ export function useTableState(
         isDirty: true,
       }));
 
-      setRows((prev) => [...newRows, ...prev]);
+      setRows((prev) => {
+        const next = [...newRows, ...prev];
+        emitRowsChange(next);
+        return next;
+      });
       setTouched((prev) => {
         const newTouched = { ...prev };
         newRows.forEach((row) => {
@@ -284,7 +315,7 @@ export function useTableState(
         return newTouched;
       });
     },
-    [columns]
+    [columns, emitRowsChange]
   );
 
   const addInlineRow = useCallback(
@@ -310,7 +341,11 @@ export function useTableState(
         isDirty: true,
       };
 
-      setRows((prev) => [createdRow, ...prev]);
+      setRows((prev) => {
+        const next = [createdRow, ...prev];
+        emitRowsChange(next);
+        return next;
+      });
       setTouched((prev) => ({
         ...prev,
         [createdRow.id]: Object.fromEntries(
@@ -318,7 +353,7 @@ export function useTableState(
         ),
       }));
     },
-    [columns, newRowDefaults]
+    [columns, newRowDefaults, emitRowsChange]
   );
 
   // Create drawer methods

@@ -89,6 +89,20 @@ export interface EditableTableProps {
     created: Array<Record<string, unknown>>;
     updated: Array<Record<string, unknown>>;
   }) => void;
+  /**
+   * Live-push callback: when provided, fires after every cell change / inline add / delete
+   * with the full current list of rows. Intended for "always editable" flows where the
+   * parent component owns the source of truth and doesn't need a Save button.
+   * When set together with `hideInternalSaveActions`, the table behaves like a live
+   * spreadsheet without Modifica/Salva toggles.
+   */
+  onRowsChange?: (rows: Array<Record<string, unknown>>) => void;
+  /**
+   * When true, suppresses the internal edit/save/cancel actions in the table header
+   * regardless of `alwaysEdit` or dirty state. Useful when using `onRowsChange` for
+   * live sync to the parent.
+   */
+  hideInternalSaveActions?: boolean;
   onDeleteSelected?: (removed: Array<Record<string, unknown>>) => void;
   deleteConfirmDescription?: (
     selectedRows: Array<Record<string, unknown>>,

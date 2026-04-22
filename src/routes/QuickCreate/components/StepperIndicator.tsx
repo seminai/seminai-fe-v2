@@ -17,7 +17,7 @@ export default function StepperIndicator({
   );
 
   return (
-    <div className="flex items-center justify-center gap-2 mb-8">
+    <div className="flex items-center justify-center gap-2">
       {QUICK_CREATE_STEPS.map((step, index) => {
         const isCompleted = currentIndex > index;
         const isCurrent = step.key === currentStep;

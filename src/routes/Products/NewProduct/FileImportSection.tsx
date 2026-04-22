@@ -37,10 +37,28 @@ interface FileImportSectionProps {
   hideImportButton?: boolean;
   /** Ref to store the import trigger function for external invocation */
   importTriggerRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+  /**
+   * Ref to store the extraction trigger function (selected files → extraction).
+   * When provided together with `hideImportButton`, the inline "Estrai prodotti"
+   * CTA is hidden and the external bar drives the extraction instead.
+   */
+  extractionTriggerRef?: React.MutableRefObject<(() => Promise<void>) | null>;
   /** Called when loading state changes (extracting file or running import) */
   onLoadingChange?: (loading: boolean) => void;
   /** Called when there are extracted products ready to load */
   onHasProductsToLoadChange?: (has: boolean) => void;
+  /**
+   * Called when files are selected but not yet extracted (i.e. the next
+   * primary action is "Estrai prodotti").
+   */
+  onNeedsExtractionChange?: (needs: boolean) => void;
+  /**
+   * Ref populated with the "go back to edit" action while the panel is on
+   * the review step. Null otherwise.
+   */
+  importBackTriggerRef?: React.MutableRefObject<(() => void) | null>;
+  /** Notifies the current internal step of the import panel. */
+  onImportStepChange?: (step: "edit" | "review") => void;
 }
 
 class CsvExcelPreviewMapper {
@@ -116,8 +134,12 @@ export default function FileImportSection({
   preselectedCompanyId,
   hideImportButton,
   importTriggerRef,
+  extractionTriggerRef,
   onLoadingChange,
   onHasProductsToLoadChange,
+  onNeedsExtractionChange,
+  importBackTriggerRef,
+  onImportStepChange,
 }: FileImportSectionProps) {
   /** When null, show big buttons to choose CSV/Excel, DDT PDF or Fattura PDF */
   const [selectedImportType, setSelectedImportType] = useState<
@@ -147,12 +169,40 @@ export default function FileImportSection({
   const [previewErrors, setPreviewErrors] = useState<ImportPreviewError[]>([]);
   const [importSource, setImportSource] = useState<ProductImportSource>("csv");
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
-  /** Desktop: when in revision (PDF + table), PDF panel is hidden by default so table is full width; toggle with eye button */
+  /**
+   * Desktop: visibile di default (split view con documento a sinistra e
+   * tabella editabile a destra) sia in step edit che in review. L'utente può
+   * nasconderlo manualmente via toggle "Mostra/Nascondi documento"; quando
+   * si entra nello step di review viene comunque ri-mostrato automaticamente
+   * per facilitare il confronto con il documento originale durante il match
+   * fitosanitari.
+   */
   const [showPdfPanel, setShowPdfPanel] = useState(true);
+
+  const handleImportStepChange = useCallback(
+    (step: "edit" | "review") => {
+      if (step === "review") setShowPdfPanel(true);
+      onImportStepChange?.(step);
+    },
+    [onImportStepChange],
+  );
 
   useEffect(() => {
     onHasProductsToLoadChange?.(extractedProducts.length > 0);
   }, [extractedProducts.length, onHasProductsToLoadChange]);
+
+  const handleSelectedFilesCountChange = useCallback(
+    (count: number) => {
+      onNeedsExtractionChange?.(count > 0);
+    },
+    [onNeedsExtractionChange],
+  );
+
+  useEffect(() => {
+    if (extractedProducts.length > 0) {
+      onNeedsExtractionChange?.(false);
+    }
+  }, [extractedProducts.length, onNeedsExtractionChange]);
 
   const {
     companies,
@@ -674,6 +724,8 @@ export default function FileImportSection({
                   onImportCompleted={onImportCompleted}
                   hideFooter={hideImportButton}
                   importTriggerRef={importTriggerRef}
+                  backTriggerRef={importBackTriggerRef}
+                  onStepChange={handleImportStepChange}
                   onImportingChange={setPanelImporting}
                   desktopPdfToggle={
                     !isExcelImport ? (
@@ -766,6 +818,9 @@ export default function FileImportSection({
                       : handleDdtFilesSelected
                 }
                 onCancel={handleCancelProcessing}
+                extractionTriggerRef={extractionTriggerRef}
+                hideInlineExtractButton={!!extractionTriggerRef}
+                onSelectedFilesCountChange={handleSelectedFilesCountChange}
               />
               {!companyId && (
                 <Alert className="mt-4 border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Upload, FileText, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -21,8 +21,22 @@ interface FileUploadAreaProps {
   disabled?: boolean;
   isProcessing?: boolean;
   processingProgress?: FileUploadProgress | null;
-  onConfirmExtraction: (files: File[]) => void;
+  onConfirmExtraction: (files: File[]) => void | Promise<void>;
   onCancel?: () => void;
+  /**
+   * When provided, the extraction trigger (confirm current selection) is
+   * assigned to this ref so that an external action (e.g. wizard footer)
+   * can drive the extraction instead of the inline button.
+   */
+  extractionTriggerRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+  /**
+   * When true, the inline "Estrai prodotti" button in the sticky toolbar
+   * is hidden. Intended to be paired with `extractionTriggerRef` when a
+   * parent bar provides the primary CTA.
+   */
+  hideInlineExtractButton?: boolean;
+  /** Notifies the parent about the current selected files count. */
+  onSelectedFilesCountChange?: (count: number) => void;
 }
 
 class FileTypeValidator {
@@ -76,6 +90,9 @@ export default function FileUploadArea({
   processingProgress,
   onConfirmExtraction,
   onCancel,
+  extractionTriggerRef,
+  hideInlineExtractButton,
+  onSelectedFilesCountChange,
 }: FileUploadAreaProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -176,11 +193,25 @@ export default function FileUploadArea({
     if (inputRef.current) inputRef.current.value = "";
   }, []);
 
-  const handleConfirm = useCallback(() => {
+  const handleConfirm = useCallback(async () => {
     if (selectedFiles.length > 0) {
-      onConfirmExtraction(selectedFiles);
+      await onConfirmExtraction(selectedFiles);
     }
   }, [selectedFiles, onConfirmExtraction]);
+
+  useEffect(() => {
+    onSelectedFilesCountChange?.(selectedFiles.length);
+  }, [selectedFiles.length, onSelectedFilesCountChange]);
+
+  useEffect(() => {
+    if (!extractionTriggerRef) return;
+    extractionTriggerRef.current = selectedFiles.length > 0 ? handleConfirm : null;
+    return () => {
+      if (extractionTriggerRef.current === handleConfirm) {
+        extractionTriggerRef.current = null;
+      }
+    };
+  }, [extractionTriggerRef, handleConfirm, selectedFiles.length]);
 
   const accept =
     mode === "csv"
@@ -282,11 +313,35 @@ export default function FileUploadArea({
       {/* Lista file selezionati */}
       {hasFiles && !isProcessing && (
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">
-            {selectedFiles.length === 1
-              ? "1 file selezionato"
-              : `${selectedFiles.length} file selezionati`}
-          </p>
+          <div className="sticky top-0 z-10 -mx-1 px-1 pt-1 pb-2 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-b border-neutral-100 flex flex-wrap items-center gap-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              {selectedFiles.length === 1
+                ? "1 file selezionato"
+                : `${selectedFiles.length} file selezionati`}
+            </p>
+
+            <div className="flex-1" />
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClear}
+              className="text-muted-foreground text-xs"
+            >
+              Rimuovi tutti
+            </Button>
+
+            {!hideInlineExtractButton && (
+              <Button
+                size="sm"
+                onClick={handleConfirm}
+                className="gap-2 bg-agri-green-600 text-white hover:bg-agri-green-700"
+              >
+                <Search className="h-3.5 w-3.5" />
+                Estrai prodotti
+              </Button>
+            )}
+          </div>
 
           <div className="space-y-1.5 max-h-60 overflow-y-auto">
             {selectedFiles.map((file) => (
@@ -316,28 +371,6 @@ export default function FileUploadArea({
                 </Button>
               </div>
             ))}
-          </div>
-
-          <div className="flex items-center gap-2 pt-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClear}
-              className="text-muted-foreground text-xs"
-            >
-              Rimuovi tutti
-            </Button>
-
-            <div className="flex-1" />
-
-            <Button
-              size="sm"
-              onClick={handleConfirm}
-              className="gap-2 bg-agri-green-600 text-white hover:bg-agri-green-700"
-            >
-              <Search className="h-3.5 w-3.5" />
-              Estrai prodotti
-            </Button>
           </div>
         </div>
       )}

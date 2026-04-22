@@ -1,5 +1,4 @@
 import * as React from "react";
-import { PageHeader } from "@/components/organism/Header";
 import { Spinner } from "@/components/ui/spinner";
 import StepperIndicator from "./StepperIndicator";
 import WizardFooter from "./WizardFooter";
@@ -29,11 +28,18 @@ export default function WizardShell({
   productsStepState,
   children,
 }: WizardShellProps): React.ReactElement {
+  const showStepper =
+    currentStep !== "company" &&
+    currentStep !== "choose-path" &&
+    currentStep !== "completion";
+
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-screen">
-      <div className="flex-shrink-0">
-        <PageHeader title="Creazione Rapida" />
-      </div>
+      {showStepper && (
+        <div className="flex-shrink-0 px-6 pt-6 pb-2">
+          <StepperIndicator currentStep={currentStep} />
+        </div>
+      )}
 
       <div className="flex-1 overflow-auto">
         {isProcessing ? (
@@ -46,14 +52,7 @@ export default function WizardShell({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col min-h-full p-6">
-            {currentStep !== "company" &&
-              currentStep !== "choose-path" &&
-              currentStep !== "completion" && (
-                <StepperIndicator currentStep={currentStep} />
-              )}
-            {children}
-          </div>
+          <div className="flex flex-col min-h-full p-6 pt-2">{children}</div>
         )}
       </div>
 
