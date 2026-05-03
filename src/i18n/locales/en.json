@@ -1,0 +1,368 @@
+{
+  "common": {
+    "brand": "Seminai",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "loading": "Loading…",
+    "logout": "Logout",
+    "access": "Log in",
+    "bookFree": "Book for free",
+    "freeMeeting": "Schedule a free meeting",
+    "add": "Add",
+    "refresh": "Refresh",
+    "settings": "Settings",
+    "integrations": "Integrations",
+    "costs": "Costs",
+    "configured": "Configured",
+    "connected": "Connected",
+    "active": "Active"
+  },
+  "language": {
+    "label": "Language",
+    "description": "Choose the language for the authenticated area. The same preference is also used on public pages.",
+    "publicSwitcherAria": "Select language",
+    "settingsTitle": "Interface language",
+    "settingsDescription": "Italian is the default language. You can switch to English whenever you prefer.",
+    "italian": "Italiano",
+    "english": "English"
+  },
+  "home": {
+    "hero": {
+      "title": "Farm records have never been this simple",
+      "subtitle": "The customizable digital field logbook that transforms operations management with artificial intelligence.",
+      "imageAlt": "Farmer robot"
+    },
+    "audience": {
+      "title": "Who is it for?",
+      "cards": [
+        {
+          "title": "For Farmers",
+          "description": "Optimize your daily work with simple, intuitive tools. Record field operations such as plowing, sowing, and other activities. Prepare compliant field records quickly, report issues with photos and field notes: everything in one place, with less paperwork and more time for production."
+        },
+        {
+          "title": "For Agronomists",
+          "description": "Manage multiple farms at the same time with greater efficiency. Our digital tools let you follow your clients' field logs in a centralized, organized, and transparent way. Offer a more complete service, reduce errors, and increase the value of your professional consulting."
+        },
+        {
+          "title": "For Trade Associations and Service Providers",
+          "description": "Expand your offering with an advanced digital consulting service for field logs. Support farmers, agronomists, and companies with modern, reliable tools, improving service quality and increasing satisfaction among your members or customers."
+        }
+      ]
+    },
+    "simplified": {
+      "title": "No more complex calculations, scattered sheets, or incomplete data.",
+      "body": "Whether you are in the field, in the office, or on the move, our solution automates dosage calculations, integrates operations such as plowing and sowing, and lets you report problems with photos and field notes. All agronomic information lives in a single data source, fully aligned with regulations. A simple, precise, and immediate way to complete your field log without stress.",
+      "imageAlt": "Simplified management"
+    },
+    "advantages": {
+      "title": "Discover the benefits of Seminai",
+      "sections": [
+        {
+          "title": "Regulatory compliance",
+          "features": [
+            "Automatic compliance checks",
+            "Complete traceability",
+            "Automatic regulatory updates",
+            "Protection from penalties",
+            "Documentation ready for inspections",
+            "Automatic pre-harvest interval calculation"
+          ]
+        },
+        {
+          "title": "Reduced time and costs",
+          "features": [
+            "Intuitive interface",
+            "Guided completion",
+            "Templates for recurring operations",
+            "Automatic dosage calculation",
+            "AI chat field notes to report problems and completed operations",
+            "Paperless workflows",
+            "Fewer transcription errors"
+          ]
+        },
+        {
+          "title": "Custom white label",
+          "features": [
+            "Complete branding",
+            "Tailored configurations",
+            "Workflow customization",
+            "Dedicated domains",
+            "Branded interface",
+            "Modular features"
+          ]
+        },
+        {
+          "title": "Integrates with third-party systems",
+          "features": [
+            "Open, documented APIs",
+            "Data import/export",
+            "Synchronization with e-commerce",
+            "Weather system integrations",
+            "Connection with agricultural marketplaces",
+            "IoT interoperability"
+          ]
+        }
+      ]
+    },
+    "features": [
+      {
+        "title": "Regulatory compliance",
+        "body": "The system automatically checks every operation you record, making sure it complies with current regulations. Work with confidence knowing every treatment is correctly tracked and documentation is always ready for inspections.",
+        "imageAlt": "Regulatory compliance"
+      },
+      {
+        "title": "Reduced time and costs",
+        "body": "An interface so intuitive that anyone can use it from day one. Complete your field log in just a few clicks thanks to smart automations that calculate doses, suggest products, and save your recurring treatments.",
+        "imageAlt": "Reduced time and costs"
+      },
+      {
+        "title": "Custom white label",
+        "body": "Turn the platform into your own business solution with custom logo, colors, and domain. Configure fields, workflows, and features so the system fits exactly the way you work.",
+        "imageAlt": "Custom white label"
+      },
+      {
+        "title": "Integrates with third-party systems",
+        "body": "Connect the field log to the software you already use through open APIs and automatic synchronizations. Bring all company information into one platform and let data flow freely between systems.",
+        "imageAlt": "Integrates with third-party systems"
+      },
+      {
+        "title": "Operations and field notes",
+        "body": "Record all field work, from plowing and sowing to treatments, and report issues directly from the field. Chat from the platform, Telegram, or WhatsApp: add photos and descriptions, and the AI assistant turns them into structured notes for the field log, without rewriting anything at the office.",
+        "imageAlt": "Operations and field notes"
+      }
+    ],
+    "contact": {
+      "title": "I'll arrange a free meeting",
+      "body": "Need information or want to see Seminai in action? Fill out the form below and we will get back to you as soon as possible."
+    },
+    "footer": {
+      "description": "Transform the management of your fields with artificial intelligence.",
+      "contactTitle": "Contact us",
+      "contactBody": "Questions? We are here to help.",
+      "rights": "All rights reserved."
+    }
+  },
+  "contactRequest": {
+    "fields": {
+      "name": "Full name *",
+      "email": "Email *",
+      "meetingDate": "Meeting date",
+      "meetingTime": "Time",
+      "message": "Tell us about your request *"
+    },
+    "placeholders": {
+      "name": "Mario Rossi",
+      "email": "mario.rossi@example.com",
+      "date": "Select a date",
+      "message": "Describe how we can help..."
+    },
+    "validation": {
+      "required": "Please fill in all required fields.",
+      "invalidEmail": "Please provide a valid email address."
+    },
+    "status": {
+      "submitting": "Sending...",
+      "submit": "Send request",
+      "success": "Request sent successfully.",
+      "error": "An error occurred while sending the request."
+    },
+    "email": {
+      "dateWithTime": "REQUESTED MEETING DATE: {{date}} at {{time}}",
+      "dateOnly": "REQUESTED MEETING DATE: {{date}} (time not specified)",
+      "bodyLabel": "MESSAGE: {{message}}"
+    }
+  },
+  "navigation": {
+    "add": "$t(common.add)",
+    "chat": "Chat",
+    "labels": "Labels",
+    "manage": "Manage",
+    "tools": "Tools",
+    "account": "Account",
+    "myAccount": "My account",
+    "settings": "$t(common.settings)",
+    "integrations": "$t(common.integrations)",
+    "costs": "$t(common.costs)",
+    "operations": "Operations",
+    "companies": "Companies",
+    "fields": "Fields",
+    "productionUnits": "Production Units",
+    "warehouse": "Warehouse",
+    "fieldNotes": "Field Notes",
+    "qdc": "Qdca",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "pageTitles": {
+      "dashboard": "Dashboard",
+      "labels": "Labels",
+      "newOperation": "New Operation",
+      "operations": "Operations",
+      "qdc": "Qdca",
+      "companies": "Companies",
+      "fields": "Fields",
+      "productionUnits": "Production Units",
+      "warehouse": "Warehouse",
+      "settings": "$t(common.settings)",
+      "newWorkspace": "New Workspace",
+      "workspaceSettings": "Workspace Settings",
+      "newLabel": "New Label",
+      "newProductionUnit": "New Production Unit",
+      "quickCreate": "Quick Create",
+      "newRule": "New Rule",
+      "editRule": "Edit Rule",
+      "seminai": "$t(common.brand)"
+    }
+  },
+  "settings": {
+    "title": "$t(common.settings)",
+    "sections": {
+      "settings": "$t(common.settings)",
+      "integrations": "$t(common.integrations)",
+      "costs": "$t(common.costs)"
+    },
+    "loadingUser": "Loading user data…",
+    "loadUserError": "Unable to load user data.",
+    "toast": {
+      "saved": "Settings saved successfully",
+      "updateFailed": "Update failed",
+      "uploadFailed": "Upload failed",
+      "profilePictureUpdated": "Profile picture updated",
+      "passwordUpdated": "Password updated",
+      "passwordUpdateFailed": "Password update failed",
+      "passwordMismatch": "Passwords do not match",
+      "apiCredentialsUpdated": "API credentials updated",
+      "numberAdded": "Number added to the list",
+      "numberRemoved": "Number removed from the list",
+      "addNumberError": "Error while adding the number",
+      "removeNumberError": "Error while removing the number",
+      "cacheCleared": "Cache cleared successfully",
+      "cacheClearError": "Error while clearing the cache",
+      "whatsappSetupComplete": "WhatsApp setup completed. Scan the QR code.",
+      "whatsappSetupError": "Error during WhatsApp setup",
+      "whatsappInstanceDeleted": "WhatsApp instance deleted successfully",
+      "whatsappDisconnected": "WhatsApp disconnected successfully",
+      "whatsappDisconnectError": "Error while disconnecting WhatsApp",
+      "qrUpdated": "QR code updated",
+      "qrLoadError": "Error while loading the QR code"
+    },
+    "profile": {
+      "credits": "Credits",
+      "creditsAvailable": "{{count}} available",
+      "profilePicture": "Profile picture",
+      "personalInfo": "Personal information",
+      "name": "Name",
+      "surname": "Surname",
+      "fiscalCode": "Tax code",
+      "phone": "Phone",
+      "companyData": "Company data",
+      "companyName": "Company name",
+      "vatNumber": "VAT number",
+      "address": "Address",
+      "changePassword": "Change password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "updating": "Updating…"
+    },
+    "cache": {
+      "title": "Cache management",
+      "description": "Delete the local cache associated with your account. This action cannot be undone.",
+      "clean": "Clear cache",
+      "confirmTitle": "Confirm cache deletion",
+      "confirmDescription": "This action will delete the cache associated with your account. To confirm, type <strong>delete</strong> in the field below.",
+      "confirmLabel": "Type \"delete\" to confirm",
+      "confirmWord": "delete",
+      "deleting": "Deleting…",
+      "deleteCache": "Delete cache"
+    },
+    "integrations": {
+      "whatsapp": {
+        "title": "WhatsApp",
+        "importantTitle": "Important: dedicated WhatsApp number required",
+        "importantBody": "The WhatsApp number used for this integration <strong>MUST be different</strong> from your personal number. If you connect your personal number, the integration will stop working correctly. We recommend using a dedicated WhatsApp Business number for your farm.",
+        "loadingStatus": "Loading connection status…",
+        "connectedTitle": "WhatsApp connected",
+        "phoneNumber": "Number: {{phoneNumber}}",
+        "lastSync": "Last sync: {{date}}",
+        "waitingTitle": "Waiting for connection...",
+        "waitingBody": "Scan the QR code with WhatsApp to complete the connection",
+        "notConnectedTitle": "WhatsApp not connected",
+        "notConnectedBody": "Connect WhatsApp to send field notes through messages",
+        "reloadStatus": "Reload status",
+        "disconnect": "Disconnect",
+        "connect": "Connect WhatsApp",
+        "setup": "Setup...",
+        "scanTitle": "Scan this QR code with WhatsApp:",
+        "instructions": "1. Open WhatsApp on your phone\n2. Go to Settings → Linked devices → Link a device\n3. Scan this QR code",
+        "refreshQr": "Refresh QR code",
+        "allowlistTitle": "Numbers authorized to send messages",
+        "allowlistInfo": "If the list is empty, all numbers can send messages. After adding one or more numbers, only the listed numbers will be authorized.",
+        "loadingAllowlist": "Loading…",
+        "emptyAllowlist": "No numbers in the list — all numbers are allowed.",
+        "qrAlt": "WhatsApp QR Code",
+        "dialogTitle": "Disconnect WhatsApp",
+        "dialogDescription": "Choose how to disconnect WhatsApp from your account.",
+        "disconnectSession": "Disconnect session",
+        "disconnectSessionDescription": "Disconnects the active session but keeps the instance. You can reconnect later by scanning a new QR code.",
+        "deleteInstance": "Delete instance",
+        "deleteInstanceDescription": "Completely deletes the WhatsApp instance and removes all associated data. You will need to repeat the full setup to reconnect.",
+        "disconnecting": "Disconnecting…"
+      },
+      "telegram": {
+        "title": "Telegram",
+        "enable": "Enable Telegram integration",
+        "scanTitle": "Scan the QR code to connect the Telegram agent:",
+        "qrAlt": "Telegram agent QR code",
+        "description": "Open Telegram, scan the code, and start a chat with the bot to use the agent by message."
+      },
+      "api": {
+        "insertCredentials": "Enter credentials"
+      }
+    },
+    "costs": {
+      "summary": {
+        "totalClientCost": "Total cost (client)",
+        "promptTokens": "Prompt tokens",
+        "completionTokens": "Completion tokens",
+        "totalTokens": "Total tokens"
+      },
+      "chartLabels": {
+        "clientCost": "Client cost (€)",
+        "totalTokens": "Total tokens"
+      },
+      "title": "Token cost history",
+      "description": "Detailed usage and costs calculated with Seminai margin.",
+      "loadError": "Unable to load costs.",
+      "searchPlaceholder": "Search by model, job, metadata…",
+      "dateFrom": "Date from",
+      "dateTo": "Date to",
+      "jobType": "Job type",
+      "model": "Model",
+      "companyMetadata": "Company (metadata)",
+      "resetFilters": "Reset filters",
+      "table": "Table",
+      "barChart": "Bars (by day and model)",
+      "lineChart": "Line (by model)",
+      "loadingCosts": "Loading costs",
+      "loadingCostsInProgress": "Retrieving costs…",
+      "noCosts": "No costs recorded yet.",
+      "noData": "No data to show. Apply filters or wait for new usage.",
+      "barCaption": "Usage by day and model (client cost €). Stacked bars with model names in the legend.",
+      "lineCaption": "Client cost (€) trend by day and model. One line for each model.",
+      "columns": {
+        "date": "Date",
+        "job": "Job",
+        "model": "Model",
+        "prompt": "Prompt",
+        "completion": "Completion",
+        "totalTokens": "Total tokens",
+        "clientCost": "Client cost",
+        "companyMetadata": "Company (metadata)",
+        "reference": "Reference",
+        "metadata": "Metadata"
+      }
+    }
+  }
+}

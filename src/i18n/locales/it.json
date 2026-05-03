@@ -1,0 +1,368 @@
+{
+  "common": {
+    "brand": "Seminai",
+    "save": "Salva",
+    "saving": "Salvataggio…",
+    "cancel": "Annulla",
+    "delete": "Elimina",
+    "loading": "Caricamento…",
+    "logout": "Logout",
+    "access": "Accedi",
+    "bookFree": "Prenota gratis",
+    "freeMeeting": "Fissa un incontro gratuito",
+    "add": "Aggiungi",
+    "refresh": "Aggiorna",
+    "settings": "Impostazioni",
+    "integrations": "Integrazioni",
+    "costs": "Costi",
+    "configured": "Configurata",
+    "connected": "Connesso",
+    "active": "Attiva"
+  },
+  "language": {
+    "label": "Lingua",
+    "description": "Scegli la lingua dell'area autenticata. La stessa preferenza viene usata anche nelle pagine pubbliche.",
+    "publicSwitcherAria": "Seleziona lingua",
+    "settingsTitle": "Lingua interfaccia",
+    "settingsDescription": "Italiano è la lingua predefinita. Puoi passare all'inglese quando preferisci.",
+    "italian": "Italiano",
+    "english": "English"
+  },
+  "home": {
+    "hero": {
+      "title": "Fare quaderni di campagna non è mai stato così semplice",
+      "subtitle": "Il quaderno di campagna digitale personalizzabile che rivoluziona la gestione delle operazioni con l'intelligenza artificiale.",
+      "imageAlt": "Robot agricoltore"
+    },
+    "audience": {
+      "title": "A chi è dedicato?",
+      "cards": [
+        {
+          "title": "Per Agricoltori",
+          "description": "Ottimizza il tuo lavoro quotidiano con strumenti semplici e intuitivi. Registra le operazioni in campo come aratura, semina, lavorazioni. Redigi i quaderni in modo rapido e conforme, segnala problemi con foto e note di campo: tutto in un unico posto, con meno burocrazia e più tempo per la produzione."
+        },
+        {
+          "title": "Per Tecnici Agronomi",
+          "description": "Gestisci più aziende contemporaneamente con maggiore efficienza. Grazie alle nostre soluzioni digitali puoi seguire i quaderni di campagna dei tuoi clienti in modo centralizzato, organizzato e trasparente. Offri un servizio più completo, riduci gli errori e aumenta il valore della tua consulenza professionale."
+        },
+        {
+          "title": "Per Associazioni di Categoria e Fornitori di Servizi",
+          "description": "Amplia la tua offerta con un servizio avanzato di consulenza digitale sui quaderni di campagna. Supporta agricoltori, tecnici e imprese con strumenti moderni e affidabili, migliorando la qualità dei servizi offerti e incrementando la soddisfazione dei tuoi associati o clienti."
+        }
+      ]
+    },
+    "simplified": {
+      "title": "Niente più calcoli complessi, fogli sparsi o dati incompleti.",
+      "body": "Che tu sia in campo, in ufficio o in movimento, la nostra soluzione automatizza i dosaggi, integra operazioni come aratura e semina, e ti permette di segnalare problemi con foto e note di campo. Tutte le informazioni agronomiche in un'unica fonte dati, nel pieno rispetto delle normative. Un modo semplice, preciso e immediato per compilare il quaderno senza stress.",
+      "imageAlt": "Gestione semplificata"
+    },
+    "advantages": {
+      "title": "Scopri i vantaggi di Seminai",
+      "sections": [
+        {
+          "title": "Conforme alle normative",
+          "features": [
+            "Verifica automatica della conformità",
+            "Tracciabilità completa",
+            "Aggiornamenti normativi automatici",
+            "Protezione da sanzioni",
+            "Documentazione pronta per controlli",
+            "Calcolo automatico tempi di carenza"
+          ]
+        },
+        {
+          "title": "Riduzione di tempo e costi",
+          "features": [
+            "Interfaccia intuitiva",
+            "Compilazione guidata",
+            "Template operazioni ricorrenti",
+            "Calcolo automatico delle dosi",
+            "Note di campo CHAT AI per segnalare problemi e operazioni svolte",
+            "Eliminazione della carta",
+            "Riduzione errori di trascrizione"
+          ]
+        },
+        {
+          "title": "White label personalizzato",
+          "features": [
+            "Branding completo",
+            "Configurazioni su misura",
+            "Personalizzazione workflow",
+            "Domini dedicati",
+            "Interfaccia brandizzata",
+            "Modulazione funzionalità"
+          ]
+        },
+        {
+          "title": "Integrabile con sistemi terzi",
+          "features": [
+            "API aperte e documentate",
+            "Import/export dati",
+            "Sincronizzazione con e-commerce",
+            "Integrazione con sistemi meteo",
+            "Connessione con marketplace agricoli",
+            "Interoperabilità con IoT"
+          ]
+        }
+      ]
+    },
+    "features": [
+      {
+        "title": "Conforme alle normative",
+        "body": "Il sistema verifica automaticamente ogni operazione che registri, assicurandosi che rispetti tutte le normative vigenti. Lavora sereno sapendo che ogni trattamento è tracciato correttamente e la documentazione è sempre pronta per eventuali controlli.",
+        "imageAlt": "Conforme alle normative"
+      },
+      {
+        "title": "Riduzione di tempo e costi",
+        "body": "Un'interfaccia così intuitiva che chiunque può usarla dal primo giorno. Compila il quaderno in pochi clic grazie alle automazioni intelligenti che calcolano dosi, suggeriscono prodotti e salvano i tuoi trattamenti ricorrenti.",
+        "imageAlt": "Riduzione di tempo e costi"
+      },
+      {
+        "title": "White label personalizzato",
+        "body": "Trasforma la piattaforma nella tua soluzione aziendale con logo, colori e dominio personalizzati. Configura campi, workflow e funzionalità per adattare il sistema esattamente al tuo modo di lavorare.",
+        "imageAlt": "White label personalizzato"
+      },
+      {
+        "title": "Integrabile con sistemi terzi",
+        "body": "Collega il quaderno ai software che già utilizzi attraverso API aperte e sincronizzazioni automatiche. Unifica tutte le informazioni aziendali in un'unica piattaforma e lascia che i dati fluiscano liberamente tra i sistemi.",
+        "imageAlt": "Integrabile con sistemi terzi"
+      },
+      {
+        "title": "Operazioni e note di campo",
+        "body": "Registra tutte le lavorazioni aratura, semina, trattamenti e segnala dove trovi problemi direttamente dal campo. Una chat con cui parli dalla piattaforma, da Telegram o da WhatsApp: aggiungi foto e descrizioni e l'assistente AI le trasforma in note strutturate per il quaderno, senza dover riscrivere nulla in ufficio.",
+        "imageAlt": "Operazioni e note di campo"
+      }
+    ],
+    "contact": {
+      "title": "Organizzo un incontro gratuito",
+      "body": "Hai bisogno di informazioni o vuoi vedere Seminai in azione? Compila il form qui sotto e ti risponderemo al più presto."
+    },
+    "footer": {
+      "description": "Rivoluziona la gestione dei tuoi campi con l'intelligenza artificiale.",
+      "contactTitle": "Contattaci",
+      "contactBody": "Hai domande? Siamo qui per aiutarti.",
+      "rights": "Tutti i diritti riservati."
+    }
+  },
+  "contactRequest": {
+    "fields": {
+      "name": "Nome e cognome *",
+      "email": "Email *",
+      "meetingDate": "Data incontro",
+      "meetingTime": "Orario",
+      "message": "Raccontaci la tua richiesta *"
+    },
+    "placeholders": {
+      "name": "Mario Rossi",
+      "email": "mario.rossi@example.com",
+      "date": "Seleziona una data",
+      "message": "Descrivi come possiamo aiutarti..."
+    },
+    "validation": {
+      "required": "Per favore compila tutti i campi obbligatori.",
+      "invalidEmail": "Per favore fornisci un indirizzo email valido."
+    },
+    "status": {
+      "submitting": "Invio in corso...",
+      "submit": "Invia richiesta",
+      "success": "Richiesta inviata correttamente.",
+      "error": "Si è verificato un errore durante l'invio della richiesta."
+    },
+    "email": {
+      "dateWithTime": "DATA DI RICHIESTA INCONTRO: {{date}} alle {{time}}",
+      "dateOnly": "DATA DI RICHIESTA INCONTRO: {{date}} (orario non specificato)",
+      "bodyLabel": "TESTO: {{message}}"
+    }
+  },
+  "navigation": {
+    "add": "$t(common.add)",
+    "chat": "Chat",
+    "labels": "Etichette",
+    "manage": "Gestisci",
+    "tools": "Strumenti",
+    "account": "Account",
+    "myAccount": "Il mio account",
+    "settings": "$t(common.settings)",
+    "integrations": "$t(common.integrations)",
+    "costs": "$t(common.costs)",
+    "operations": "Operazioni",
+    "companies": "Aziende",
+    "fields": "Campi",
+    "productionUnits": "Unità Produttive",
+    "warehouse": "Magazzino",
+    "fieldNotes": "Note di Campo",
+    "qdc": "Qdca",
+    "collapseSidebar": "Comprimi sidebar",
+    "expandSidebar": "Espandi sidebar",
+    "pageTitles": {
+      "dashboard": "Dashboard",
+      "labels": "Etichette",
+      "newOperation": "Nuova Operazione",
+      "operations": "Operazioni",
+      "qdc": "Qdca",
+      "companies": "Aziende",
+      "fields": "Campi",
+      "productionUnits": "Unità Produttive",
+      "warehouse": "Magazzino",
+      "settings": "$t(common.settings)",
+      "newWorkspace": "Nuovo Workspace",
+      "workspaceSettings": "Impostazioni Workspace",
+      "newLabel": "Nuova Etichetta",
+      "newProductionUnit": "Nuova Unità Produttiva",
+      "quickCreate": "Creazione Rapida",
+      "newRule": "Nuova Regola",
+      "editRule": "Modifica Regola",
+      "seminai": "$t(common.brand)"
+    }
+  },
+  "settings": {
+    "title": "$t(common.settings)",
+    "sections": {
+      "settings": "$t(common.settings)",
+      "integrations": "$t(common.integrations)",
+      "costs": "$t(common.costs)"
+    },
+    "loadingUser": "Caricamento dati utente…",
+    "loadUserError": "Impossibile caricare i dati utente.",
+    "toast": {
+      "saved": "Impostazioni salvate correttamente",
+      "updateFailed": "Aggiornamento non riuscito",
+      "uploadFailed": "Caricamento non riuscito",
+      "profilePictureUpdated": "Foto profilo aggiornata",
+      "passwordUpdated": "Password aggiornata",
+      "passwordUpdateFailed": "Aggiornamento password non riuscito",
+      "passwordMismatch": "Le password non coincidono",
+      "apiCredentialsUpdated": "Credenziali API aggiornate",
+      "numberAdded": "Numero aggiunto alla lista",
+      "numberRemoved": "Numero rimosso dalla lista",
+      "addNumberError": "Errore durante l'aggiunta del numero",
+      "removeNumberError": "Errore durante la rimozione del numero",
+      "cacheCleared": "Cache eliminata con successo",
+      "cacheClearError": "Errore durante l'eliminazione della cache",
+      "whatsappSetupComplete": "Setup WhatsApp completato. Scansiona il QR code.",
+      "whatsappSetupError": "Errore durante il setup WhatsApp",
+      "whatsappInstanceDeleted": "Istanza WhatsApp eliminata con successo",
+      "whatsappDisconnected": "WhatsApp disconnesso con successo",
+      "whatsappDisconnectError": "Errore durante la disconnessione WhatsApp",
+      "qrUpdated": "QR code aggiornato",
+      "qrLoadError": "Errore durante il caricamento del QR code"
+    },
+    "profile": {
+      "credits": "Crediti",
+      "creditsAvailable": "{{count}} disponibili",
+      "profilePicture": "Foto profilo",
+      "personalInfo": "Informazioni personali",
+      "name": "Nome",
+      "surname": "Cognome",
+      "fiscalCode": "Codice fiscale",
+      "phone": "Telefono",
+      "companyData": "Dati aziendali",
+      "companyName": "Ragione sociale",
+      "vatNumber": "P. IVA",
+      "address": "Indirizzo",
+      "changePassword": "Cambia password",
+      "currentPassword": "Password attuale",
+      "newPassword": "Nuova password",
+      "confirmPassword": "Conferma password",
+      "updating": "Aggiornamento…"
+    },
+    "cache": {
+      "title": "Gestione cache",
+      "description": "Elimina la cache locale associata al tuo account. Questa azione è irreversibile.",
+      "clean": "Pulisci cache",
+      "confirmTitle": "Conferma eliminazione cache",
+      "confirmDescription": "Questa azione eliminerà la cache associata al tuo account. Per confermare, digita <strong>elimina</strong> nel campo sottostante.",
+      "confirmLabel": "Digita \"elimina\" per confermare",
+      "confirmWord": "elimina",
+      "deleting": "Eliminazione…",
+      "deleteCache": "Elimina cache"
+    },
+    "integrations": {
+      "whatsapp": {
+        "title": "WhatsApp",
+        "importantTitle": "Importante: Numero WhatsApp dedicato richiesto",
+        "importantBody": "Il numero WhatsApp utilizzato per questa integrazione <strong>DEVE essere diverso</strong> dal tuo numero personale. Se colleghi il tuo numero personale, l'integrazione smetterà di funzionare correttamente. Ti consigliamo di utilizzare un numero WhatsApp Business dedicato per la tua azienda agricola.",
+        "loadingStatus": "Caricamento stato connessione…",
+        "connectedTitle": "WhatsApp connesso",
+        "phoneNumber": "Numero: {{phoneNumber}}",
+        "lastSync": "Ultima sincronizzazione: {{date}}",
+        "waitingTitle": "In attesa di connessione...",
+        "waitingBody": "Scansiona il QR code con WhatsApp per completare la connessione",
+        "notConnectedTitle": "WhatsApp non connesso",
+        "notConnectedBody": "Collega WhatsApp per inviare note di campo tramite messaggi",
+        "reloadStatus": "Ricarica stato",
+        "disconnect": "Disconnetti",
+        "connect": "Collega WhatsApp",
+        "setup": "Setup...",
+        "scanTitle": "Scansiona questo QR code con WhatsApp:",
+        "instructions": "1. Apri WhatsApp sul telefono\n2. Vai in Impostazioni → Dispositivi collegati → Collega un dispositivo\n3. Scansiona questo QR code",
+        "refreshQr": "Aggiorna QR code",
+        "allowlistTitle": "Numeri autorizzati a inviare messaggi",
+        "allowlistInfo": "Se la lista è vuota, tutti i numeri possono inviare messaggi. Aggiungendo uno o più numeri, solo quelli elencati saranno autorizzati.",
+        "loadingAllowlist": "Caricamento…",
+        "emptyAllowlist": "Nessun numero in lista — tutti i numeri sono ammessi.",
+        "qrAlt": "WhatsApp QR Code",
+        "dialogTitle": "Disconnetti WhatsApp",
+        "dialogDescription": "Scegli come disconnettere WhatsApp dal tuo account.",
+        "disconnectSession": "Disconnetti sessione",
+        "disconnectSessionDescription": "Disconnette la sessione attiva ma mantiene l'istanza. Potrai riconnetterti in futuro scansionando un nuovo QR code.",
+        "deleteInstance": "Elimina istanza",
+        "deleteInstanceDescription": "Elimina completamente l'istanza WhatsApp e rimuove tutti i dati associati. Dovrai ripetere il setup completo per riconnetterti.",
+        "disconnecting": "Disconnessione in corso…"
+      },
+      "telegram": {
+        "title": "Telegram",
+        "enable": "Attiva integrazione Telegram",
+        "scanTitle": "Scansiona il QR code per collegare l'agente Telegram:",
+        "qrAlt": "QR code agente Telegram",
+        "description": "Apri Telegram, scansiona il codice e avvia una chat con il bot per usare l'agente da messaggio."
+      },
+      "api": {
+        "insertCredentials": "Inserisci credenziali"
+      }
+    },
+    "costs": {
+      "summary": {
+        "totalClientCost": "Costo totale (cliente)",
+        "promptTokens": "Token prompt",
+        "completionTokens": "Token completion",
+        "totalTokens": "Token totali"
+      },
+      "chartLabels": {
+        "clientCost": "Costo cliente (€)",
+        "totalTokens": "Token totali"
+      },
+      "title": "Storico costi token",
+      "description": "Dettaglio dei consumi e dei costi calcolati con margine Seminai.",
+      "loadError": "Impossibile caricare i costi.",
+      "searchPlaceholder": "Cerca per modello, job, metadata…",
+      "dateFrom": "Data da",
+      "dateTo": "Data a",
+      "jobType": "Job type",
+      "model": "Modello",
+      "companyMetadata": "Azienda (metadata)",
+      "resetFilters": "Reset filtri",
+      "table": "Tabella",
+      "barChart": "Barre (per giorno e modello)",
+      "lineChart": "Lineare (per modello)",
+      "loadingCosts": "Caricamento costi",
+      "loadingCostsInProgress": "Recupero costi in corso…",
+      "noCosts": "Nessun costo registrato al momento.",
+      "noData": "Nessun dato da mostrare. Applica i filtri o attendi nuovi consumi.",
+      "barCaption": "Consumo per giorno per modello (costo cliente €). Barre impilate con nomi modelli in legenda.",
+      "lineCaption": "Andamento costo cliente (€) per giorno e per modello. Una linea per ogni modello.",
+      "columns": {
+        "date": "Data",
+        "job": "Job",
+        "model": "Modello",
+        "prompt": "Prompt",
+        "completion": "Completion",
+        "totalTokens": "Token totali",
+        "clientCost": "Costo cliente",
+        "companyMetadata": "Azienda (metadata)",
+        "reference": "Riferimento",
+        "metadata": "Metadata"
+      }
+    }
+  }
+}

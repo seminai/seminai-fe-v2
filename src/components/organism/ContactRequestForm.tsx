@@ -1,4 +1,5 @@
 import { ChangeEvent, FormEvent, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { emailApiService } from "@/api/email";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
@@ -10,7 +11,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { it } from "date-fns/locale";
+import { enUS, it } from "date-fns/locale";
+import { normalizeLanguage } from "@/i18n";
 
 interface ContactRequestFormProps {
   className?: string;
@@ -21,6 +23,8 @@ export function ContactRequestForm({
   className,
   onSuccess,
 }: ContactRequestFormProps) {
+  const { t, i18n } = useTranslation();
+  const dateLocale = normalizeLanguage(i18n.language) === "en" ? enUS : it;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -57,12 +61,12 @@ export function ContactRequestForm({
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!trimmedName || !trimmedEmail || !trimmedMessage) {
-      setErrorMessage("Per favore compila tutti i campi obbligatori.");
+      setErrorMessage(t("contactRequest.validation.required"));
       return;
     }
 
     if (!emailRegex.test(trimmedEmail)) {
-      setErrorMessage("Per favore fornisci un indirizzo email valido.");
+      setErrorMessage(t("contactRequest.validation.invalidEmail"));
       return;
     }
 
@@ -72,14 +76,21 @@ export function ContactRequestForm({
     let finalMessage = "";
 
     if (date && time) {
-      const formattedDate = format(date, "dd/MM/yyyy", { locale: it });
-      finalMessage += `DATA DI RICHIESTA INCONTRO: ${formattedDate} alle ${time}\n\n`;
+      const formattedDate = format(date, "dd/MM/yyyy", { locale: dateLocale });
+      finalMessage += `${t("contactRequest.email.dateWithTime", {
+        date: formattedDate,
+        time,
+      })}\n\n`;
     } else if (date) {
-      const formattedDate = format(date, "dd/MM/yyyy", { locale: it });
-      finalMessage += `DATA DI RICHIESTA INCONTRO: ${formattedDate} (orario non specificato)\n\n`;
+      const formattedDate = format(date, "dd/MM/yyyy", { locale: dateLocale });
+      finalMessage += `${t("contactRequest.email.dateOnly", {
+        date: formattedDate,
+      })}\n\n`;
     }
 
-    finalMessage += `TESTO: ${trimmedMessage}`;
+    finalMessage += t("contactRequest.email.bodyLabel", {
+      message: trimmedMessage,
+    });
 
     try {
       const response = await emailApiService.sendContactEmail({
@@ -94,16 +105,14 @@ export function ContactRequestForm({
       setDate(undefined);
       setTime("");
       setIsSubmitting(false);
-      setSuccessMessage(response.message ?? "Richiesta inviata correttamente.");
+      setSuccessMessage(response.message ?? t("contactRequest.status.success"));
 
       if (onSuccess) {
         onSuccess();
       }
     } catch {
       setIsSubmitting(false);
-      setErrorMessage(
-        "Si è verificato un errore durante l'invio della richiesta."
-      );
+      setErrorMessage(t("contactRequest.status.error"));
     }
   };
 
@@ -114,10 +123,12 @@ export function ContactRequestForm({
     >
       <div className="space-y-2">
         <label className="block text-left">
-          <span className="text-gray-700 font-medium">Nome e cognome *</span>
+          <span className="text-gray-700 font-medium">
+            {t("contactRequest.fields.name")}
+          </span>
           <input
             className="mt-2 w-full rounded-2xl border border-gray-200 p-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-agri-green-500 focus:border-transparent transition"
-            placeholder="Mario Rossi"
+            placeholder={t("contactRequest.placeholders.name")}
             value={name}
             onChange={handleNameChange}
             required
@@ -127,11 +138,13 @@ export function ContactRequestForm({
 
       <div className="space-y-2">
         <label className="block text-left">
-          <span className="text-gray-700 font-medium">Email *</span>
+          <span className="text-gray-700 font-medium">
+            {t("contactRequest.fields.email")}
+          </span>
           <input
             type="email"
             className="mt-2 w-full rounded-2xl border border-gray-200 p-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-agri-green-500 focus:border-transparent transition"
-            placeholder="mario.rossi@example.com"
+            placeholder={t("contactRequest.placeholders.email")}
             value={email}
             onChange={handleEmailChange}
             required
@@ -142,7 +155,7 @@ export function ContactRequestForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2 flex flex-col">
           <span className="text-gray-700 font-medium text-left">
-            Data incontro
+            {t("contactRequest.fields.meetingDate")}
           </span>
           <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>
@@ -155,9 +168,9 @@ export function ContactRequestForm({
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {date ? (
-                  format(date, "PPP", { locale: it })
+                  format(date, "PPP", { locale: dateLocale })
                 ) : (
-                  <span>Seleziona una data</span>
+                  <span>{t("contactRequest.placeholders.date")}</span>
                 )}
               </Button>
             </PopoverTrigger>
@@ -170,7 +183,7 @@ export function ContactRequestForm({
                   setIsCalendarOpen(false);
                 }}
                 initialFocus
-                locale={it}
+                locale={dateLocale}
               />
             </PopoverContent>
           </Popover>
@@ -178,7 +191,9 @@ export function ContactRequestForm({
 
         <div className="space-y-2">
           <label className="block text-left">
-            <span className="text-gray-700 font-medium">Orario</span>
+            <span className="text-gray-700 font-medium">
+              {t("contactRequest.fields.meetingTime")}
+            </span>
             <input
               type="time"
               className="mt-2 w-full h-[58px] rounded-2xl border border-gray-200 p-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-agri-green-500 focus:border-transparent transition"
@@ -192,11 +207,11 @@ export function ContactRequestForm({
       <div className="space-y-2">
         <label className="block text-left">
           <span className="text-gray-700 font-medium">
-            Raccontaci la tua richiesta *
+            {t("contactRequest.fields.message")}
           </span>
           <textarea
             className="mt-2 w-full min-h-[120px] rounded-2xl border border-gray-200 p-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-agri-green-500 focus:border-transparent transition"
-            placeholder="Descrivi come possiamo aiutarti..."
+            placeholder={t("contactRequest.placeholders.message")}
             value={message}
             onChange={handleMessageChange}
             required
@@ -212,7 +227,9 @@ export function ContactRequestForm({
         className="w-full py-4 px-6 rounded-2xl bg-green-700 text-white font-semibold hover:bg-green-600 transition disabled:opacity-60 disabled:cursor-not-allowed"
         disabled={isSubmitting}
       >
-        {isSubmitting ? "Invio in corso..." : "Invia richiesta"}
+        {isSubmitting
+          ? t("contactRequest.status.submitting")
+          : t("contactRequest.status.submit")}
       </button>
     </form>
   );

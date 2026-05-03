@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import "./index.css";
 import "./components/ui/custom-theme.css";
+import "./i18n";
 import { Toaster } from "@/components/ui/sonner";
 import App from "./App.tsx";
 

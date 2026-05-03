@@ -1,66 +1,68 @@
 import { useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { WorkspaceSwitcher } from "@/components/organism/WorkspaceSwitcher";
 
 /**
  * Maps route pathname to page title
  */
-function getPageTitle(pathname: string): string {
+function getPageTitle(pathname: string, t: TFunction): string {
   if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
-    return "Dashboard";
+    return t("navigation.pageTitles.dashboard");
   }
   if (pathname === "/label" || pathname.startsWith("/label/")) {
-    return "Etichette";
+    return t("navigation.pageTitles.labels");
   }
   if (pathname === "/job/new") {
-    return "Nuova Operazione";
+    return t("navigation.pageTitles.newOperation");
   }
   if (pathname === "/job" || pathname.startsWith("/job/")) {
-    return "Operazioni";
+    return t("navigation.pageTitles.operations");
   }
   if (pathname === "/operations" || pathname.startsWith("/operations/")) {
-    return "Qdca";
+    return t("navigation.pageTitles.qdc");
   }
   if (pathname === "/company" || pathname.startsWith("/company/")) {
-    return "Aziende";
+    return t("navigation.pageTitles.companies");
   }
   if (pathname === "/fields" || pathname.startsWith("/fields/")) {
-    return "Campi";
+    return t("navigation.pageTitles.fields");
   }
   if (
     pathname === "/production-unit" ||
     pathname.startsWith("/production-unit/")
   ) {
-    return "Unità Produttive";
+    return t("navigation.pageTitles.productionUnits");
   }
   if (pathname === "/products" || pathname.startsWith("/products/")) {
-    return "Magazzino";
+    return t("navigation.pageTitles.warehouse");
   }
   if (pathname === "/settings") {
-    return "Impostazioni";
+    return t("navigation.pageTitles.settings");
   }
   if (pathname === "/new-workspace") {
-    return "Nuovo Workspace";
+    return t("navigation.pageTitles.newWorkspace");
   }
   if (pathname.startsWith("/workspace/settings")) {
-    return "Impostazioni Workspace";
+    return t("navigation.pageTitles.workspaceSettings");
   }
   if (pathname === "/new-label") {
-    return "Nuova Etichetta";
+    return t("navigation.pageTitles.newLabel");
   }
   if (pathname === "/new-production-unit") {
-    return "Nuova Unità Produttiva";
+    return t("navigation.pageTitles.newProductionUnit");
   }
   if (pathname === "/create-company-field-production") {
-    return "Creazione Rapida";
+    return t("navigation.pageTitles.quickCreate");
   }
   if (pathname === "/new-rule") {
-    return "Nuova Regola";
+    return t("navigation.pageTitles.newRule");
   }
   if (pathname.startsWith("/workspace/settings/rules/")) {
-    return "Modifica Regola";
+    return t("navigation.pageTitles.editRule");
   }
 
-  return "Seminai";
+  return t("navigation.pageTitles.seminai");
 }
 
 /**
@@ -69,8 +71,9 @@ function getPageTitle(pathname: string): string {
  */
 export function MobileHeader(): React.ReactElement {
   const location = useLocation();
+  const { t } = useTranslation();
 
-  const pageTitle = getPageTitle(location.pathname);
+  const pageTitle = getPageTitle(location.pathname, t);
 
   return (
     <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white backdrop-blur-lg">

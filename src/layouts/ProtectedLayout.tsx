@@ -2,6 +2,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { ComponentType } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   Sidebar,
   SidebarContent,
@@ -258,42 +260,46 @@ class ManageMenuController {
   private readonly visibility: ManageMenuVisibility;
   private readonly items: ManageMenuItemConfig[];
 
-  constructor(visibility: ManageMenuVisibility, icons: SidebarIconRegistry) {
+  constructor(
+    visibility: ManageMenuVisibility,
+    icons: SidebarIconRegistry,
+    t: TFunction,
+  ) {
     this.visibility = visibility;
     this.items = [
       {
         key: "company",
-        label: "Aziende",
+        label: t("navigation.companies"),
         path: "/company",
         icon: icons.getCompanyIcon(),
       },
       {
         key: "fields",
-        label: "Campi",
+        label: t("navigation.fields"),
         path: "/fields",
         icon: icons.getFieldsIcon(),
       },
       {
         key: "productionUnit",
-        label: "Unità Produttive",
+        label: t("navigation.productionUnits"),
         path: "/production-unit",
         icon: icons.getProductionUnitIcon(),
       },
       {
         key: "products",
-        label: "Magazzino",
+        label: t("navigation.warehouse"),
         path: "/products",
         icon: icons.getProductsIcon(),
       },
       {
         key: "fieldNotes",
-        label: "Note di Campo",
+        label: t("navigation.fieldNotes"),
         path: "/field-notes",
         icon: icons.getFieldNotesIcon(),
       },
       {
         key: "operations",
-        label: "Qdca",
+        label: t("navigation.qdc"),
         path: "/operations",
         icon: icons.getOperationsIcon(),
       },
@@ -307,13 +313,17 @@ class ManageMenuController {
 
 class SidebarToggleController {
   private readonly isOpen: boolean;
+  private readonly t: TFunction;
 
-  constructor(isOpen: boolean) {
+  constructor(isOpen: boolean, t: TFunction) {
     this.isOpen = isOpen;
+    this.t = t;
   }
 
   public getAriaLabel(): string {
-    return this.isOpen ? "Collapse sidebar" : "Expand sidebar";
+    return this.isOpen
+      ? this.t("navigation.collapseSidebar")
+      : this.t("navigation.expandSidebar");
   }
 }
 
@@ -324,6 +334,8 @@ function MobileBottomBar({
   userRole,
   manageVisibility,
 }: MobileBottomBarProps) {
+  const { t } = useTranslation();
+
   if (!isMobile) return null;
 
   const labelActive = location.pathname.startsWith("/label");
@@ -373,7 +385,7 @@ function MobileBottomBar({
                     )}
                     size={20}
                   />
-                  <span className="mt-1">Aggiungi</span>
+                  <span className="mt-1">{t("navigation.add")}</span>
                 </Link>
               </li>
             )}
@@ -393,7 +405,7 @@ function MobileBottomBar({
                   )}
                   size={20}
                 />
-                <span className="mt-1">Chat</span>
+                <span className="mt-1">{t("navigation.chat")}</span>
               </Link>
             </li>
           )}
@@ -413,7 +425,7 @@ function MobileBottomBar({
                   )}
                   size={20}
                 />
-                <span className="mt-1">Etichette</span>
+                <span className="mt-1">{t("navigation.labels")}</span>
               </Link>
             </li>
           )}
@@ -439,6 +451,7 @@ function MobileManageMenu({
   isActive: boolean;
 }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <li key="manage" className="">
@@ -458,7 +471,7 @@ function MobileManageMenu({
               )}
               size={20}
             />
-            <span className="mt-1">Gestisci</span>
+            <span className="mt-1">{t("navigation.manage")}</span>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -466,42 +479,42 @@ function MobileManageMenu({
           align="center"
           className="min-w-[180px]"
         >
-          <DropdownMenuLabel>Gestisci</DropdownMenuLabel>
+          <DropdownMenuLabel>{t("navigation.manage")}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           {manageVisibility.jobs && (
             <DropdownMenuItem onClick={() => navigate("/job")}>
               <ClipboardCheck className="size-4 mr-2" size={16} />
-              Operazioni
+              {t("navigation.operations")}
             </DropdownMenuItem>
           )}
           {manageVisibility.company && (
             <DropdownMenuItem onClick={() => navigate("/company")}>
               <Building2 className="size-4 mr-2" size={16} />
-              Aziende
+              {t("navigation.companies")}
             </DropdownMenuItem>
           )}
           {manageVisibility.fields && (
             <DropdownMenuItem onClick={() => navigate("/fields")}>
               <Map className="size-4 mr-2" size={16} />
-              Campi
+              {t("navigation.fields")}
             </DropdownMenuItem>
           )}
           {manageVisibility.productionUnit && (
             <DropdownMenuItem onClick={() => navigate("/production-unit")}>
               <Sprout className="size-4 mr-2" size={16} />
-              Unità Produttive
+              {t("navigation.productionUnits")}
             </DropdownMenuItem>
           )}
           {manageVisibility.products && (
             <DropdownMenuItem onClick={() => navigate("/products")}>
               <Warehouse className="size-4 mr-2" size={16} />
-              Magazzino
+              {t("navigation.warehouse")}
             </DropdownMenuItem>
           )}
           {manageVisibility.fieldNotes && (
             <DropdownMenuItem onClick={() => navigate("/field-notes")}>
               <NotebookPen className="size-4 mr-2" />
-              Note di Campo
+              {t("navigation.fieldNotes")}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -513,6 +526,7 @@ function MobileManageMenu({
 function MobileAccountMenu() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   return (
     <li key="account" className="">
@@ -525,24 +539,24 @@ function MobileAccountMenu() {
             )}
           >
             <IoPersonCircleOutline className="size-5 text-gray-700/90" />
-            <span className="mt-1">Account</span>
+            <span className="mt-1">{t("navigation.account")}</span>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" align="center">
-          <DropdownMenuLabel>Il mio account</DropdownMenuLabel>
+          <DropdownMenuLabel>{t("navigation.myAccount")}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => navigate("/settings?tab=impostazioni")}
           >
-            <LuSettings className="size-4" /> Impostazioni
+            <LuSettings className="size-4" /> {t("navigation.settings")}
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => navigate("/settings?tab=integrazioni")}
           >
-            <Plug className="size-4" /> Integrazioni
+            <Plug className="size-4" /> {t("navigation.integrations")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate("/settings?tab=costi")}>
-            <Coins className="size-4" /> Costi
+            <Coins className="size-4" /> {t("navigation.costs")}
           </DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
@@ -571,7 +585,7 @@ function MobileAccountMenu() {
               }
             }}
           >
-            Logout
+            {t("common.logout")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -584,7 +598,8 @@ function SidebarToggleButton({
   onToggle,
   className,
 }: SidebarToggleButtonProps) {
-  const controller = new SidebarToggleController(isOpen);
+  const { t } = useTranslation();
+  const controller = new SidebarToggleController(isOpen, t);
 
   return (
     <button
@@ -636,6 +651,7 @@ const TOOLS_MENU_STATE_KEY = "tools-menu-open-state";
 export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const { data } = useCurrentUser();
   const { companies } = useCompanies();
@@ -738,8 +754,8 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   );
   const jobVisible = manageVisibility.jobs;
   const manageMenuController = useMemo(
-    () => new ManageMenuController(manageVisibility, sidebarIcons),
-    [manageVisibility],
+    () => new ManageMenuController(manageVisibility, sidebarIcons, t),
+    [manageVisibility, t],
   );
   const manageMenuItems = manageMenuController.getVisibleItems();
   const hasManageItems = manageMenuItems.length > 0;
@@ -788,7 +804,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       className="flex flex-1 items-center gap-2 h-10 rounded-xl bg-neutral-200/80 hover:bg-neutral-300/80 text-neutral-800 px-3"
                     >
                       <Plus className="size-5 shrink-0" />
-                      <span className="text-sm font-medium">Aggiungi</span>
+                      <span className="text-sm font-medium">
+                        {t("navigation.add")}
+                      </span>
                     </Link>
                     <SidebarToggleButton
                       isOpen={sidebarOpen}
@@ -817,7 +835,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     <SidebarMenuItem key="quick-create">
                       <SidebarMenuButton
                         asChild
-                        tooltip="Aggiungi"
+                        tooltip={t("navigation.add")}
                         size="lg"
                         className="p-0 w-10 h-10 rounded-xl bg-neutral-200/80 hover:bg-neutral-300/80 text-neutral-800 data-[active=false]:bg-neutral-200/80"
                       >
@@ -836,7 +854,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                     <SidebarMenuButton
                       asChild
                       isActive={dosageAgentChatActive}
-                      tooltip="Chat"
+                      tooltip={t("navigation.chat")}
                       size="lg"
                       className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                     >
@@ -864,12 +882,12 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       <SidebarMenuItem>
                         <CollapsibleTrigger asChild>
                           <SidebarMenuButton
-                            tooltip="Strumenti"
+                            tooltip={t("navigation.tools")}
                             size="lg"
                             className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                           >
                             <Layers className="size-5" size={20} />
-                            <span>Strumenti</span>
+                            <span>{t("navigation.tools")}</span>
                             <IoChevronDownOutline
                               className={cn(
                                 "ml-auto size-4 transition-transform",
@@ -885,7 +903,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 <SidebarMenuButton
                                   asChild
                                   isActive={labelActive}
-                                  tooltip="Etichette"
+                                  tooltip={t("navigation.labels")}
                                   size="lg"
                                   className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
                                 >
@@ -894,7 +912,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                     className="flex items-center gap-3"
                                   >
                                     <Tags className="size-5" size={20} />
-                                    <span>Etichette</span>
+                                    <span>{t("navigation.labels")}</span>
                                   </Link>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
@@ -904,7 +922,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 <SidebarMenuButton
                                   asChild
                                   isActive={jobActive}
-                                  tooltip="Operazioni"
+                                  tooltip={t("navigation.operations")}
                                   size="lg"
                                   className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
                                 >
@@ -916,7 +934,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                       className="size-5"
                                       size={20}
                                     />
-                                    <span>Operazioni</span>
+                                    <span>{t("navigation.operations")}</span>
                                   </Link>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
@@ -937,12 +955,12 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       <SidebarMenuItem>
                         <CollapsibleTrigger asChild>
                           <SidebarMenuButton
-                            tooltip="Gestisci"
+                            tooltip={t("navigation.manage")}
                             size="lg"
                             className="data-[active=true]:bg-neutral-900/5 py-3 px-3 text-[15px]"
                           >
                             <Settings2 className="size-5" size={20} />
-                            <span>Gestisci</span>
+                            <span>{t("navigation.manage")}</span>
                             <IoChevronDownOutline
                               className={cn(
                                 "ml-auto size-4 transition-transform",
@@ -958,7 +976,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 <SidebarMenuButton
                                   asChild
                                   isActive={companyActive}
-                                  tooltip="Aziende"
+                                  tooltip={t("navigation.companies")}
                                   size="lg"
                                   className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
                                 >
@@ -967,7 +985,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                     className="flex items-center gap-3"
                                   >
                                     <Building2 className="size-5" size={20} />
-                                    <span>Aziende</span>
+                                    <span>{t("navigation.companies")}</span>
                                   </Link>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
@@ -977,7 +995,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 <SidebarMenuButton
                                   asChild
                                   isActive={fieldsActive}
-                                  tooltip="Campi"
+                                  tooltip={t("navigation.fields")}
                                   size="lg"
                                   className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
                                 >
@@ -986,7 +1004,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                     className="flex items-center gap-3"
                                   >
                                     <Map className="size-5" size={20} />
-                                    <span>Campi</span>
+                                    <span>{t("navigation.fields")}</span>
                                   </Link>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
@@ -996,7 +1014,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 <SidebarMenuButton
                                   asChild
                                   isActive={productionUnitActive}
-                                  tooltip="Unità Produttive"
+                                  tooltip={t("navigation.productionUnits")}
                                   size="lg"
                                   className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
                                 >
@@ -1005,7 +1023,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                     className="flex items-center gap-3"
                                   >
                                     <Sprout className="size-5" size={20} />
-                                    <span>Unità Produttive</span>
+                                    <span>{t("navigation.productionUnits")}</span>
                                   </Link>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
@@ -1015,7 +1033,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 <SidebarMenuButton
                                   asChild
                                   isActive={productsActive}
-                                  tooltip="Magazzino"
+                                  tooltip={t("navigation.warehouse")}
                                   size="lg"
                                   className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
                                 >
@@ -1024,7 +1042,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                     className="flex items-center gap-3"
                                   >
                                     <Warehouse className="size-5" size={20} />
-                                    <span>Magazzino</span>
+                                    <span>{t("navigation.warehouse")}</span>
                                   </Link>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
@@ -1034,7 +1052,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 <SidebarMenuButton
                                   asChild
                                   isActive={fieldNotesActive}
-                                  tooltip="Note di Campo"
+                                  tooltip={t("navigation.fieldNotes")}
                                   size="lg"
                                   className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
                                 >
@@ -1043,7 +1061,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                     className="flex items-center gap-3"
                                   >
                                     <NotebookPen className="size-5" />
-                                    <span>Note di Campo</span>
+                                    <span>{t("navigation.fieldNotes")}</span>
                                   </Link>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
@@ -1053,7 +1071,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 <SidebarMenuButton
                                   asChild
                                   isActive={operationsActive}
-                                  tooltip="Qdca"
+                                  tooltip={t("navigation.qdc")}
                                   size="lg"
                                   className="data-[active=true]:bg-neutral-900/5 py-2.5 px-3 text-[14px]"
                                 >
@@ -1065,7 +1083,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                       className="size-5"
                                       size={20}
                                     />
-                                    <span>Qdca</span>
+                                    <span>{t("navigation.qdc")}</span>
                                   </Link>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
@@ -1086,7 +1104,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                         <DropdownMenuTrigger asChild>
                           <SidebarMenuButton
                             type="button"
-                            tooltip="Strumenti"
+                            tooltip={t("navigation.tools")}
                             size="lg"
                             className={cn(
                               "data-[state=open]:bg-neutral-900/5",
@@ -1105,20 +1123,22 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                           align="start"
                           className="min-w-[220px]"
                         >
-                          <DropdownMenuLabel>Strumenti</DropdownMenuLabel>
+                          <DropdownMenuLabel>
+                            {t("navigation.tools")}
+                          </DropdownMenuLabel>
                           <DropdownMenuSeparator />
                           {canViewMenuItem("label", userRole) && (
                             <DropdownMenuItem
                               onClick={() => navigate("/label")}
                             >
                               <Tags className="size-4 mr-2" size={16} />
-                              Etichette
+                              {t("navigation.labels")}
                             </DropdownMenuItem>
                           )}
                           {jobVisible && (
                             <DropdownMenuItem onClick={() => navigate("/job")}>
                               <CheckCircle2 className="size-4 mr-2" size={16} />
-                              Operazioni
+                              {t("navigation.operations")}
                             </DropdownMenuItem>
                           )}
                           {dosageAgentChatVisible && (
@@ -1129,7 +1149,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                                 className="size-4 mr-2"
                                 size={16}
                               />
-                              Chat
+                              {t("navigation.chat")}
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
@@ -1144,7 +1164,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                       <DropdownMenuTrigger asChild>
                         <SidebarMenuButton
                           type="button"
-                          tooltip="Gestisci"
+                          tooltip={t("navigation.manage")}
                           size="lg"
                           className="data-[state=open]:bg-neutral-900/5"
                         >
@@ -1156,7 +1176,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                         align="start"
                         className="min-w-[220px]"
                       >
-                        <DropdownMenuLabel>Gestisci</DropdownMenuLabel>
+                        <DropdownMenuLabel>
+                          {t("navigation.manage")}
+                        </DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         {manageMenuItems.map(
                           ({ key, label, icon: Icon, path }) => (
@@ -1204,22 +1226,24 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="right" align="start">
-                <DropdownMenuLabel>Il mio account</DropdownMenuLabel>
+                <DropdownMenuLabel>
+                  {t("navigation.myAccount")}
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => navigate("/settings?tab=impostazioni")}
                 >
-                  <LuSettings /> Impostazioni
+                  <LuSettings /> {t("navigation.settings")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => navigate("/settings?tab=integrazioni")}
                 >
-                  <Plug className="size-4" /> Integrazioni
+                  <Plug className="size-4" /> {t("navigation.integrations")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => navigate("/settings?tab=costi")}
                 >
-                  <Coins className="size-4" /> Costi
+                  <Coins className="size-4" /> {t("navigation.costs")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
@@ -1248,7 +1272,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
                   }}
                   className="cursor-pointer  text-red-600"
                 >
-                  <LuLogOut /> Logout
+                  <LuLogOut /> {t("common.logout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

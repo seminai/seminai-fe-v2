@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useSearchParams } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useTokenCosts } from "@/hooks/useTokenCosts";
 import { Spinner } from "@/components/ui/spinner";
@@ -99,54 +107,81 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import {
+  getIntlLocale,
+  LANGUAGE_OPTIONS,
+  normalizeLanguage,
+  type SupportedLanguage,
+} from "@/i18n";
 
-const currencyFormatter = new Intl.NumberFormat("it-IT", {
-  style: "currency",
-  currency: "EUR",
-  minimumFractionDigits: 4,
-  maximumFractionDigits: 6,
-});
+type FormatterBundle = {
+  currency: Intl.NumberFormat;
+  integer: Intl.NumberFormat;
+  percentage: Intl.NumberFormat;
+  dateTime: Intl.DateTimeFormat;
+};
 
-const integerFormatter = new Intl.NumberFormat("it-IT", {
-  maximumFractionDigits: 0,
-});
+const formatterCache = new Map<string, FormatterBundle>();
 
-const percentageFormatter = new Intl.NumberFormat("it-IT", {
-  style: "percent",
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 1,
-});
+function getFormatters(language: string): FormatterBundle {
+  const locale = getIntlLocale(language);
+  const cached = formatterCache.get(locale);
+  if (cached) {
+    return cached;
+  }
 
-const dateTimeFormatter = new Intl.DateTimeFormat("it-IT", {
-  dateStyle: "short",
-  timeStyle: "short",
-});
+  const formatters = {
+    currency: new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: 4,
+      maximumFractionDigits: 6,
+    }),
+    integer: new Intl.NumberFormat(locale, {
+      maximumFractionDigits: 0,
+    }),
+    percentage: new Intl.NumberFormat(locale, {
+      style: "percent",
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }),
+    dateTime: new Intl.DateTimeFormat(locale, {
+      dateStyle: "short",
+      timeStyle: "short",
+    }),
+  };
 
-function formatCurrency(value: number): string {
-  return currencyFormatter.format(value);
+  formatterCache.set(locale, formatters);
+  return formatters;
 }
 
-function formatInteger(value: number): string {
-  return integerFormatter.format(value);
+function formatCurrency(value: number, language: string): string {
+  return getFormatters(language).currency.format(value);
 }
 
-function formatPercentage(value: number): string {
-  return percentageFormatter.format(value);
+function formatInteger(value: number, language: string): string {
+  return getFormatters(language).integer.format(value);
 }
 
-function formatDateTime(value: string): string {
+function formatPercentage(value: number, language: string): string {
+  return getFormatters(language).percentage.format(value);
+}
+
+function formatDateTime(value: string, language: string): string {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
     return value;
   }
-  return dateTimeFormatter.format(parsed);
+  return getFormatters(language).dateTime.format(parsed);
 }
 
 class TokenUsageViewModel {
   private readonly usage: TokenUsage;
+  private readonly language: string;
 
-  constructor(usage: TokenUsage) {
+  constructor(usage: TokenUsage, language: string) {
     this.usage = usage;
+    this.language = language;
   }
 
   public get id(): string {
@@ -162,31 +197,31 @@ class TokenUsageViewModel {
   }
 
   public get promptTokens(): string {
-    return formatInteger(this.usage.promptTokens);
+    return formatInteger(this.usage.promptTokens, this.language);
   }
 
   public get completionTokens(): string {
-    return formatInteger(this.usage.completionTokens);
+    return formatInteger(this.usage.completionTokens, this.language);
   }
 
   public get totalTokens(): string {
-    return formatInteger(this.usage.totalTokens);
+    return formatInteger(this.usage.totalTokens, this.language);
   }
 
   public get cost(): string {
-    return formatCurrency(this.usage.cost);
+    return formatCurrency(this.usage.cost, this.language);
   }
 
   public get clientCost(): string {
-    return formatCurrency(this.usage.costClient);
+    return formatCurrency(this.usage.costClient, this.language);
   }
 
   public get margin(): string {
-    return formatPercentage(this.usage.seminaiMargin);
+    return formatPercentage(this.usage.seminaiMargin, this.language);
   }
 
   public get createdAt(): string {
-    return formatDateTime(this.usage.createdAt);
+    return formatDateTime(this.usage.createdAt, this.language);
   }
 
   /** Date key (YYYY-MM-DD) for filtering and grouping */
@@ -294,6 +329,8 @@ const DEFAULT_FILTERS: TokenUsageFilters = {
 };
 
 export default function Settings() {
+  const { t, i18n } = useTranslation();
+  const currentLanguage = normalizeLanguage(i18n.language);
   const [searchParams] = useSearchParams();
   const activeTab = (searchParams.get("tab") ?? "impostazioni") as
     | "impostazioni"
@@ -352,8 +389,8 @@ export default function Settings() {
     editingIfarming && ifarmingValue !== ifarmingOriginalValue;
 
   const usageRows = React.useMemo(() => {
-    return usages.map((usage) => new TokenUsageViewModel(usage));
-  }, [usages]);
+    return usages.map((usage) => new TokenUsageViewModel(usage, currentLanguage));
+  }, [usages, currentLanguage]);
 
   const [filters, setFilters] =
     React.useState<TokenUsageFilters>(DEFAULT_FILTERS);
@@ -401,24 +438,33 @@ export default function Settings() {
       usageRows.length > 0
         ? [
             {
-              label: "Costo totale (cliente)",
-              value: formatCurrency(filteredTotals.totalCostClient),
+              label: t("settings.costs.summary.totalClientCost"),
+              value: formatCurrency(
+                filteredTotals.totalCostClient,
+                currentLanguage,
+              ),
             },
             {
-              label: "Token prompt",
-              value: formatInteger(filteredTotals.totalPromptTokens),
+              label: t("settings.costs.summary.promptTokens"),
+              value: formatInteger(
+                filteredTotals.totalPromptTokens,
+                currentLanguage,
+              ),
             },
             {
-              label: "Token completion",
-              value: formatInteger(filteredTotals.totalCompletionTokens),
+              label: t("settings.costs.summary.completionTokens"),
+              value: formatInteger(
+                filteredTotals.totalCompletionTokens,
+                currentLanguage,
+              ),
             },
             {
-              label: "Token totali",
-              value: formatInteger(filteredTotals.totalTokens),
+              label: t("settings.costs.summary.totalTokens"),
+              value: formatInteger(filteredTotals.totalTokens, currentLanguage),
             },
           ]
         : [],
-    [usageRows.length, filteredTotals],
+    [usageRows.length, filteredTotals, t, currentLanguage],
   );
 
   const modelsInChart = React.useMemo(
@@ -464,11 +510,11 @@ export default function Settings() {
   const consumptionChartConfig: ChartConfig = React.useMemo(() => {
     const base: ChartConfig = {
       costClient: {
-        label: "Costo cliente (€)",
+        label: t("settings.costs.chartLabels.clientCost"),
         color: "var(--chart-1)",
       },
       totalTokens: {
-        label: "Token totali",
+        label: t("settings.costs.chartLabels.totalTokens"),
         color: "var(--chart-2)",
       },
     };
@@ -480,7 +526,7 @@ export default function Settings() {
       };
     });
     return base;
-  }, [modelsInChart]);
+  }, [modelsInChart, t]);
 
   React.useEffect(() => {
     if (userData) {
@@ -494,10 +540,11 @@ export default function Settings() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["users", "me"] });
-      toast.success("Settings saved successfully");
+      toast.success(t("settings.toast.saved"));
     },
     onError: (e: unknown) => {
-      const message = e instanceof Error ? e.message : "Update failed";
+      const message =
+        e instanceof Error ? e.message : t("settings.toast.updateFailed");
       toast.error(message);
     },
   });
@@ -508,10 +555,11 @@ export default function Settings() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["users", "me"] });
-      toast.success("Foto profilo aggiornata");
+      toast.success(t("settings.toast.profilePictureUpdated"));
     },
     onError: (e: unknown) => {
-      const message = e instanceof Error ? e.message : "Upload failed";
+      const message =
+        e instanceof Error ? e.message : t("settings.toast.uploadFailed");
       toast.error(message);
     },
   });
@@ -528,12 +576,14 @@ export default function Settings() {
         return await updatePasswordWithBearer(payload);
       },
       onSuccess: () => {
-        toast.success("Password aggiornata");
+        toast.success(t("settings.toast.passwordUpdated"));
         setPasswords({ oldPassword: "", newPassword: "", confirmPassword: "" });
       },
       onError: (e: unknown) => {
         const message =
-          e instanceof Error ? e.message : "Password update failed";
+          e instanceof Error
+            ? e.message
+            : t("settings.toast.passwordUpdateFailed");
         toast.error(message);
       },
     });
@@ -548,7 +598,7 @@ export default function Settings() {
       },
       onSuccess: async (_, variables) => {
         await queryClient.invalidateQueries({ queryKey: ["users", "me"] });
-        toast.success("Credenziali API aggiornate");
+        toast.success(t("settings.toast.apiCredentialsUpdated"));
         if (variables.qdcApiKey !== undefined) {
           setQdcOriginalValue(variables.qdcApiKey ?? "");
           setEditingQdc(false);
@@ -559,7 +609,8 @@ export default function Settings() {
         }
       },
       onError: (e: unknown) => {
-        const message = e instanceof Error ? e.message : "Update failed";
+        const message =
+          e instanceof Error ? e.message : t("settings.toast.updateFailed");
         toast.error(message);
       },
     });
@@ -580,11 +631,11 @@ export default function Settings() {
       onSuccess: (response) => {
         setAllowedNumbers(response.data.allowedNumbers);
         setNewAllowlistNumber("");
-        toast.success("Numero aggiunto alla lista");
+        toast.success(t("settings.toast.numberAdded"));
       },
       onError: (e: unknown) => {
         const message =
-          e instanceof Error ? e.message : "Errore durante l'aggiunta del numero";
+          e instanceof Error ? e.message : t("settings.toast.addNumberError");
         toast.error(message);
       },
     });
@@ -596,11 +647,13 @@ export default function Settings() {
       },
       onSuccess: (response) => {
         setAllowedNumbers(response.data.allowedNumbers);
-        toast.success("Numero rimosso dalla lista");
+        toast.success(t("settings.toast.numberRemoved"));
       },
       onError: (e: unknown) => {
         const message =
-          e instanceof Error ? e.message : "Errore durante la rimozione del numero";
+          e instanceof Error
+            ? e.message
+            : t("settings.toast.removeNumberError");
         toast.error(message);
       },
     });
@@ -626,7 +679,7 @@ export default function Settings() {
         return await clearCacheWithBearer();
       },
       onSuccess: () => {
-        toast.success("Cache eliminata con successo");
+        toast.success(t("settings.toast.cacheCleared"));
         setClearCacheDialogOpen(false);
         setClearCacheConfirmText("");
       },
@@ -634,13 +687,14 @@ export default function Settings() {
         const message =
           e instanceof Error
             ? e.message
-            : "Errore durante l'eliminazione della cache";
+            : t("settings.toast.cacheClearError");
         toast.error(message);
       },
     });
 
   const isClearCacheConfirmValid =
-    clearCacheConfirmText.trim().toLowerCase() === "elimina";
+    clearCacheConfirmText.trim().toLowerCase() ===
+    t("settings.cache.confirmWord").toLowerCase();
 
   const stopWhatsappStatusPolling = React.useCallback(() => {
     if (whatsappStatusPollingIntervalRef.current) {
@@ -847,12 +901,14 @@ export default function Settings() {
         setWhatsappQrCode(response.data.qrCodeBase64);
       }
       startWhatsappStatusPolling();
-      toast.success("Setup WhatsApp completato. Scansiona il QR code.");
+      toast.success(t("settings.toast.whatsappSetupComplete"));
     },
     onError: (e: unknown) => {
       setIsWhatsappConnecting(false);
       const message =
-        e instanceof Error ? e.message : "Errore durante il setup WhatsApp";
+        e instanceof Error
+          ? e.message
+          : t("settings.toast.whatsappSetupError");
       toast.error(message);
     },
   });
@@ -878,15 +934,15 @@ export default function Settings() {
       await queryClient.invalidateQueries({ queryKey: ["users", "me"] });
       toast.success(
         deleteInstance
-          ? "Istanza WhatsApp eliminata con successo"
-          : "WhatsApp disconnesso con successo",
+          ? t("settings.toast.whatsappInstanceDeleted")
+          : t("settings.toast.whatsappDisconnected"),
       );
     },
     onError: (e: unknown) => {
       const message =
         e instanceof Error
           ? e.message
-          : "Errore durante la disconnessione WhatsApp";
+          : t("settings.toast.whatsappDisconnectError");
       toast.error(message);
     },
   });
@@ -894,10 +950,12 @@ export default function Settings() {
   if (isLoading) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-semibold mb-4">Impostazioni</h1>
+        <h1 className="text-2xl font-semibold mb-4">
+          {t("settings.title")}
+        </h1>
         <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Spinner size={20} ariaLabel="Caricamento dati utente" />
-          <span>Caricamento dati utente…</span>
+          <Spinner size={20} ariaLabel={t("settings.loadingUser")} />
+          <span>{t("settings.loadingUser")}</span>
         </div>
       </div>
     );
@@ -906,9 +964,11 @@ export default function Settings() {
   if (error || !data) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-semibold mb-4">Impostazioni</h1>
+        <h1 className="text-2xl font-semibold mb-4">
+          {t("settings.title")}
+        </h1>
         <div className="text-sm text-red-600">
-          Impossibile caricare i dati utente.
+          {t("settings.loadUserError")}
         </div>
       </div>
     );
@@ -923,10 +983,10 @@ export default function Settings() {
 
   const sectionTitle =
     activeTab === "integrazioni"
-      ? "Integrazioni"
+      ? t("settings.sections.integrations")
       : activeTab === "costi"
-        ? "Costi"
-        : "Impostazioni";
+        ? t("settings.sections.costs")
+        : t("settings.sections.settings");
 
   return (
     <div className="p-6">
@@ -941,7 +1001,7 @@ export default function Settings() {
             }}
             disabled={!isDirty || isSaving}
           >
-            {isSaving ? "Salvataggio…" : "Salva"}
+            {isSaving ? t("common.saving") : t("common.save")}
           </Button>
         )}
       </div>
@@ -964,9 +1024,13 @@ export default function Settings() {
                 <div className="text-gray-600 text-sm">{current?.companyName}</div>
                 <div className="mt-2 flex flex-col gap-1.5 w-full max-w-xs">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Crediti</span>
+                    <span className="text-gray-600">
+                      {t("settings.profile.credits")}
+                    </span>
                     <span className="font-medium tabular-nums">
-                      {user.credits} disponibili
+                      {t("settings.profile.creditsAvailable", {
+                        count: user.credits,
+                      })}
                     </span>
                   </div>
                   <Progress
@@ -981,7 +1045,7 @@ export default function Settings() {
               <div>
                 <InputFile
                   id="profilePictureUpload"
-                  label="Foto profilo"
+                  label={t("settings.profile.profilePicture")}
                   accept="image/*"
                   disabled={isUploading}
                   onChange={async (file) => {
@@ -992,12 +1056,51 @@ export default function Settings() {
               </div>
             </Card>
 
+            <Card className="p-4 shadow-none">
+              <div className="grid gap-3 md:grid-cols-[1fr_220px] md:items-center">
+                <div>
+                  <h2 className="font-medium">
+                    {t("language.settingsTitle")}
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {t("language.settingsDescription")}
+                  </p>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="settings-language">
+                    {t("language.label")}
+                  </Label>
+                  <Select
+                    value={currentLanguage}
+                    onValueChange={(value) => {
+                      void i18n.changeLanguage(value as SupportedLanguage);
+                    }}
+                  >
+                    <SelectTrigger id="settings-language">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LANGUAGE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {t(option.labelKey)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </Card>
+
             <div className="grid md:grid-cols-2 gap-4">
               <Card className="p-4 shadow-none">
-                <h2 className="font-medium mb-4">Informazioni personali</h2>
+                <h2 className="font-medium mb-4">
+                  {t("settings.profile.personalInfo")}
+                </h2>
                 <div className="space-y-3">
                   <div className="grid gap-1.5">
-                    <Label htmlFor="name">Nome</Label>
+                    <Label htmlFor="name">
+                      {t("settings.profile.name")}
+                    </Label>
                     <Input
                       id="name"
                       value={current?.name ?? ""}
@@ -1011,7 +1114,9 @@ export default function Settings() {
                     />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label htmlFor="surname">Cognome</Label>
+                    <Label htmlFor="surname">
+                      {t("settings.profile.surname")}
+                    </Label>
                     <Input
                       id="surname"
                       value={current?.surname ?? ""}
@@ -1025,7 +1130,9 @@ export default function Settings() {
                     />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label htmlFor="fiscalCode">Codice fiscale</Label>
+                    <Label htmlFor="fiscalCode">
+                      {t("settings.profile.fiscalCode")}
+                    </Label>
                     <Input
                       id="fiscalCode"
                       value={current?.fiscalCode ?? ""}
@@ -1039,7 +1146,9 @@ export default function Settings() {
                     />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label htmlFor="phoneNumber">Telefono</Label>
+                    <Label htmlFor="phoneNumber">
+                      {t("settings.profile.phone")}
+                    </Label>
                     <Input
                       id="phoneNumber"
                       value={current?.phoneNumber ?? ""}
@@ -1055,10 +1164,14 @@ export default function Settings() {
                 </div>
               </Card>
               <Card className="p-4 shadow-none">
-                <h2 className="font-medium mb-4">Dati aziendali</h2>
+                <h2 className="font-medium mb-4">
+                  {t("settings.profile.companyData")}
+                </h2>
                 <div className="space-y-3">
                   <div className="grid gap-1.5">
-                    <Label htmlFor="companyName">Ragione sociale</Label>
+                    <Label htmlFor="companyName">
+                      {t("settings.profile.companyName")}
+                    </Label>
                     <Input
                       id="companyName"
                       value={current?.companyName ?? ""}
@@ -1072,7 +1185,9 @@ export default function Settings() {
                     />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label htmlFor="vatNumber">P. IVA</Label>
+                    <Label htmlFor="vatNumber">
+                      {t("settings.profile.vatNumber")}
+                    </Label>
                     <Input
                       id="vatNumber"
                       value={current?.vatNumber ?? ""}
@@ -1086,7 +1201,9 @@ export default function Settings() {
                     />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label htmlFor="address">Indirizzo</Label>
+                    <Label htmlFor="address">
+                      {t("settings.profile.address")}
+                    </Label>
                     <Input
                       id="address"
                       value={current?.address ?? ""}
@@ -1104,10 +1221,14 @@ export default function Settings() {
             </div>
 
             <Card className="p-4 shadow-none">
-              <h2 className="font-medium mb-4">Cambia password</h2>
+              <h2 className="font-medium mb-4">
+                {t("settings.profile.changePassword")}
+              </h2>
               <div className="grid md:grid-cols-3 gap-3">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="oldPassword">Password attuale</Label>
+                  <Label htmlFor="oldPassword">
+                    {t("settings.profile.currentPassword")}
+                  </Label>
                   <Input
                     id="oldPassword"
                     type="password"
@@ -1118,7 +1239,9 @@ export default function Settings() {
                   />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="newPassword">Nuova password</Label>
+                  <Label htmlFor="newPassword">
+                    {t("settings.profile.newPassword")}
+                  </Label>
                   <Input
                     id="newPassword"
                     type="password"
@@ -1129,7 +1252,9 @@ export default function Settings() {
                   />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="confirmPassword">Conferma password</Label>
+                  <Label htmlFor="confirmPassword">
+                    {t("settings.profile.confirmPassword")}
+                  </Label>
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -1153,13 +1278,15 @@ export default function Settings() {
                   }
                   onClick={async () => {
                     if (passwords.newPassword !== passwords.confirmPassword) {
-                      toast.error("Le password non coincidono");
+                      toast.error(t("settings.toast.passwordMismatch"));
                       return;
                     }
                     await changePasswordAsync(passwords);
                   }}
                 >
-                  {isChangingPassword ? "Aggiornamento…" : "Cambia password"}
+                  {isChangingPassword
+                    ? t("settings.profile.updating")
+                    : t("settings.profile.changePassword")}
                 </Button>
               </div>
             </Card>
@@ -1170,13 +1297,14 @@ export default function Settings() {
                   <AccordionTrigger className="hover:no-underline py-2">
                     <div className="flex items-center gap-2">
                       <HardDrive className="h-4 w-4 text-gray-600" />
-                      <span className="font-medium">Gestione cache</span>
+                      <span className="font-medium">
+                        {t("settings.cache.title")}
+                      </span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
                     <p className="text-sm text-gray-600 mb-4">
-                      Elimina la cache locale associata al tuo account. Questa
-                      azione è irreversibile.
+                      {t("settings.cache.description")}
                     </p>
                     <Button
                       variant="destructive"
@@ -1184,7 +1312,7 @@ export default function Settings() {
                       disabled={isClearingCache}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
-                      Pulisci cache
+                      {t("settings.cache.clean")}
                     </Button>
                   </AccordionContent>
                 </AccordionItem>
@@ -1201,10 +1329,12 @@ export default function Settings() {
                 <AccordionTrigger className="px-4 hover:no-underline">
                   <div className="flex items-center gap-3">
                     <MessageCircle className="h-5 w-5 text-green-600" />
-                    <span className="font-medium">WhatsApp</span>
+                    <span className="font-medium">
+                      {t("settings.integrations.whatsapp.title")}
+                    </span>
                     {whatsappStatus?.connected && (
                       <Badge variant="outline" className="text-green-600 border-green-200 ml-auto">
-                        Connesso
+                        {t("common.connected")}
                       </Badge>
                     )}
                   </div>
@@ -1216,15 +1346,13 @@ export default function Settings() {
                         <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
                           <p className="text-sm font-medium text-yellow-900 mb-1">
-                            Importante: Numero WhatsApp dedicato richiesto
+                            {t("settings.integrations.whatsapp.importantTitle")}
                           </p>
                           <p className="text-sm text-yellow-800">
-                            Il numero WhatsApp utilizzato per questa integrazione{" "}
-                            <strong>DEVE essere diverso</strong> dal tuo numero
-                            personale. Se colleghi il tuo numero personale,
-                            l'integrazione smetterà di funzionare correttamente. Ti
-                            consigliamo di utilizzare un numero WhatsApp Business
-                            dedicato per la tua azienda agricola.
+                            <Trans
+                              i18nKey="settings.integrations.whatsapp.importantBody"
+                              components={{ strong: <strong /> }}
+                            />
                           </p>
                         </div>
                       </div>
@@ -1232,8 +1360,13 @@ export default function Settings() {
 
                     {isLoadingWhatsappStatus ? (
                       <div className="flex items-center gap-2 text-sm text-gray-500 py-4">
-                        <Spinner size={16} ariaLabel="Caricamento stato WhatsApp" />
-                        <span>Caricamento stato connessione…</span>
+                        <Spinner
+                          size={16}
+                          ariaLabel={t("settings.integrations.whatsapp.loadingStatus")}
+                        />
+                        <span>
+                          {t("settings.integrations.whatsapp.loadingStatus")}
+                        </span>
                       </div>
                     ) : (
                       <>
@@ -1244,17 +1377,23 @@ export default function Settings() {
                                 <CheckCircle2 className="h-5 w-5 text-green-600" />
                                 <div>
                                   <p className="text-sm font-medium text-gray-900">
-                                    WhatsApp connesso
+                                    {t("settings.integrations.whatsapp.connectedTitle")}
                                   </p>
                                   {whatsappStatus.phoneNumber && (
                                     <p className="text-xs text-gray-600">
-                                      Numero: {whatsappStatus.phoneNumber}
+                                      {t("settings.integrations.whatsapp.phoneNumber", {
+                                        phoneNumber: whatsappStatus.phoneNumber,
+                                      })}
                                     </p>
                                   )}
                                   {whatsappStatus.lastSync && (
                                     <p className="text-xs text-gray-600">
-                                      Ultima sincronizzazione:{" "}
-                                      {formatDateTime(whatsappStatus.lastSync)}
+                                      {t("settings.integrations.whatsapp.lastSync", {
+                                        date: formatDateTime(
+                                          whatsappStatus.lastSync,
+                                          currentLanguage,
+                                        ),
+                                      })}
                                     </p>
                                   )}
                                 </div>
@@ -1265,11 +1404,10 @@ export default function Settings() {
                                 <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
                                 <div>
                                   <p className="text-sm font-medium text-gray-900">
-                                    In attesa di connessione...
+                                    {t("settings.integrations.whatsapp.waitingTitle")}
                                   </p>
                                   <p className="text-xs text-gray-600">
-                                    Scansiona il QR code con WhatsApp per completare la
-                                    connessione
+                                    {t("settings.integrations.whatsapp.waitingBody")}
                                   </p>
                                 </div>
                               </>
@@ -1278,11 +1416,10 @@ export default function Settings() {
                                 <XCircle className="h-5 w-5 text-gray-400" />
                                 <div>
                                   <p className="text-sm font-medium text-gray-900">
-                                    WhatsApp non connesso
+                                    {t("settings.integrations.whatsapp.notConnectedTitle")}
                                   </p>
                                   <p className="text-xs text-gray-600">
-                                    Collega WhatsApp per inviare note di campo tramite
-                                    messaggi
+                                    {t("settings.integrations.whatsapp.notConnectedBody")}
                                   </p>
                                 </div>
                               </>
@@ -1296,7 +1433,7 @@ export default function Settings() {
                               onClick={() => {
                                 loadWhatsappStatus();
                               }}
-                              title="Ricarica stato"
+                              title={t("settings.integrations.whatsapp.reloadStatus")}
                             >
                               <RefreshCw
                                 className={`h-4 w-4 ${
@@ -1310,7 +1447,7 @@ export default function Settings() {
                                 size="sm"
                                 onClick={() => setWhatsappDisconnectDialogOpen(true)}
                               >
-                                Disconnetti
+                                {t("settings.integrations.whatsapp.disconnect")}
                               </Button>
                             ) : (
                               <Button
@@ -1328,10 +1465,10 @@ export default function Settings() {
                                 {isSettingUpWhatsapp ? (
                                   <>
                                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    Setup...
+                                    {t("settings.integrations.whatsapp.setup")}
                                   </>
                                 ) : (
-                                  "Collega WhatsApp"
+                                  t("settings.integrations.whatsapp.connect")
                                 )}
                               </Button>
                             )}
@@ -1342,24 +1479,26 @@ export default function Settings() {
                           whatsappStatus?.connectionStatus !== "connected" && (
                             <div className="p-4 rounded-lg border border-agri-green-100 bg-white">
                               <p className="text-sm font-medium text-gray-900 mb-3">
-                                Scansiona questo QR code con WhatsApp:
+                                {t("settings.integrations.whatsapp.scanTitle")}
                               </p>
                               {whatsappQrCode && (
                                 <div className="flex justify-center">
                                   <img
                                     src={whatsappQrCode}
-                                    alt="WhatsApp QR Code"
+                                    alt={t("settings.integrations.whatsapp.qrAlt")}
                                     className="w-64 h-64 border border-gray-200 rounded-lg"
                                   />
                                 </div>
                               )}
                               <p className="text-xs text-gray-600 mt-3 text-center">
-                                1. Apri WhatsApp sul telefono
-                                <br />
-                                2. Vai in Impostazioni → Dispositivi collegati → Collega
-                                un dispositivo
-                                <br />
-                                3. Scansiona questo QR code
+                                {t("settings.integrations.whatsapp.instructions")
+                                  .split("\n")
+                                  .map((line) => (
+                                    <React.Fragment key={line}>
+                                      {line}
+                                      <br />
+                                    </React.Fragment>
+                                  ))}
                               </p>
                               <div className="mt-3 flex justify-center">
                                 <Button
@@ -1371,17 +1510,17 @@ export default function Settings() {
                                       const qrResponse =
                                         await getWhatsAppQrCodeWithBearer();
                                       setWhatsappQrCode(qrResponse.data.qrCodeBase64);
-                                      toast.success("QR code aggiornato");
+                                      toast.success(t("settings.toast.qrUpdated"));
                                     } catch (error: unknown) {
                                       console.error(error);
                                       toast.error(
-                                        "Errore durante il caricamento del QR code",
+                                        t("settings.toast.qrLoadError"),
                                       );
                                     }
                                   }}
                                 >
                                   <RefreshCw className="h-4 w-4 mr-2" />
-                                  Aggiorna QR code
+                                  {t("settings.integrations.whatsapp.refreshQr")}
                                 </Button>
                               </div>
                             </div>
@@ -1392,23 +1531,26 @@ export default function Settings() {
                           <div className="flex items-center gap-2 mb-3">
                             <Phone className="h-4 w-4 text-gray-600" />
                             <h3 className="text-sm font-medium text-gray-900">
-                              Numeri autorizzati a inviare messaggi
+                              {t("settings.integrations.whatsapp.allowlistTitle")}
                             </h3>
                           </div>
 
                           <div className="flex items-start gap-2 mb-3 rounded-md border border-blue-200 bg-blue-50 p-3">
                             <Info className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
                             <p className="text-xs text-blue-800">
-                              Se la lista è vuota, tutti i numeri possono inviare messaggi.
-                              Aggiungendo uno o più numeri, solo quelli elencati saranno
-                              autorizzati.
+                              {t("settings.integrations.whatsapp.allowlistInfo")}
                             </p>
                           </div>
 
                           {isLoadingAllowlist ? (
                             <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
-                              <Spinner size={16} ariaLabel="Caricamento lista numeri" />
-                              <span>Caricamento…</span>
+                              <Spinner
+                                size={16}
+                                ariaLabel={t("settings.integrations.whatsapp.loadingAllowlist")}
+                              />
+                              <span>
+                                {t("settings.integrations.whatsapp.loadingAllowlist")}
+                              </span>
                             </div>
                           ) : (
                             <>
@@ -1446,7 +1588,7 @@ export default function Settings() {
                                   ) : (
                                     <>
                                       <Plus className="h-4 w-4 mr-1" />
-                                      Aggiungi
+                                      {t("common.add")}
                                     </>
                                   )}
                                 </Button>
@@ -1454,7 +1596,7 @@ export default function Settings() {
 
                               {allowedNumbers.length === 0 ? (
                                 <p className="text-xs text-gray-500 italic">
-                                  Nessun numero in lista — tutti i numeri sono ammessi.
+                                  {t("settings.integrations.whatsapp.emptyAllowlist")}
                                 </p>
                               ) : (
                                 <ul className="space-y-1.5">
@@ -1495,10 +1637,12 @@ export default function Settings() {
                 <AccordionTrigger className="px-4 hover:no-underline">
                   <div className="flex items-center gap-3">
                     <Send className="h-5 w-5 text-sky-500" />
-                    <span className="font-medium">Telegram</span>
+                    <span className="font-medium">
+                      {t("settings.integrations.telegram.title")}
+                    </span>
                     {telegramEnabled && (
                       <Badge variant="outline" className="text-sky-600 border-sky-200 ml-auto">
-                        Attiva
+                        {t("common.active")}
                       </Badge>
                     )}
                   </div>
@@ -1518,19 +1662,19 @@ export default function Settings() {
                               setTelegramEnabled(checked === true)
                             }
                           />
-                          Attiva integrazione Telegram
+                          {t("settings.integrations.telegram.enable")}
                         </Label>
                       </div>
                     </div>
                     {telegramEnabled && (
                       <div className="p-4 rounded-lg border border-agri-green-100 bg-white">
                         <p className="text-sm font-medium text-gray-900 mb-3">
-                          Scansiona il QR code per collegare l’agente Telegram:
+                          {t("settings.integrations.telegram.scanTitle")}
                         </p>
                         <div className="flex flex-col items-center">
                           <img
                             src="/integration/telegram_qrcode.png"
-                            alt="QR code agente Telegram"
+                            alt={t("settings.integrations.telegram.qrAlt")}
                             className="w-56 h-auto border border-gray-200 rounded-lg"
                           />
                           <p className="text-sm text-gray-600 mt-3 font-mono">
@@ -1538,8 +1682,7 @@ export default function Settings() {
                           </p>
                         </div>
                         <p className="text-xs text-gray-600 mt-3 text-center">
-                          Apri Telegram, scansiona il codice e avvia una chat con
-                          il bot per usare l’agente da messaggio.
+                          {t("settings.integrations.telegram.description")}
                         </p>
                       </div>
                     )}
@@ -1555,7 +1698,7 @@ export default function Settings() {
                     <span className="font-medium">QDC API Key</span>
                     {qdcApiKey && (
                       <Badge variant="outline" className="text-green-600 border-green-200 ml-auto">
-                        Configurata
+                        {t("common.configured")}
                       </Badge>
                     )}
                   </div>
@@ -1568,7 +1711,9 @@ export default function Settings() {
                         id="qdcApiKey"
                         type="password"
                         placeholder={
-                          qdcApiKey === null ? "Inserisci credenziali" : undefined
+                          qdcApiKey === null
+                            ? t("settings.integrations.api.insertCredentials")
+                            : undefined
                         }
                         value={editingQdc ? qdcValue : "••••••••••••••••"}
                         readOnly={!editingQdc}
@@ -1607,7 +1752,7 @@ export default function Settings() {
                               }
                             }}
                           >
-                            Annulla
+                            {t("common.cancel")}
                           </Button>
                           <Button
                             type="button"
@@ -1617,7 +1762,9 @@ export default function Settings() {
                               await saveApiKeysAsync({ qdcApiKey: qdcValue || null });
                             }}
                           >
-                            {isSavingApiKeys ? "Salvataggio…" : "Salva"}
+                            {isSavingApiKeys
+                              ? t("common.saving")
+                              : t("common.save")}
                           </Button>
                         </div>
                       )}
@@ -1634,7 +1781,7 @@ export default function Settings() {
                     <span className="font-medium">iFarming API Key</span>
                     {ifarmingApiKey && (
                       <Badge variant="outline" className="text-green-600 border-green-200 ml-auto">
-                        Configurata
+                        {t("common.configured")}
                       </Badge>
                     )}
                   </div>
@@ -1648,7 +1795,7 @@ export default function Settings() {
                         type="password"
                         placeholder={
                           ifarmingApiKey === null
-                            ? "Inserisci credenziali"
+                            ? t("settings.integrations.api.insertCredentials")
                             : undefined
                         }
                         value={editingIfarming ? ifarmingValue : "••••••••••••••••"}
@@ -1691,7 +1838,7 @@ export default function Settings() {
                               }
                             }}
                           >
-                            Annulla
+                            {t("common.cancel")}
                           </Button>
                           <Button
                             type="button"
@@ -1703,7 +1850,9 @@ export default function Settings() {
                               });
                             }}
                           >
-                            {isSavingApiKeys ? "Salvataggio…" : "Salva"}
+                            {isSavingApiKeys
+                              ? t("common.saving")
+                              : t("common.save")}
                           </Button>
                         </div>
                       )}
@@ -1720,22 +1869,25 @@ export default function Settings() {
             <Card className="p-4 shadow-none">
               <div className="flex items-center justify-between gap-2 mb-4">
                 <div>
-                  <h2 className="font-medium">Storico costi token</h2>
+                  <h2 className="font-medium">{t("settings.costs.title")}</h2>
                   <p className="text-sm text-gray-600">
-                    Dettaglio dei consumi e dei costi calcolati con margine Seminai.
+                    {t("settings.costs.description")}
                   </p>
                 </div>
                 {isLoadingTokenCosts && (
                   <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Spinner size={16} ariaLabel="Caricamento costi token" />
-                    <span>Caricamento…</span>
+                    <Spinner
+                      size={16}
+                      ariaLabel={t("settings.costs.loadingCosts")}
+                    />
+                    <span>{t("common.loading")}</span>
                   </div>
                 )}
               </div>
 
               {isTokenCostsError && (
                 <div className="mb-4 text-sm text-red-600">
-                  {tokenCostsError?.message ?? "Impossibile caricare i costi."}
+                  {tokenCostsError?.message ?? t("settings.costs.loadError")}
                 </div>
               )}
 
@@ -1757,7 +1909,7 @@ export default function Settings() {
 
               <div className="mb-4 flex flex-wrap gap-3 items-center">
                 <Input
-                  placeholder="Cerca per modello, job, metadata…"
+                  placeholder={t("settings.costs.searchPlaceholder")}
                   value={filters.text}
                   className="w-full sm:w-64"
                   onChange={(e) =>
@@ -1765,7 +1917,7 @@ export default function Settings() {
                   }
                 />
                 <Label className="sr-only" htmlFor="filter-date-from">
-                  Data da
+                  {t("settings.costs.dateFrom")}
                 </Label>
                 <Input
                   id="filter-date-from"
@@ -1777,7 +1929,7 @@ export default function Settings() {
                   }
                 />
                 <Label className="sr-only" htmlFor="filter-date-to">
-                  Data a
+                  {t("settings.costs.dateTo")}
                 </Label>
                 <Input
                   id="filter-date-to"
@@ -1795,7 +1947,7 @@ export default function Settings() {
                     setFilters((prev) => ({ ...prev, jobType: e.target.value }))
                   }
                 >
-                  <option value="">Job type</option>
+                  <option value="">{t("settings.costs.jobType")}</option>
                   {filterOptions.jobTypes.map((type) => (
                     <option key={type} value={type}>
                       {type}
@@ -1809,7 +1961,7 @@ export default function Settings() {
                     setFilters((prev) => ({ ...prev, model: e.target.value }))
                   }
                 >
-                  <option value="">Modello</option>
+                  <option value="">{t("settings.costs.model")}</option>
                   {filterOptions.models.map((m) => (
                     <option key={m} value={m}>
                       {m}
@@ -1823,7 +1975,7 @@ export default function Settings() {
                     setFilters((prev) => ({ ...prev, companyId: e.target.value }))
                   }
                 >
-                  <option value="">Azienda (metadata)</option>
+                  <option value="">{t("settings.costs.companyMetadata")}</option>
                   {filterOptions.companies.map((c) => (
                     <option key={c} value={c}>
                       {c}
@@ -1835,7 +1987,7 @@ export default function Settings() {
                   onClick={() => setFilters(DEFAULT_FILTERS)}
                   className="ml-auto"
                 >
-                  Reset filtri
+                  {t("settings.costs.resetFilters")}
                 </Button>
               </div>
 
@@ -1847,15 +1999,15 @@ export default function Settings() {
                 <TabsList className="mb-4 flex flex-wrap">
                   <TabsTrigger value="table" className="gap-2">
                     <Table2 className="h-4 w-4" />
-                    Tabella
+                    {t("settings.costs.table")}
                   </TabsTrigger>
                   <TabsTrigger value="chart" className="gap-2">
                     <BarChart3 className="h-4 w-4" />
-                    Barre (per giorno e modello)
+                    {t("settings.costs.barChart")}
                   </TabsTrigger>
                   <TabsTrigger value="line" className="gap-2">
                     <TrendingUp className="h-4 w-4" />
-                    Lineare (per modello)
+                    {t("settings.costs.lineChart")}
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="table" className="mt-0">
@@ -1863,16 +2015,30 @@ export default function Settings() {
                     <Table className="min-w-[1040px] [&_tr]:border-agri-green-100 [&_th]:border-agri-green-100 [&_td]:border-agri-green-50">
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Data</TableHead>
-                          <TableHead>Job</TableHead>
-                          <TableHead>Modello</TableHead>
-                          <TableHead className="text-right">Prompt</TableHead>
-                          <TableHead className="text-right">Completion</TableHead>
-                          <TableHead className="text-right">Token totali</TableHead>
-                          <TableHead className="text-right">Costo cliente</TableHead>
-                          <TableHead>Azienda (metadata)</TableHead>
-                          <TableHead>Riferimento</TableHead>
-                          <TableHead>Metadata</TableHead>
+                          <TableHead>{t("settings.costs.columns.date")}</TableHead>
+                          <TableHead>{t("settings.costs.columns.job")}</TableHead>
+                          <TableHead>{t("settings.costs.columns.model")}</TableHead>
+                          <TableHead className="text-right">
+                            {t("settings.costs.columns.prompt")}
+                          </TableHead>
+                          <TableHead className="text-right">
+                            {t("settings.costs.columns.completion")}
+                          </TableHead>
+                          <TableHead className="text-right">
+                            {t("settings.costs.columns.totalTokens")}
+                          </TableHead>
+                          <TableHead className="text-right">
+                            {t("settings.costs.columns.clientCost")}
+                          </TableHead>
+                          <TableHead>
+                            {t("settings.costs.columns.companyMetadata")}
+                          </TableHead>
+                          <TableHead>
+                            {t("settings.costs.columns.reference")}
+                          </TableHead>
+                          <TableHead>
+                            {t("settings.costs.columns.metadata")}
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1882,9 +2048,11 @@ export default function Settings() {
                               <div className="flex items-center gap-2 text-sm text-gray-500">
                                 <Spinner
                                   size={16}
-                                  ariaLabel="Caricamento costi token"
+                                  ariaLabel={t("settings.costs.loadingCosts")}
                                 />
-                                <span>Recupero costi in corso…</span>
+                                <span>
+                                  {t("settings.costs.loadingCostsInProgress")}
+                                </span>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -1894,7 +2062,7 @@ export default function Settings() {
                           <TableRow>
                             <TableCell colSpan={10}>
                               <div className="text-sm text-gray-600">
-                                Nessun costo registrato al momento.
+                                {t("settings.costs.noCosts")}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -1940,14 +2108,16 @@ export default function Settings() {
                   <div className="rounded-lg border border-agri-green-100 bg-white p-4 min-h-[320px]">
                     {isLoadingTokenCosts && (
                       <div className="flex items-center justify-center gap-2 py-12 text-sm text-gray-500">
-                        <Spinner size={20} ariaLabel="Caricamento costi" />
-                        <span>Caricamento…</span>
+                        <Spinner
+                          size={20}
+                          ariaLabel={t("settings.costs.loadingCosts")}
+                        />
+                        <span>{t("common.loading")}</span>
                       </div>
                     )}
                     {!isLoadingTokenCosts && dailyConsumptionByModel.length === 0 && (
                       <div className="flex items-center justify-center py-12 text-sm text-gray-600">
-                        Nessun dato da mostrare. Applica i filtri o attendi nuovi
-                        consumi.
+                        {t("settings.costs.noData")}
                       </div>
                     )}
                     {!isLoadingTokenCosts &&
@@ -1975,12 +2145,16 @@ export default function Settings() {
                           <YAxis
                             tickLine={false}
                             axisLine={false}
-                            tickFormatter={(v) => `€ ${Number(v).toFixed(2)}`}
+                            tickFormatter={(v) =>
+                              formatCurrency(Number(v), currentLanguage)
+                            }
                           />
                           <ChartTooltip
                             content={
                               <ChartTooltipContent
-                                formatter={(value) => [formatCurrency(Number(value))]}
+                                formatter={(value) => [
+                                  formatCurrency(Number(value), currentLanguage),
+                                ]}
                               />
                             }
                           />
@@ -2001,22 +2175,23 @@ export default function Settings() {
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
-                    Consumo per giorno per modello (costo cliente €). Barre impilate
-                    con nomi modelli in legenda.
+                    {t("settings.costs.barCaption")}
                   </p>
                 </TabsContent>
                 <TabsContent value="line" className="mt-0">
                   <div className="rounded-lg border border-agri-green-100 bg-white p-4 min-h-[320px]">
                     {isLoadingTokenCosts && (
                       <div className="flex items-center justify-center gap-2 py-12 text-sm text-gray-500">
-                        <Spinner size={20} ariaLabel="Caricamento costi" />
-                        <span>Caricamento…</span>
+                        <Spinner
+                          size={20}
+                          ariaLabel={t("settings.costs.loadingCosts")}
+                        />
+                        <span>{t("common.loading")}</span>
                       </div>
                     )}
                     {!isLoadingTokenCosts && dailyConsumptionByModel.length === 0 && (
                       <div className="flex items-center justify-center py-12 text-sm text-gray-600">
-                        Nessun dato da mostrare. Applica i filtri o attendi nuovi
-                        consumi.
+                        {t("settings.costs.noData")}
                       </div>
                     )}
                     {!isLoadingTokenCosts &&
@@ -2044,12 +2219,16 @@ export default function Settings() {
                           <YAxis
                             tickLine={false}
                             axisLine={false}
-                            tickFormatter={(v) => `€ ${Number(v).toFixed(2)}`}
+                            tickFormatter={(v) =>
+                              formatCurrency(Number(v), currentLanguage)
+                            }
                           />
                           <ChartTooltip
                             content={
                               <ChartTooltipContent
-                                formatter={(value) => [formatCurrency(Number(value))]}
+                                formatter={(value) => [
+                                  formatCurrency(Number(value), currentLanguage),
+                                ]}
                               />
                             }
                           />
@@ -2071,8 +2250,7 @@ export default function Settings() {
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
-                    Andamento costo cliente (€) per giorno e per modello. Una linea
-                    per ogni modello.
+                    {t("settings.costs.lineCaption")}
                   </p>
                 </TabsContent>
               </Tabs>
@@ -2086,21 +2264,23 @@ export default function Settings() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma eliminazione cache</DialogTitle>
+            <DialogTitle>{t("settings.cache.confirmTitle")}</DialogTitle>
             <DialogDescription>
-              Questa azione eliminerà la cache associata al tuo account. Per
-              confermare, digita <strong>elimina</strong> nel campo sottostante.
+              <Trans
+                i18nKey="settings.cache.confirmDescription"
+                components={{ strong: <strong /> }}
+              />
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Label htmlFor="clearCacheConfirm">
-              Digita "elimina" per confermare
+              {t("settings.cache.confirmLabel")}
             </Label>
             <Input
               id="clearCacheConfirm"
               value={clearCacheConfirmText}
               onChange={(e) => setClearCacheConfirmText(e.target.value)}
-              placeholder="elimina"
+              placeholder={t("settings.cache.confirmWord")}
               className="mt-2"
             />
           </div>
@@ -2112,7 +2292,7 @@ export default function Settings() {
                 setClearCacheConfirmText("");
               }}
             >
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -2121,7 +2301,9 @@ export default function Settings() {
                 await clearCacheAsync();
               }}
             >
-              {isClearingCache ? "Eliminazione…" : "Elimina cache"}
+              {isClearingCache
+                ? t("settings.cache.deleting")
+                : t("settings.cache.deleteCache")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2133,9 +2315,11 @@ export default function Settings() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Disconnetti WhatsApp</DialogTitle>
+            <DialogTitle>
+              {t("settings.integrations.whatsapp.dialogTitle")}
+            </DialogTitle>
             <DialogDescription>
-              Scegli come disconnettere WhatsApp dal tuo account.
+              {t("settings.integrations.whatsapp.dialogDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -2148,11 +2332,12 @@ export default function Settings() {
               }}
             >
               <p className="text-sm font-medium text-gray-900">
-                Disconnetti sessione
+                {t("settings.integrations.whatsapp.disconnectSession")}
               </p>
               <p className="text-xs text-gray-600 mt-1">
-                Disconnette la sessione attiva ma mantiene l'istanza. Potrai
-                riconnetterti in futuro scansionando un nuovo QR code.
+                {t(
+                  "settings.integrations.whatsapp.disconnectSessionDescription",
+                )}
               </p>
             </button>
             <button
@@ -2164,11 +2349,10 @@ export default function Settings() {
               }}
             >
               <p className="text-sm font-medium text-red-700">
-                Elimina istanza
+                {t("settings.integrations.whatsapp.deleteInstance")}
               </p>
               <p className="text-xs text-gray-600 mt-1">
-                Elimina completamente l'istanza WhatsApp e rimuove tutti i dati
-                associati. Dovrai ripetere il setup completo per riconnetterti.
+                {t("settings.integrations.whatsapp.deleteInstanceDescription")}
               </p>
             </button>
           </div>
@@ -2178,13 +2362,13 @@ export default function Settings() {
               disabled={isDisconnecting}
               onClick={() => setWhatsappDisconnectDialogOpen(false)}
             >
-              Annulla
+              {t("common.cancel")}
             </Button>
           </DialogFooter>
           {isDisconnecting && (
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Disconnessione in corso…</span>
+              <span>{t("settings.integrations.whatsapp.disconnecting")}</span>
             </div>
           )}
         </DialogContent>
