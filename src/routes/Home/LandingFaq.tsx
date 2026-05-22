@@ -12,7 +12,7 @@ export function LandingFaq() {
   }) as FaqItem[];
 
   return (
-    <section className="row faq" id="faq" style={{ padding: "50px 0px 90px" }}>
+    <section className="row faq" id="faq">
       <div className="container">
         <div className="faq-grid">
           <div>

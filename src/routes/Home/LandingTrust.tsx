@@ -13,8 +13,8 @@ export function LandingTrust() {
   }) as TrustSource[];
 
   return (
-    <section className="trust" id="fonti" style={{ padding: "50px 0px" }}>
-      <div className="container" style={{ padding: "0px 22px" }}>
+    <section className="trust" id="fonti">
+      <div className="container">
         <div className="section-head section-head-single">
           <div>
             <h2>
@@ -26,14 +26,14 @@ export function LandingTrust() {
 
         <div className="trust-grid">
           {sources.map((source) => (
-            <div key={source.num} className="trust-card" style={{ padding: 22 }}>
+            <div key={source.num} className="trust-card">
               <div className="trust-num">{source.num}</div>
               <h3>{source.title}</h3>
             </div>
           ))}
         </div>
 
-        <div className="trust-foot" style={{ margin: 0, padding: 22 }}>
+        <div className="trust-foot">
           <p>
             <RichHtml html={t("landing.trust.foot")} />
           </p>

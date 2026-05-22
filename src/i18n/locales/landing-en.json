@@ -10,7 +10,7 @@
     "title": "Your field logbook<br />in <em>minutes.</em>",
     "subtitle": "You review. You approve. <span class=\"earth\">You sign.</span>",
     "body": "Invoices show up on WhatsApp, email, PDF, handwritten notes. Collecting them, cross-checking and formatting them into the logbook takes <strong>hours</strong>, before the real work even starts. Drop everything into Seminai. In a few minutes you have the logbook ready.",
-    "ctaPrimary": "Send your invoices to Francesco on WhatsApp",
+    "ctaPrimary": "Send us the invoice on WhatsApp",
     "ctaSecondary": "Running a cooperative? See the Network plan →",
     "demoUrl": "app.seminai.tech / logbook · Tenuta La Sorgente",
     "demoEyebrow": "Field Logbook · 2026",
@@ -69,8 +69,7 @@
       "D.Lgs. 150/2012",
       "Regional bulletins, 20 regions",
       "Invoice OCR · WhatsApp · PDF · email",
-      "Anomalies flagged with source",
-      "European servers, Hetzner DE"
+      "Anomalies flagged with source"
     ]
   },
   "problem": {
@@ -257,7 +256,7 @@
   "magnet": {
     "eyebrow": "06, Free trial",
     "title": "Not ready for a trial yet? <em>Send us your invoices.</em> We'll return a clean Excel. <em>Free.</em>",
-    "cta": "Send your invoices to Francesco on WhatsApp",
+    "cta": "Send us the invoice on WhatsApp",
     "note": "Available for the first 5 new contacts each month.",
     "chatAria": "WhatsApp chat with invoice sent to Seminai",
     "chatName": "Seminai",
@@ -317,7 +316,7 @@
       },
       {
         "question": "Are my farm data secure?",
-        "answer": "Data is encrypted in transit and at rest. It is not shared with third parties or used to train AI models. You can export or delete all data at any time. Infrastructure on European servers (Hetzner, Germany)."
+        "answer": "Data is encrypted in transit and at rest. It is not shared with third parties or used to train AI models. You can export or delete all data at any time."
       },
       {
         "question": "Does it work for all Italian regions?",
@@ -381,7 +380,6 @@
     "privacy": "Privacy Policy",
     "cookies": "Cookie Policy",
     "terms": "Terms of Service",
-    "copyright": "Seminai © {{year}} · VAT xxxxxxxxxxx",
-    "serverNote": "European servers · Hetzner DE"
+    "copyright": "Seminai © {{year}} · VAT xxxxxxxxxxx"
   }
 }

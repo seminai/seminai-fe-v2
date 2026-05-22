@@ -12,7 +12,7 @@ export function LandingFork() {
   }) as string[];
 
   return (
-    <section className="row" id="cooperative" style={{ padding: "50px 0px" }}>
+    <section className="row" id="cooperative">
       <div className="container">
         <div className="section-head section-head-single">
           <div>

@@ -23,8 +23,8 @@ export function LandingPricing() {
   }) as string[];
 
   return (
-    <section className="row pricing" id="piani" style={{ padding: "50px 0px 0px" }}>
-      <div className="container" style={{ padding: "50px 40px" }}>
+    <section className="row pricing" id="piani">
+      <div className="container pricing-container">
         <div className="section-head section-head-single">
           <div>
             <h2 style={{ width: 660 }}>

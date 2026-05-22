@@ -4,9 +4,9 @@ export const WHATSAPP_CONTACT = "Francesco";
 
 const WHATSAPP_E164 = "393317424341";
 const WHATSAPP_PREFILL_IT =
-  "Ciao Francesco, vi mando le fatture per il quaderno di campagna.";
+  "Ciao! Vi invio la fattura per il quaderno di campagna.";
 const WHATSAPP_PREFILL_EN =
-  "Hi Francesco, I'm sending the invoices for the field logbook.";
+  "Hi! I'm sending the invoice for the field logbook.";
 
 export function getWhatsAppUrl(language: string): string {
   const text = language.startsWith("en")
@@ -24,4 +24,9 @@ export const ANCHORS = {
   faq: "#faq",
   trial: "#trial",
   sources: "#fonti",
+} as const;
+
+export const LEGAL_ROUTES = {
+  privacy: "/privacy-policy",
+  terms: "/terms-of-service",
 } as const;

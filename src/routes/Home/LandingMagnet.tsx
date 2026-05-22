@@ -15,7 +15,7 @@ export function LandingMagnet() {
   }) as InvoiceLine[];
 
   return (
-    <section className="magnet" id="trial" style={{ padding: "50px 0px" }}>
+    <section className="magnet" id="trial">
       <div className="container">
         <div className="magnet-grid">
           <div>

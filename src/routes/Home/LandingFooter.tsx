@@ -1,6 +1,5 @@
-import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ANCHORS, getWhatsAppUrl, LANDING_LOGO } from "./constants";
+import { ANCHORS, getWhatsAppUrl, LANDING_LOGO, LEGAL_ROUTES } from "./constants";
 
 export function LandingFooter() {
   const { t, i18n } = useTranslation();
@@ -58,20 +57,19 @@ export function LandingFooter() {
             <h5>{t("landing.footer.legalTitle")}</h5>
             <ul>
               <li>
-                <Link to="/privacy-policy">{t("landing.footer.privacy")}</Link>
+                <a href={LEGAL_ROUTES.privacy}>{t("landing.footer.privacy")}</a>
               </li>
               <li>
                 <a href="#">{t("landing.footer.cookies")}</a>
               </li>
               <li>
-                <Link to="/terms-of-service">{t("landing.footer.terms")}</Link>
+                <a href={LEGAL_ROUTES.terms}>{t("landing.footer.terms")}</a>
               </li>
             </ul>
           </div>
         </div>
         <div className="foot-bottom">
           <span>{t("landing.footer.copyright", { year })}</span>
-          <span>{t("landing.footer.serverNote")}</span>
         </div>
       </div>
     </footer>

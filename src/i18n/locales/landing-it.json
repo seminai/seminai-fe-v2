@@ -10,7 +10,7 @@
     "title": "Il quaderno di campagna<br />in <em>pochi minuti.</em>",
     "subtitle": "Tu rivedi. Tu approvi. <span class=\"earth\">Tu firmi.</span>",
     "body": "Le fatture arrivano da WhatsApp, email, PDF, appunti a mano. Raccoglierle, incrociarle e formattarle nel quaderno richiede <strong>ore</strong>, prima ancora di iniziare il lavoro vero. Carica tutto su Seminai. In pochi minuti hai il quaderno pronto.",
-    "ctaPrimary": "Manda le tue fatture a Francesco su WhatsApp",
+    "ctaPrimary": "Inviaci la fattura su WhatsApp",
     "ctaSecondary": "Gestisci una cooperativa? Guarda il piano Network →",
     "demoUrl": "app.seminai.tech / quaderno · Tenuta La Sorgente",
     "demoEyebrow": "Quaderno di Campagna · 2026",
@@ -69,8 +69,7 @@
       "D.Lgs. 150/2012",
       "Bollettini regionali, 20 regioni",
       "OCR fatture WhatsApp · PDF · email",
-      "Anomalie segnalate con fonte",
-      "Server europei, Hetzner DE"
+      "Anomalie segnalate con fonte"
     ]
   },
   "problem": {
@@ -257,7 +256,7 @@
   "magnet": {
     "eyebrow": "06, Prova gratuita",
     "title": "Non sei ancora pronto per il trial? <em>Mandaci le tue fatture.</em> Ti restituiamo l'Excel pulito. <em>Gratis.</em>",
-    "cta": "Manda le tue fatture a Francesco su WhatsApp",
+    "cta": "Inviaci la fattura su WhatsApp",
     "note": "Disponibile per i primi 5 nuovi contatti ogni mese.",
     "chatAria": "Chat WhatsApp con fattura inviata a Seminai",
     "chatName": "Seminai",
@@ -317,7 +316,7 @@
       },
       {
         "question": "I dati delle mie aziende sono al sicuro?",
-        "answer": "I dati sono cifrati in transito e a riposo. Non vengono condivisi con terze parti né usati per addestrare modelli AI. Puoi esportare o eliminare tutti i dati in qualsiasi momento. Infrastruttura su server europei (Hetzner, Germania)."
+        "answer": "I dati sono cifrati in transito e a riposo. Non vengono condivisi con terze parti né usati per addestrare modelli AI. Puoi esportare o eliminare tutti i dati in qualsiasi momento."
       },
       {
         "question": "Funziona per tutte le regioni italiane?",
@@ -381,7 +380,6 @@
     "privacy": "Privacy Policy",
     "cookies": "Cookie Policy",
     "terms": "Termini di servizio",
-    "copyright": "Seminai © {{year}} · P.IVA xxxxxxxxxxx",
-    "serverNote": "Server europei · Hetzner DE"
+    "copyright": "Seminai © {{year}} · P.IVA xxxxxxxxxxx"
   }
 }

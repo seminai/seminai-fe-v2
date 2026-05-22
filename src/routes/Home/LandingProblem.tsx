@@ -45,7 +45,7 @@ export function LandingProblem() {
   }) as ProblemCard[];
 
   return (
-    <section className="row problem" style={{ padding: "50px 0px" }}>
+    <section className="row problem">
       <div className="container">
         <div className="section-head section-head-single">
           <div>
@@ -60,11 +60,7 @@ export function LandingProblem() {
           {cards.map((card, index) => {
             const Icon = PROBLEM_ICONS[index] ?? ClockIcon;
             return (
-              <div
-                key={card.title}
-                className="problem-card"
-                style={{ padding: "22px 22px 22px 30px" }}
-              >
+              <div key={card.title} className="problem-card">
                 <div className="problem-icon icon-clock">
                   <Icon />
                 </div>
@@ -75,7 +71,7 @@ export function LandingProblem() {
           })}
         </div>
 
-        <div className="problem-bridge" style={{ margin: 0 }}>
+        <div className="problem-bridge">
           <p>
             <RichHtml html={t("landing.problem.bridge")} />
           </p>

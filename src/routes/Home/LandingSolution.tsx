@@ -23,7 +23,7 @@ export function LandingSolution() {
   }) as string[];
 
   return (
-    <section className="row" id="come-funziona" style={{ padding: "50px 0px" }}>
+    <section className="row" id="come-funziona">
       <div className="container">
         <div className="section-head section-head-single">
           <div>

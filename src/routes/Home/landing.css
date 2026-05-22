@@ -1570,7 +1570,7 @@
   footer {
     background: var(--ink);
     color: rgba(255,255,255,0.7);
-    padding: 60px 0 28px;
+    padding: 80px 0 52px;
     font-size: 14px;
   }
   .foot-top {
@@ -1597,7 +1597,7 @@
   .foot-col a:hover { color: #fff; }
   .foot-bottom {
     display: flex; justify-content: space-between; align-items: center;
-    padding-top: 22px;
+    padding-top: 28px;
     font-family: "Inter", sans-serif;
     font-size: 12px;
     font-weight: 500;
@@ -1636,3 +1636,32 @@
     transition: color .2s;
   }
   .email-fallback-link:hover { color: var(--green-deep); }
+
+  /* ===================== PRICING CONTAINER ===================== */
+  section.pricing.row { padding-bottom: 0; }
+  .pricing-container { padding-top: 50px; padding-bottom: 50px; }
+
+  /* ===================== RESPONSIVE SPACING ===================== */
+  @media (max-width: 880px) {
+    section.row { padding: 56px 0; }
+    section.row.tight { padding: 48px 0; }
+    section.hero { padding: 48px 0 20px; }
+    section.trust { padding: 56px 0; }
+    section.magnet { padding: 56px 0; }
+    section.final-cta { padding: 72px 0 64px; }
+    .pricing-container { padding-top: 40px; padding-bottom: 40px; }
+  }
+
+  @media (min-width: 881px) {
+    .container { padding: 0 56px; }
+    section.row { padding: 110px 0; }
+    section.row.tight { padding: 88px 0; }
+    section.hero { padding: 72px 0 36px; }
+    section.trust { padding: 110px 0; }
+    section.magnet { padding: 100px 0; }
+    section.final-cta { padding: 120px 0 100px; }
+    .section-head { gap: 72px; margin-bottom: 72px; }
+    .problem-card { padding: 44px 36px 40px; }
+    .hero-split { gap: 72px; }
+    .pricing-container { padding-top: 60px; padding-bottom: 60px; }
+  }
