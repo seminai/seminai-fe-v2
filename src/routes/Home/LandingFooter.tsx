@@ -11,7 +11,7 @@ export function LandingFooter() {
       <div className="container">
         <div className="foot-top">
           <div className="foot-brand">
-            <a href="#" className="brand">
+            <a href="/" className="brand">
               <img src={LANDING_LOGO} alt="Seminai" className="brand-img" />
               <span>Seminai</span>
             </a>
@@ -60,7 +60,7 @@ export function LandingFooter() {
                 <a href={LEGAL_ROUTES.privacy}>{t("landing.footer.privacy")}</a>
               </li>
               <li>
-                <a href="#">{t("landing.footer.cookies")}</a>
+                <a href={LEGAL_ROUTES.cookies}>{t("landing.footer.cookies")}</a>
               </li>
               <li>
                 <a href={LEGAL_ROUTES.terms}>{t("landing.footer.terms")}</a>

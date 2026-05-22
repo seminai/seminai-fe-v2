@@ -1,37 +1,8 @@
-import { Link } from "react-router-dom";
+import { LegalPageLayout } from "./Home/LegalPageLayout";
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="border-b border-gray-200 bg-white sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link
-            to="/"
-            className="flex items-center gap-3 hover:opacity-80 transition"
-          >
-            <img src="/logo.png" alt="SeminAI Logo" className="h-8 w-auto" />
-            <span className="text-xl font-semibold text-black">SeminAI</span>
-          </Link>
-          <nav className="flex items-center gap-4">
-            <Link
-              to="/dashboard"
-              className="text-sm text-gray-600 hover:text-black transition"
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/auth"
-              className="text-sm text-gray-600 hover:text-black transition"
-            >
-              Accedi
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="max-w-4xl mx-auto px-6 py-12">
+    <LegalPageLayout>
         <h1 className="text-4xl font-bold text-gray-900 mb-2">
           Privacy Policy
         </h1>
@@ -466,32 +437,6 @@ export default function PrivacyPolicy() {
             </p>
           </section>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-200 mt-16">
-        <div className="max-w-5xl mx-auto px-6 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-gray-500">
-              © {new Date().getFullYear()} SeminAI. Tutti i diritti riservati.
-            </p>
-            <div className="flex gap-6">
-              <Link
-                to="/terms-of-service"
-                className="text-sm text-gray-600 hover:text-black transition"
-              >
-                Termini di Servizio
-              </Link>
-              <Link
-                to="/privacy-policy"
-                className="text-sm text-gray-600 hover:text-black transition"
-              >
-                Privacy Policy
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </LegalPageLayout>
   );
 }

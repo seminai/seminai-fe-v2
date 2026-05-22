@@ -17,7 +17,7 @@ export function LandingNav() {
   return (
     <nav className="top">
       <div className="container nav-row">
-        <a href="#" className="brand">
+        <a href="/" className="brand">
           <img src={LANDING_LOGO} alt="Seminai" className="brand-img" />
           <span>Seminai</span>
         </a>

@@ -24,6 +24,7 @@ import FieldNotes from "./routes/FieldNotes";
 import QuickCreate from "./routes/QuickCreate";
 import TermsOfService from "./routes/TermsOfService";
 import PrivacyPolicy from "./routes/PrivacyPolicy";
+import CookiePolicy from "./routes/CookiePolicy";
 import NewWorkspace from "./routes/Workspace/NewWorkspace";
 import WorkspaceSettings from "./routes/Workspace/WorkspaceSettings";
 import NewRule from "./routes/Workspace/NewRule";
@@ -50,6 +51,7 @@ function App() {
       />
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/cookie-policy" element={<CookiePolicy />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/settings" element={<Settings />} />
