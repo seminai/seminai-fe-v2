@@ -1,7 +1,12 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import en from "./locales/en.json";
-import it from "./locales/it.json";
+import enBase from "./locales/en.json";
+import itBase from "./locales/it.json";
+import landingEn from "./locales/landing-en.json";
+import landingIt from "./locales/landing-it.json";
+
+const it = { ...itBase, landing: landingIt };
+const en = { ...enBase, landing: landingEn };
 
 export const LANGUAGE_STORAGE_KEY = "seminai-language";
 export const SUPPORTED_LANGUAGES = ["it", "en"] as const;

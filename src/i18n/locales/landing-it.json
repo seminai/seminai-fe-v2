@@ -1,0 +1,285 @@
+{
+  "nav": {
+    "how": "Come funziona",
+    "who": "Per chi",
+    "plans": "Piani & prezzi",
+    "faq": "FAQ",
+    "login": "Login"
+  },
+  "hero": {
+    "title": "Il quaderno di campagna<br />in <em>pochi minuti.</em>",
+    "subtitle": "Tu rivedi. Tu approvi. <span class=\"earth\">Tu firmi.</span>",
+    "body": "Le fatture arrivano da WhatsApp, email, PDF, appunti a mano. Raccoglierle, incrociarle e formattarle nel quaderno richiede <strong>ore</strong> — prima ancora di iniziare il lavoro vero. Carica tutto su Seminai. In pochi minuti hai il quaderno pronto.",
+    "ctaPrimary": "Manda le tue fatture al numero WhatsApp — Francesco",
+    "ctaSecondary": "Gestisci una cooperativa? Guarda il piano Network →",
+    "demoUrl": "app.seminai.tech / quaderno · Tenuta La Sorgente",
+    "demoEyebrow": "Quaderno di Campagna · 2026",
+    "demoTitle": "Tenuta La Sorgente — Vigneto Sud",
+    "demoStatus": "Conforme PAC",
+    "demoCaption": "Anteprima · output revisionabile",
+    "demoAnomaly": "<strong>Anomalia 24 Mar</strong> — dose 3,2 kg/ha eccede limite etichetta (max 2,5 kg/ha). <em>Riduci a 2,5 kg/ha.</em>",
+    "demoHeaders": ["Data", "Prodotto", "Coltura", "Dose", "Stato"],
+    "demoRows": [
+      { "date": "12 Mar", "product": "Ridomil Gold", "crop": "Vite", "dose": "2,5 kg/ha", "status": "ok" },
+      { "date": "18 Mar", "product": "Karate Zeon", "crop": "Vite", "dose": "0,15 L/ha", "status": "ok" },
+      { "date": "24 Mar", "product": "Mancozeb 75", "crop": "Vite", "dose": "3,2 kg/ha", "status": "warn" },
+      { "date": "02 Apr", "product": "Topas 100", "crop": "Vite", "dose": "0,4 L/ha", "status": "ok" },
+      { "date": "09 Apr", "product": "Switch", "crop": "Vite", "dose": "0,8 kg/ha", "status": "ok" }
+    ],
+    "statusOk": "OK",
+    "statusWarn": "Anomalia",
+    "ticker": [
+      "Conforme PAC",
+      "D.Lgs. 150/2012",
+      "Bollettini regionali — 20 regioni",
+      "OCR fatture WhatsApp · PDF · email",
+      "Anomalie segnalate con fonte",
+      "Server europei — Hetzner DE"
+    ]
+  },
+  "problem": {
+    "eyebrow": "01 — Il Problema",
+    "title": "Il quaderno di campagna non è difficile. <em><span class=\"serif-i\">È lento.</span></em> E i dati stanno sempre nel posto sbagliato.",
+    "lead": "WhatsApp del cliente. Email del fornitore. Fattura cartacea. Appunto a mano. Foglio Excel non aggiornato. Raccogliere tutto, incrociarlo, formattarlo — prima ancora di iniziare il quaderno — richiede ore. Ogni volta. Per ogni azienda.",
+    "cards": [
+      {
+        "title": "6 ore perse ogni settimana.",
+        "body": "Solo per raccogliere dati da fonti diverse e trascriverli nel formato corretto. Ore che non generano fatturato. Ore che potresti usare per nuovi clienti."
+      },
+      {
+        "title": "Il 34% delle aziende ha almeno un'anomalia.",
+        "body": "Dosaggio fuori etichetta, trattamento non registrato sulla varietà, data di carenza violata. Errori invisibili finché non arriva il controllo. A quel punto, la decurtazione PAC media è €4.200 per azienda."
+      },
+      {
+        "title": "4 normative da incrociare ogni volta.",
+        "body": "Etichetta del prodotto. Regolamento nazionale fitosanitario. Normativa PAC in vigore. Regole specifiche della tua regione. Cambiano ogni anno. Tenerle aggiornate manualmente mentre produci quaderni è impossibile."
+      }
+    ],
+    "bridge": "Seminai risolve tutti e tre. <em>In pochi minuti.</em> Senza toglierti la responsabilità professionale che ti appartiene."
+  },
+  "solution": {
+    "eyebrow": "02 — Come funziona",
+    "title": "Come Seminai produce il <em>quaderno di campagna</em> in pochi minuti.",
+    "lead": "Tre passi. Il primo lo fai tu in trenta secondi. Il secondo lo fa Seminai. Il terzo torna in mano tua — perché la firma del professionista non si delega.",
+    "steps": [
+      { "label": "Carica", "heading": "Carica le fatture — da dove stanno.", "body": "Foto su WhatsApp, PDF upload, email forward. Fitofarmaci, sementi, fertilizzanti. <strong>Anche disorganizzate, anche da fonti diverse.</strong> Seminai le raccoglie tutte." },
+      { "label": "Elabora", "heading": "Il sistema elabora e segnala.", "body": "Estrae i dati, incrocia i dosaggi con le etichette, verifica la conformità su <strong>4 livelli normativi aggiornati</strong>. Ogni anomalia viene segnalata con fonte e azione correttiva." },
+      { "label": "Approva", "heading": "Tu rivedi, approvi, consegni.", "body": "In pochi minuti hai il quaderno pronto per la revisione. Controlli, approvi o correggi. <strong>Firmi tu</strong> — la responsabilità professionale resta dove deve stare." }
+    ],
+    "doorBeforeLabel": "Senza Seminai",
+    "doorAfterLabel": "Con Seminai",
+    "doorBefore": [
+      "Domenica 22:30 ancora al PC a chiudere il quaderno.",
+      "Cliente che ti chiama in panico per un controllo PAC.",
+      "Rifiuti il quinto nuovo studio — non hai capacità."
+    ],
+    "doorAfter": [
+      "Sabato in campo. Domenica libera.",
+      "Lunedì cliente nuovo firmato senza pensarci.",
+      "Mercoledì: 30 quaderni revisionati in mattinata.",
+      "Decurtazioni PAC sui tuoi clienti: zero."
+    ],
+    "ctaPrimary": "Prova subito",
+    "ctaNote": "14 giorni · senza carta di credito"
+  },
+  "trust": {
+    "eyebrow": "03 — Fonti",
+    "title": "Su cosa si basano le <em>verifiche</em> di Seminai.",
+    "lead": "Seminai non inventa regole. Le applica da fonti ufficiali, aggiornate automaticamente a ogni modifica normativa.",
+    "sources": [
+      { "num": "FONTE 01", "title": "Etichetta ministeriale del prodotto." },
+      { "num": "FONTE 02", "title": "Disciplinari" },
+      { "num": "FONTE 03", "title": "Normativa Europea" },
+      { "num": "FONTE 04", "title": "Bollettini e deroghe regionali" }
+    ],
+    "foot": "Quando una norma cambia, ricevi un alert. <em>Il prossimo quaderno è già conforme.</em> Non devi tenere tu traccia degli aggiornamenti.",
+    "illustrationAria": "Robot che approva conformità su clipboard"
+  },
+  "fork": {
+    "eyebrow": "04 — Per chi",
+    "title": "Sei un agronomo <em>libero professionista</em> o gestisci una <em>cooperativa?</em>",
+    "lead": "Il problema è lo stesso. La scala è diversa. I piani anche.",
+    "studiosEyebrow": "Studi tecnici",
+    "studiosTitle": "Per agronomi e studi tecnici.",
+    "studiosIntro": "Gestisci 10, 20, 50 aziende. Il quaderno di campagna è la parte del lavoro che consuma più ore senza generare fatturato diretto.",
+    "studiosItems": [
+      "Quaderni pronti per la revisione in <strong>minuti, non in ore</strong>.",
+      "Tutti i dati in un posto — WhatsApp, email, PDF, foto.",
+      "Anomalie segnalate <strong>prima</strong> del controllo, non dopo.",
+      "Tu rivedi e approvi — la responsabilità professionale resta tua."
+    ],
+    "studiosPrice": "Piani da €297/anno (3 farm) a €3.497/anno (80 farm).",
+    "studiosCta": "Scopri i piani per agronomi →",
+    "networkEyebrow": "Network",
+    "networkTitle": "Per cooperative e consorzi agricoli.",
+    "networkIntro": "Non hai un problema di singola azienda. Hai un problema sistemico: centinaia di soci, ognuno con le sue fatture, il suo modo di lavorare, i suoi canali.",
+    "networkItems": [
+      "Quaderni conformi per <strong>tutti i soci</strong> in pochi minuti.",
+      "Report aggregati per il tuo ufficio tecnico.",
+      "Un unico punto di controllo per tutta la compliance.",
+      "Integrazione API con i tuoi sistemi esistenti."
+    ],
+    "networkPrice": "Piano Network — pricing su misura per il tuo volume.",
+    "networkCta": "Parla con noi →"
+  },
+  "pricing": {
+    "eyebrow": "05 — Piani",
+    "title": "Piani chiari. <em>Nessuna sorpresa.</em>",
+    "foundingEyebrow": "Founding Member 2026",
+    "foundingTitle": "−30% <em>per sempre.</em> Primi 100 studi.",
+    "foundingBody": "Stiamo costruendo il database normativo regionale insieme ai primi 100 studi che entrano. In cambio del loro feedback: <em>prezzo bloccato a vita.</em> Lo sconto resta a ogni rinnovo, finché il piano esiste.",
+    "foundingCounter": "47",
+    "foundingCounterLabel": "posti rimasti",
+    "anchorLeft": "Quanto costa produrre i quaderni di campagna <em><span class=\"serif-i\">senza</span></em> Seminai?",
+    "anchorRight": "6 ore di lavoro manuale per agronomo a settimana. Su 10 aziende, in una stagione, sono decine di ore che non generi fatturato ma non puoi eliminare.<br /><br /><em>Studio 10 di Seminai: €697/anno.</em> Quelle ore le recuperi tutte.",
+    "featuredBadge": "Più scelto",
+    "foundingTag": "Founding −30%",
+    "perYear": "/anno",
+    "perMonth": "al mese",
+    "perFarmMonth": "per farm/mese",
+    "startCta": "Inizia →",
+    "plans": [
+      { "name": "Solo", "farms": "3 farm", "oldPrice": "€297", "price": "€207", "monthly": "€17.25", "perFarm": "€5.75", "who": "Agronomo con poche aziende o singolo agricoltore." },
+      { "name": "Studio 10", "farms": "10 farm", "oldPrice": "€697", "price": "€487", "monthly": "€40.58", "perFarm": "€4.06", "who": "Studio tecnico medio. Il rapporto ore-recuperate-per-euro più alto.", "featured": true },
+      { "name": "Studio 30", "farms": "30 farm", "oldPrice": "€1.497", "price": "€1.047", "monthly": "€87.25", "perFarm": "€2.91", "who": "Studio strutturato con team di tecnici." },
+      { "name": "Studio 80", "farms": "80 farm", "oldPrice": "€3.497", "price": "€2.447", "monthly": "€203.92", "perFarm": "€2.55", "who": "Grande studio o consorzio piccolo." }
+    ],
+    "networkName": "Network",
+    "networkFarms": "80+ farm",
+    "networkPrice": "Preventivo — pricing su misura",
+    "networkWho": "Cooperative e consorzi. API, SSO, ufficio tecnico dedicato.",
+    "networkCta": "Parla con noi →",
+    "featuresTitle": "Incluso in tutti i piani",
+    "features": [
+      "Quaderni di campagna per le tue farm.",
+      "OCR automatico — foto WhatsApp o PDF upload.",
+      "Verifica conformità su 4 livelli normativi ufficiali.",
+      "Anomalie segnalate con fonte e correzione specifica.",
+      "Alert automatici su aggiornamenti normativi.",
+      "Supporto WhatsApp e Telegram diretto.",
+      "Export PDF quaderno pronto per controlli PAC.",
+      "Server europei — dati cifrati."
+    ]
+  },
+  "magnet": {
+    "eyebrow": "06 — Prova gratuita",
+    "title": "Non sei ancora pronto per il trial? <em>Mandaci le tue fatture.</em> Ti restituiamo l'Excel pulito. <em>Gratis.</em>",
+    "cta": "Manda le tue fatture al numero WhatsApp — Francesco",
+    "note": "Disponibile per i primi 5 nuovi contatti ogni mese.",
+    "chatAria": "Chat WhatsApp con fattura inviata a Seminai",
+    "chatName": "Seminai",
+    "chatStatus": "online · risponde in pochi minuti",
+    "chatDate": "oggi · 09:42",
+    "chatOut1": "Ciao! Vi mando la fattura di stamattina, fitofarmaci per il vigneto.",
+    "chatIn": "Ricevuto 👍 Estraggo i prodotti e aggiorno il quaderno per il vigneto di Antonio.",
+    "chatTypingAria": "Seminai sta scrivendo",
+    "chatInput": "Scrivi un messaggio…",
+    "invoiceBrand": "Agrifornitura Rossi srl",
+    "invoiceNum": "N° 1284/2026",
+    "invoiceTitle": "Fattura — 14/05/2026",
+    "invoiceLines": [
+      { "label": "Ridomil Gold 1kg ×4", "amount": "148,00" },
+      { "label": "Vitipec Cu 5L ×2", "amount": "89,40" },
+      { "label": "Score 25 EC 1L ×1", "amount": "62,10" }
+    ],
+    "invoiceTotal": "€ 365,86",
+    "photoCaption": "IMG_2841.jpg · 1.2 MB"
+  },
+  "faq": {
+    "eyebrow": "07 — FAQ",
+    "title": "Domande frequenti sul quaderno di campagna digitale.",
+    "items": [
+      {
+        "question": "Cos'è il quaderno di campagna e a cosa serve?",
+        "answer": "Il quaderno di campagna è il documento obbligatorio per legge in cui ogni azienda agricola registra tutti i trattamenti fitosanitari effettuati — prodotti usati, dosaggi, date, colture trattate. È richiesto dalla normativa PAC, dal D.Lgs. 150/2012 e dalle normative regionali specifiche. In caso di controllo, la mancanza o l'irregolarità del quaderno può comportare decurtazioni dei contributi PAC."
+      },
+      {
+        "question": "Quanto tempo ci vuole per produrre un quaderno con Seminai?",
+        "answer": "Pochi minuti dall'invio delle fatture. Senza Seminai, un agronomo impiega in media 4-6 ore per raccogliere i dati da fonti diverse e produrre il quaderno manualmente."
+      },
+      {
+        "question": "Chi approva il quaderno prodotto da Seminai?",
+        "answer": "Sei tu — l'agronomo o il tecnico responsabile. Seminai produce il quaderno e segnala le anomalie con le correzioni specifiche. Tu rivedi, approvi e firmi. La responsabilità professionale resta al professionista, dove deve stare per legge."
+      },
+      {
+        "question": "Come vengono verificate le normative?",
+        "answer": "Seminai incrocia ogni trattamento con 4 livelli normativi aggiornati automaticamente: etichetta ministeriale del prodotto fitosanitario; D.Lgs. 150/2012 e successive modifiche; normativa PAC in vigore per la campagna corrente; bollettino ufficiale della regione dell'azienda agricola. Se un trattamento viola uno qualsiasi dei 4 livelli, viene segnalato come anomalia con la fonte normativa specifica e l'azione correttiva raccomandata."
+      },
+      {
+        "question": "Come funziona l'OCR delle fatture?",
+        "answer": "Mandi le foto delle fatture su WhatsApp o in PDF upload. La piattaforma estrae automaticamente: data, fornitore, prodotto commerciale, principio attivo, quantità acquistata, numero lotto, prezzo unitario. I dati estratti vengono incrociati con i dati delle farm per produrre il quaderno di campagna."
+      },
+      {
+        "question": "Cosa succede se cambiano le normative?",
+        "answer": "Seminai aggiorna automaticamente i database normativi a ogni modifica — PAC, regolamento nazionale, normative regionali. Ricevi un alert se una modifica impatta le farm che gestisci. Il prossimo quaderno è già conforme senza che tu faccia nulla."
+      },
+      {
+        "question": "I dati delle mie aziende sono al sicuro?",
+        "answer": "I dati sono cifrati in transito e a riposo. Non vengono condivisi con terze parti né usati per addestrare modelli AI. Puoi esportare o eliminare tutti i dati in qualsiasi momento. Infrastruttura su server europei (Hetzner, Germania)."
+      },
+      {
+        "question": "Funziona per tutte le regioni italiane?",
+        "answer": "Sì. Seminai copre le normative regionali di tutte le 20 regioni italiane. Le normative vengono aggiornate automaticamente a ogni modifica pubblicata sui bollettini ufficiali regionali."
+      },
+      {
+        "question": "Posso integrare Seminai con i software che uso già?",
+        "answer": "Sì. Seminai offre API aperte e documentate per integrazione con gestionali esistenti, software di contabilità e sistemi di gestione cooperativa. Contattaci per una valutazione tecnica gratuita."
+      },
+      {
+        "question": "Come funziona il trial gratuito di 14 giorni?",
+        "answer": "Accedi alla piattaforma senza carta di credito. Puoi caricare fino a 2 farm di prova con dati reali. Alla scadenza dei 14 giorni, l'account passa in sola lettura — i tuoi dati restano accessibili, non vengono eliminati. Nessun addebito automatico. Nessun obbligo di conversione."
+      }
+    ]
+  },
+  "emailFallback": {
+    "teaser": "Se proprio non vuoi scriverci su WhatsApp, ecco l'email:",
+    "teaserLink": "invia le fatture via email",
+    "dialogTitle": "Invia le fatture via email",
+    "dialogDescription": "Compila i campi e allega le fatture in PDF o immagine. Ti risponderemo al più presto.",
+    "fields": {
+      "name": "Nome e cognome *",
+      "email": "Email *",
+      "message": "Messaggio (opzionale)",
+      "files": "Allegati fatture *"
+    },
+    "placeholders": {
+      "name": "Mario Rossi",
+      "email": "mario@example.com",
+      "message": "Descrivi brevemente le fatture che stai inviando..."
+    },
+    "filesHint": "PDF, JPG, PNG o WEBP — puoi selezionare più file.",
+    "removeFile": "Rimuovi",
+    "defaultBody": "Invio fatture dalla landing Seminai — {{name}}",
+    "validation": {
+      "required": "Compila nome, email e allega almeno una fattura.",
+      "invalidEmail": "Inserisci un indirizzo email valido."
+    },
+    "status": {
+      "submitting": "Invio in corso...",
+      "submit": "Invia fatture",
+      "success": "Fatture inviate correttamente. Ti risponderemo via email.",
+      "error": "Invio non riuscito. Riprova tra qualche minuto."
+    }
+  },
+  "footer": {
+    "description": "Il quaderno di campagna digitale per agronomi, studi tecnici e cooperative agricole. Conforme PAC, D.Lgs. 150/2012 e normative regionali.",
+    "productTitle": "Prodotto",
+    "productLinks": {
+      "how": "Come funziona",
+      "sources": "Fonti normative",
+      "plans": "Piani e prezzi",
+      "cooperative": "Per cooperative",
+      "faq": "FAQ"
+    },
+    "contactTitle": "Contatti",
+    "email": "info@seminai.tech",
+    "whatsapp": "WhatsApp Business",
+    "trial": "Trial 14 giorni",
+    "legalTitle": "Legale",
+    "privacy": "Privacy Policy",
+    "cookies": "Cookie Policy",
+    "terms": "Termini di servizio",
+    "copyright": "Seminai © {{year}} — P.IVA xxxxxxxxxxx",
+    "serverNote": "Server europei · Hetzner DE"
+  }
+}
