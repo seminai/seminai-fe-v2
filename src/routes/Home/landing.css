@@ -1567,23 +1567,23 @@
   }
 
   /* ===================== FOOTER ===================== */
-  footer {
+  .landing-page footer {
     background: var(--ink);
     color: rgba(255,255,255,0.7);
-    padding: 160px 0 120px;
+    padding: 72px 0 32px;
     font-size: 14px;
   }
-  .foot-top {
+  .landing-page .foot-top {
     display: grid;
     grid-template-columns: 1.3fr 0.8fr 0.6fr 0.6fr;
     gap: 48px;
-    padding-bottom: 80px;
+    padding-bottom: 44px;
     border-bottom: 1px solid rgba(255,255,255,0.12);
   }
-  .foot-brand .brand { color: #fff; }
-  .foot-brand .brand-mark { background: #fff; }
-  .foot-brand p { margin-top: 14px; max-width: 36ch; font-size: 13.5px; color: rgba(255,255,255,0.55); line-height: 1.55; }
-  .foot-col h5 {
+  .landing-page .foot-brand .brand { color: #fff; }
+  .landing-page .foot-brand .brand-mark { background: #fff; }
+  .landing-page .foot-brand p { margin-top: 14px; max-width: 36ch; font-size: 13.5px; color: rgba(255,255,255,0.55); line-height: 1.55; }
+  .landing-page .foot-col h5 {
     font-family: "Inter", sans-serif;
     font-size: 11.5px;
     font-weight: 600;
@@ -1592,12 +1592,12 @@
     color: var(--ochre-soft);
     margin-bottom: 14px;
   }
-  .foot-col ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
-  .foot-col a { font-size: 13.5px; color: rgba(255,255,255,0.7); }
-  .foot-col a:hover { color: #fff; }
-  .foot-bottom {
+  .landing-page .foot-col ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .landing-page .foot-col a { font-size: 13.5px; color: rgba(255,255,255,0.7); }
+  .landing-page .foot-col a:hover { color: #fff; }
+  .landing-page .foot-bottom {
     display: flex; justify-content: space-between; align-items: center;
-    padding-top: 56px;
+    padding-top: 22px;
     font-family: "Inter", sans-serif;
     font-size: 12px;
     font-weight: 500;
@@ -1605,7 +1605,8 @@
     flex-wrap: wrap; gap: 10px;
   }
   @media (max-width: 880px) {
-    .foot-top { grid-template-columns: 1fr 1fr; }
+    .landing-page .foot-top { grid-template-columns: 1fr 1fr; }
+    .landing-page footer { padding: 56px 0 28px; }
   }
 
   /* ===================== LEGAL PAGES ===================== */
@@ -1660,7 +1661,7 @@
   section.email-fallback {
     background: var(--bg-soft);
     border-top: 1px solid var(--line-soft);
-    padding: 36px 0 44px;
+    padding: 36px 0 28px;
   }
   .email-fallback-text {
     text-align: center;
