@@ -9,38 +9,74 @@
   "hero": {
     "title": "Your field logbook<br />in <em>minutes.</em>",
     "subtitle": "You review. You approve. <span class=\"earth\">You sign.</span>",
-    "body": "Invoices show up on WhatsApp, email, PDF, handwritten notes. Collecting them, cross-checking and formatting them into the logbook takes <strong>hours</strong> — before the real work even starts. Drop everything into Seminai. In a few minutes you have the logbook ready.",
-    "ctaPrimary": "Send your invoices on WhatsApp — Francesco",
+    "body": "Invoices show up on WhatsApp, email, PDF, handwritten notes. Collecting them, cross-checking and formatting them into the logbook takes <strong>hours</strong>, before the real work even starts. Drop everything into Seminai. In a few minutes you have the logbook ready.",
+    "ctaPrimary": "Send your invoices to Francesco on WhatsApp",
     "ctaSecondary": "Running a cooperative? See the Network plan →",
     "demoUrl": "app.seminai.tech / logbook · Tenuta La Sorgente",
     "demoEyebrow": "Field Logbook · 2026",
-    "demoTitle": "Tenuta La Sorgente — South Vineyard",
+    "demoTitle": "Tenuta La Sorgente, South Vineyard",
     "demoStatus": "CAP compliant",
     "demoCaption": "Preview · reviewable output",
-    "demoAnomaly": "<strong>Anomaly 24 Mar</strong> — dose 3.2 kg/ha exceeds label limit (max 2.5 kg/ha). <em>Reduce to 2.5 kg/ha.</em>",
-    "demoHeaders": ["Date", "Product", "Crop", "Dose", "Status"],
+    "demoAnomaly": "<strong>Anomaly 24 Mar</strong>: dose 3.2 kg/ha exceeds label limit (max 2.5 kg/ha). <em>Reduce to 2.5 kg/ha.</em>",
+    "demoHeaders": [
+      "Date",
+      "Product",
+      "Crop",
+      "Dose",
+      "Status"
+    ],
     "demoRows": [
-      { "date": "12 Mar", "product": "Ridomil Gold", "crop": "Grapevine", "dose": "2.5 kg/ha", "status": "ok" },
-      { "date": "18 Mar", "product": "Karate Zeon", "crop": "Grapevine", "dose": "0.15 L/ha", "status": "ok" },
-      { "date": "24 Mar", "product": "Mancozeb 75", "crop": "Grapevine", "dose": "3.2 kg/ha", "status": "warn" },
-      { "date": "02 Apr", "product": "Topas 100", "crop": "Grapevine", "dose": "0.4 L/ha", "status": "ok" },
-      { "date": "09 Apr", "product": "Switch", "crop": "Grapevine", "dose": "0.8 kg/ha", "status": "ok" }
+      {
+        "date": "12 Mar",
+        "product": "Ridomil Gold",
+        "crop": "Grapevine",
+        "dose": "2.5 kg/ha",
+        "status": "ok"
+      },
+      {
+        "date": "18 Mar",
+        "product": "Karate Zeon",
+        "crop": "Grapevine",
+        "dose": "0.15 L/ha",
+        "status": "ok"
+      },
+      {
+        "date": "24 Mar",
+        "product": "Mancozeb 75",
+        "crop": "Grapevine",
+        "dose": "3.2 kg/ha",
+        "status": "warn"
+      },
+      {
+        "date": "02 Apr",
+        "product": "Topas 100",
+        "crop": "Grapevine",
+        "dose": "0.4 L/ha",
+        "status": "ok"
+      },
+      {
+        "date": "09 Apr",
+        "product": "Switch",
+        "crop": "Grapevine",
+        "dose": "0.8 kg/ha",
+        "status": "ok"
+      }
     ],
     "statusOk": "OK",
     "statusWarn": "Anomaly",
     "ticker": [
       "CAP compliant",
       "D.Lgs. 150/2012",
-      "Regional bulletins — 20 regions",
+      "Regional bulletins, 20 regions",
       "Invoice OCR · WhatsApp · PDF · email",
       "Anomalies flagged with source",
-      "European servers — Hetzner DE"
+      "European servers, Hetzner DE"
     ]
   },
   "problem": {
-    "eyebrow": "01 — The Problem",
+    "eyebrow": "01, The Problem",
     "title": "The field logbook isn't hard. <em><span class=\"serif-i\">It's slow.</span></em> And the data always lives in the wrong place.",
-    "lead": "Client WhatsApp. Supplier email. Paper invoice. Handwritten note. Out-of-date spreadsheet. Collecting it all, cross-checking and formatting it — before you even start the logbook — takes hours. Every time. For every farm.",
+    "lead": "Client WhatsApp. Supplier email. Paper invoice. Handwritten note. Out-of-date spreadsheet. Collecting it all, cross-checking and formatting it, before you even start the logbook, takes hours. Every time. For every farm.",
     "cards": [
       {
         "title": "6 hours lost every week.",
@@ -48,7 +84,7 @@
       },
       {
         "title": "34% of farms have at least one anomaly.",
-        "body": "Off-label dosage, treatment not registered on the variety, harvest interval violated. Invisible errors — until the inspection arrives. At that point, the average CAP deduction is €4,200 per farm."
+        "body": "Off-label dosage, treatment not registered on the variety, harvest interval violated. Invisible errors until the inspection arrives. At that point, the average CAP deduction is €4,200 per farm."
       },
       {
         "title": "4 regulations to cross-check every time.",
@@ -58,20 +94,32 @@
     "bridge": "Seminai solves all three. <em>In minutes.</em> Without taking away the professional responsibility that belongs to you."
   },
   "solution": {
-    "eyebrow": "02 — How it works",
+    "eyebrow": "02, How it works",
     "title": "How Seminai produces the <em>field logbook</em> in minutes.",
-    "lead": "Three steps. The first one you do in thirty seconds. The second one is Seminai. The third comes back to you — because a professional's signature can't be delegated.",
+    "lead": "Three steps. The first one you do in thirty seconds. The second one is Seminai. The third comes back to you, because a professional's signature can't be delegated.",
     "steps": [
-      { "label": "Upload", "heading": "Upload the invoices — from wherever they live.", "body": "WhatsApp photos, PDF upload, forwarded emails. Pesticides, seeds, fertilizers. <strong>Even messy, even from different sources.</strong> Seminai collects them all." },
-      { "label": "Process", "heading": "The system processes and flags.", "body": "Extracts the data, cross-checks dosages with labels, verifies compliance against <strong>4 live regulatory layers</strong>. Every anomaly is flagged with source and corrective action." },
-      { "label": "Approve", "heading": "You review, approve, deliver.", "body": "In a few minutes you have the logbook ready for review. You check, approve or correct. <strong>You sign</strong> — the professional responsibility stays where it belongs." }
+      {
+        "label": "Upload",
+        "heading": "Upload the invoices from wherever they live.",
+        "body": "WhatsApp photos, PDF upload, forwarded emails. Pesticides, seeds, fertilizers. <strong>Even messy, even from different sources.</strong> Seminai collects them all."
+      },
+      {
+        "label": "Process",
+        "heading": "The system processes and flags.",
+        "body": "Extracts the data, cross-checks dosages with labels, verifies compliance against <strong>4 live regulatory layers</strong>. Every anomaly is flagged with source and corrective action."
+      },
+      {
+        "label": "Approve",
+        "heading": "You review, approve, deliver.",
+        "body": "In a few minutes you have the logbook ready for review. You check, approve or correct. <strong>You sign</strong>. The professional responsibility stays where it belongs."
+      }
     ],
     "doorBeforeLabel": "Without Seminai",
     "doorAfterLabel": "With Seminai",
     "doorBefore": [
       "Sunday 10:30 PM still at the PC closing the logbook.",
       "Client calling in panic about a CAP inspection.",
-      "You turn down the fifth new practice — no capacity."
+      "You turn down the fifth new practice: no capacity."
     ],
     "doorAfter": [
       "Saturday in the field. Sunday off.",
@@ -83,20 +131,32 @@
     "ctaNote": "14 days · no credit card"
   },
   "trust": {
-    "eyebrow": "03 — Sources",
+    "eyebrow": "03, Sources",
     "title": "What Seminai's <em>checks</em> are based on.",
     "lead": "Seminai doesn't invent rules. It applies them from official sources, updated automatically whenever regulations change.",
     "sources": [
-      { "num": "SOURCE 01", "title": "Ministerial product label." },
-      { "num": "SOURCE 02", "title": "Disciplinary codes" },
-      { "num": "SOURCE 03", "title": "European regulation" },
-      { "num": "SOURCE 04", "title": "Regional bulletins and derogations" }
+      {
+        "num": "SOURCE 01",
+        "title": "Ministerial product label."
+      },
+      {
+        "num": "SOURCE 02",
+        "title": "Disciplinary codes"
+      },
+      {
+        "num": "SOURCE 03",
+        "title": "European regulation"
+      },
+      {
+        "num": "SOURCE 04",
+        "title": "Regional bulletins and derogations"
+      }
     ],
     "foot": "When a rule changes, you get an alert. <em>The next logbook is already compliant.</em> You don't have to track updates yourself.",
     "illustrationAria": "Robot approving compliance on a clipboard"
   },
   "fork": {
-    "eyebrow": "04 — Who it's for",
+    "eyebrow": "04, Who it's for",
     "title": "Are you a <em>freelance agronomist</em> or do you run a <em>cooperative?</em>",
     "lead": "The problem is the same. The scale is different. So are the plans.",
     "studiosEyebrow": "Technical practices",
@@ -104,9 +164,9 @@
     "studiosIntro": "You manage 10, 20, 50 farms. The field logbook is the part of the job that eats the most hours without direct billable value.",
     "studiosItems": [
       "Logbooks ready for review in <strong>minutes, not hours</strong>.",
-      "All data in one place — WhatsApp, email, PDF, photos.",
+      "All data in one place, WhatsApp, email, PDF, photos.",
       "Anomalies flagged <strong>before</strong> the inspection, not after.",
-      "You review and approve — professional responsibility stays yours."
+      "You review and approve. Professional responsibility stays yours."
     ],
     "studiosPrice": "Plans from €297/year (3 farms) to €3,497/year (80 farms).",
     "studiosCta": "See plans for agronomists →",
@@ -119,11 +179,11 @@
       "One compliance checkpoint for the whole network.",
       "API integration with your existing systems."
     ],
-    "networkPrice": "Network plan — custom pricing for your volume.",
+    "networkPrice": "Network plan, custom pricing for your volume.",
     "networkCta": "Talk to us →"
   },
   "pricing": {
-    "eyebrow": "05 — Plans",
+    "eyebrow": "05, Plans",
     "title": "Clear plans. <em>No surprises.</em>",
     "foundingEyebrow": "Founding Member 2026",
     "foundingTitle": "−30% <em>forever.</em> First 100 practices.",
@@ -139,32 +199,65 @@
     "perFarmMonth": "per farm/month",
     "startCta": "Start →",
     "plans": [
-      { "name": "Solo", "farms": "3 farms", "oldPrice": "€297", "price": "€207", "monthly": "€17.25", "perFarm": "€5.75", "who": "Agronomist with a few farms or a single farmer." },
-      { "name": "Studio 10", "farms": "10 farms", "oldPrice": "€697", "price": "€487", "monthly": "€40.58", "perFarm": "€4.06", "who": "Mid-size technical practice. Best hours-saved-per-euro ratio.", "featured": true },
-      { "name": "Studio 30", "farms": "30 farms", "oldPrice": "€1,497", "price": "€1,047", "monthly": "€87.25", "perFarm": "€2.91", "who": "Structured practice with a team of technicians." },
-      { "name": "Studio 80", "farms": "80 farms", "oldPrice": "€3,497", "price": "€2,447", "monthly": "€203.92", "perFarm": "€2.55", "who": "Large practice or small consortium." }
+      {
+        "name": "Solo",
+        "farms": "3 farms",
+        "oldPrice": "€297",
+        "price": "€207",
+        "monthly": "€17.25",
+        "perFarm": "€5.75",
+        "who": "Agronomist with a few farms or a single farmer."
+      },
+      {
+        "name": "Studio 10",
+        "farms": "10 farms",
+        "oldPrice": "€697",
+        "price": "€487",
+        "monthly": "€40.58",
+        "perFarm": "€4.06",
+        "who": "Mid-size technical practice. Best hours-saved-per-euro ratio.",
+        "featured": true
+      },
+      {
+        "name": "Studio 30",
+        "farms": "30 farms",
+        "oldPrice": "€1,497",
+        "price": "€1,047",
+        "monthly": "€87.25",
+        "perFarm": "€2.91",
+        "who": "Structured practice with a team of technicians."
+      },
+      {
+        "name": "Studio 80",
+        "farms": "80 farms",
+        "oldPrice": "€3,497",
+        "price": "€2,447",
+        "monthly": "€203.92",
+        "perFarm": "€2.55",
+        "who": "Large practice or small consortium."
+      }
     ],
     "networkName": "Network",
     "networkFarms": "80+ farms",
-    "networkPrice": "Quote — custom pricing",
+    "networkPrice": "Quote, custom pricing",
     "networkWho": "Cooperatives and consortia. API, SSO, dedicated technical office.",
     "networkCta": "Talk to us →",
     "featuresTitle": "Included in all plans",
     "features": [
       "Field logbooks for your farms.",
-      "Automatic OCR — WhatsApp photos or PDF upload.",
+      "Automatic OCR, WhatsApp photos or PDF upload.",
       "Compliance checks across 4 official regulatory layers.",
       "Anomalies flagged with source and specific correction.",
       "Automatic alerts on regulatory updates.",
       "Direct WhatsApp and Telegram support.",
       "PDF export ready for CAP inspections.",
-      "European servers — encrypted data."
+      "European servers, encrypted data."
     ]
   },
   "magnet": {
-    "eyebrow": "06 — Free trial",
+    "eyebrow": "06, Free trial",
     "title": "Not ready for a trial yet? <em>Send us your invoices.</em> We'll return a clean Excel. <em>Free.</em>",
-    "cta": "Send your invoices on WhatsApp — Francesco",
+    "cta": "Send your invoices to Francesco on WhatsApp",
     "note": "Available for the first 5 new contacts each month.",
     "chatAria": "WhatsApp chat with invoice sent to Seminai",
     "chatName": "Seminai",
@@ -176,22 +269,31 @@
     "chatInput": "Type a message…",
     "invoiceBrand": "Agrifornitura Rossi srl",
     "invoiceNum": "No. 1284/2026",
-    "invoiceTitle": "Invoice — 14/05/2026",
+    "invoiceTitle": "Invoice dated 14/05/2026",
     "invoiceLines": [
-      { "label": "Ridomil Gold 1kg ×4", "amount": "148.00" },
-      { "label": "Vitipec Cu 5L ×2", "amount": "89.40" },
-      { "label": "Score 25 EC 1L ×1", "amount": "62.10" }
+      {
+        "label": "Ridomil Gold 1kg ×4",
+        "amount": "148.00"
+      },
+      {
+        "label": "Vitipec Cu 5L ×2",
+        "amount": "89.40"
+      },
+      {
+        "label": "Score 25 EC 1L ×1",
+        "amount": "62.10"
+      }
     ],
     "invoiceTotal": "€ 365.86",
     "photoCaption": "IMG_2841.jpg · 1.2 MB"
   },
   "faq": {
-    "eyebrow": "07 — FAQ",
+    "eyebrow": "07, FAQ",
     "title": "Frequently asked questions about the digital field logbook.",
     "items": [
       {
         "question": "What is the field logbook and what is it for?",
-        "answer": "The field logbook is the legally required document where every farm records all phytosanitary treatments — products used, dosages, dates, treated crops. It is required by CAP rules, D.Lgs. 150/2012 and specific regional regulations. In an inspection, missing or irregular logbooks can lead to CAP contribution cuts."
+        "answer": "The field logbook is the legally required document where every farm records all phytosanitary treatments: products used, dosages, dates, treated crops. It is required by CAP rules, D.Lgs. 150/2012 and specific regional regulations. In an inspection, missing or irregular logbooks can lead to CAP contribution cuts."
       },
       {
         "question": "How long does it take to produce a logbook with Seminai?",
@@ -199,7 +301,7 @@
       },
       {
         "question": "Who approves the logbook produced by Seminai?",
-        "answer": "You — the responsible agronomist or technician. Seminai produces the logbook and flags anomalies with specific corrections. You review, approve and sign. Professional responsibility stays with the professional, where it belongs by law."
+        "answer": "You: the agronomist or technician in charge. Seminai produces the logbook and flags anomalies with specific corrections. You review, approve and sign. Professional responsibility stays with the professional, where it belongs by law."
       },
       {
         "question": "How are regulations verified?",
@@ -211,7 +313,7 @@
       },
       {
         "question": "What happens when regulations change?",
-        "answer": "Seminai automatically updates regulatory databases whenever rules change — CAP, national regulation, regional rules. You receive an alert if a change impacts farms you manage. The next logbook is already compliant without you doing anything."
+        "answer": "Seminai automatically updates regulatory databases whenever rules change (CAP, national regulation, regional rules. You receive an alert if a change impacts farms you manage. The next logbook is already compliant without you doing anything."
       },
       {
         "question": "Are my farm data secure?",
@@ -227,7 +329,7 @@
       },
       {
         "question": "How does the 14-day free trial work?",
-        "answer": "Access the platform with no credit card. You can load up to 2 trial farms with real data. After 14 days, the account becomes read-only — your data stays accessible, it is not deleted. No automatic charges. No obligation to convert."
+        "answer": "Access the platform with no credit card. You can load up to 2 trial farms with real data. After 14 days, the account becomes read-only: your data stays accessible, it is not deleted. No automatic charges. No obligation to convert."
       }
     ]
   },
@@ -247,9 +349,9 @@
       "email": "mario@example.com",
       "message": "Briefly describe the invoices you're sending..."
     },
-    "filesHint": "PDF, JPG, PNG or WEBP — you can select multiple files.",
+    "filesHint": "PDF, JPG, PNG or WEBP, you can select multiple files.",
     "removeFile": "Remove",
-    "defaultBody": "Invoice submission from Seminai landing — {{name}}",
+    "defaultBody": "Invoice submission from Seminai landing, {{name}}",
     "validation": {
       "required": "Please fill in name, email and attach at least one invoice.",
       "invalidEmail": "Please enter a valid email address."
@@ -279,7 +381,7 @@
     "privacy": "Privacy Policy",
     "cookies": "Cookie Policy",
     "terms": "Terms of Service",
-    "copyright": "Seminai © {{year}} — VAT xxxxxxxxxxx",
+    "copyright": "Seminai © {{year}} · VAT xxxxxxxxxxx",
     "serverNote": "European servers · Hetzner DE"
   }
 }
