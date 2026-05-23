@@ -62,7 +62,10 @@
 
 .landing-page em { font-style: italic; }
 
-.landing-page a { color: inherit; text-decoration: none; }
+.landing-page a { text-decoration: none; }
+.landing-page a:not(.btn-primary):not(.btn-secondary):not(.btn-link):not(.pick):not(.nav-cta) {
+  color: inherit;
+}
 .landing-page img { display: block; max-width: 100%; }
 
   /* Layout */
@@ -245,8 +248,12 @@
     border-radius: 999px;
     font-size: 14.5px;
     font-weight: 500;
-    transition: background .2s, transform .2s;
+    transition: background .2s, transform .2s, color .2s;
     border: 1px solid var(--green-deep);
+  }
+  .landing-page a.btn-primary,
+  .landing-page a.btn-primary:hover {
+    color: #fff;
   }
   .btn-primary:hover { background: var(--green-deep); transform: translateY(-1px); }
   .btn-primary .arrow {
@@ -1015,9 +1022,11 @@
     color: #fff;
     transition: background .2s, color .2s, border-color .2s;
   }
+  .landing-page a.btn-secondary { color: #fff; }
   .fork-card .btn-secondary:hover { background: var(--green-deep); border-color: var(--green-deep); color: #fff; }
   .fork-card.dark .btn-secondary { border-color: #fff; background: #fff; color: var(--green-deep); }
-  .fork-card.dark .btn-secondary:hover { background: var(--ochre); border-color: var(--ochre); color: var(--green-deep); }
+  .landing-page .fork-card.dark a.btn-secondary { color: var(--green-deep); }
+  .landing-page .fork-card.dark a.btn-secondary:hover { background: var(--ochre); border-color: var(--ochre); color: var(--green-deep); }
 
   @media (max-width: 880px) {
     .fork-grid { grid-template-columns: 1fr; }
@@ -1164,9 +1173,11 @@
     font-weight: 500;
     transition: background .2s, color .2s, border-color .2s;
   }
-  .price-cell.featured .pick { border-color: #fff; background: #fff; color: var(--green-deep); }
+  .landing-page a.pick { color: #fff; }
   .price-cell .pick:hover { background: var(--green-deep); border-color: var(--green-deep); color: #fff; }
-  .price-cell.featured .pick:hover { background: var(--ochre); border-color: var(--ochre); color: var(--green-deep); }
+  .price-cell.featured .pick { border-color: #fff; background: #fff; color: var(--green-deep); }
+  .landing-page .price-cell.featured a.pick { color: var(--green-deep); }
+  .landing-page .price-cell.featured a.pick:hover { background: var(--ochre); border-color: var(--ochre); color: var(--green-deep); }
 
   /* Network row — full width, horizontal */
   .price-cell.network {
