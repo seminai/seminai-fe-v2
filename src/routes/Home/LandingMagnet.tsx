@@ -1,15 +1,17 @@
 import { useTranslation } from "react-i18next";
-import { getWhatsAppUrl } from "./constants";
 import { RichHtml } from "./RichHtml";
+
+interface LandingMagnetProps {
+  onOpenSendInvoices: () => void;
+}
 
 interface InvoiceLine {
   label: string;
   amount: string;
 }
 
-export function LandingMagnet() {
-  const { t, i18n } = useTranslation();
-  const whatsAppUrl = getWhatsAppUrl(i18n.language);
+export function LandingMagnet({ onOpenSendInvoices }: LandingMagnetProps) {
+  const { t } = useTranslation();
   const invoiceLines = t("landing.magnet.invoiceLines", {
     returnObjects: true,
   }) as InvoiceLine[];
@@ -23,15 +25,10 @@ export function LandingMagnet() {
               <RichHtml html={t("landing.magnet.title")} />
             </h2>
             <div className="magnet-cta">
-              <a
-                href={whatsAppUrl}
-                className="btn-primary"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <button type="button" className="btn-primary" onClick={onOpenSendInvoices}>
                 {t("landing.magnet.cta")}
                 <span className="arrow" />
-              </a>
+              </button>
               <span className="note">{t("landing.magnet.note")}</span>
             </div>
           </div>

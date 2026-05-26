@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { SendInvoicesEmailDialog } from "@/components/organism/SendInvoicesEmailDialog";
 import "./landing.css";
 import { LandingFooter } from "./LandingFooter";
 import { LandingNav } from "./LandingNav";
@@ -8,11 +9,17 @@ type LegalPageLayoutProps = {
 };
 
 export function LegalPageLayout({ children }: LegalPageLayoutProps) {
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+
   return (
     <div className="landing-page wrap legal-page">
       <LandingNav />
       <main className="legal-content container">{children}</main>
-      <LandingFooter />
+      <LandingFooter onOpenSendInvoices={() => setInvoiceDialogOpen(true)} />
+      <SendInvoicesEmailDialog
+        open={invoiceDialogOpen}
+        onOpenChange={setInvoiceDialogOpen}
+      />
     </div>
   );
 }

@@ -1,6 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { ANCHORS, getWhatsAppUrl } from "./constants";
+import { ANCHORS } from "./constants";
 import { RichHtml } from "./RichHtml";
+
+interface LandingHeroProps {
+  onOpenSendInvoices: () => void;
+}
 
 interface DemoRow {
   date: string;
@@ -10,9 +14,8 @@ interface DemoRow {
   status: "ok" | "warn";
 }
 
-export function LandingHero() {
-  const { t, i18n } = useTranslation();
-  const whatsAppUrl = getWhatsAppUrl(i18n.language);
+export function LandingHero({ onOpenSendInvoices }: LandingHeroProps) {
+  const { t } = useTranslation();
   const headers = t("landing.hero.demoHeaders", {
     returnObjects: true,
   }) as string[];
@@ -45,10 +48,10 @@ export function LandingHero() {
               <RichHtml html={t("landing.hero.body")} />
             </p>
             <div className="hero-ctas">
-              <a href={whatsAppUrl} className="btn-primary" target="_blank" rel="noopener noreferrer">
+              <button type="button" className="btn-primary" onClick={onOpenSendInvoices}>
                 {t("landing.hero.ctaPrimary")}
                 <span className="arrow" />
-              </a>
+              </button>
               <a href={ANCHORS.who} className="btn-link">
                 {t("landing.hero.ctaSecondary")}
               </a>

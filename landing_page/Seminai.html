@@ -535,7 +535,10 @@
     font-weight: 500;
     transition: background .2s, transform .2s;
     border: 1px solid var(--green-deep);
+    cursor: pointer;
+    font-family: inherit;
   }
+  button.btn-primary { color: #fff; }
   .btn-primary:hover { background: var(--green-deep); transform: translateY(-1px); }
   .btn-primary .arrow {
     width: 18px; height: 12px; display: inline-block;
@@ -1881,6 +1884,197 @@
   .foot-col ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
   .foot-col a { font-size: 13.5px; color: rgba(255,255,255,0.7); }
   .foot-col a:hover { color: #fff; }
+  .foot-link-btn {
+    appearance: none;
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    font-size: 13.5px;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    text-align: left;
+  }
+  .foot-link-btn:hover { color: #fff; }
+
+  /* ===================== INVOICES MODAL ===================== */
+  .invoices-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.5);
+  }
+  .invoices-modal-overlay[hidden] { display: none; }
+  .invoices-modal {
+    width: 100%;
+    max-width: 32rem;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
+  }
+  .invoices-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .invoices-modal-header h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0;
+  }
+  .invoices-modal-close {
+    appearance: none;
+    border: none;
+    background: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--ink-3);
+    cursor: pointer;
+    padding: 0;
+  }
+  .invoices-modal-close:hover { color: var(--ink); }
+  .invoices-modal-desc {
+    font-size: 14px;
+    color: var(--ink-2);
+    line-height: 1.5;
+    margin: 0 0 20px;
+  }
+  .invoices-field {
+    display: block;
+    margin-bottom: 16px;
+  }
+  .invoices-field > span {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+  .invoices-field input,
+  .invoices-field textarea {
+    width: 100%;
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    background: #fff;
+  }
+  .invoices-field textarea { min-height: 96px; resize: vertical; }
+  .invoices-field input[type="file"] {
+    padding: 8px 0;
+    border: none;
+  }
+  .invoices-field input[type="file"]::file-selector-button {
+    margin-right: 12px;
+    border: none;
+    border-radius: 999px;
+    background: var(--green);
+    color: #fff;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .invoices-field input[type="file"]::file-selector-button:hover {
+    background: var(--green-deep);
+  }
+  .invoices-hint {
+    font-size: 12px;
+    color: var(--ink-3);
+    margin-top: 6px;
+  }
+  .invoices-file-list {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .invoices-file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-soft);
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .invoices-file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .invoices-file-remove {
+    appearance: none;
+    border: none;
+    background: none;
+    font-size: 12px;
+    color: var(--ink-3);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .invoices-file-remove:hover { color: var(--ink); }
+  .invoices-error {
+    font-size: 14px;
+    color: #b42318;
+    margin: 0 0 12px;
+  }
+  .invoices-success {
+    font-size: 14px;
+    color: var(--green-deep);
+    margin: 0 0 12px;
+  }
+  .invoices-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .invoices-btn-outline {
+    appearance: none;
+    border: 1px solid var(--line-soft);
+    background: #fff;
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 10px 18px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .invoices-btn-outline:hover { background: var(--bg-soft); }
+  .invoices-btn-primary {
+    appearance: none;
+    border: 1px solid var(--green-deep);
+    background: var(--green);
+    color: #fff;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .invoices-btn-primary:hover { background: var(--green-deep); }
+  .invoices-btn-primary:disabled,
+  .invoices-btn-outline:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
   .foot-bottom {
     display: flex; justify-content: space-between; align-items: center;
     padding-top: 22px;
@@ -1890,6 +2084,7 @@
     color: rgba(255,255,255,0.4);
     flex-wrap: wrap; gap: 10px;
   }
+
   @media (max-width: 880px) {
     .foot-top { grid-template-columns: 1fr 1fr; }
   }
@@ -1938,10 +2133,10 @@
           </p>
 
           <div class="hero-ctas">
-            <a href="#trial" class="btn-primary">
-              Carica le tue fatture
+            <button type="button" class="btn-primary js-open-invoices-modal">
+              Invia le fatture via email
               <span class="arrow"></span>
-            </a>
+            </button>
             <a href="#cooperative" class="btn-link">Gestisci una cooperativa? Guarda il piano Network →</a>
           </div>
         </div>
@@ -2350,7 +2545,7 @@
         <div>
           <h2>Non sei ancora pronto per il trial? <em>Mandaci le tue fatture.</em> Ti restituiamo l'Excel pulito. <em>Gratis.</em></h2>
           <div class="magnet-cta">
-            <a href="https://wa.me/0000000000" class="btn-primary">Carica le tue fatture<span class="arrow"></span></a>
+            <button type="button" class="btn-primary js-open-invoices-modal">Invia le fatture via email<span class="arrow"></span></button>
             <span class="note">Disponibile per i primi 5 nuovi contatti ogni mese.</span>
           </div>
         </div>
@@ -2526,7 +2721,7 @@
           <h5>Contatti</h5>
           <ul>
             <li><a href="mailto:info@seminai.tech">info@seminai.tech</a></li>
-            <li><a href="https://wa.me/0000000000">WhatsApp Business</a></li>
+            <li><button type="button" class="foot-link-btn js-open-invoices-modal">Invia fatture via email</button></li>
             <li><a href="#trial">Trial 14 giorni</a></li>
           </ul>
         </div>
@@ -2546,6 +2741,55 @@
     </div>
   </footer>
 
+  <div id="invoices-modal-overlay" class="invoices-modal-overlay" hidden>
+    <div
+      id="invoices-modal"
+      class="invoices-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="invoices-modal-title"
+    >
+      <div class="invoices-modal-header">
+        <h2 id="invoices-modal-title">Invia le fatture via email</h2>
+        <button type="button" id="invoices-close" class="invoices-modal-close" aria-label="Chiudi">&times;</button>
+      </div>
+      <p class="invoices-modal-desc">
+        Compila i campi e allega le fatture in PDF o immagine. Ti risponderemo al più presto.
+      </p>
+      <form id="invoices-modal-form">
+        <label class="invoices-field">
+          <span>Nome e cognome *</span>
+          <input id="invoices-name" type="text" placeholder="Mario Rossi" required />
+        </label>
+        <label class="invoices-field">
+          <span>Email *</span>
+          <input id="invoices-email" type="email" placeholder="mario@example.com" required />
+        </label>
+        <label class="invoices-field">
+          <span>Messaggio (opzionale)</span>
+          <textarea id="invoices-message" placeholder="Descrivi brevemente le fatture che stai inviando..."></textarea>
+        </label>
+        <div class="invoices-field">
+          <span>Allegati fatture *</span>
+          <input
+            id="invoices-files"
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png,.webp,.heic"
+            multiple
+          />
+          <p class="invoices-hint">PDF, JPG, PNG o WEBP, puoi selezionare più file.</p>
+          <ul id="invoices-file-list" class="invoices-file-list"></ul>
+        </div>
+        <p id="invoices-error" class="invoices-error" role="alert" hidden></p>
+        <p id="invoices-success" class="invoices-success" role="status" hidden></p>
+        <div class="invoices-modal-actions">
+          <button type="button" id="invoices-cancel" class="invoices-btn-outline">Annulla</button>
+          <button type="submit" id="invoices-submit" class="invoices-btn-primary">Invia fatture</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -2564,6 +2808,7 @@
     io.observe(stepper);
   })();
 </script>
+<script src="send-invoices-modal.js"></script>
 <script src="seminai-i18n.js"></script>
 </body>
 </html>

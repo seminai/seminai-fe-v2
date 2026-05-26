@@ -1,9 +1,12 @@
 import { useTranslation } from "react-i18next";
-import { ANCHORS, getWhatsAppUrl, LANDING_LOGO, LEGAL_ROUTES } from "./constants";
+import { ANCHORS, LANDING_LOGO, LEGAL_ROUTES } from "./constants";
 
-export function LandingFooter() {
-  const { t, i18n } = useTranslation();
-  const whatsAppUrl = getWhatsAppUrl(i18n.language);
+interface LandingFooterProps {
+  onOpenSendInvoices: () => void;
+}
+
+export function LandingFooter({ onOpenSendInvoices }: LandingFooterProps) {
+  const { t } = useTranslation();
   const year = new Date().getFullYear();
 
   return (
@@ -44,9 +47,9 @@ export function LandingFooter() {
                 <a href="mailto:info@seminai.tech">{t("landing.footer.email")}</a>
               </li>
               <li>
-                <a href={whatsAppUrl} target="_blank" rel="noopener noreferrer">
-                  {t("landing.footer.whatsapp")}
-                </a>
+                <button type="button" className="foot-link-btn" onClick={onOpenSendInvoices}>
+                  {t("landing.footer.sendInvoices")}
+                </button>
               </li>
               <li>
                 <a href={ANCHORS.trial}>{t("landing.footer.trial")}</a>

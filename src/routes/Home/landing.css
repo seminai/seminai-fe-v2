@@ -250,9 +250,13 @@
     font-weight: 500;
     transition: background .2s, transform .2s, color .2s;
     border: 1px solid var(--green-deep);
+    cursor: pointer;
+    font-family: inherit;
   }
   .landing-page a.btn-primary,
-  .landing-page a.btn-primary:hover {
+  .landing-page a.btn-primary:hover,
+  .landing-page button.btn-primary,
+  .landing-page button.btn-primary:hover {
     color: #fff;
   }
   .btn-primary:hover { background: var(--green-deep); transform: translateY(-1px); }
@@ -1610,6 +1614,18 @@
   .landing-page .foot-col ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
   .landing-page .foot-col a { font-size: 13.5px; color: rgba(255,255,255,0.7); }
   .landing-page .foot-col a:hover { color: #fff; }
+  .landing-page .foot-link-btn {
+    appearance: none;
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    font-size: 13.5px;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    text-align: left;
+  }
+  .landing-page .foot-link-btn:hover { color: #fff; }
   .landing-page .foot-bottom {
     display: flex; justify-content: space-between; align-items: center;
     padding-top: 22px;
