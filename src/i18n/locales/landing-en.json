@@ -9,7 +9,7 @@
   "hero": {
     "title": "Your field logbook<br />in <em>minutes.</em>",
     "subtitle": "You review. You approve. <span class=\"earth\">You sign.</span>",
-    "body": "Invoices show up on WhatsApp, email, PDF, handwritten notes. Collecting them, cross-checking and formatting them into the logbook takes <strong>hours</strong>, before the real work even starts. Drop everything into Seminai. In a few minutes you have the logbook ready.",
+    "body": "Invoices show up on WhatsApp, email, PDF, handwritten notes. Collecting and formatting them into the logbook takes <strong>hours</strong>, before the real work even starts. Drop everything into Seminai: in a few minutes the logbook is ready.",
     "ctaPrimary": "Send invoices via email",
     "ctaSecondary": "Running a cooperative? See the Network plan →",
     "demoUrl": "app.seminai.tech / logbook · Tenuta La Sorgente",
@@ -75,19 +75,19 @@
   "problem": {
     "eyebrow": "01, The Problem",
     "title": "The field logbook isn't hard. <em><span class=\"serif-i\">It's slow.</span></em> And the data always lives in the wrong place.",
-    "lead": "Client WhatsApp. Supplier email. Paper invoice. Handwritten note. Out-of-date spreadsheet. Collecting it all, cross-checking and formatting it, before you even start the logbook, takes hours. Every time. For every farm.",
+    "lead": "Client WhatsApp. Supplier email. Paper invoice. Handwritten note. Out-of-date spreadsheet. Collecting and cross-checking it all, before you even start the logbook, takes hours. Every time. For every farm.",
     "cards": [
       {
         "title": "6 hours lost every week.",
-        "body": "Just to gather data from different sources and transcribe it into the right format. Hours that don't bill. Hours you could spend on new clients."
+        "body": "Just to gather data from different sources and transcribe it into the right format. Hours you don't bill, and could spend on new clients."
       },
       {
         "title": "34% of farms have at least one anomaly.",
-        "body": "Off-label dosage, treatment not registered on the variety, harvest interval violated. Invisible errors until the inspection arrives. At that point, the average CAP deduction is €4,200 per farm."
+        "body": "Off-label dosage, unregistered treatment, harvest interval violated. Invisible errors until the inspection arrives: at that point the average CAP deduction is €4,200 per farm."
       },
       {
         "title": "4 regulations to cross-check every time.",
-        "body": "Product label. National pesticide regulation. Current CAP rules. Region-specific rules. They change every year. Keeping them up to date by hand while producing logbooks is impossible."
+        "body": "Product label. National pesticide regulation. Current CAP rules. Region-specific rules. They change every year: keeping them up to date by hand while producing logbooks is impossible."
       }
     ],
     "bridge": "Seminai solves all three. <em>In minutes.</em> Without taking away the professional responsibility that belongs to you."
@@ -95,7 +95,7 @@
   "solution": {
     "eyebrow": "02, How it works",
     "title": "How Seminai produces the <em>field logbook</em> in minutes.",
-    "lead": "Three steps. The first one you do in thirty seconds. The second one is Seminai. The third comes back to you, because a professional's signature can't be delegated.",
+    "lead": "Three steps. The first you do in thirty seconds. The second is Seminai. The third comes back to you: a professional's signature can't be delegated.",
     "steps": [
       {
         "label": "Upload",
@@ -171,7 +171,7 @@
     "studiosCta": "See plans for agronomists →",
     "networkEyebrow": "Network",
     "networkTitle": "For agricultural cooperatives and consortia.",
-    "networkIntro": "You don't have a single-farm problem. You have a systemic one: hundreds of members, each with their own invoices, workflows and channels.",
+    "networkIntro": "You don't have a single-farm problem, but a systemic one: hundreds of members, each with their own invoices, workflows and channels.",
     "networkItems": [
       "Compliant logbooks for <strong>all members</strong> in minutes.",
       "Aggregated reports for your technical office.",
@@ -186,11 +186,11 @@
     "title": "Clear plans. <em>No surprises.</em>",
     "foundingEyebrow": "Founding Member 2026",
     "foundingTitle": "−30% <em>forever.</em> First 100 practices.",
-    "foundingBody": "We're building the regional regulatory database together with the first 100 practices that join. In exchange for their feedback: <em>price locked for life.</em> The discount stays on every renewal, as long as the plan exists.",
+    "foundingBody": "We're building the regional regulatory database together with the first 100 practices. In exchange for their feedback: <em>price locked for life.</em> The discount stays on every renewal, as long as the plan exists.",
     "foundingCounter": "47",
     "foundingCounterLabel": "spots left",
     "anchorLeft": "What does producing field logbooks cost <em><span class=\"serif-i\">without</span></em> Seminai?",
-    "anchorRight": "6 hours of manual work per agronomist per week. Across 10 farms in a season, that's dozens of hours that don't generate revenue but you can't cut.<br /><br /><em>Seminai Studio 10: €697/year.</em> You get all those hours back.",
+    "anchorRight": "6 hours of manual work per agronomist per week. Across 10 farms in a season, dozens of hours you can't bill but can't cut.<br /><br /><em>Seminai Studio 10: €697/year.</em> You get all those hours back.",
     "featuredBadge": "Most popular",
     "foundingTag": "Founding −30%",
     "perYear": "/year",
@@ -312,7 +312,7 @@
       },
       {
         "question": "What happens when regulations change?",
-        "answer": "Seminai automatically updates regulatory databases whenever rules change (CAP, national regulation, regional rules. You receive an alert if a change impacts farms you manage. The next logbook is already compliant without you doing anything."
+        "answer": "Seminai automatically updates regulatory databases whenever rules change (CAP, national regulation, regional rules). You receive an alert if a change impacts farms you manage. The next logbook is already compliant without you doing anything."
       },
       {
         "question": "Are my farm data secure?",

@@ -9,7 +9,7 @@
   "hero": {
     "title": "Il quaderno di campagna<br />in <em>pochi minuti.</em>",
     "subtitle": "Tu rivedi. Tu approvi. <span class=\"earth\">Tu firmi.</span>",
-    "body": "Le fatture arrivano da WhatsApp, email, PDF, appunti a mano. Raccoglierle, incrociarle e formattarle nel quaderno richiede <strong>ore</strong>, prima ancora di iniziare il lavoro vero. Carica tutto su Seminai. In pochi minuti hai il quaderno pronto.",
+    "body": "Fatture da WhatsApp, email, PDF, appunti a mano. Raccoglierle e formattarle nel quaderno richiede <strong>ore</strong>, prima ancora del lavoro vero. Carica tutto su Seminai: in pochi minuti il quaderno è pronto.",
     "ctaPrimary": "Invia le fatture via email",
     "ctaSecondary": "Gestisci una cooperativa? Guarda il piano Network →",
     "demoUrl": "app.seminai.tech / quaderno · Tenuta La Sorgente",
@@ -75,19 +75,19 @@
   "problem": {
     "eyebrow": "01, Il Problema",
     "title": "Il quaderno di campagna non è difficile. <em><span class=\"serif-i\">È lento.</span></em> E i dati stanno sempre nel posto sbagliato.",
-    "lead": "WhatsApp del cliente. Email del fornitore. Fattura cartacea. Appunto a mano. Foglio Excel non aggiornato. Raccogliere tutto, incrociarlo, formattarlo, prima ancora di iniziare il quaderno, richiede ore. Ogni volta. Per ogni azienda.",
+    "lead": "WhatsApp del cliente. Email del fornitore. Fattura cartacea. Appunto a mano. Excel non aggiornato. Raccogliere e incrociare tutto, prima ancora del quaderno, richiede ore. Ogni volta. Per ogni azienda.",
     "cards": [
       {
         "title": "6 ore perse ogni settimana.",
-        "body": "Solo per raccogliere dati da fonti diverse e trascriverli nel formato corretto. Ore che non generano fatturato. Ore che potresti usare per nuovi clienti."
+        "body": "Solo per raccogliere dati da fonti diverse e trascriverli nel formato corretto. Ore che non fatturi, e che potresti dedicare a nuovi clienti."
       },
       {
         "title": "Il 34% delle aziende ha almeno un'anomalia.",
-        "body": "Dosaggio fuori etichetta, trattamento non registrato sulla varietà, data di carenza violata. Errori invisibili finché non arriva il controllo. A quel punto, la decurtazione PAC media è €4.200 per azienda."
+        "body": "Dosaggio fuori etichetta, trattamento non registrato, data di carenza violata. Errori invisibili finché non arriva il controllo: a quel punto la decurtazione PAC media è €4.200 per azienda."
       },
       {
         "title": "4 normative da incrociare ogni volta.",
-        "body": "Etichetta del prodotto. Regolamento nazionale fitosanitario. Normativa PAC in vigore. Regole specifiche della tua regione. Cambiano ogni anno. Tenerle aggiornate manualmente mentre produci quaderni è impossibile."
+        "body": "Etichetta del prodotto. Regolamento nazionale fitosanitario. Normativa PAC in vigore. Regole della tua regione. Cambiano ogni anno: tenerle aggiornate a mano mentre produci quaderni è impossibile."
       }
     ],
     "bridge": "Seminai risolve tutti e tre. <em>In pochi minuti.</em> Senza toglierti la responsabilità professionale che ti appartiene."
@@ -95,7 +95,7 @@
   "solution": {
     "eyebrow": "02, Come funziona",
     "title": "Come Seminai produce il <em>quaderno di campagna</em> in pochi minuti.",
-    "lead": "Tre passi. Il primo lo fai tu in trenta secondi. Il secondo lo fa Seminai. Il terzo torna in mano tua, perché la firma del professionista non si delega.",
+    "lead": "Tre passi. Il primo lo fai tu in trenta secondi. Il secondo lo fa Seminai. Il terzo torna a te: la firma del professionista non si delega.",
     "steps": [
       {
         "label": "Carica",
@@ -171,7 +171,7 @@
     "studiosCta": "Scopri i piani per agronomi →",
     "networkEyebrow": "Network",
     "networkTitle": "Per cooperative e consorzi agricoli.",
-    "networkIntro": "Non hai un problema di singola azienda. Hai un problema sistemico: centinaia di soci, ognuno con le sue fatture, il suo modo di lavorare, i suoi canali.",
+    "networkIntro": "Non hai un problema di singola azienda, ma sistemico: centinaia di soci, ognuno con le sue fatture, il suo modo di lavorare, i suoi canali.",
     "networkItems": [
       "Quaderni conformi per <strong>tutti i soci</strong> in pochi minuti.",
       "Report aggregati per il tuo ufficio tecnico.",
@@ -186,11 +186,11 @@
     "title": "Piani chiari. <em>Nessuna sorpresa.</em>",
     "foundingEyebrow": "Founding Member 2026",
     "foundingTitle": "−30% <em>per sempre.</em> Primi 100 studi.",
-    "foundingBody": "Stiamo costruendo il database normativo regionale insieme ai primi 100 studi che entrano. In cambio del loro feedback: <em>prezzo bloccato a vita.</em> Lo sconto resta a ogni rinnovo, finché il piano esiste.",
+    "foundingBody": "Costruiamo il database normativo regionale insieme ai primi 100 studi. In cambio del loro feedback: <em>prezzo bloccato a vita.</em> Lo sconto resta a ogni rinnovo, finché il piano esiste.",
     "foundingCounter": "47",
     "foundingCounterLabel": "posti rimasti",
     "anchorLeft": "Quanto costa produrre i quaderni di campagna <em><span class=\"serif-i\">senza</span></em> Seminai?",
-    "anchorRight": "6 ore di lavoro manuale per agronomo a settimana. Su 10 aziende, in una stagione, sono decine di ore che non generi fatturato ma non puoi eliminare.<br /><br /><em>Studio 10 di Seminai: €697/anno.</em> Quelle ore le recuperi tutte.",
+    "anchorRight": "6 ore di lavoro manuale a settimana per agronomo. Su 10 aziende, in una stagione, sono decine di ore che non fatturi ma non puoi eliminare.<br /><br /><em>Studio 10 di Seminai: €697/anno.</em> Quelle ore le recuperi tutte.",
     "featuredBadge": "Più scelto",
     "foundingTag": "Founding −30%",
     "perYear": "/anno",
@@ -312,7 +312,7 @@
       },
       {
         "question": "Cosa succede se cambiano le normative?",
-        "answer": "Seminai aggiorna automaticamente i database normativi a ogni modifica (PAC, regolamento nazionale, normative regionali. Ricevi un alert se una modifica impatta le farm che gestisci. Il prossimo quaderno è già conforme senza che tu faccia nulla."
+        "answer": "Seminai aggiorna automaticamente i database normativi a ogni modifica (PAC, regolamento nazionale, normative regionali). Ricevi un alert se una modifica impatta le farm che gestisci. Il prossimo quaderno è già conforme senza che tu faccia nulla."
       },
       {
         "question": "I dati delle mie aziende sono al sicuro?",
@@ -328,7 +328,7 @@
       },
       {
         "question": "Come funziona il trial gratuito di 14 giorni?",
-        "answer": "Accedi alla piattaforma senza carta di credito. Puoi caricare fino a 2 farm di prova con dati reali. Alla scadenza dei 14 giorni, l'account passa in sola lettura: i tuoi dati dati restano accessibili, non vengono eliminati. Nessun addebito automatico. Nessun obbligo di conversione."
+        "answer": "Accedi alla piattaforma senza carta di credito. Puoi caricare fino a 2 farm di prova con dati reali. Alla scadenza dei 14 giorni, l'account passa in sola lettura: i tuoi dati restano accessibili, non vengono eliminati. Nessun addebito automatico. Nessun obbligo di conversione."
       }
     ]
   },

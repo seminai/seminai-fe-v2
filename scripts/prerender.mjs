@@ -27,6 +27,13 @@ const ROUTES = [
 
 const ROOT_DIV = '<div id="root"></div>';
 
+// React 19 injects resource-hint <link> tags (preload/modulepreload/…) INLINE in the
+// body during renderToString. The client hoists them to <head> instead, so leaving them
+// in the prerendered body causes a hydration mismatch (React error #418). Strip them —
+// the client re-adds them to <head> on hydration. Landing components render no <link>.
+const RESOURCE_HINT_LINK =
+  /<link\b[^>]*\brel="(?:preload|modulepreload|stylesheet|preconnect|dns-prefetch|prefetch)"[^>]*>/gi;
+
 const template = readFileSync(join(distDir, "index.html"), "utf-8");
 if (!template.includes(ROOT_DIV)) {
   throw new Error(`prerender: '${ROOT_DIV}' not found in dist/index.html`);
@@ -36,8 +43,9 @@ const { render } = await import(ssrEntry);
 
 for (const route of ROUTES) {
   const { html, head } = await render(route.url, "it");
+  const body = html.replace(RESOURCE_HINT_LINK, "");
   const page = template
-    .replace(ROOT_DIV, `<div id="root">${html}</div>`)
+    .replace(ROOT_DIV, `<div id="root">${body}</div>`)
     .replace("</head>", `${head}</head>`);
 
   const outPath = join(distDir, route.out);
