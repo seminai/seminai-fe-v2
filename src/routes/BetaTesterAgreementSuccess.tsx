@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Seo } from "@/components/molecules/Seo/Seo";
+import { SEO, SITE_URL } from "@/config/seo";
 
 const LEAF_COUNT = 30;
 
@@ -103,6 +105,7 @@ export default function BetaTesterAgreementSuccess() {
 
   return (
     <div className="relative min-h-screen bg-white overflow-hidden flex items-center justify-center px-4">
+      <Seo {...SEO.beta} canonical={`${SITE_URL}/diventa-beta-tester/successo`} />
       <style>{`
         @keyframes leafFall {
           0% { transform: translateY(-30px); opacity: 0; }

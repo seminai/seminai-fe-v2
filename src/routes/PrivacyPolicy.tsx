@@ -1,8 +1,11 @@
+import { Seo } from "@/components/molecules/Seo/Seo";
+import { SEO } from "@/config/seo";
 import { LegalPageLayout } from "./Home/LegalPageLayout";
 
 export default function PrivacyPolicy() {
   return (
     <LegalPageLayout>
+        <Seo {...SEO.privacy} />
         <h1 className="text-4xl font-bold text-gray-900 mb-2">
           Privacy Policy
         </h1>

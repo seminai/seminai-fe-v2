@@ -1,0 +1,38 @@
+# Seminai
+
+> Seminai produce il **quaderno di campagna digitale** in pochi minuti, partendo dalle fatture (WhatsApp, email, PDF). Verifica dosaggi e conformità su fonti normative ufficiali; l'agronomo rivede, approva e firma. Software italiano per agronomi, studi tecnici e cooperative agricole.
+
+## Cos'è
+Il quaderno di campagna è il registro obbligatorio dei trattamenti fitosanitari (prodotti, dosaggi, date, colture), richiesto da normativa PAC, D.Lgs. 150/2012 e regolamenti regionali. Seminai lo genera automaticamente: estrae i dati delle fatture con OCR, incrocia i dosaggi con le etichette e segnala le anomalie con fonte e azione correttiva. La firma resta del professionista.
+
+## Per chi
+- Agronomi e liberi professionisti che gestiscono più aziende agricole.
+- Studi tecnici (10–80 farm).
+- Cooperative e consorzi agricoli (piano Network).
+
+## Fatti chiave
+- Verifica conformità su 4 livelli normativi: etichetta ministeriale, disciplinari, normativa europea/PAC, bollettini regionali.
+- Copertura delle 20 regioni italiane, con aggiornamento automatico dei bollettini.
+- OCR fatture da WhatsApp, PDF ed email; export PDF pronto per i controlli PAC.
+- Server europei, dati cifrati, conformi GDPR; i dati non sono usati per addestrare modelli AI.
+- Risparmio tipico: ~6 ore a settimana di lavoro manuale per agronomo.
+
+## Prezzi (annuali, listino)
+- Solo (fino a 3 farm): €297
+- Studio 10 (10 farm): €697
+- Studio 30 (30 farm): €1.497
+- Studio 80 (80 farm): €3.497
+- Network (cooperative/consorzi, 80+ farm): pricing su misura
+- Offerta Founding Member 2026: −30% a vita per i primi 100 studi.
+- Trial: 14 giorni senza carta di credito.
+
+## Link
+- Sito: https://seminai.it/
+- App / login: https://app.seminai.tech/login
+- Privacy: https://seminai.it/privacy-policy
+- Cookie: https://seminai.it/cookie-policy
+- Termini: https://seminai.it/terms-of-service
+- Dettagli completi (FAQ, procedura): https://seminai.it/llms-full.txt
+
+## Contatti
+Email: info@seminai.tech

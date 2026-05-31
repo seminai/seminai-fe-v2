@@ -1,5 +1,7 @@
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Seo } from "@/components/molecules/Seo/Seo";
+import { SEO } from "@/config/seo";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { jsPDF } from "jspdf";
@@ -429,6 +431,7 @@ Il PDF firmato è allegato a questa email.`;
 
   return (
     <div className="min-h-screen bg-white text-black px-4 py-10 md:px-6">
+      <Seo {...SEO.beta} />
       <div className="max-w-5xl mx-auto space-y-8">
         <header className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-bold">

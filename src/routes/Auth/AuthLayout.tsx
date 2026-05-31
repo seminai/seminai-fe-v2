@@ -1,8 +1,11 @@
 import { Outlet } from "react-router-dom";
+import { Seo } from "@/components/molecules/Seo/Seo";
+import { SEO } from "@/config/seo";
 
 export default function AuthLayout() {
   return (
     <div className="min-h-screen w-full flex">
+      <Seo {...SEO.auth} />
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-agri-green-50 via-nature-100 to-agri-green-100 p-12 flex-col justify-between">
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="SeminAI Logo" className="h-10 w-auto" />

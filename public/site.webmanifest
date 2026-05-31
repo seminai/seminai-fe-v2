@@ -1,0 +1,19 @@
+{
+  "name": "Seminai — Quaderno di Campagna Digitale",
+  "short_name": "Seminai",
+  "description": "Quaderno di campagna digitale automatico per agronomi, studi tecnici e cooperative agricole. Conforme PAC e D.Lgs. 150/2012.",
+  "lang": "it",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#234D34",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

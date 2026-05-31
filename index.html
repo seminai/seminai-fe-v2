@@ -6,13 +6,20 @@
     <link rel="apple-touch-icon" href="/logo.png" />
     <link rel="shortcut icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quaderno di Campagna Digitale — Automatico in Minuti | Seminai</title>
-    
+    <meta name="theme-color" content="#234D34" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!--
+      Per-route SEO (title, description, canonical, hreflang, Open Graph, Twitter, JSON-LD)
+      is managed by the <Seo> component (react-helmet-async) and baked into the prerendered
+      HTML at build time. See src/components/molecules/Seo and scripts/prerender.mjs.
+    -->
+
     <!-- Google Fonts - Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
-    
+
     <!-- Preload critical images for faster LCP -->
     <link rel="preload" as="image" href="/logo.png" />
   </head>

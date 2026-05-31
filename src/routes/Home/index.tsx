@@ -1,5 +1,9 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { SendInvoicesEmailDialog } from "@/components/organism/SendInvoicesEmailDialog";
+import { Seo } from "@/components/molecules/Seo/Seo";
+import { SEO } from "@/config/seo";
+import { buildHomeGraph, type FaqItem } from "@/config/jsonLd";
 import "./landing.css";
 import { LandingFaq } from "./LandingFaq";
 import { LandingFooter } from "./LandingFooter";
@@ -13,11 +17,15 @@ import { LandingSolution } from "./LandingSolution";
 import { LandingTrust } from "./LandingTrust";
 
 export default function Home() {
+  const { t } = useTranslation();
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const openSendInvoices = () => setInvoiceDialogOpen(true);
 
+  const faqItems = t("landing.faq.items", { returnObjects: true }) as FaqItem[];
+
   return (
     <div className="landing-page wrap">
+      <Seo {...SEO.home} jsonLd={buildHomeGraph(faqItems)} />
       <LandingNav />
       <LandingHero onOpenSendInvoices={openSendInvoices} />
       <LandingProblem />

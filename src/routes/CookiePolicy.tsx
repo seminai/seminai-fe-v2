@@ -1,8 +1,11 @@
+import { Seo } from "@/components/molecules/Seo/Seo";
+import { SEO } from "@/config/seo";
 import { LegalPageLayout } from "./Home/LegalPageLayout";
 
 export default function CookiePolicy() {
   return (
     <LegalPageLayout>
+      <Seo {...SEO.cookie} />
       <h1 className="text-4xl font-bold text-gray-900 mb-2">Cookie Policy</h1>
       <p className="text-sm text-gray-500 mb-8">
         Ultimo aggiornamento:{" "}

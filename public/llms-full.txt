@@ -1,0 +1,63 @@
+# Seminai — guida completa per agenti AI
+
+> Quaderno di campagna digitale automatico. Carica le fatture, Seminai produce il quaderno conforme PAC in pochi minuti, segnala le anomalie con la fonte normativa; l'agronomo rivede, approva e firma.
+
+## Come funziona (3 step, ~5 minuti)
+1. **Carica le fatture** — foto su WhatsApp, PDF o email inoltrate. Fitofarmaci, sementi, fertilizzanti, anche disorganizzate e da fonti diverse.
+2. **Il sistema elabora e segnala** — OCR estrae i dati, incrocia i dosaggi con le etichette ministeriali e verifica la conformità su 4 livelli normativi aggiornati. Ogni anomalia è segnalata con fonte e azione correttiva.
+3. **Rivedi, approvi, consegni** — in pochi minuti il quaderno è pronto per la revisione. Controlli, approvi o correggi. Firmi tu: la responsabilità professionale resta del tecnico abilitato.
+
+## Fonti normative verificate
+- Etichetta ministeriale del prodotto fitosanitario.
+- Disciplinari di produzione.
+- Normativa europea / PAC in vigore per la campagna.
+- Bollettini e deroghe regionali (20 regioni italiane).
+Quando una norma cambia, Seminai aggiorna i database e invia un alert: il prossimo quaderno è già conforme.
+
+## Piani e prezzi (annuali, listino)
+- Solo — fino a 3 farm — €297/anno
+- Studio 10 — 10 farm — €697/anno
+- Studio 30 — 30 farm — €1.497/anno
+- Studio 80 — 80 farm — €3.497/anno
+- Network — cooperative e consorzi (80+ farm) — pricing su misura, API, SSO, ufficio tecnico dedicato
+Founding Member 2026: −30% bloccato a vita per i primi 100 studi. Trial di 14 giorni senza carta di credito.
+
+## Incluso in tutti i piani
+OCR fatture (WhatsApp/PDF), verifica conformità su 4 livelli, anomalie con fonte e correzione, alert su aggiornamenti normativi, export PDF per i controlli PAC, supporto WhatsApp/Telegram, server europei e dati cifrati.
+
+## FAQ
+
+**Cos'è il quaderno di campagna e a cosa serve?**
+È il documento obbligatorio per legge in cui ogni azienda agricola registra i trattamenti fitosanitari (prodotti, dosaggi, date, colture). Richiesto da normativa PAC, D.Lgs. 150/2012 e regolamenti regionali. In caso di controllo, un quaderno mancante o irregolare può comportare decurtazioni dei contributi PAC.
+
+**Quanto tempo serve per produrre un quaderno con Seminai?**
+Pochi minuti dall'invio delle fatture. Manualmente un agronomo impiega in media 4-6 ore.
+
+**Chi approva il quaderno?**
+L'agronomo o il tecnico responsabile. Seminai produce il quaderno e segnala le anomalie; tu rivedi, approvi e firmi. La responsabilità professionale resta al professionista.
+
+**Come vengono verificate le normative?**
+Ogni trattamento è incrociato con 4 livelli aggiornati: etichetta ministeriale, D.Lgs. 150/2012, normativa PAC in vigore, bollettino regionale dell'azienda. Le violazioni sono segnalate come anomalie con fonte e azione correttiva.
+
+**Come funziona l'OCR delle fatture?**
+Invii foto su WhatsApp o PDF: la piattaforma estrae data, fornitore, prodotto, principio attivo, quantità, lotto e prezzo, e incrocia i dati con le farm.
+
+**Cosa succede se cambiano le normative?**
+Seminai aggiorna automaticamente i database e ti invia un alert se una modifica impatta le tue farm. Il prossimo quaderno è già conforme.
+
+**I dati sono al sicuro?**
+Cifrati in transito e a riposo, non condivisi con terze parti né usati per addestrare modelli AI. Esportabili o eliminabili in qualsiasi momento.
+
+**Funziona per tutte le regioni italiane?**
+Sì, tutte le 20 regioni, con aggiornamento automatico dai bollettini ufficiali.
+
+**Posso integrarlo con i software che uso già?**
+Sì, API aperte e documentate per gestionali, contabilità e sistemi cooperativi.
+
+**Come funziona il trial gratuito di 14 giorni?**
+Accesso senza carta di credito, fino a 2 farm di prova con dati reali. Allo scadere l'account passa in sola lettura: i dati restano accessibili, nessun addebito automatico.
+
+## Link
+- Sito: https://seminai.it/
+- App / login: https://app.seminai.tech/login
+- Contatti: info@seminai.tech
