@@ -43,9 +43,9 @@ jobs:
         run: npm run build
         env:
           COMMIT_SHA: ${{ github.sha }}
-          VITE_API_URL: https://seminai-be-v2-661301438659.europe-west1.run.app
-          VITE_GOOGLE_CLIENT_ID: 661301438659-s1k70moupqvu486rlr07ul3b563qtbh4.apps.googleusercontent.com
-          VITE_REGISTRATION_CODE: benvenutodaclariceefrancescoteamseminai2026
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
+          VITE_REGISTRATION_CODE: ${{ vars.VITE_REGISTRATION_CODE }}
 
       - name: Add SPA fallback
         run: cp dist/index.html dist/404.html
