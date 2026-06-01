@@ -10,6 +10,7 @@ import { renderToString } from "react-dom/server";
 import { StaticRouter, Routes, Route } from "react-router";
 import { HelmetProvider, type HelmetServerState } from "react-helmet-async";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/sonner";
 import i18n from "./i18n";
 
 import Home from "./routes/Home";
@@ -39,6 +40,9 @@ export async function render(url: string, lng = "it"): Promise<RenderResult> {
             <Route path="/cookie-policy" element={<CookiePolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
           </Routes>
+          {/* Mirror main.tsx: <Toaster> renders a sibling <section> into #root.
+              Omitting it here would make the client DOM differ → hydration mismatch. */}
+          <Toaster />
         </StaticRouter>
       </QueryClientProvider>
     </HelmetProvider>,

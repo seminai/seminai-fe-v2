@@ -72,7 +72,10 @@ export function LandingFooter({ onOpenSendInvoices }: LandingFooterProps) {
           </div>
         </div>
         <div className="foot-bottom">
-          <span>{t("landing.footer.copyright", { year })}</span>
+          {/* year is baked at prerender time; suppress the once-a-year SSR/CSR mismatch */}
+          <span suppressHydrationWarning>
+            {t("landing.footer.copyright", { year })}
+          </span>
         </div>
       </div>
     </footer>

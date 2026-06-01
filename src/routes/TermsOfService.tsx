@@ -9,7 +9,7 @@ export default function TermsOfService() {
         <h1 className="text-4xl font-bold text-gray-900 mb-2">
           Termini di Servizio
         </h1>
-        <p className="text-sm text-gray-500 mb-8">
+        <p className="text-sm text-gray-500 mb-8" suppressHydrationWarning>
           Ultimo aggiornamento:{" "}
           {new Date().toLocaleDateString("it-IT", {
             year: "numeric",
