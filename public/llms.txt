@@ -27,12 +27,12 @@ Il quaderno di campagna è il registro obbligatorio dei trattamenti fitosanitari
 - Trial: 14 giorni senza carta di credito.
 
 ## Link
-- Sito: https://seminai.it/
+- Sito: https://seminai.tech/
 - App / login: https://app.seminai.tech/login
-- Privacy: https://seminai.it/privacy-policy
-- Cookie: https://seminai.it/cookie-policy
-- Termini: https://seminai.it/terms-of-service
-- Dettagli completi (FAQ, procedura): https://seminai.it/llms-full.txt
+- Privacy: https://seminai.tech/privacy-policy
+- Cookie: https://seminai.tech/cookie-policy
+- Termini: https://seminai.tech/terms-of-service
+- Dettagli completi (FAQ, procedura): https://seminai.tech/llms-full.txt
 
 ## Contatti
 Email: info@seminai.tech

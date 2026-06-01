@@ -7,7 +7,7 @@
  * different host (app.seminai.tech, see src/routes/Home/constants.ts) — keep them separate.
  */
 
-export const SITE_URL = "https://seminai.it";
+export const SITE_URL = "https://seminai.tech";
 export const SITE_NAME = "Seminai";
 export const THEME_COLOR = "#234D34";
 

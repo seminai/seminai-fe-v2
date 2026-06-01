@@ -32,4 +32,4 @@ Allow: /
 User-agent: Applebot
 Allow: /
 
-Sitemap: https://seminai.it/sitemap.xml
+Sitemap: https://seminai.tech/sitemap.xml

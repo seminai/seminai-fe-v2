@@ -58,6 +58,6 @@ Sì, API aperte e documentate per gestionali, contabilità e sistemi cooperativi
 Accesso senza carta di credito, fino a 2 farm di prova con dati reali. Allo scadere l'account passa in sola lettura: i dati restano accessibili, nessun addebito automatico.
 
 ## Link
-- Sito: https://seminai.it/
+- Sito: https://seminai.tech/
 - App / login: https://app.seminai.tech/login
 - Contatti: info@seminai.tech

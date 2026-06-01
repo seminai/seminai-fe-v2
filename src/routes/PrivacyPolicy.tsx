@@ -347,7 +347,7 @@ export default function PrivacyPolicy() {
             </ul>
             <p className="text-gray-700 leading-relaxed mb-4">
               Per esercitare i tuoi diritti, contattare il Titolare
-              all'indirizzo <strong>privacy@seminai.it</strong> o alla PEC{" "}
+              all'indirizzo <strong>privacy@seminai.tech</strong> o alla PEC{" "}
               <strong>seminai@pec.it</strong>
             </p>
             <p className="text-gray-700 leading-relaxed">
@@ -434,7 +434,7 @@ export default function PrivacyPolicy() {
             </div>
             <p className="text-gray-700 leading-relaxed mt-4">
               I contatti sopra indicati fanno riferimento al Titolare del
-              Trattamento. I domini seminai.it e seminai@pec.it sono utilizzati
+              Trattamento. I domini seminai.tech e seminai@pec.it sono utilizzati
               per le comunicazioni relative al progetto SeminAI, ma il titolare
               del trattamento resta Mazzi Francesco Saverio.
             </p>
