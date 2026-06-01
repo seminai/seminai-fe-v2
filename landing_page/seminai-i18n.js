@@ -255,7 +255,7 @@
 
     // Chat mock
     ['.chat-mock .chat-status',
-      'online \u00b7 replies in a few minutes'],
+      'Seminai \u00b7 online \u00b7 replies in a few minutes'],
     ['.chat-mock .chat-date', 'today \u00b7 09:42'],
     ['.chat-mock .bubble.out:not(.photo)',
       'Hi! Sending this morning\u2019s invoice \u2014 pesticides for the vineyard.<div class="meta">09:42 <span class="ticks">\u2713\u2713</span></div>'],

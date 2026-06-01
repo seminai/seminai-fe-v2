@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { LANDING_LOGO } from "./constants";
 import { RichHtml } from "./RichHtml";
 
 interface LandingMagnetProps {
@@ -40,11 +41,10 @@ export function LandingMagnet({ onOpenSendInvoices }: LandingMagnetProps) {
           >
             <div className="chat-mock">
               <div className="chat-head">
-                <div className="chat-avatar">S</div>
-                <div>
-                  <div className="chat-name">{t("landing.magnet.chatName")}</div>
-                  <div className="chat-status">{t("landing.magnet.chatStatus")}</div>
+                <div className="chat-avatar" aria-hidden="true">
+                  <img src={LANDING_LOGO} alt="" />
                 </div>
+                <div className="chat-status">{t("landing.magnet.chatStatus")}</div>
               </div>
               <div className="chat-body">
                 <div className="chat-date">{t("landing.magnet.chatDate")}</div>
