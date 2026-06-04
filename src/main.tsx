@@ -8,7 +8,10 @@ import "./index.css";
 import "./components/ui/custom-theme.css";
 import "./i18n";
 import { Toaster } from "@/components/ui/sonner";
+import { registerSeminaiWebMcpTools } from "@/lib/webmcp";
 import App from "./App.tsx";
+
+registerSeminaiWebMcpTools();
 
 // Crea una nuova istanza di QueryClient
 const queryClient = new QueryClient({

@@ -1,4 +1,4 @@
-# Seminai Auth Metadata
+# Auth.md
 
 Seminai currently supports human user authentication through the web application at https://app.seminai.tech/login.
 
