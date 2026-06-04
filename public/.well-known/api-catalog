@@ -1,0 +1,35 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://seminai.tech/",
+      "describedby": [
+        {
+          "href": "https://seminai.tech/llms.txt",
+          "type": "text/plain"
+        },
+        {
+          "href": "https://seminai.tech/llms-full.txt",
+          "type": "text/plain"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://seminai-be-v2-661301438659.europe-west1.run.app/api-docs",
+          "type": "text/html"
+        }
+      ],
+      "service-desc": [
+        {
+          "href": "https://seminai-be-v2-661301438659.europe-west1.run.app/openapi.json",
+          "type": "application/vnd.oai.openapi+json"
+        }
+      ],
+      "status": [
+        {
+          "href": "https://seminai-be-v2-661301438659.europe-west1.run.app/health",
+          "type": "application/json"
+        }
+      ]
+    }
+  ]
+}

@@ -51,6 +51,17 @@ export function Seo({
       <meta name="description" content={description} />
       <meta name="robots" content={robots} />
       <link rel="canonical" href={canonical} />
+      <link rel="describedby" href={`${SITE_URL}/llms.txt`} type="text/plain" />
+      <link
+        rel="api-catalog"
+        href={`${SITE_URL}/.well-known/api-catalog`}
+        type="application/linkset+json"
+      />
+      <link
+        rel="service-doc"
+        href="https://seminai-be-v2-661301438659.europe-west1.run.app/api-docs"
+        type="text/html"
+      />
 
       {hreflang ? (
         <link rel="alternate" hrefLang="it" href={`${SITE_URL}/`} />

@@ -7,9 +7,9 @@
     "login": "Login"
   },
   "hero": {
-    "title": "Il quaderno di campagna<br />in <em>pochi minuti.</em>",
+    "title": "Il quaderno di campagna digitale<br />per agronomi, <em>in pochi minuti.</em>",
     "subtitle": "Tu rivedi. Tu approvi. <span class=\"earth\">Tu firmi.</span>",
-    "body": "Fatture da WhatsApp, email, PDF, appunti a mano. Raccoglierle e formattarle nel quaderno richiede <strong>ore</strong>, prima ancora del lavoro vero. Carica tutto su Seminai: in pochi minuti il quaderno è pronto.",
+    "body": "Seminai produce il quaderno di campagna digitale in pochi minuti, partendo dalle fatture (WhatsApp, email, PDF). Verifica dosaggi e conformità su fonti normative ufficiali; l'agronomo rivede, approva e firma.",
     "ctaPrimary": "Invia le fatture via email",
     "ctaSecondary": "Gestisci una cooperativa? Guarda il piano Network →",
     "demoUrl": "app.seminai.tech / quaderno · Tenuta La Sorgente",
@@ -369,7 +369,8 @@
       "sources": "Fonti normative",
       "plans": "Piani e prezzi",
       "cooperative": "Per cooperative",
-      "faq": "FAQ"
+      "faq": "FAQ",
+      "aiInfo": "Informazioni per assistenti AI"
     },
     "contactTitle": "Contatti",
     "email": "info@seminai.tech",

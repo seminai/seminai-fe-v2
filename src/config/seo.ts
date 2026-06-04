@@ -10,6 +10,8 @@
 export const SITE_URL = "https://seminai.tech";
 export const SITE_NAME = "Seminai";
 export const THEME_COLOR = "#234D34";
+export const GEO_DESCRIPTION =
+  "Seminai produce il quaderno di campagna digitale in pochi minuti, partendo dalle fatture (WhatsApp, email, PDF). Verifica dosaggi e conformità su fonti normative ufficiali; l'agronomo rivede, approva e firma.";
 
 /**
  * OG/Twitter share image. Interim: the existing square /logo.png so social tags don't 404.
@@ -48,8 +50,7 @@ export const SEO: Record<
 > = {
   home: {
     title: "Quaderno di Campagna Digitale — Automatico in Minuti | Seminai",
-    description:
-      "Seminai produce il quaderno di campagna in minuti. Carica le fatture da WhatsApp, email o PDF. Il sistema verifica dosaggi e normativa PAC su fonti ufficiali. Tu rivedi e approvi. Prova gratis.",
+    description: GEO_DESCRIPTION,
     canonical: absoluteUrl("/"),
     locale: "it_IT",
     hreflang: true,

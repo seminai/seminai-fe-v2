@@ -1,5 +1,10 @@
 User-agent: *
 Allow: /
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
+
+# Agent-readable context
+# LLM summary: https://seminai.tech/llms.txt
+# Full LLM context: https://seminai.tech/llms-full.txt
 
 # Bot AI / GEO (Generative Engine Optimization)
 User-agent: GPTBot

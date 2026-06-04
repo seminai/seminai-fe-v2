@@ -1,6 +1,6 @@
 # Seminai — guida completa per agenti AI
 
-> Quaderno di campagna digitale automatico. Carica le fatture, Seminai produce il quaderno conforme PAC in pochi minuti, segnala le anomalie con la fonte normativa; l'agronomo rivede, approva e firma.
+> Seminai produce il quaderno di campagna digitale in pochi minuti, partendo dalle fatture (WhatsApp, email, PDF). Verifica dosaggi e conformità su fonti normative ufficiali; l'agronomo rivede, approva e firma. Software italiano per agronomi, studi tecnici e cooperative agricole.
 
 ## Come funziona (3 step, ~5 minuti)
 1. **Carica le fatture** — foto su WhatsApp, PDF o email inoltrate. Fitofarmaci, sementi, fertilizzanti, anche disorganizzate e da fonti diverse.
@@ -46,7 +46,7 @@ Invii foto su WhatsApp o PDF: la piattaforma estrae data, fornitore, prodotto, p
 Seminai aggiorna automaticamente i database e ti invia un alert se una modifica impatta le tue farm. Il prossimo quaderno è già conforme.
 
 **I dati sono al sicuro?**
-Cifrati in transito e a riposo, non condivisi con terze parti né usati per addestrare modelli AI. Esportabili o eliminabili in qualsiasi momento.
+Cifrati in transito e a riposo, non condivisi con terze parti senza consenso. Esportabili o eliminabili in qualsiasi momento.
 
 **Funziona per tutte le regioni italiane?**
 Sì, tutte le 20 regioni, con aggiornamento automatico dai bollettini ufficiali.

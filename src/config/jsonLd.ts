@@ -5,7 +5,7 @@
  *
  * Used by the homepage <Seo> (src/routes/Home/index.tsx) and the prerender.
  */
-import { SITE_URL, SITE_NAME } from "./seo";
+import { GEO_DESCRIPTION, SITE_URL, SITE_NAME } from "./seo";
 
 export interface FaqItem {
   question: string;
@@ -30,8 +30,7 @@ function buildOrganization() {
     name: SITE_NAME,
     url: SITE_URL,
     logo: { "@type": "ImageObject", url: `${SITE_URL}/logo.png` },
-    description:
-      "Software italiano per la produzione automatica del quaderno di campagna digitale. Conforme PAC, D.Lgs. 150/2012 e bollettini regionali.",
+    description: GEO_DESCRIPTION,
     areaServed: { "@type": "Country", name: "Italia" },
     knowsLanguage: "it-IT",
     foundingDate: "2025",
@@ -54,8 +53,7 @@ function buildWebSite() {
     "@id": WEBSITE_ID,
     url: `${SITE_URL}/`,
     name: SITE_NAME,
-    description:
-      "Quaderno di campagna digitale automatico per agronomi, studi tecnici e cooperative agricole.",
+    description: GEO_DESCRIPTION,
     inLanguage: "it-IT",
     publisher: { "@id": ORG_ID },
   };
@@ -69,8 +67,7 @@ function buildSoftwareApplication() {
     applicationCategory: "BusinessApplication",
     applicationSubCategory: "Agricultural Software",
     operatingSystem: "Web, iOS, Android",
-    description:
-      "Software per la gestione automatica del quaderno di campagna digitale. Produce quaderni conformi PAC in pochi minuti con verifica su 4 livelli normativi ufficiali: etichetta ministeriale, disciplinari, normativa europea e bollettini regionali.",
+    description: GEO_DESCRIPTION,
     url: SITE_URL,
     inLanguage: "it-IT",
     datePublished: "2025-01-01",

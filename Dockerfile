@@ -43,19 +43,7 @@ FROM nginx:stable-alpine AS production
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # Copia una configurazione personalizzata di Nginx per SPA (Single Page Application)
-RUN echo 'server {\
-    listen 8080;\
-    root /usr/share/nginx/html;\
-    index index.html;\
-    server_name localhost;\
-    error_page 500 502 503 504 /50x.html;\
-    location = /50x.html {\
-        root /usr/share/nginx/html;\
-    }\
-    location / {\
-        try_files $uri $uri/ /index.html;\
-    }\
-}' > /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Esponi la porta 8080 (Cloud Run richiede che il container sia in ascolto sulla porta definita nella variabile PORT)
 EXPOSE 8080

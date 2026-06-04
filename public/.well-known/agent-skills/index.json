@@ -1,0 +1,12 @@
+{
+  "$schema": "https://agentskills.io/schemas/agent-skills-index-v0.2.json",
+  "skills": [
+    {
+      "name": "seminai-site-guide",
+      "type": "markdown",
+      "description": "Guide AI agents through Seminai public content, product positioning, legal pages and API discovery.",
+      "url": "https://seminai.tech/agent-skills/seminai-site-guide/SKILL.md",
+      "sha256": "e7e6b23bc50809ff3e1b457e23c6e7979a2f69239bcbea1843138fc7572d96d9"
+    }
+  ]
+}

@@ -7,9 +7,9 @@
     "login": "Login"
   },
   "hero": {
-    "title": "Your field logbook<br />in <em>minutes.</em>",
+    "title": "The digital field logbook<br />for agronomists, <em>in minutes.</em>",
     "subtitle": "You review. You approve. <span class=\"earth\">You sign.</span>",
-    "body": "Invoices show up on WhatsApp, email, PDF, handwritten notes. Collecting and formatting them into the logbook takes <strong>hours</strong>, before the real work even starts. Drop everything into Seminai: in a few minutes the logbook is ready.",
+    "body": "Seminai produces the digital field logbook in minutes from invoices (WhatsApp, email, PDF). It verifies dosages and compliance against official regulatory sources; the agronomist reviews, approves and signs.",
     "ctaPrimary": "Send invoices via email",
     "ctaSecondary": "Running a cooperative? See the Network plan →",
     "demoUrl": "app.seminai.tech / logbook · Tenuta La Sorgente",
@@ -369,7 +369,8 @@
       "sources": "Regulatory sources",
       "plans": "Plans & pricing",
       "cooperative": "For cooperatives",
-      "faq": "FAQ"
+      "faq": "FAQ",
+      "aiInfo": "Information for AI assistants"
     },
     "contactTitle": "Contact",
     "email": "info@seminai.tech",

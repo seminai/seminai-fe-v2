@@ -14,7 +14,7 @@ Il quaderno di campagna è il registro obbligatorio dei trattamenti fitosanitari
 - Verifica conformità su 4 livelli normativi: etichetta ministeriale, disciplinari, normativa europea/PAC, bollettini regionali.
 - Copertura delle 20 regioni italiane, con aggiornamento automatico dei bollettini.
 - OCR fatture da WhatsApp, PDF ed email; export PDF pronto per i controlli PAC.
-- Server europei, dati cifrati, conformi GDPR; i dati non sono usati per addestrare modelli AI.
+- Server europei, dati cifrati e conformi GDPR; l'uso dei contenuti pubblici per indicizzazione, input AI e training e' consentito tramite Content-Signal.
 - Risparmio tipico: ~6 ore a settimana di lavoro manuale per agronomo.
 
 ## Prezzi (annuali, listino)

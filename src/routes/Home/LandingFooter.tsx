@@ -38,6 +38,9 @@ export function LandingFooter({ onOpenSendInvoices }: LandingFooterProps) {
               <li>
                 <a href={ANCHORS.faq}>{t("landing.footer.productLinks.faq")}</a>
               </li>
+              <li>
+                <a href="/llms.txt">{t("landing.footer.productLinks.aiInfo")}</a>
+              </li>
             </ul>
           </div>
           <div className="foot-col">
