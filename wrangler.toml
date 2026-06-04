@@ -1,0 +1,10 @@
+name = "seminai-agent-readiness"
+main = "cloudflare/agent-readiness-worker.js"
+compatibility_date = "2026-06-04"
+
+workers_dev = false
+
+routes = [
+  { pattern = "seminai.tech/*", zone_name = "seminai.tech" },
+  { pattern = "www.seminai.tech/*", zone_name = "seminai.tech" },
+]

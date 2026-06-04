@@ -1,6 +1,7 @@
 # DNS-AID setup for seminai.tech
 
-Use this checklist in Cloudflare DNS after the frontend and backend discovery endpoints are deployed.
+Use this checklist in Cloudflare DNS after the frontend discovery headers and
+Markdown negotiation Worker are deployed.
 
 ## Required endpoints
 
@@ -11,19 +12,21 @@ Use this checklist in Cloudflare DNS after the frontend and backend discovery en
 
 ## DNS-AID records
 
-Create experimental SVCB or HTTPS records under the public zone. Cloudflare UI/API support for custom SVCB parameters can vary, so keep TXT fallbacks until the DNS-AID draft stabilizes.
+Create HTTPS records under the public zone. Keep capability endpoints in TXT
+fallbacks because Cloudflare supports standard SVCB/HTTPS parameters, while
+DNS-AID custom parameters are still draft-stage and provider support varies.
 
 ### Preferred SVCB/HTTPS records
 
 ```text
-_index._agents.seminai.tech. 300 IN HTTPS 1 seminai.tech. alpn="h2,h3" endpoint="https://seminai.tech/.well-known/api-catalog"
-_a2a._agents.seminai.tech. 300 IN HTTPS 1 seminai.tech. alpn="h2,h3" endpoint="https://seminai.tech/.well-known/agent-skills/index.json"
+_index._agents.seminai.tech. 300 IN HTTPS 1 seminai.tech. alpn="h2,h3" port=443 mandatory="alpn,port"
+_a2a._agents.seminai.tech. 300 IN HTTPS 1 seminai.tech. alpn="h2,h3" port=443 mandatory="alpn,port"
 ```
 
 Add this only after a real MCP endpoint exists:
 
 ```text
-_mcp._agents.seminai.tech. 300 IN HTTPS 1 seminai-be-v2-661301438659.europe-west1.run.app. alpn="h2" endpoint="https://seminai-be-v2-661301438659.europe-west1.run.app/mcp"
+_mcp._agents.seminai.tech. 300 IN HTTPS 1 seminai-be-v2-661301438659.europe-west1.run.app. alpn="h2" port=443 mandatory="alpn,port"
 ```
 
 ### TXT fallbacks
