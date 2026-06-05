@@ -2,40 +2,20 @@ import { StrictMode } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { GoogleOAuthProvider } from "@react-oauth/google";
-import "./index.css";
-import "./components/ui/custom-theme.css";
 import "./i18n";
-import { Toaster } from "@/components/ui/sonner";
 import { registerSeminaiWebMcpTools } from "@/lib/webmcp";
 import App from "./App.tsx";
 
 registerSeminaiWebMcpTools();
-
-// Crea una nuova istanza di QueryClient
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minuti
-    },
-  },
-});
 
 const container = document.getElementById("root")!;
 
 const app = (
   <StrictMode>
     <HelmetProvider>
-      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-        <QueryClientProvider client={queryClient}>
-          <BrowserRouter>
-            <App />
-            <Toaster />
-          </BrowserRouter>
-        </QueryClientProvider>
-      </GoogleOAuthProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
     </HelmetProvider>
   </StrictMode>
 );

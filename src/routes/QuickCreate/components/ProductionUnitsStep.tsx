@@ -123,7 +123,6 @@ function adaptExtractedPUsToInputs(
 function convertPUInputsToExtracted(
   inputs: ProductionUnitInput[],
   originalPUsMap: Map<string, ExtractedProductionUnit>,
-  _fieldsData: ExtractedField[],
 ): ExtractedProductionUnit[] {
   return inputs.map((input) => {
     const original = originalPUsMap.get(input.id);
@@ -234,7 +233,6 @@ export default function ProductionUnitsStep({
       const extracted = convertPUInputsToExtracted(
         productionUnits,
         originalPUsMap.current,
-        fieldsData,
       );
       onProductionUnitsChange(extracted);
     }, 300);

@@ -1,4 +1,5 @@
 import type { Workspace } from "@/types/workspace";
+import { APP_LOGO_URL } from "@/config/brand";
 
 const DEFAULT_WORKSPACE_COLORS = {
   primary: "#64a42e",
@@ -10,7 +11,7 @@ const DEFAULT_THEME = {
   "--workspace-primary": DEFAULT_WORKSPACE_COLORS.primary,
   "--workspace-secondary": DEFAULT_WORKSPACE_COLORS.secondary,
   "--workspace-accent": DEFAULT_WORKSPACE_COLORS.accent,
-  "--workspace-logo": "/logo.png",
+  "--workspace-logo": APP_LOGO_URL,
 };
 
 const DEFAULT_PALETTE_VARIABLES: Record<string, string> = {

@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { APP_LOGO_URL } from "@/config/brand";
 import { cn } from "@/lib/utils";
 import { useWorkspaceContext } from "@/contexts/WorkspaceContext";
 import type { Workspace } from "@/types/workspace";
@@ -41,7 +42,7 @@ function WorkspaceAvatar({
   if (!workspace) {
     return (
       <img
-        src="/logo.png"
+        src={APP_LOGO_URL}
         alt="Seminai"
         className={cn(sizeClasses[size], "rounded-lg object-contain", className)}
       />

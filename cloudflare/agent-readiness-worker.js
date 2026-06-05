@@ -10,6 +10,8 @@ const HOME_LINK_HEADER = [
 const API_CATALOG_PATH = "/.well-known/api-catalog";
 const AUTH_MD_PATH = "/auth.md";
 const HOME_PATHS = new Set(["/", "/index.html"]);
+const IMMUTABLE_ASSET_CACHE = "public, max-age=31536000, immutable";
+const HTML_CACHE = "public, max-age=300, must-revalidate";
 const OAUTH_PROTECTED_RESOURCE_PATH = "/.well-known/oauth-protected-resource";
 const MCP_SERVER_CARD_PATH = "/.well-known/mcp/server-card.json";
 const MCP_RPC_PATH = "/mcp";
@@ -232,6 +234,8 @@ export default {
       headers.set("Content-Type", "application/linkset+json; charset=utf-8");
     }
 
+    applyCacheHeaders(url.pathname, headers);
+
     if (
       request.method === "GET" &&
       HOME_PATHS.has(url.pathname) &&
@@ -430,6 +434,17 @@ function estimateMarkdownTokens(markdown) {
 
 function isHtmlResponse(headers) {
   return headers.get("Content-Type")?.toLowerCase().includes("text/html") ?? false;
+}
+
+function applyCacheHeaders(pathname, headers) {
+  if (pathname.startsWith("/assets/")) {
+    headers.set("Cache-Control", IMMUTABLE_ASSET_CACHE);
+    return;
+  }
+
+  if (isHtmlResponse(headers)) {
+    headers.set("Cache-Control", HTML_CACHE);
+  }
 }
 
 function injectWebMcpBootstrap(html) {

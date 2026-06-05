@@ -7,18 +7,15 @@
  * for each public URL matches what the client renders for the same URL, so hydration is clean.
  */
 import { renderToString } from "react-dom/server";
+import { Suspense } from "react";
 import { StaticRouter, Routes, Route } from "react-router";
 import { HelmetProvider, type HelmetServerState } from "react-helmet-async";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/sonner";
 import i18n from "./i18n";
 
 import Home from "./routes/Home";
 import PrivacyPolicy from "./routes/PrivacyPolicy";
 import CookiePolicy from "./routes/CookiePolicy";
 import TermsOfService from "./routes/TermsOfService";
-
-const queryClient = new QueryClient();
 
 export interface RenderResult {
   html: string;
@@ -32,19 +29,16 @@ export async function render(url: string, lng = "it"): Promise<RenderResult> {
 
   const html = renderToString(
     <HelmetProvider context={helmetContext}>
-      <QueryClientProvider client={queryClient}>
-        <StaticRouter location={url}>
+      <StaticRouter location={url}>
+        <Suspense fallback={null}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/cookie-policy" element={<CookiePolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
           </Routes>
-          {/* Mirror main.tsx: <Toaster> renders a sibling <section> into #root.
-              Omitting it here would make the client DOM differ → hydration mismatch. */}
-          <Toaster />
-        </StaticRouter>
-      </QueryClientProvider>
+        </Suspense>
+      </StaticRouter>
     </HelmetProvider>,
   );
 

@@ -456,7 +456,7 @@ export const SingleProductionUnitForm: React.FC<
                           selectedUnitIds.has(u.id),
                         )
                       }
-                      onCheckedChange={(_checked) => {
+                      onCheckedChange={() => {
                         if (filteredProductionUnits.length === 0) return;
                         const allSelected = filteredProductionUnits.every((u) =>
                           selectedUnitIds.has(u.id),

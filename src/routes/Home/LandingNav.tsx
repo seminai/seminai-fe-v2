@@ -4,7 +4,12 @@ import {
   normalizeLanguage,
   type SupportedLanguage,
 } from "@/i18n";
-import { ANCHORS, LANDING_LOGIN_URL, LANDING_LOGO } from "./constants";
+import {
+  ANCHORS,
+  LANDING_LOGIN_URL,
+  LANDING_LOGO,
+  LANDING_LOGO_SRCSET,
+} from "./constants";
 
 export function LandingNav() {
   const { t, i18n } = useTranslation();
@@ -18,7 +23,15 @@ export function LandingNav() {
     <nav className="top">
       <div className="container nav-row">
         <a href="/" className="brand">
-          <img src={LANDING_LOGO} alt="Seminai" className="brand-img" />
+          <img
+            src={LANDING_LOGO}
+            srcSet={LANDING_LOGO_SRCSET}
+            alt=""
+            className="brand-img"
+            aria-hidden="true"
+            width={34}
+            height={34}
+          />
           <span>Seminai</span>
         </a>
         <div className="nav-links">

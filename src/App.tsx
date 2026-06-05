@@ -1,100 +1,112 @@
+import { lazy, Suspense } from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import Home from "./routes/Home";
-import Auth from "./routes/Auth";
-import LoginRegister from "./routes/Auth/LoginRegister";
-import ForgotPassword from "./routes/Auth/ForgotPassword";
-import ResetPassword from "./routes/Auth/ResetPassword";
-import Dashboard from "./routes/Dashboard";
-import Settings from "./routes/Settings";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import Label from "./routes/Label";
-import LabelDetailPage from "./routes/Label/Detail";
-import NewLabel from "./routes/Label/New";
-import Fields from "./routes/Fields";
-import Company from "./routes/Company";
-import CompanyDetailPage from "./routes/Company/Detail";
-import ProductionUnit from "./routes/ProductionUnit";
-import NewProductionUnit from "./routes/ProductionUnit/NewProductionUnit";
-import Products from "./routes/Products";
-import NewProduct from "./routes/Products/NewProduct";
-import Job from "./routes/Job";
-import NewOperation from "./routes/NewOperation";
-import Operations from "./routes/Operations";
-import FieldNotes from "./routes/FieldNotes";
-import QuickCreate from "./routes/QuickCreate";
 import TermsOfService from "./routes/TermsOfService";
 import PrivacyPolicy from "./routes/PrivacyPolicy";
 import CookiePolicy from "./routes/CookiePolicy";
-import NewWorkspace from "./routes/Workspace/NewWorkspace";
-import WorkspaceSettings from "./routes/Workspace/WorkspaceSettings";
-import NewRule from "./routes/Workspace/NewRule";
-import EditRule from "./routes/Workspace/EditRule";
-import AcceptInvitation from "./routes/Workspace/AcceptInvitation";
-import BetaTesterAgreement from "./routes/BetaTesterAgreement";
-import BetaTesterAgreementSuccess from "./routes/BetaTesterAgreementSuccess";
-import DosageAgentChat from "./routes/DosageAgentChat";
-import AdminDataTotalsPage from "./routes/AdminDataTotals";
+
+const Auth = lazy(() => import("./routes/Auth"));
+const LoginRegister = lazy(() => import("./routes/Auth/LoginRegister"));
+const ForgotPassword = lazy(() => import("./routes/Auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("./routes/Auth/ResetPassword"));
+const Dashboard = lazy(() => import("./routes/Dashboard"));
+const Settings = lazy(() => import("./routes/Settings"));
+const ProtectedRoute = lazy(() => import("@/components/ProtectedRoute"));
+const Label = lazy(() => import("./routes/Label"));
+const LabelDetailPage = lazy(() => import("./routes/Label/Detail"));
+const NewLabel = lazy(() => import("./routes/Label/New"));
+const Fields = lazy(() => import("./routes/Fields"));
+const Company = lazy(() => import("./routes/Company"));
+const CompanyDetailPage = lazy(() => import("./routes/Company/Detail"));
+const ProductionUnit = lazy(() => import("./routes/ProductionUnit"));
+const NewProductionUnit = lazy(
+  () => import("./routes/ProductionUnit/NewProductionUnit"),
+);
+const Products = lazy(() => import("./routes/Products"));
+const NewProduct = lazy(() => import("./routes/Products/NewProduct"));
+const Job = lazy(() => import("./routes/Job"));
+const NewOperation = lazy(() => import("./routes/NewOperation"));
+const Operations = lazy(() => import("./routes/Operations"));
+const FieldNotes = lazy(() => import("./routes/FieldNotes"));
+const QuickCreate = lazy(() => import("./routes/QuickCreate"));
+const NewWorkspace = lazy(() => import("./routes/Workspace/NewWorkspace"));
+const WorkspaceSettings = lazy(
+  () => import("./routes/Workspace/WorkspaceSettings"),
+);
+const NewRule = lazy(() => import("./routes/Workspace/NewRule"));
+const EditRule = lazy(() => import("./routes/Workspace/EditRule"));
+const AcceptInvitation = lazy(
+  () => import("./routes/Workspace/AcceptInvitation"),
+);
+const BetaTesterAgreement = lazy(() => import("./routes/BetaTesterAgreement"));
+const BetaTesterAgreementSuccess = lazy(
+  () => import("./routes/BetaTesterAgreementSuccess"),
+);
+const DosageAgentChat = lazy(() => import("./routes/DosageAgentChat"));
+const AdminDataTotalsPage = lazy(() => import("./routes/AdminDataTotals"));
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/auth" element={<Auth />}>
-        <Route index element={<LoginRegister />} />
-        <Route path="forgot-password" element={<ForgotPassword />} />
-        <Route path="reset-password" element={<ResetPassword />} />
-      </Route>
-      <Route path="/diventa-beta-tester" element={<BetaTesterAgreement />} />
-      <Route
-        path="/diventa-beta-tester/successo"
-        element={<BetaTesterAgreementSuccess />}
-      />
-      <Route path="/terms-of-service" element={<TermsOfService />} />
-      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-      <Route path="/cookie-policy" element={<CookiePolicy />} />
-      <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/label" element={<Label />} />
-        <Route path="/new-label" element={<NewLabel />} />
-        <Route path="/label/:id" element={<LabelDetailPage />} />
-        <Route path="/fields" element={<Fields />} />
-        <Route path="/company" element={<Company />} />
-        <Route path="/company/:id" element={<CompanyDetailPage />} />
-        <Route path="/production-unit" element={<ProductionUnit />} />
-        <Route path="/new-production-unit" element={<NewProductionUnit />} />
-        <Route path="/dosage-manager" element={<Navigate to="/job/new" replace />} />
-        <Route path="/job" element={<Job />} />
-        <Route path="/job/new" element={<NewOperation />} />
-        <Route path="/job/new-job-manual" element={<Navigate to="/job/new" replace />} />
-        <Route path="/operations" element={<Operations />} />
-        <Route path="/field-notes" element={<FieldNotes />} />
-        <Route path="/dosage-agent-chat" element={<DosageAgentChat />} />
-        <Route path="/admin-data-totals" element={<AdminDataTotalsPage />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/new-product" element={<NewProduct />} />
+    <Suspense fallback={null}>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/auth" element={<Auth />}>
+          <Route index element={<LoginRegister />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
+        </Route>
+        <Route path="/diventa-beta-tester" element={<BetaTesterAgreement />} />
         <Route
-          path="/create-company-field-production"
-          element={<QuickCreate />}
+          path="/diventa-beta-tester/successo"
+          element={<BetaTesterAgreementSuccess />}
         />
-        <Route path="/new-workspace" element={<NewWorkspace />} />
-        <Route
-          path="/workspace/accept-invitation"
-          element={<AcceptInvitation />}
-        />
-        <Route
-          path="/workspace/settings/rules/:ruleId"
-          element={<EditRule />}
-        />
-        <Route
-          path="/workspace/settings/:section"
-          element={<WorkspaceSettings />}
-        />
-        <Route path="/workspace/settings" element={<WorkspaceSettings />} />
-        <Route path="/new-rule" element={<NewRule />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/cookie-policy" element={<CookiePolicy />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/label" element={<Label />} />
+          <Route path="/new-label" element={<NewLabel />} />
+          <Route path="/label/:id" element={<LabelDetailPage />} />
+          <Route path="/fields" element={<Fields />} />
+          <Route path="/company" element={<Company />} />
+          <Route path="/company/:id" element={<CompanyDetailPage />} />
+          <Route path="/production-unit" element={<ProductionUnit />} />
+          <Route path="/new-production-unit" element={<NewProductionUnit />} />
+          <Route path="/dosage-manager" element={<Navigate to="/job/new" replace />} />
+          <Route path="/job" element={<Job />} />
+          <Route path="/job/new" element={<NewOperation />} />
+          <Route path="/job/new-job-manual" element={<Navigate to="/job/new" replace />} />
+          <Route path="/operations" element={<Operations />} />
+          <Route path="/field-notes" element={<FieldNotes />} />
+          <Route path="/dosage-agent-chat" element={<DosageAgentChat />} />
+          <Route path="/admin-data-totals" element={<AdminDataTotalsPage />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/new-product" element={<NewProduct />} />
+          <Route
+            path="/create-company-field-production"
+            element={<QuickCreate />}
+          />
+          <Route path="/new-workspace" element={<NewWorkspace />} />
+          <Route
+            path="/workspace/accept-invitation"
+            element={<AcceptInvitation />}
+          />
+          <Route
+            path="/workspace/settings/rules/:ruleId"
+            element={<EditRule />}
+          />
+          <Route
+            path="/workspace/settings/:section"
+            element={<WorkspaceSettings />}
+          />
+          <Route path="/workspace/settings" element={<WorkspaceSettings />} />
+          <Route path="/new-rule" element={<NewRule />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
 

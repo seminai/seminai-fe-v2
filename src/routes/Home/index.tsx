@@ -1,10 +1,8 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SendInvoicesEmailDialog } from "@/components/organism/SendInvoicesEmailDialog";
 import { Seo } from "@/components/molecules/Seo/Seo";
 import { SEO } from "@/config/seo";
 import { buildHomeGraph, type FaqItem } from "@/config/jsonLd";
-import "./landing.css";
 import { LandingFaq } from "./LandingFaq";
 import { LandingFooter } from "./LandingFooter";
 import { LandingFork } from "./LandingFork";
@@ -15,6 +13,13 @@ import { LandingPricing } from "./LandingPricing";
 import { LandingProblem } from "./LandingProblem";
 import { LandingSolution } from "./LandingSolution";
 import { LandingTrust } from "./LandingTrust";
+import "./landing.css";
+
+const SendInvoicesEmailDialog = lazy(() =>
+  import("@/components/organism/SendInvoicesEmailDialog").then((module) => ({
+    default: module.SendInvoicesEmailDialog,
+  })),
+);
 
 export default function Home() {
   const { t } = useTranslation();
@@ -27,19 +32,25 @@ export default function Home() {
     <div className="landing-page wrap">
       <Seo {...SEO.home} jsonLd={buildHomeGraph(faqItems)} />
       <LandingNav />
-      <LandingHero onOpenSendInvoices={openSendInvoices} />
-      <LandingProblem />
-      <LandingSolution />
-      <LandingTrust />
-      <LandingFork />
-      <LandingPricing />
-      <LandingMagnet onOpenSendInvoices={openSendInvoices} />
-      <LandingFaq />
+      <main>
+        <LandingHero onOpenSendInvoices={openSendInvoices} />
+        <LandingProblem />
+        <LandingSolution />
+        <LandingTrust />
+        <LandingFork />
+        <LandingPricing />
+        <LandingMagnet onOpenSendInvoices={openSendInvoices} />
+        <LandingFaq />
+      </main>
       <LandingFooter onOpenSendInvoices={openSendInvoices} />
-      <SendInvoicesEmailDialog
-        open={invoiceDialogOpen}
-        onOpenChange={setInvoiceDialogOpen}
-      />
+      {invoiceDialogOpen && (
+        <Suspense fallback={null}>
+          <SendInvoicesEmailDialog
+            open={invoiceDialogOpen}
+            onOpenChange={setInvoiceDialogOpen}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

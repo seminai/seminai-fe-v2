@@ -359,24 +359,17 @@ export default function Fields(): React.ReactElement {
       return;
     }
 
-    try {
-      const promises = [];
+    const promises = [];
 
-      if (fieldsToCreate.length > 0) {
-        promises.push(createFieldsAsync(fieldsToCreate));
-      }
-
-      if (fieldsToUpdate.length > 0) {
-        promises.push(
-          updateFieldsAsync(fieldsToUpdate as BulkFieldUpdateInput[]),
-        );
-      }
-
-      await Promise.all(promises);
-    } catch (err) {
-      // Rilancia l'errore per permettere alla tabella di non resettare lo stato
-      throw err;
+    if (fieldsToCreate.length > 0) {
+      promises.push(createFieldsAsync(fieldsToCreate));
     }
+
+    if (fieldsToUpdate.length > 0) {
+      promises.push(updateFieldsAsync(fieldsToUpdate as BulkFieldUpdateInput[]));
+    }
+
+    await Promise.all(promises);
   };
 
   const handleDeleteSelected = async (

@@ -1,3 +1,27 @@
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-v20-latin-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-v20-latin-italic.woff2") format("woff2");
+}
+
+  html, body, #root {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+  }
+
   :root {
     --bg: #FFFFFF;
     --bg-soft: #FAF6E8;
@@ -7,7 +31,7 @@
     --paper: #F2E8CF;
     --ink: #1A1A1A;
     --ink-2: #3A3A3A;
-    --ink-3: #7A7368;
+    --ink-3: #5F574D;
     --line: #1A1A1A;
     --line-soft: rgba(26, 26, 26, 0.10);
     --green: #386641;
@@ -27,7 +51,7 @@
   .landing-page {
     background: var(--bg);
     color: var(--ink);
-    font-family: "Inter", system-ui, sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 400;
     font-size: 16.5px;
     line-height: 1.55;
@@ -38,16 +62,16 @@
 
 .landing-page ::selection { background: var(--green); color: #fff; }
 
-  /* Typography — Inter only */
-  .serif, .serif-i { font-family: "Inter", sans-serif; font-style: italic; font-weight: 500; letter-spacing: -0.01em; }
+  /* Typography */
+  .serif, .serif-i { font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-style: italic; font-weight: 500; letter-spacing: -0.01em; }
   .mono {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 500;
     letter-spacing: 0.04em;
     font-feature-settings: "tnum";
   }
   .eyebrow {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 12px;
     font-weight: 500;
     letter-spacing: 0.16em;
@@ -55,7 +79,7 @@
     color: var(--green);
   }
 
-.landing-page h1, .landing-page h2, .landing-page h3 { font-family: "Inter", sans-serif; font-weight: 700; line-height: 1.02; letter-spacing: -0.028em; }
+.landing-page h1, .landing-page h2, .landing-page h3 { font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-weight: 700; line-height: 1.02; letter-spacing: -0.028em; }
 .landing-page h1 { font-size: clamp(44px, 6.6vw, 96px); font-weight: 800; letter-spacing: -0.035em; }
 .landing-page h2 { font-size: clamp(32px, 4.2vw, 60px); line-height: 1.05; }
 .landing-page h3 { font-size: clamp(22px, 2.1vw, 30px); line-height: 1.15; }
@@ -90,7 +114,7 @@
   }
   .brand {
     display: flex; align-items: center; gap: 9px;
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 19px;
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -99,8 +123,8 @@
   .brand-mark {
     width: 24px; height: 24px;
     background: var(--green);
-    -webkit-mask: url("/landing/logo.png") center / contain no-repeat;
-            mask: url("/landing/logo.png") center / contain no-repeat;
+    -webkit-mask: url("../../assets/landing/logo-96.webp") center / contain no-repeat;
+            mask: url("../../assets/landing/logo-96.webp") center / contain no-repeat;
   }
   .brand-img {
     width: 34px; height: 34px;
@@ -140,11 +164,11 @@
     appearance: none;
     border: none;
     background: transparent;
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 11.5px;
     font-weight: 600;
     letter-spacing: 0.06em;
-    color: var(--ink-3);
+    color: var(--ink-2);
     padding: 6px 11px;
     border-radius: 999px;
     cursor: pointer;
@@ -183,7 +207,7 @@
     background: var(--green-soft);
     box-shadow: 0 0 0 4px rgba(47,100,68,0.18);
   }
-  .hero-eyebrow .label { font-family: "Inter", sans-serif; font-size: 11.5px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+  .hero-eyebrow .label { font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 11.5px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
 
   h1.hero-title {
     font-size: clamp(40px, 5.2vw, 76px);
@@ -201,7 +225,7 @@
 
   .hero-subtitle {
     margin-top: 14px;
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 600;
     font-size: 17px;
     color: var(--ink-2);
@@ -294,7 +318,7 @@
     backdrop-filter: blur(6px);
     padding: 7px 11px;
     border-radius: 4px;
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 10.5px;
     font-weight: 500;
     letter-spacing: 0.08em;
@@ -325,7 +349,7 @@
   .demo-bar .demo-url {
     margin-left: 12px;
     font-size: 11.5px;
-    color: var(--ink-3);
+    color: var(--ink-2);
     font-weight: 500;
     letter-spacing: 0;
     white-space: nowrap;
@@ -348,7 +372,7 @@
     margin-bottom: 4px;
   }
   .demo-h {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 700;
     font-size: 17px;
     color: var(--ink);
@@ -387,7 +411,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--ink-3);
+    color: var(--ink-2);
   }
   .demo-row.warn { background: rgba(232,179,59,0.12); }
   .demo-row .tag {
@@ -440,7 +464,7 @@
     border-bottom: 1px solid var(--line-soft);
     overflow: hidden;
     padding: 16px 0;
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 16px;
     font-weight: 500;
     color: var(--ink-2);
@@ -508,7 +532,7 @@
   .problem-card:nth-child(3) .problem-icon { color: var(--green); }
   .problem-icon svg { width: 100%; height: 100%; display: block; }
   .problem-num {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-style: italic;
     font-weight: 800;
     font-size: 44px;
@@ -541,7 +565,7 @@
     flex-wrap: wrap;
   }
   .problem-bridge p {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 600;
     font-size: clamp(20px, 1.9vw, 26px);
     line-height: 1.3;
@@ -597,7 +621,7 @@
     background: #fff;
     border: 3px solid rgba(35,77,52,0.18);
     display: flex; align-items: center; justify-content: center;
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 700;
     font-size: 20px;
     color: var(--ink-3);
@@ -647,7 +671,7 @@
   }
   .step-block:last-child { border-right: none; }
   .step-block-h {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 700;
     font-size: 19px;
     color: var(--ink);
@@ -700,7 +724,7 @@
     color: #fff;
   }
   .door-label {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 11.5px;
     font-weight: 600;
     letter-spacing: 0.14em;
@@ -761,7 +785,7 @@
   }
   .founding-eyebrow {
     display: inline-flex; align-items: center; gap: 10px;
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.16em;
@@ -803,7 +827,7 @@
     padding-left: 36px;
   }
   .counter-num {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 800;
     font-size: 64px;
     line-height: 1;
@@ -818,7 +842,7 @@
   }
   .counter-label {
     margin-top: 10px;
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 11.5px;
     font-weight: 600;
     letter-spacing: 0.14em;
@@ -846,7 +870,7 @@
 
   /* Price card: old (struck) + founding tag */
   .price-cell .price-old {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 14px;
     font-weight: 500;
     color: var(--ink-3);
@@ -861,7 +885,7 @@
     text-decoration: none;
     display: inline-block;
   }
-  .price-cell.featured .price-old { color: rgba(255,255,255,0.45); }
+  .price-cell.featured .price-old { color: rgba(255,255,255,0.72); }
   .price-cell.featured .price-old { text-decoration-color: rgba(255,255,255,0.4); }
   .founding-tag {
     display: inline-flex; align-items: center; gap: 6px;
@@ -870,7 +894,7 @@
     border-radius: 999px;
     background: var(--ochre);
     color: var(--ink);
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -898,7 +922,7 @@
   .trust-card:nth-child(2n) { border-right: none; }
   .trust-card:nth-last-child(-n+2) { border-bottom: none; }
   .trust-num {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 12px;
     font-weight: 600;
     color: var(--ochre-soft);
@@ -928,7 +952,7 @@
     align-items: center;
   }
   .trust-foot p {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 600;
     font-size: 22px;
     line-height: 1.3;
@@ -939,11 +963,19 @@
   .trust-foot p em { font-style: italic; color: var(--ochre-soft); font-weight: 700; }
   .trust-illust {
     aspect-ratio: 1/1;
-    background: var(--bg) url("/landing/conforme.png") center / 70% no-repeat;
+    background: var(--bg);
     border-radius: 6px;
+    display: grid;
+    place-items: center;
+    width: min(280px, 100%);
     max-width: 280px;
     justify-self: end;
     box-shadow: 0 24px 50px -28px rgba(0,0,0,.5);
+  }
+  .trust-illust img {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
   }
   @media (max-width: 880px) {
     .trust-grid { grid-template-columns: 1fr; }
@@ -978,14 +1010,22 @@
   .fork-card.dark p, .fork-card.dark li { color: rgba(255,255,255,0.78); }
   .fork-card.dark h3 { color: #fff; }
   .fork-card.dark .eyebrow { color: var(--ochre-soft); }
+  .fork-card .eyebrow { margin-bottom: 16px; }
 
   .fork-card .illust {
     height: 110px;
     margin-bottom: 22px;
-    background: center / contain no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
   }
-  .fork-card.left .illust { background-image: url("/landing/chat-farmer.png"); background-position: left center; }
-  .fork-card.right .illust { background-image: url("/landing/white-label.png"); background-position: left center; }
+  .fork-card .illust img {
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+    object-position: left center;
+  }
 
   .fork-card h3 { font-size: 30px; font-weight: 700; margin-bottom: 14px; max-width: 22ch; letter-spacing: -0.025em; }
   .fork-card .intro { font-size: 15.5px; color: var(--ink-2); margin-bottom: 22px; line-height: 1.55; }
@@ -1007,7 +1047,7 @@
   }
   .fork-card.dark li::before { background: var(--ochre-soft); }
   .fork-card .price-note {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 13px;
     font-weight: 500;
     color: var(--ink-3);
@@ -1039,6 +1079,7 @@
 
   /* ===================== PRICING ===================== */
   section.pricing { background: var(--bg-soft); border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); }
+  .pricing-title { width: 660px; max-width: 100%; }
   .anchor-card {
     margin-bottom: 40px;
     padding: 28px 32px;
@@ -1050,7 +1091,7 @@
     gap: 50px;
   }
   .anchor-card .left p {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 700;
     font-size: 22px; line-height: 1.3;
     color: var(--ink);
@@ -1095,13 +1136,13 @@
   }
   .price-cell.featured .plan-head { border-bottom-color: rgba(255,255,255,0.12); }
   .price-cell .plan-name {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 700;
     font-size: 18px;
     letter-spacing: -0.02em;
   }
   .price-cell .plan-sub {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 11px;
     font-weight: 500;
     letter-spacing: 0.14em;
@@ -1113,7 +1154,7 @@
   /* Price block */
   .price-cell .price-block { margin-bottom: 18px; }
   .price-cell .price {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 800;
     font-size: 38px;
     line-height: 1;
@@ -1129,7 +1170,7 @@
   .price-cell.featured .price { color: var(--ochre-soft); }
   .price-cell.featured .price small { color: rgba(255,255,255,0.6); }
   .price-cell .price-meta {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 12.5px;
     line-height: 1.5;
     color: var(--ink-2);
@@ -1140,7 +1181,7 @@
   }
   .price-cell .price-meta .pf strong { color: var(--green); font-weight: 700; }
   .price-cell.featured .price-meta { color: rgba(255,255,255,0.78); }
-  .price-cell.featured .price-meta .pf { color: rgba(255,255,255,0.55); }
+  .price-cell.featured .price-meta .pf { color: rgba(255,255,255,0.74); }
   .price-cell.featured .price-meta .pf strong { color: #fff; }
 
   .price-cell .who {
@@ -1156,7 +1197,7 @@
     top: 14px; right: 14px;
     background: var(--ochre);
     color: var(--ink);
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.12em;
@@ -1209,7 +1250,7 @@
   }
   .price-cell.network .net-meta .who {
     margin: 0; min-height: 0;
-    font-size: 13px; color: var(--ink-3);
+    font-size: 13px; color: var(--ink-2);
   }
   .price-cell.network .pick { margin-top: 0; white-space: nowrap; }
 
@@ -1221,7 +1262,7 @@
     border-radius: 4px;
   }
   .price-features h4 {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 12px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -1250,7 +1291,7 @@
     margin-top: 28px;
     text-align: center;
   }
-  .price-trial .note { font-family: "Inter", sans-serif; font-size: 12.5px; font-weight: 500; color: var(--ink-3); margin-top: 12px; }
+  .price-trial .note { font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12.5px; font-weight: 500; color: var(--ink-3); margin-top: 12px; }
 
   @media (max-width: 880px) {
     .price-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1275,7 +1316,7 @@
     align-items: center;
   }
   .magnet-grid h2 { font-size: clamp(32px, 3.6vw, 54px); font-weight: 800; letter-spacing: -0.03em; }
-  .magnet-grid h2 em { font-style: italic; color: var(--earth); }
+  .magnet-grid h2 em { font-style: italic; color: #6F1F22; }
   .magnet-grid .body { font-size: 16px; line-height: 1.6; color: var(--ink-2); margin-top: 20px; max-width: 50ch; }
   .magnet-cta {
     margin-top: 26px;
@@ -1286,7 +1327,7 @@
     background: var(--green); color: #fff; border-color: var(--green);
   }
   .magnet-cta .btn-primary:hover { background: var(--green-deep); border-color: var(--green-deep); color: #fff; }
-  .magnet-cta .note { font-family: "Inter", sans-serif; font-size: 12.5px; font-weight: 500; color: rgba(26,26,26,0.7); }
+  .magnet-cta .note { font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12.5px; font-weight: 500; color: rgba(26,26,26,0.7); }
 
   /* ----- Chat mockup ----- */
   .chat-mock {
@@ -1300,7 +1341,7 @@
       0 30px 60px -20px rgba(26,26,26,0.35),
       0 8px 20px -6px rgba(26,26,26,0.18),
       0 0 0 1px rgba(26,26,26,0.08);
-    font-family: "Inter", system-ui, sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     transform: rotate(-1.2deg);
   }
   .chat-mock .chat-head {
@@ -1399,7 +1440,7 @@
     padding-bottom: 6px;
   }
   .chat-mock .invoice .inv-brand {
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 9px; font-weight: 700;
     letter-spacing: 0.18em; text-transform: uppercase;
     color: var(--earth);
@@ -1516,7 +1557,7 @@
     list-style: none;
     cursor: pointer;
     display: flex; justify-content: space-between; align-items: flex-start; gap: 24px;
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-weight: 600;
     font-size: clamp(16px, 1.4vw, 19px);
     line-height: 1.35;
@@ -1580,8 +1621,8 @@
     right: -100px; bottom: -100px;
     width: 460px; height: 460px;
     background: var(--ochre-soft);
-    -webkit-mask: url("/landing/logo.png") center / contain no-repeat;
-            mask: url("/landing/logo.png") center / contain no-repeat;
+    -webkit-mask: url("../../assets/landing/logo-96.webp") center / contain no-repeat;
+            mask: url("../../assets/landing/logo-96.webp") center / contain no-repeat;
     opacity: 0.14;
     z-index: 1;
   }
@@ -1603,8 +1644,8 @@
   .landing-page .foot-brand .brand { color: #fff; }
   .landing-page .foot-brand .brand-mark { background: #fff; }
   .landing-page .foot-brand p { margin-top: 14px; max-width: 36ch; font-size: 13.5px; color: rgba(255,255,255,0.55); line-height: 1.55; }
-  .landing-page .foot-col h5 {
-    font-family: "Inter", sans-serif;
+  .landing-page .foot-col .foot-title {
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 11.5px;
     font-weight: 600;
     letter-spacing: 0.14em;
@@ -1630,10 +1671,10 @@
   .landing-page .foot-bottom {
     display: flex; justify-content: space-between; align-items: center;
     padding-top: 22px;
-    font-family: "Inter", sans-serif;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 12px;
     font-weight: 500;
-    color: rgba(255,255,255,0.4);
+    color: rgba(255,255,255,0.64);
     flex-wrap: wrap; gap: 10px;
   }
   @media (max-width: 880px) {

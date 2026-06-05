@@ -26,13 +26,8 @@ export default defineConfig(({ isSsrBuild }) => ({
         ? {}
         : {
             manualChunks: {
-              vendor: ["react", "react-dom"],
+              vendor: ["react", "react-dom", "react/jsx-runtime"],
               router: ["react-router-dom"],
-              ui: [
-                "@radix-ui/react-dialog",
-                "@radix-ui/react-dropdown-menu",
-                "@radix-ui/react-select",
-              ],
             },
           },
     },

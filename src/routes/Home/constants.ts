@@ -1,6 +1,9 @@
+import { APP_LOGO_SRCSET, APP_LOGO_URL } from "@/config/brand";
+
 export const LANDING_LOGIN_URL = "https://app.seminai.tech/login";
 
-export const LANDING_LOGO = "/landing/logo.png";
+export const LANDING_LOGO = APP_LOGO_URL;
+export const LANDING_LOGO_SRCSET = APP_LOGO_SRCSET;
 
 export const ANCHORS = {
   how: "/#come-funziona",

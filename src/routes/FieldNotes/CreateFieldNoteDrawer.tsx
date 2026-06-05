@@ -55,7 +55,6 @@ export function CreateFieldNoteDrawer({
   onOpenChange,
   companies,
   productionUnits,
-  fields: _fields,
   products,
   onSave,
 }: CreateFieldNoteDrawerProps) {

@@ -1,12 +1,19 @@
 import type { ReactElement } from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useMe } from "@/hooks/useAuth";
 import ProtectedLayout from "@/layouts/ProtectedLayout";
 import { UserRole } from "@/api/auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { Toaster } from "@/components/ui/sonner";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 import { UserIdProvider } from "@/contexts/UserIdContext";
+import { createSeminaiQueryClient } from "@/lib/queryClient";
+import "@/index.css";
+import "@/components/ui/custom-theme.css";
+
+const queryClient = createSeminaiQueryClient();
 
 class ProtectedLayoutSkeletonRenderer {
   private readonly navigationItemsCount = 6;
@@ -97,7 +104,7 @@ function canAccessRoute(pathname: string, userRole?: UserRole): boolean {
   return false;
 }
 
-export default function ProtectedRoute() {
+function ProtectedRouteContent() {
   const { data, error, isLoading } = useMe();
   const location = useLocation();
   const skeletonRenderer = new ProtectedLayoutSkeletonRenderer();
@@ -125,10 +132,21 @@ export default function ProtectedRoute() {
   return (
     <UserIdProvider userId={data.id}>
       <WorkspaceProvider>
-        <ProtectedLayout>
-          <Outlet />
-        </ProtectedLayout>
+        <>
+          <ProtectedLayout>
+            <Outlet />
+          </ProtectedLayout>
+          <Toaster />
+        </>
       </WorkspaceProvider>
     </UserIdProvider>
+  );
+}
+
+export default function ProtectedRoute() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ProtectedRouteContent />
+    </QueryClientProvider>
   );
 }

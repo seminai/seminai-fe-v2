@@ -5,7 +5,7 @@
  *
  * Used by the homepage <Seo> (src/routes/Home/index.tsx) and the prerender.
  */
-import { GEO_DESCRIPTION, SITE_URL, SITE_NAME } from "./seo";
+import { GEO_DESCRIPTION, OG_IMAGE, SITE_URL, SITE_NAME } from "./seo";
 
 export interface FaqItem {
   question: string;
@@ -29,7 +29,7 @@ function buildOrganization() {
     "@id": ORG_ID,
     name: SITE_NAME,
     url: SITE_URL,
-    logo: { "@type": "ImageObject", url: `${SITE_URL}/logo.png` },
+    logo: { "@type": "ImageObject", url: OG_IMAGE },
     description: GEO_DESCRIPTION,
     areaServed: { "@type": "Country", name: "Italia" },
     knowsLanguage: "it-IT",

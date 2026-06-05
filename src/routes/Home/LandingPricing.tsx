@@ -27,7 +27,7 @@ export function LandingPricing() {
       <div className="container pricing-container">
         <div className="section-head section-head-single">
           <div>
-            <h2 style={{ width: 660 }}>
+            <h2 className="pricing-title">
               <RichHtml html={t("landing.pricing.title")} />
             </h2>
           </div>
@@ -52,9 +52,15 @@ export function LandingPricing() {
             <div
               className="counter-bar"
               role="progressbar"
+              aria-label={`${t("landing.pricing.foundingEyebrow")} ${t(
+                "landing.pricing.foundingCounterLabel",
+              )}`}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={53}
+              aria-valuetext={`${t("landing.pricing.foundingCounter")} ${t(
+                "landing.pricing.foundingCounterLabel",
+              )}`}
             >
               <div className="counter-bar-fill" />
             </div>

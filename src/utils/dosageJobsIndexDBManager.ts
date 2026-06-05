@@ -91,7 +91,7 @@ class DosageJobsIndexDBManager {
             });
           }
         };
-      } catch (error) {
+      } catch {
         // Fallback to localStorage if IndexedDB initialization fails
         this.useLocalStorage = true;
         resolve();

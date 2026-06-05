@@ -25,6 +25,7 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
+import { APP_LOGO_URL } from "@/config/brand";
 import { toast } from "sonner";
 import {
   dosageAgentApiService,
@@ -227,7 +228,7 @@ class JobProgressIndicatorRenderer {
       return (
         <div className="flex items-center gap-2">
           <img
-            src="/logo.png"
+            src={APP_LOGO_URL}
             alt="Seminai Logo"
             className="h-5 w-5 animate-spin"
           />

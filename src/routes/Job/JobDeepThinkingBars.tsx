@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Brain, ListTodo, Check, Wrench, Search, CheckCircle2, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { APP_LOGO_URL } from "@/config/brand";
 import { Spinner } from "@/components/ui/spinner";
 import type { AgentTask } from "@/api/job-verification-agent";
 import type { ThinkingStep } from "@/hooks/useJobVerificationAgent";
@@ -16,7 +17,7 @@ function LogoSpinner({ className }: { className?: string }) {
   return (
     <div className={cn("relative", className)}>
       <img
-        src="/logo.png"
+        src={APP_LOGO_URL}
         alt="Seminai"
         className="w-5 h-5 animate-spin"
         style={{ animationDuration: "2s" }}

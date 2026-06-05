@@ -25,6 +25,7 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
+import { APP_LOGO_URL } from "@/config/brand";
 import type { EditableColumn } from "@/components/organism/EditableTable";
 import {
   dosageAgentApiService,
@@ -230,7 +231,7 @@ export function HistoryTab(): ReactElement {
         if (PENDING_STATES.includes(d.state)) {
           return (
             <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="" className="h-5 w-5 animate-spin" />
+              <img src={APP_LOGO_URL} alt="" className="h-5 w-5 animate-spin" />
               <span className="text-sm text-neutral-500">In elaborazione...</span>
             </div>
           );
@@ -263,7 +264,14 @@ export function HistoryTab(): ReactElement {
             variant={isLive ? "default" : "outline"}
             size="sm"
             className={isLive ? "gap-2 bg-green-600 text-white hover:bg-green-700" : "gap-2 text-green-600 border-green-600 hover:bg-green-50"}
-            onClick={(e) => { e.stopPropagation(); isLive ? handleCloseLiveLogs() : handleOpenLiveLogs(d.jobId); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isLive) {
+                handleCloseLiveLogs();
+                return;
+              }
+              handleOpenLiveLogs(d.jobId);
+            }}
           >
             <Radio className="h-3.5 w-3.5" /><span>Live</span>
           </Button>
@@ -293,7 +301,7 @@ export function HistoryTab(): ReactElement {
       render: (_v, row) => {
         const d = row as JobHistoryTableRow;
         if (PENDING_STATES.includes(d.state)) {
-          return <div className="flex items-center gap-2"><img src="/logo.png" alt="" className="h-5 w-5 animate-spin" /><span className="text-sm text-neutral-500">In elaborazione...</span></div>;
+          return <div className="flex items-center gap-2"><img src={APP_LOGO_URL} alt="" className="h-5 w-5 animate-spin" /><span className="text-sm text-neutral-500">In elaborazione...</span></div>;
         }
         if (FAILED_STATES.includes(d.state)) {
           return <div className="flex items-center gap-2 text-sm text-red-600"><Octagon className="h-4 w-4" /><span>STOP</span></div>;

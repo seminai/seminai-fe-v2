@@ -1,5 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { ANCHORS, LANDING_LOGO, LEGAL_ROUTES } from "./constants";
+import {
+  ANCHORS,
+  LANDING_LOGO,
+  LANDING_LOGO_SRCSET,
+  LEGAL_ROUTES,
+} from "./constants";
 
 interface LandingFooterProps {
   onOpenSendInvoices: () => void;
@@ -15,13 +20,23 @@ export function LandingFooter({ onOpenSendInvoices }: LandingFooterProps) {
         <div className="foot-top">
           <div className="foot-brand">
             <a href="/" className="brand">
-              <img src={LANDING_LOGO} alt="Seminai" className="brand-img" />
+              <img
+                src={LANDING_LOGO}
+                srcSet={LANDING_LOGO_SRCSET}
+                alt=""
+                className="brand-img"
+                aria-hidden="true"
+                loading="lazy"
+                decoding="async"
+                width={34}
+                height={34}
+              />
               <span>Seminai</span>
             </a>
             <p>{t("landing.footer.description")}</p>
           </div>
           <div className="foot-col">
-            <h5>{t("landing.footer.productTitle")}</h5>
+            <div className="foot-title">{t("landing.footer.productTitle")}</div>
             <ul>
               <li>
                 <a href={ANCHORS.how}>{t("landing.footer.productLinks.how")}</a>
@@ -44,7 +59,7 @@ export function LandingFooter({ onOpenSendInvoices }: LandingFooterProps) {
             </ul>
           </div>
           <div className="foot-col">
-            <h5>{t("landing.footer.contactTitle")}</h5>
+            <div className="foot-title">{t("landing.footer.contactTitle")}</div>
             <ul>
               <li>
                 <a href="mailto:info@seminai.tech">{t("landing.footer.email")}</a>
@@ -60,7 +75,7 @@ export function LandingFooter({ onOpenSendInvoices }: LandingFooterProps) {
             </ul>
           </div>
           <div className="foot-col">
-            <h5>{t("landing.footer.legalTitle")}</h5>
+            <div className="foot-title">{t("landing.footer.legalTitle")}</div>
             <ul>
               <li>
                 <a href={LEGAL_ROUTES.privacy}>{t("landing.footer.privacy")}</a>

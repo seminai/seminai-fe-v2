@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Brain, ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { APP_LOGO_URL } from "@/config/brand";
 
 interface DeepThinkingBarsProps {
   thinking: string | undefined;
@@ -12,7 +13,7 @@ function LogoSpinner({ className }: { className?: string }) {
   return (
     <div className={cn("relative", className)}>
       <img
-        src="/logo.png"
+        src={APP_LOGO_URL}
         alt="Seminai"
         className="w-5 h-5 animate-spin"
         style={{ animationDuration: "2s" }}

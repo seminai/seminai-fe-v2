@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { Seo } from "@/components/molecules/Seo/Seo";
+import { APP_LOGO_URL } from "@/config/brand";
 import { SEO } from "@/config/seo";
 
 export default function AuthLayout() {
@@ -8,7 +9,7 @@ export default function AuthLayout() {
       <Seo {...SEO.auth} />
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-agri-green-50 via-nature-100 to-agri-green-100 p-12 flex-col justify-between">
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="SeminAI Logo" className="h-10 w-auto" />
+          <img src={APP_LOGO_URL} alt="SeminAI Logo" className="h-10 w-auto" />
           <span className="text-xl font-semibold text-black">SeminAI</span>
         </div>
 
@@ -25,7 +26,7 @@ export default function AuthLayout() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md space-y-8">
           <div className="flex lg:hidden items-center justify-center gap-3 mb-8">
-            <img src="/logo.png" alt="SeminAI Logo" className="h-8 w-auto" />
+            <img src={APP_LOGO_URL} alt="SeminAI Logo" className="h-8 w-auto" />
             <span className="text-lg font-semibold text-black">SeminAI</span>
           </div>
 

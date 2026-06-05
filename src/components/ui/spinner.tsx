@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { APP_LOGO_URL } from "@/config/brand";
 
 interface SpinnerProps {
   size?: number;
@@ -38,7 +39,7 @@ function Spinner({
   const model = new SpinnerModel({ size, speed, ariaLabel });
   return (
     <img
-      src="/logo.png"
+      src={APP_LOGO_URL}
       role="status"
       aria-label={model.ariaLabel}
       alt={model.ariaLabel}

@@ -1,4 +1,6 @@
 import { useTranslation } from "react-i18next";
+import conforme360Url from "@/assets/landing/conforme-360.webp";
+import conforme720Url from "@/assets/landing/conforme-720.webp";
 import { RichHtml } from "./RichHtml";
 
 interface TrustSource {
@@ -37,11 +39,21 @@ export function LandingTrust() {
           <p>
             <RichHtml html={t("landing.trust.foot")} />
           </p>
-          <div
-            className="trust-illust"
-            role="img"
-            aria-label={t("landing.trust.illustrationAria")}
-          />
+          <picture className="trust-illust">
+            <source
+              type="image/webp"
+              srcSet={`${conforme360Url} 360w, ${conforme720Url} 720w`}
+              sizes="(max-width: 880px) 220px, 280px"
+            />
+            <img
+              src={conforme360Url}
+              alt={t("landing.trust.illustrationAria")}
+              loading="lazy"
+              decoding="async"
+              width={280}
+              height={280}
+            />
+          </picture>
         </div>
       </div>
     </section>

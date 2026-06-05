@@ -321,6 +321,8 @@ class AgeaCompanyGroup {
       vatNumber: this.profile.vatNumber,
       fields: Array.from(this.fields.values()).map((field) => {
         const { companyName, vatNumber, ...fieldData } = field;
+        void companyName;
+        void vatNumber;
         return fieldData;
       }),
       productionUnits: Array.from(this.productionUnits.values()).map((unit) =>

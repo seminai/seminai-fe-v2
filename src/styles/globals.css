@@ -55,7 +55,7 @@
     --workspace-primary: #64a42e;
     --workspace-secondary: #4a7a22;
     --workspace-accent: #8bc34a;
-    --workspace-logo: /logo.png;
+    --workspace-logo: /icons/icon-512.webp;
 
     /* Tailwind palette channels (r g b) for global background control */
     --palette-white: 255 255 255;

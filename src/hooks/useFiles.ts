@@ -60,8 +60,6 @@ export function useFiles(companyId: string): UseFilesResult {
       try {
         await filesApiService.uploadFile(request);
         await fetchFiles();
-      } catch (err) {
-        throw err;
       } finally {
         setIsUploading(false);
       }

@@ -1,4 +1,8 @@
 import { useTranslation } from "react-i18next";
+import chatFarmer320Url from "@/assets/landing/chat-farmer-320.webp";
+import chatFarmer640Url from "@/assets/landing/chat-farmer-640.webp";
+import whiteLabel320Url from "@/assets/landing/white-label-320.webp";
+import whiteLabel640Url from "@/assets/landing/white-label-640.webp";
 import { ANCHORS } from "./constants";
 import { RichHtml } from "./RichHtml";
 
@@ -25,8 +29,22 @@ export function LandingFork() {
 
         <div className="fork-grid">
           <div className="fork-card left">
-            <div className="illust" />
-            <div className="eyebrow" style={{ marginBottom: 16 }}>
+            <picture className="illust" aria-hidden="true">
+              <source
+                type="image/webp"
+                srcSet={`${chatFarmer320Url} 320w, ${chatFarmer640Url} 640w`}
+                sizes="110px"
+              />
+              <img
+                src={chatFarmer320Url}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                width={110}
+                height={110}
+              />
+            </picture>
+            <div className="eyebrow">
               {t("landing.fork.studiosEyebrow")}
             </div>
             <h3>{t("landing.fork.studiosTitle")}</h3>
@@ -47,8 +65,22 @@ export function LandingFork() {
           </div>
 
           <div className="fork-card right dark">
-            <div className="illust" />
-            <div className="eyebrow" style={{ marginBottom: 16 }}>
+            <picture className="illust" aria-hidden="true">
+              <source
+                type="image/webp"
+                srcSet={`${whiteLabel320Url} 320w, ${whiteLabel640Url} 640w`}
+                sizes="110px"
+              />
+              <img
+                src={whiteLabel320Url}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                width={110}
+                height={110}
+              />
+            </picture>
+            <div className="eyebrow">
               {t("landing.fork.networkEyebrow")}
             </div>
             <h3>{t("landing.fork.networkTitle")}</h3>

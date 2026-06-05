@@ -13,11 +13,8 @@ export const THEME_COLOR = "#234D34";
 export const GEO_DESCRIPTION =
   "Seminai produce il quaderno di campagna digitale in pochi minuti, partendo dalle fatture (WhatsApp, email, PDF). Verifica dosaggi e conformità su fonti normative ufficiali; l'agronomo rivede, approva e firma.";
 
-/**
- * OG/Twitter share image. Interim: the existing square /logo.png so social tags don't 404.
- * TODO(design): replace with a real 1200×630 /og-image.png (<300 KB) and update this constant.
- */
-export const OG_IMAGE = `${SITE_URL}/logo.png`;
+/** OG/Twitter share image. Keep it lightweight because it is emitted into public HTML. */
+export const OG_IMAGE = `${SITE_URL}/og/og-image.jpg`;
 export const OG_IMAGE_ALT =
   "Seminai — quaderno di campagna digitale per agronomi e cooperative agricole";
 
