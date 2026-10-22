@@ -1,10 +1,6 @@
 import { useTranslation } from "react-i18next";
-import {
-  ANCHORS,
-  LANDING_LOGO,
-  LANDING_LOGO_SRCSET,
-  LEGAL_ROUTES,
-} from "./constants";
+import { ANCHORS, LEGAL_ROUTES } from "./constants";
+import { LandingBrand } from "./LandingNav";
 
 interface LandingFooterProps {
   onOpenSendInvoices: () => void;
@@ -19,20 +15,7 @@ export function LandingFooter({ onOpenSendInvoices }: LandingFooterProps) {
       <div className="container">
         <div className="foot-top">
           <div className="foot-brand">
-            <a href="/" className="brand">
-              <img
-                src={LANDING_LOGO}
-                srcSet={LANDING_LOGO_SRCSET}
-                alt=""
-                className="brand-img"
-                aria-hidden="true"
-                loading="lazy"
-                decoding="async"
-                width={34}
-                height={34}
-              />
-              <span>Seminai</span>
-            </a>
+            <LandingBrand />
             <p>{t("landing.footer.description")}</p>
           </div>
           <div className="foot-col">

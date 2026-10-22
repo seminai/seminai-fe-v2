@@ -11,34 +11,50 @@ import {
   LANDING_LOGO_SRCSET,
 } from "./constants";
 
+export function LandingBrand() {
+  return (
+    <a href="/" className="brand">
+      <span className="brand-mark">
+        <img
+          src={LANDING_LOGO}
+          srcSet={LANDING_LOGO_SRCSET}
+          alt=""
+          className="brand-img"
+          width={28}
+          height={28}
+        />
+      </span>
+      Semin<span className="brand-ai">AI</span>
+    </a>
+  );
+}
+
 export function LandingNav() {
   const { t, i18n } = useTranslation();
   const currentLanguage = normalizeLanguage(i18n.language);
+  const isEnglish = currentLanguage === "en";
 
   const changeLanguage = (language: SupportedLanguage) => {
     void i18n.changeLanguage(language);
   };
 
   return (
-    <nav className="top">
-      <div className="container nav-row">
-        <a href="/" className="brand">
-          <img
-            src={LANDING_LOGO}
-            srcSet={LANDING_LOGO_SRCSET}
-            alt=""
-            className="brand-img"
-            aria-hidden="true"
-            width={34}
-            height={34}
-          />
-          <span>Seminai</span>
-        </a>
-        <div className="nav-links">
+    <>
+      <a className="skip-link" href="#contenuto">
+        {isEnglish ? "Skip to content" : "Vai al contenuto"}
+      </a>
+      <header className="site-header">
+        <LandingBrand />
+        <nav
+          className="nav-links"
+          aria-label={isEnglish ? "Main" : "Navigazione principale"}
+        >
           <a href={ANCHORS.how}>{t("landing.nav.how")}</a>
           <a href={ANCHORS.who}>{t("landing.nav.who")}</a>
           <a href={ANCHORS.plans}>{t("landing.nav.plans")}</a>
           <a href={ANCHORS.faq}>{t("landing.nav.faq")}</a>
+        </nav>
+        <div className="nav-actions">
           <div
             className="lang-toggle"
             role="group"
@@ -65,7 +81,7 @@ export function LandingNav() {
             {t("landing.nav.login")}
           </a>
         </div>
-      </div>
-    </nav>
+      </header>
+    </>
   );
 }

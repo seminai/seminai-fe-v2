@@ -19,7 +19,9 @@ export function LegalPageLayout({ children }: LegalPageLayoutProps) {
   return (
     <div className="landing-page wrap legal-page">
       <LandingNav />
-      <main className="legal-content container">{children}</main>
+      <main id="contenuto" className="legal-content container">
+        {children}
+      </main>
       <LandingFooter onOpenSendInvoices={() => setInvoiceDialogOpen(true)} />
       {invoiceDialogOpen && (
         <Suspense fallback={null}>

@@ -186,7 +186,7 @@ export function SendInvoicesEmailDialog({
               type="file"
               accept={INVOICE_ACCEPT}
               multiple
-              className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-agri-green-600 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-agri-green-700"
+              className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-[#111210] file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#343730]"
               onChange={handleFilesChange}
             />
             <p className="text-xs text-muted-foreground">
@@ -219,7 +219,7 @@ export function SendInvoicesEmailDialog({
             </p>
           )}
           {successMessage && (
-            <p className="text-sm text-agri-green-700" role="status">
+            <p className="text-sm text-[#375c43]" role="status">
               {successMessage}
             </p>
           )}
@@ -235,7 +235,7 @@ export function SendInvoicesEmailDialog({
             </Button>
             <Button
               type="submit"
-              className={cn("bg-agri-green-600 hover:bg-agri-green-700")}
+              className={cn("bg-[#111210] text-white hover:bg-[#343730]")}
               disabled={isSubmitting}
             >
               {isSubmitting

@@ -57,7 +57,7 @@ export function LandingPricing() {
               )}`}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-valuenow={53}
+              aria-valuenow={47}
               aria-valuetext={`${t("landing.pricing.foundingCounter")} ${t(
                 "landing.pricing.foundingCounterLabel",
               )}`}

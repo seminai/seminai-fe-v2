@@ -32,7 +32,7 @@ export default function Home() {
     <div className="landing-page wrap">
       <Seo {...SEO.home} jsonLd={buildHomeGraph(faqItems)} />
       <LandingNav />
-      <main>
+      <main id="contenuto">
         <LandingHero onOpenSendInvoices={openSendInvoices} />
         <LandingProblem />
         <LandingSolution />
