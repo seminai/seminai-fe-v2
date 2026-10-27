@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { InvoiceWalkthrough } from "./AgriScenes";
 import { ANCHORS } from "./constants";
-import { MigrationOffer } from "./MigrationOffer";
+import { HeroPreviewSlider } from "./HeroPreviewSlider";
 import { RichHtml } from "./RichHtml";
 
 interface LandingHeroProps {
@@ -45,10 +44,7 @@ export function LandingHero({ onOpenSendInvoices }: LandingHeroProps) {
             </span>
           ))}
         </p>
-        <MigrationOffer />
-        <div className="hero-preview">
-          <InvoiceWalkthrough />
-        </div>
+        <HeroPreviewSlider />
       </div>
     </section>
   );

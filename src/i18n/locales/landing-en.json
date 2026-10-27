@@ -72,7 +72,10 @@
       "CAP compliant",
       "Invoices, delivery notes, WhatsApp, PDF"
     ],
-    "ctaManufacturing": "In manufacturing? See how it works →"
+    "ctaManufacturing": "In manufacturing? See how it works →",
+    "sliderLabel": "Product preview",
+    "slideLabel": "Slide {{index}}: {{name}}",
+    "slides": ["Register", "Data migration"]
   },
   "problem": {
     "eyebrow": "01, The Problem",
@@ -407,7 +410,9 @@
     "full": "The 200 free data migrations are full.",
     "fullLabel": "offer closed",
     "remaining": "{{spots}} spots left",
-    "progressLabel": "Users with free data migration"
+    "progressLabel": "Users with free data migration",
+    "url": "seminai.tech / data migration",
+    "caption": "Moving the data you already have stays free while spots remain."
   },
   "show": {
     "title": "Watch it work, <em>step by step.</em>",
@@ -417,31 +422,53 @@
       "caption": "You upload an invoice and the rows land in the register.",
       "eyebrow": "Register · 2026",
       "title": "Tenuta La Sorgente",
+      "tab": "Register · Tenuta La Sorgente",
+      "navActive": "Register",
+      "nav": ["Home", "Archive", "Register", "Chat"],
       "upload": "Upload invoice",
       "empty": "The register is empty. The cursor is about to upload the invoice.",
-      "note": "3 products in the register, ready for the logbook.",
+      "note": "4 products in the register, ready for the logbook.",
       "headers": [
         "Date",
         "Product",
-        "Dose"
+        "Field",
+        "Dose",
+        "Status"
       ],
       "rows": [
         {
           "date": "12 Mar",
           "product": "Ridomil Gold",
-          "dose": "2.5 kg/ha"
+          "field": "South vineyard",
+          "dose": "2.5 kg/ha",
+          "status": "Compliant",
+          "tone": "ok"
         },
         {
-          "date": "18 Mar",
+          "date": "16 Mar",
           "product": "Karate Zeon",
-          "dose": "0.15 L/ha"
+          "field": "North vineyard",
+          "dose": "0.15 L/ha",
+          "status": "Compliant",
+          "tone": "ok"
         },
         {
           "date": "24 Mar",
           "product": "Mancozeb 75",
-          "dose": "3.2 kg/ha"
+          "field": "South vineyard",
+          "dose": "3.2 kg/ha",
+          "status": "Compliant",
+          "tone": "ok"
         }
-      ]
+      ],
+      "added": {
+        "date": "28 Mar",
+        "product": "Score 25 EC",
+        "field": "North vineyard",
+        "dose": "0.2 L/ha",
+        "status": "To review",
+        "tone": "warn"
+      }
     },
     "plan": {
       "url": "app.seminai.tech / plan · next week",

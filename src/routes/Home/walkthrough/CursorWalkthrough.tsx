@@ -11,6 +11,9 @@ interface CursorWalkthroughProps {
   readonly steps: readonly CursorStep[];
   readonly url: string;
   readonly caption: string;
+  readonly stageClassName?: string;
+  readonly paused?: boolean;
+  readonly onCycleComplete?: () => void;
   readonly children: (step: number) => ReactNode;
 }
 
@@ -18,11 +21,17 @@ export function CursorWalkthrough({
   steps,
   url,
   caption,
+  stageClassName,
+  paused = false,
+  onCycleComplete,
   children,
 }: CursorWalkthroughProps) {
   const reduced = usePrefersReducedMotion();
-  const step = useWalkthroughStep(steps.length, reduced);
+  const step = useWalkthroughStep(steps.length, reduced, onCycleComplete, paused);
   const current = steps[step];
+  const stageClass = stageClassName
+    ? `demo-body walkthrough-stage ${stageClassName}`
+    : "demo-body walkthrough-stage";
 
   return (
     <figure className="walkthrough">
@@ -33,7 +42,7 @@ export function CursorWalkthrough({
           <span className="dot d3" />
           <span className="demo-url">{url}</span>
         </div>
-        <div className="demo-body walkthrough-stage">
+        <div className={stageClass}>
           {children(step)}
           {!reduced && current ? (
             <span

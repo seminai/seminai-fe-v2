@@ -72,7 +72,10 @@
       "Conforme PAC",
       "Fatture, DDT, WhatsApp, PDF"
     ],
-    "ctaManufacturing": "Lavori in manifattura? Guarda come funziona →"
+    "ctaManufacturing": "Lavori in manifattura? Guarda come funziona →",
+    "sliderLabel": "Anteprima del gestionale",
+    "slideLabel": "Slide {{index}}: {{name}}",
+    "slides": ["Registro", "Passaggio dati"]
   },
   "problem": {
     "eyebrow": "01, Il Problema",
@@ -407,7 +410,9 @@
     "full": "I 200 passaggi gratuiti sono esauriti.",
     "fullLabel": "offerta chiusa",
     "remaining": "{{spots}} posti rimasti",
-    "progressLabel": "Utenti con il passaggio dati gratuito"
+    "progressLabel": "Utenti con il passaggio dati gratuito",
+    "url": "seminai.tech / passaggio dati",
+    "caption": "Il passaggio dei dati che hai già resta gratuito finché ci sono posti."
   },
   "show": {
     "title": "Guardalo fare, <em>passo per passo.</em>",
@@ -417,31 +422,53 @@
       "caption": "Carichi una fattura e le righe entrano nel registro.",
       "eyebrow": "Registro · 2026",
       "title": "Tenuta La Sorgente",
+      "tab": "Registro · Tenuta La Sorgente",
+      "navActive": "Registro",
+      "nav": ["Home", "Archivio", "Registro", "Chat"],
       "upload": "Carica fattura",
       "empty": "Il registro è vuoto. Il cursore sta per caricare la fattura.",
-      "note": "3 prodotti nel registro, pronti per il quaderno.",
+      "note": "4 prodotti nel registro, pronti per il quaderno.",
       "headers": [
         "Data",
         "Prodotto",
-        "Dose"
+        "Appezzamento",
+        "Dose",
+        "Stato"
       ],
       "rows": [
         {
           "date": "12 Mar",
           "product": "Ridomil Gold",
-          "dose": "2,5 kg/ha"
+          "field": "Vigneto Sud",
+          "dose": "2,5 kg/ha",
+          "status": "Conforme",
+          "tone": "ok"
         },
         {
-          "date": "18 Mar",
+          "date": "16 Mar",
           "product": "Karate Zeon",
-          "dose": "0,15 L/ha"
+          "field": "Vigneto Nord",
+          "dose": "0,15 L/ha",
+          "status": "Conforme",
+          "tone": "ok"
         },
         {
           "date": "24 Mar",
           "product": "Mancozeb 75",
-          "dose": "3,2 kg/ha"
+          "field": "Vigneto Sud",
+          "dose": "3,2 kg/ha",
+          "status": "Conforme",
+          "tone": "ok"
         }
-      ]
+      ],
+      "added": {
+        "date": "28 Mar",
+        "product": "Score 25 EC",
+        "field": "Vigneto Nord",
+        "dose": "0,2 L/ha",
+        "status": "Da rivedere",
+        "tone": "warn"
+      }
     },
     "plan": {
       "url": "app.seminai.tech / piano · settimana prossima",
