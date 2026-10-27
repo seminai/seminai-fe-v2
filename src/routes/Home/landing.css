@@ -434,6 +434,11 @@
   font-weight: 500;
 }
 
+.tag.ok {
+  color: var(--green);
+  font-weight: 500;
+}
+
 .demo-note {
   display: flex;
   gap: 10px;
@@ -1334,6 +1339,8 @@
 
   .price-cell.network,
   .founding-banner,
+  .migration-offer,
+  .scene-grid,
   .magnet-grid,
   .faq-grid,
   .trust-foot,
@@ -1417,5 +1424,182 @@
   .landing-page *::after {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+.migration-offer {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 28px;
+  align-items: center;
+  background: var(--soft);
+  border-radius: 24px;
+  padding: 28px 32px;
+  margin-top: 36px;
+  text-align: left;
+}
+
+.migration-offer-kicker {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.migration-offer-title {
+  font-size: 22px;
+  letter-spacing: -0.4px;
+  font-weight: 500;
+}
+
+.scene-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+.scene-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.scene-toolbar-end {
+  justify-content: flex-end;
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+.scene-btn {
+  display: inline-flex;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: #fff;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.scene-btn.is-idle {
+  background: #fff;
+  color: var(--ink);
+}
+
+.scene-empty {
+  color: var(--muted);
+  font-size: 14px;
+  min-height: 96px;
+}
+
+.scene-list {
+  margin-top: 14px;
+}
+
+.scene-line {
+  display: grid;
+  grid-template-columns: 18px 72px 1fr 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.scene-check {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+}
+
+.scene-check.on {
+  background: var(--ink);
+}
+
+.scene-chat {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scene-bubble {
+  align-self: flex-end;
+  background: var(--soft);
+  border-radius: 14px 14px 4px 14px;
+  padding: 8px 12px;
+  font-size: 13px;
+  max-width: 92%;
+}
+
+.scene-bubble.in {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px 14px 14px 4px;
+}
+
+.scene-input {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.scene-input.is-filled {
+  color: var(--ink);
+}
+
+.demo-row.cols-3 {
+  grid-template-columns: 0.7fr 1.4fr 0.9fr;
+  min-width: 0;
+}
+
+.mfg-field {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.walkthrough-stage {
+  position: relative;
+  min-height: 240px;
+}
+
+.walk-cursor {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  transition: left 0.65s ease, top 0.65s ease;
+}
+
+.walk-cursor.is-click::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  animation: walk-click 0.45s ease-out;
+}
+
+@keyframes walk-click {
+  from {
+    transform: scale(0.4);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.6);
+    opacity: 0;
   }
 }

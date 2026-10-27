@@ -20,6 +20,7 @@ const ssrEntry = pathToFileURL(join(ssrDir, "entry-server.js")).href;
 // serves `<route>/index.html` for `/<route>`.
 const ROUTES = [
   { url: "/", out: "index.html" },
+  { url: "/manifattura", out: "manifattura/index.html" },
   { url: "/privacy-policy", out: "privacy-policy/index.html" },
   { url: "/cookie-policy", out: "cookie-policy/index.html" },
   { url: "/terms-of-service", out: "terms-of-service/index.html" },

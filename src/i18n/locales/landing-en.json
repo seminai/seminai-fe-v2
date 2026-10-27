@@ -4,12 +4,13 @@
     "who": "Who it's for",
     "plans": "Plans & pricing",
     "faq": "FAQ",
-    "login": "Login"
+    "login": "Login",
+    "manufacturing": "Manufacturing"
   },
   "hero": {
-    "title": "The digital field logbook<br />for agronomists, <em>in minutes.</em>",
+    "title": "Collect the data. Prepare the plans.<br /><em>AI optimizes the rest.</em>",
     "subtitle": "You review. You approve. <span class=\"earth\">You sign.</span>",
-    "body": "Seminai produces the digital field logbook in minutes from invoices (WhatsApp, email, PDF). It verifies dosages and compliance against official regulatory sources; the agronomist reviews, approves and signs.",
+    "body": "Seminai is the management system for farms: invoices, delivery notes and messages become records, warehouse stock and the field logbook. AI prepares upcoming operations and flags what to fix. You review, approve and sign.",
     "ctaPrimary": "Send invoices via email",
     "ctaSecondary": "Running a cooperative? See the Network plan →",
     "demoUrl": "app.seminai.tech / logbook · Tenuta La Sorgente",
@@ -65,12 +66,13 @@
     "statusOk": "OK",
     "statusWarn": "Anomaly",
     "ticker": [
+      "Records, warehouse and registers in one place",
+      "Plans for upcoming operations",
+      "AI that optimizes doses and anomalies",
       "CAP compliant",
-      "D.Lgs. 150/2012",
-      "Regional bulletins, 20 regions",
-      "Invoice OCR · WhatsApp · PDF · email",
-      "Anomalies flagged with source"
-    ]
+      "Invoices, delivery notes, WhatsApp, PDF"
+    ],
+    "ctaManufacturing": "In manufacturing? See how it works →"
   },
   "problem": {
     "eyebrow": "01, The Problem",
@@ -94,23 +96,23 @@
   },
   "solution": {
     "eyebrow": "02, How it works",
-    "title": "How Seminai produces the <em>field logbook</em> in minutes.",
-    "lead": "Three steps. The first you do in thirty seconds. The second is Seminai. The third comes back to you: a professional's signature can't be delegated.",
+    "title": "How it works: <em>collect, plan, optimize.</em>",
+    "lead": "Three steps. Data lands in the system, Seminai prepares the plan, AI proposes the corrections. The signature stays yours.",
     "steps": [
       {
-        "label": "Upload",
-        "heading": "Upload the invoices from wherever they live.",
-        "body": "WhatsApp photos, PDF upload, forwarded emails. Pesticides, seeds, fertilizers. <strong>Even messy, even from different sources.</strong> Seminai collects them all."
+        "label": "Collect",
+        "heading": "Documents become records in the system.",
+        "body": "Invoices, delivery notes, photos and messages. Seminai fills in master data, stock and logbook rows. <strong>Even when they arrive from different places.</strong>"
       },
       {
-        "label": "Process",
-        "heading": "The system processes and flags.",
-        "body": "Extracts the data, cross-checks dosages with labels, verifies compliance against <strong>4 live regulatory layers</strong>. Every anomaly is flagged with source and corrective action."
+        "label": "Plan",
+        "heading": "Prepare upcoming operations.",
+        "body": "The register turns into next week's plan: what to do, on which plot, with which product. <strong>You confirm it before it becomes work.</strong>"
       },
       {
-        "label": "Approve",
-        "heading": "You review, approve, deliver.",
-        "body": "In a few minutes you have the logbook ready for review. You check, approve or correct. <strong>You sign</strong>. The professional responsibility stays where it belongs."
+        "label": "Optimize",
+        "heading": "AI fixes doses and anomalies.",
+        "body": "Ask the chat to correct a dose or a stock level: the record changes, with the rule that explains why. <strong>You approve and sign.</strong>"
       }
     ],
     "doorBeforeLabel": "Without Seminai",
@@ -287,8 +289,24 @@
   },
   "faq": {
     "eyebrow": "07, FAQ",
-    "title": "Frequently asked questions about the digital field logbook.",
+    "title": "Frequently asked questions.",
     "items": [
+      {
+        "question": "Is Seminai a management system?",
+        "answer": "Yes. Farms, warehouse, registers and the field logbook live in one place. Invoices, delivery notes and messages become records you can look up and correct, not only a PDF to sign."
+      },
+      {
+        "question": "Can it prepare plans for upcoming operations?",
+        "answer": "Yes. From the data it has collected, Seminai prepares next week's plan: product, plot and date. You confirm it before it becomes an operation."
+      },
+      {
+        "question": "Does the AI change data on its own?",
+        "answer": "It proposes the correction and, when you ask in chat, updates the record. Doses, anomalies and stock stay visible. Confirmation and the signature are yours."
+      },
+      {
+        "question": "Is moving my data in free?",
+        "answer": "Moving the data you already have is free for the first 200 users. The counter on the page shows 143 and, after the 143rd verified account, rises with real registrations up to 200."
+      },
       {
         "question": "What is the field logbook and what is it for?",
         "answer": "The field logbook is the legally required document where every farm records all phytosanitary treatments: products used, dosages, dates, treated crops. It is required by CAP rules, D.Lgs. 150/2012 and specific regional regulations. In an inspection, missing or irregular logbooks can lead to CAP contribution cuts."
@@ -362,7 +380,7 @@
     }
   },
   "footer": {
-    "description": "The digital field logbook for agronomists, technical practices and agricultural cooperatives. CAP compliant, D.Lgs. 150/2012 and regional regulations.",
+    "description": "The AI management system for agriculture and manufacturing. It collects the data, prepares the plans and leaves the confirmation to you.",
     "productTitle": "Product",
     "productLinks": {
       "how": "How it works",
@@ -370,7 +388,8 @@
       "plans": "Plans & pricing",
       "cooperative": "For cooperatives",
       "faq": "FAQ",
-      "aiInfo": "Information for AI assistants"
+      "aiInfo": "Information for AI assistants",
+      "manufacturing": "For manufacturing"
     },
     "contactTitle": "Contact",
     "email": "info@seminai.tech",
@@ -381,5 +400,170 @@
     "cookies": "Cookie Policy",
     "terms": "Terms of Service",
     "copyright": "Seminai © {{year}} · VAT xxxxxxxxxxx"
+  },
+  "offer": {
+    "kicker": "Data migration",
+    "title": "Moving your data in is free for the first 200 users.",
+    "full": "The 200 free data migrations are full.",
+    "fullLabel": "offer closed",
+    "remaining": "{{spots}} spots left",
+    "progressLabel": "Users with free data migration"
+  },
+  "show": {
+    "title": "Watch it work, <em>step by step.</em>",
+    "lead": "A cursor does the same actions you would. No diagrams: you see the record change.",
+    "invoice": {
+      "url": "app.seminai.tech / register · Tenuta La Sorgente",
+      "caption": "You upload an invoice and the rows land in the register.",
+      "eyebrow": "Register · 2026",
+      "title": "Tenuta La Sorgente",
+      "upload": "Upload invoice",
+      "empty": "The register is empty. The cursor is about to upload the invoice.",
+      "note": "3 products in the register, ready for the logbook.",
+      "headers": [
+        "Date",
+        "Product",
+        "Dose"
+      ],
+      "rows": [
+        {
+          "date": "12 Mar",
+          "product": "Ridomil Gold",
+          "dose": "2.5 kg/ha"
+        },
+        {
+          "date": "18 Mar",
+          "product": "Karate Zeon",
+          "dose": "0.15 L/ha"
+        },
+        {
+          "date": "24 Mar",
+          "product": "Mancozeb 75",
+          "dose": "3.2 kg/ha"
+        }
+      ]
+    },
+    "plan": {
+      "url": "app.seminai.tech / plan · next week",
+      "caption": "You confirm next week's treatment plan.",
+      "eyebrow": "Operation plan",
+      "title": "Week of 31 Mar – 6 Apr",
+      "confirm": "Confirm plan",
+      "confirmed": "Plan confirmed",
+      "rows": [
+        {
+          "date": "31 Mar",
+          "place": "South vineyard",
+          "product": "Ridomil Gold"
+        },
+        {
+          "date": "2 Apr",
+          "place": "North vineyard",
+          "product": "Karate Zeon"
+        },
+        {
+          "date": "4 Apr",
+          "place": "South vineyard",
+          "product": "Topas 100"
+        }
+      ]
+    },
+    "chat": {
+      "url": "app.seminai.tech / chat · logbook",
+      "caption": "You write in chat and the dose in the register changes.",
+      "eyebrow": "Chat · edit a record",
+      "date": "Date",
+      "product": "Product",
+      "dose": "Dose",
+      "original": "3.2 kg/ha",
+      "fixed": "2.5 kg/ha",
+      "prompt": "Set the 24 March dose to 2.5 kg/ha",
+      "reply": "Done. The dose now matches the label limit.",
+      "placeholder": "Write what you want to change…"
+    }
+  },
+  "manufacturing": {
+    "hero": {
+      "title": "The management system for manufacturing.<br /><em>Documents, warehouse, chat.</em>",
+      "subtitle": "Read a delivery note. Accept a load. <span class=\"earth\">Ask AI to fix the records.</span>",
+      "body": "Seminai reads delivery documents, updates stock and lets you correct everything in chat. Collect the data, prepare the next movements and let AI keep the warehouse aligned. You confirm.",
+      "ctaPrimary": "Enter Seminai",
+      "ctaSecondary": "Talk to us"
+    },
+    "show": {
+      "title": "Three actions you understand <em>without a manual.</em>",
+      "lead": "The cursor makes the gesture. The number on screen changes. Same system, with warehouse documents."
+    },
+    "ddt": {
+      "url": "app.seminai.tech / documents · DN 1842",
+      "caption": "You open a delivery note and the fields fill in by themselves.",
+      "eyebrow": "Delivery note",
+      "title": "DN 1842",
+      "read": "Read document",
+      "lines": [
+        {
+          "label": "Supplier",
+          "value": "Acciai Rossi srl"
+        },
+        {
+          "label": "Item",
+          "value": "Sheet metal 2 mm"
+        },
+        {
+          "label": "Quantity",
+          "value": "80 pieces"
+        }
+      ]
+    },
+    "load": {
+      "url": "app.seminai.tech / warehouse · inbound",
+      "caption": "You accept the load and the warehouse stock goes up.",
+      "eyebrow": "Warehouse A",
+      "title": "Load waiting",
+      "pending": "Waiting",
+      "accepted": "Accepted",
+      "item": "Sheet metal 2 mm",
+      "qty": "80 pieces",
+      "stockLabel": "On hand",
+      "stockBefore": "40 pieces",
+      "stockAfter": "120 pieces",
+      "accept": "Accept load"
+    },
+    "chat": {
+      "url": "app.seminai.tech / chat · warehouse",
+      "caption": "You write in chat and the stock in both warehouses changes.",
+      "eyebrow": "Chat · move stock",
+      "title": "On hand",
+      "warehouseA": "Warehouse A",
+      "warehouseB": "Warehouse B",
+      "stockABefore": "80 pieces",
+      "stockAAfter": "60 pieces",
+      "stockBBefore": "10 pieces",
+      "stockBAfter": "30 pieces",
+      "prompt": "Move 20 pieces of sheet metal to warehouse B",
+      "reply": "Done. 20 pieces moved from A to B.",
+      "placeholder": "Write the movement…"
+    },
+    "faq": {
+      "title": "Questions about manufacturing.",
+      "items": [
+        {
+          "question": "Does Seminai read a delivery note?",
+          "answer": "Yes. Open the document and Seminai fills in supplier, item and quantity. You check the fields before they are saved."
+        },
+        {
+          "question": "How do I accept a warehouse load?",
+          "answer": "When the document looks right, click Accept load. On-hand stock increases by the quantity read from the delivery note."
+        },
+        {
+          "question": "Can chat change the records?",
+          "answer": "Yes. Write what you want to change, for example moving pieces from one warehouse to another. Seminai updates the stock and shows you the result."
+        },
+        {
+          "question": "Is moving my data in free?",
+          "answer": "Moving the data you already have (documents, master data, stock) is free for the first 200 users. The counter on the page starts at 143 and then follows verified accounts past that number, up to 200."
+        }
+      ]
+    }
   }
 }

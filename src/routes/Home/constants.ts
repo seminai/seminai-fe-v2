@@ -1,6 +1,9 @@
 import { APP_LOGO_SRCSET, APP_LOGO_URL } from "@/config/brand";
 
 export const LANDING_LOGIN_URL = "https://app.seminai.tech/login";
+export const LANDING_REGISTER_URL = "https://app.seminai.tech/register";
+export const MANUFACTURING_CONTACT_URL =
+  "mailto:info@seminai.tech?subject=Seminai%20manifattura";
 
 export const LANDING_LOGO = APP_LOGO_URL;
 export const LANDING_LOGO_SRCSET = APP_LOGO_SRCSET;
@@ -10,6 +13,7 @@ export const ANCHORS = {
   who: "/#cooperative",
   plans: "/#piani",
   faq: "/#faq",
+  manufacturing: "/manifattura",
   trial: "/#trial",
   sources: "/#fonti",
 } as const;

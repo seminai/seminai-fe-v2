@@ -7,6 +7,7 @@ import { LandingFaq } from "./LandingFaq";
 import { LandingFooter } from "./LandingFooter";
 import { LandingFork } from "./LandingFork";
 import { LandingHero } from "./LandingHero";
+import { LandingScenes } from "./LandingScenes";
 import { LandingMagnet } from "./LandingMagnet";
 import { LandingNav } from "./LandingNav";
 import { LandingPricing } from "./LandingPricing";
@@ -34,6 +35,7 @@ export default function Home() {
       <LandingNav />
       <main id="contenuto">
         <LandingHero onOpenSendInvoices={openSendInvoices} />
+        <LandingScenes />
         <LandingProblem />
         <LandingSolution />
         <LandingTrust />

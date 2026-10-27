@@ -71,13 +71,14 @@ function buildSoftwareApplication() {
     url: SITE_URL,
     inLanguage: "it-IT",
     datePublished: "2025-01-01",
-    dateModified: "2026-05-14",
+    dateModified: "2026-10-27",
     publisher: { "@id": ORG_ID },
     featureList: [
-      "OCR automatico fatture da WhatsApp, PDF, email",
+      "Raccolta dati da fatture, DDT, WhatsApp, PDF ed email",
+      "Piani delle operazioni future",
+      "AI che ottimizza dosi, anomalie e giacenze",
       "Verifica conformità su 4 livelli normativi",
       "Aggiornamento automatico bollettini regionali (20 regioni)",
-      "Segnalazione anomalie con fonte normativa",
       "Server europei — conforme GDPR",
       "Esportazione PDF firmabile dall'agronomo",
     ],
@@ -119,41 +120,41 @@ function buildHowTo() {
   const url = `${SITE_URL}/#come-funziona`;
   return {
     "@type": "HowTo",
-    name: "Come produrre il quaderno di campagna digitale con Seminai",
+    name: "Come funziona Seminai: raccogli, pianifica, ottimizza",
     description:
-      "Procedura in 3 step per produrre un quaderno di campagna conforme PAC partendo dalle fatture.",
+      "Tre passi: i documenti entrano nel gestionale, Seminai prepara il piano delle operazioni, l'AI propone le correzioni. La firma resta del professionista.",
     totalTime: "PT5M",
     inLanguage: "it-IT",
     step: [
       {
         "@type": "HowToStep",
         position: 1,
-        name: "Carica le fatture",
-        text: "Invia le foto delle fatture via WhatsApp, carica PDF o inoltra le email. Fitofarmaci, sementi, fertilizzanti — anche disorganizzate, anche da fonti diverse.",
+        name: "Raccogli i dati",
+        text: "Carica fatture, DDT, foto e messaggi. Seminai li trasforma in anagrafiche, giacenze e righe del quaderno.",
         url,
       },
       {
         "@type": "HowToStep",
         position: 2,
-        name: "Il sistema elabora e segnala",
-        text: "Seminai estrae i dati con OCR, incrocia i dosaggi con le etichette ministeriali e verifica la conformità su 4 livelli normativi aggiornati. Ogni anomalia viene segnalata con fonte e azione correttiva.",
+        name: "Prepara il piano",
+        text: "Dal registro esce il piano delle operazioni future: cosa fare, su quale appezzamento, con quale prodotto. Lo confermi prima che diventi lavoro.",
         url,
       },
       {
         "@type": "HowToStep",
         position: 3,
-        name: "Rivedi, approvi, consegni",
-        text: "In pochi minuti hai il quaderno pronto per la revisione. Controlli, approvi o correggi. Firmi tu — la responsabilità professionale resta del tecnico abilitato.",
+        name: "Ottimizza e approva",
+        text: "L'AI segnala dosi e anomalie. In chat puoi correggere un dato e vederlo cambiare. Rivedi, approvi e firmi tu.",
         url,
       },
     ],
   };
 }
 
-function buildFaqPage(faqItems: FaqItem[]) {
+function buildFaqPage(faqItems: FaqItem[], id = `${SITE_URL}/#faq`) {
   return {
     "@type": "FAQPage",
-    "@id": `${SITE_URL}/#faq`,
+    "@id": id,
     mainEntity: faqItems.map((item) => ({
       "@type": "Question",
       name: plain(item.question),
@@ -183,6 +184,41 @@ export function buildHomeGraph(faqItems: FaqItem[]) {
       buildHowTo(),
       buildFaqPage(faqItems),
       buildBreadcrumb(),
+    ],
+  };
+}
+
+const MANUFACTURING_DESCRIPTION =
+  "Leggi i documenti di trasporto, accetta i carichi a magazzino e modifica le giacenze in chat.";
+
+/** JSON-LD for the manufacturing landing. */
+export function buildManufacturingGraph(faqItems: FaqItem[]) {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      buildOrganization(),
+      {
+        "@type": "WebPage",
+        "@id": `${SITE_URL}/manifattura#webpage`,
+        url: `${SITE_URL}/manifattura`,
+        name: "Seminai per la manifattura",
+        description: MANUFACTURING_DESCRIPTION,
+        isPartOf: { "@id": WEBSITE_ID },
+        inLanguage: "it-IT",
+      },
+      buildFaqPage(faqItems, `${SITE_URL}/manifattura#faq`),
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Manifattura",
+            item: `${SITE_URL}/manifattura`,
+          },
+        ],
+      },
     ],
   };
 }

@@ -1,21 +1,24 @@
 # Seminai
 
-> Seminai produce il **quaderno di campagna digitale** in pochi minuti, partendo dalle fatture (WhatsApp, email, PDF). Verifica dosaggi e conformità su fonti normative ufficiali; l'agronomo rivede, approva e firma. Software italiano per agronomi, studi tecnici e cooperative agricole.
+> Seminai è il gestionale con AI per l'agricoltura e la manifattura. Raccoglie fatture, DDT e messaggi, prepara i piani delle operazioni e ottimizza dosi, giacenze e conformità. Il quaderno di campagna lo rivedi e lo firmi tu. Il passaggio dei dati è gratuito per i primi 200 utenti.
 
 ## Cos'è
-Il quaderno di campagna è il registro obbligatorio dei trattamenti fitosanitari (prodotti, dosaggi, date, colture), richiesto da normativa PAC, D.Lgs. 150/2012 e regolamenti regionali. Seminai lo genera automaticamente: estrae i dati delle fatture con OCR, incrocia i dosaggi con le etichette e segnala le anomalie con fonte e azione correttiva. La firma resta del professionista.
+Seminai tiene aziende, magazzino, registri e documenti nello stesso posto. In agricoltura produce il quaderno di campagna e i piani dei trattamenti. In manifattura legge i documenti di trasporto, accetta i carichi e aggiorna le giacenze, anche da chat.
 
 ## Per chi
 - Agronomi e liberi professionisti che gestiscono più aziende agricole.
 - Studi tecnici (10–80 farm).
 - Cooperative e consorzi agricoli (piano Network).
+- Officine e magazzini: https://seminai.tech/manifattura
 
 ## Fatti chiave
 - Verifica conformità su 4 livelli normativi: etichetta ministeriale, disciplinari, normativa europea/PAC, bollettini regionali.
 - Copertura delle 20 regioni italiane, con aggiornamento automatico dei bollettini.
-- OCR fatture da WhatsApp, PDF ed email; export PDF pronto per i controlli PAC.
+- OCR di fatture e documenti di trasporto da WhatsApp, PDF ed email; export PDF pronto per i controlli PAC.
+- Piani delle operazioni future e chat che modifica i dati, con conferma dell'utente.
 - Server europei, dati cifrati e conformi GDPR; l'uso dei contenuti pubblici per indicizzazione, input AI e training e' consentito tramite Content-Signal.
 - Risparmio tipico: ~6 ore a settimana di lavoro manuale per agronomo.
+- Passaggio dati gratuito per i primi 200 utenti.
 
 ## Prezzi (annuali, listino)
 - Solo (fino a 3 farm): €297
@@ -28,6 +31,7 @@ Il quaderno di campagna è il registro obbligatorio dei trattamenti fitosanitari
 
 ## Link
 - Sito: https://seminai.tech/
+- Manifattura: https://seminai.tech/manifattura
 - App / login: https://app.seminai.tech/login
 - Privacy: https://seminai.tech/privacy-policy
 - Cookie: https://seminai.tech/cookie-policy

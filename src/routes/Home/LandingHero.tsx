@@ -1,30 +1,16 @@
 import { useTranslation } from "react-i18next";
+import { InvoiceWalkthrough } from "./AgriScenes";
 import { ANCHORS } from "./constants";
+import { MigrationOffer } from "./MigrationOffer";
 import { RichHtml } from "./RichHtml";
 
 interface LandingHeroProps {
   onOpenSendInvoices: () => void;
 }
 
-interface DemoRow {
-  date: string;
-  product: string;
-  crop: string;
-  dose: string;
-  status: "ok" | "warn";
-}
-
 export function LandingHero({ onOpenSendInvoices }: LandingHeroProps) {
   const { t } = useTranslation();
-  const headers = t("landing.hero.demoHeaders", {
-    returnObjects: true,
-  }) as string[];
-  const rows = t("landing.hero.demoRows", {
-    returnObjects: true,
-  }) as DemoRow[];
-  const tickerItems = t("landing.hero.ticker", {
-    returnObjects: true,
-  }) as string[];
+  const tickerItems = t("landing.hero.ticker", { returnObjects: true }) as string[];
 
   return (
     <section className="hero">
@@ -43,8 +29,8 @@ export function LandingHero({ onOpenSendInvoices }: LandingHeroProps) {
             {t("landing.hero.ctaPrimary")}
             <span className="arrow" aria-hidden="true" />
           </button>
-          <a href={ANCHORS.who} className="btn-secondary">
-            {t("landing.hero.ctaSecondary")}
+          <a href={ANCHORS.manufacturing} className="btn-secondary">
+            {t("landing.hero.ctaManufacturing")}
           </a>
         </div>
         <p className="hero-meta">
@@ -59,59 +45,10 @@ export function LandingHero({ onOpenSendInvoices }: LandingHeroProps) {
             </span>
           ))}
         </p>
-
-        <figure className="hero-preview">
-          <div className="demo-frame">
-            <div className="demo-bar">
-              <span className="dot d1" />
-              <span className="dot d2" />
-              <span className="dot d3" />
-              <span className="demo-url">{t("landing.hero.demoUrl")}</span>
-            </div>
-            <div className="demo-body">
-              <div className="demo-head">
-                <div>
-                  <div className="demo-eyebrow">{t("landing.hero.demoEyebrow")}</div>
-                  <div className="demo-h">{t("landing.hero.demoTitle")}</div>
-                </div>
-                <div className="demo-status ok">
-                  <span className="sdot" />
-                  {t("landing.hero.demoStatus")}
-                </div>
-              </div>
-              <div className="demo-table">
-                <div className="demo-row demo-hd">
-                  {headers.map((header) => (
-                    <span key={header}>{header}</span>
-                  ))}
-                </div>
-                {rows.map((row) => (
-                  <div
-                    key={`${row.date}-${row.product}`}
-                    className={`demo-row${row.status === "warn" ? " warn" : ""}`}
-                  >
-                    <span>{row.date}</span>
-                    <span>{row.product}</span>
-                    <span>{row.crop}</span>
-                    <span>{row.dose}</span>
-                    <span className={`tag ${row.status}`}>
-                      {row.status === "ok"
-                        ? t("landing.hero.statusOk")
-                        : t("landing.hero.statusWarn")}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div className="demo-note">
-                <span className="note-dot" />
-                <span>
-                  <RichHtml html={t("landing.hero.demoAnomaly")} />
-                </span>
-              </div>
-            </div>
-          </div>
-          <figcaption className="demo-caption">{t("landing.hero.demoCaption")}</figcaption>
-        </figure>
+        <MigrationOffer />
+        <div className="hero-preview">
+          <InvoiceWalkthrough />
+        </div>
       </div>
     </section>
   );

@@ -31,6 +31,11 @@ export function LandingFooter({ onOpenSendInvoices }: LandingFooterProps) {
                 <a href={ANCHORS.plans}>{t("landing.footer.productLinks.plans")}</a>
               </li>
               <li>
+                <a href={ANCHORS.manufacturing}>
+                  {t("landing.footer.productLinks.manufacturing")}
+                </a>
+              </li>
+              <li>
                 <a href={ANCHORS.who}>{t("landing.footer.productLinks.cooperative")}</a>
               </li>
               <li>

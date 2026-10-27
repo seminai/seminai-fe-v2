@@ -5,9 +5,17 @@ interface FaqItem {
   answer: string;
 }
 
-export function LandingFaq() {
+interface LandingFaqProps {
+  readonly titleKey?: string;
+  readonly itemsKey?: string;
+}
+
+export function LandingFaq({
+  titleKey = "landing.faq.title",
+  itemsKey = "landing.faq.items",
+}: LandingFaqProps) {
   const { t } = useTranslation();
-  const items = t("landing.faq.items", {
+  const items = t(itemsKey, {
     returnObjects: true,
   }) as FaqItem[];
 
@@ -16,7 +24,7 @@ export function LandingFaq() {
       <div className="container">
         <div className="faq-grid">
           <div>
-            <h2>{t("landing.faq.title")}</h2>
+            <h2>{t(titleKey)}</h2>
           </div>
 
           <div className="faq-list">

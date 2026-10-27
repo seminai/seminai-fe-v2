@@ -4,12 +4,13 @@
     "who": "Per chi",
     "plans": "Piani & prezzi",
     "faq": "FAQ",
-    "login": "Login"
+    "login": "Login",
+    "manufacturing": "Manifattura"
   },
   "hero": {
-    "title": "Il quaderno di campagna digitale<br />per agronomi, <em>in pochi minuti.</em>",
+    "title": "Raccogli i dati. Prepara i piani.<br /><em>L'AI ottimizza il resto.</em>",
     "subtitle": "Tu rivedi. Tu approvi. <span class=\"earth\">Tu firmi.</span>",
-    "body": "Seminai produce il quaderno di campagna digitale in pochi minuti, partendo dalle fatture (WhatsApp, email, PDF). Verifica dosaggi e conformità su fonti normative ufficiali; l'agronomo rivede, approva e firma.",
+    "body": "Seminai è il gestionale per le aziende agricole: fatture, DDT e messaggi diventano registri, magazzino e quaderno di campagna. L'AI prepara le operazioni future e segnala cosa correggere. Tu rivedi, approvi e firmi.",
     "ctaPrimary": "Invia le fatture via email",
     "ctaSecondary": "Gestisci una cooperativa? Guarda il piano Network →",
     "demoUrl": "app.seminai.tech / quaderno · Tenuta La Sorgente",
@@ -65,12 +66,13 @@
     "statusOk": "OK",
     "statusWarn": "Anomalia",
     "ticker": [
+      "Gestionale: aziende, magazzino, registri",
+      "Piani delle operazioni future",
+      "AI che ottimizza dosi e anomalie",
       "Conforme PAC",
-      "D.Lgs. 150/2012",
-      "Bollettini regionali, 20 regioni",
-      "OCR fatture WhatsApp · PDF · email",
-      "Anomalie segnalate con fonte"
-    ]
+      "Fatture, DDT, WhatsApp, PDF"
+    ],
+    "ctaManufacturing": "Lavori in manifattura? Guarda come funziona →"
   },
   "problem": {
     "eyebrow": "01, Il Problema",
@@ -94,23 +96,23 @@
   },
   "solution": {
     "eyebrow": "02, Come funziona",
-    "title": "Come Seminai produce il <em>quaderno di campagna</em> in pochi minuti.",
-    "lead": "Tre passi. Il primo lo fai tu in trenta secondi. Il secondo lo fa Seminai. Il terzo torna a te: la firma del professionista non si delega.",
+    "title": "Come funziona: <em>raccogli, pianifica, ottimizza.</em>",
+    "lead": "Tre passi. I dati entrano nel gestionale, Seminai prepara il piano, l'AI propone le correzioni. La firma resta tua.",
     "steps": [
       {
-        "label": "Carica",
-        "heading": "Carica le fatture da dove stanno.",
-        "body": "Foto su WhatsApp, PDF upload, email forward. Fitofarmaci, sementi, fertilizzanti. <strong>Anche disorganizzate, anche da fonti diverse.</strong> Seminai le raccoglie tutte."
+        "label": "Raccogli",
+        "heading": "I documenti diventano dati del gestionale.",
+        "body": "Fatture, DDT, foto e messaggi. Seminai compila anagrafiche, giacenze e righe del quaderno. <strong>Anche se arrivano da posti diversi.</strong>"
       },
       {
-        "label": "Elabora",
-        "heading": "Il sistema elabora e segnala.",
-        "body": "Estrae i dati, incrocia i dosaggi con le etichette, verifica la conformità su <strong>4 livelli normativi aggiornati</strong>. Ogni anomalia viene segnalata con fonte e azione correttiva."
+        "label": "Pianifica",
+        "heading": "Prepara le operazioni future.",
+        "body": "Dal registro esce il piano della settimana successiva: cosa fare, su quale appezzamento, con quale prodotto. <strong>Lo confermi tu prima che diventi lavoro.</strong>"
       },
       {
-        "label": "Approva",
-        "heading": "Tu rivedi, approvi, consegni.",
-        "body": "In pochi minuti hai il quaderno pronto per la revisione. Controlli, approvi o correggi. <strong>Firmi tu</strong>. La responsabilità professionale resta dove deve stare."
+        "label": "Ottimizza",
+        "heading": "L'AI sistema dosi e anomalie.",
+        "body": "Chiedi in chat di correggere una dose o una giacenza: il dato cambia, con la fonte della regola. <strong>Approvi e firmi tu.</strong>"
       }
     ],
     "doorBeforeLabel": "Senza Seminai",
@@ -287,8 +289,24 @@
   },
   "faq": {
     "eyebrow": "07, FAQ",
-    "title": "Domande frequenti sul quaderno di campagna digitale.",
+    "title": "Domande frequenti.",
     "items": [
+      {
+        "question": "Seminai è un gestionale?",
+        "answer": "Sì. Tieni nello stesso posto aziende, magazzino, registri e quaderno di campagna. Fatture, DDT e messaggi diventano dati che puoi consultare e correggere, non solo un PDF da firmare."
+      },
+      {
+        "question": "Si possono preparare i piani delle operazioni future?",
+        "answer": "Sì. Dai dati raccolti Seminai prepara il piano della settimana successiva: prodotto, appezzamento e data. Lo confermi tu prima che diventi un'operazione."
+      },
+      {
+        "question": "L'AI modifica i dati da sola?",
+        "answer": "Propone la correzione e, se glielo chiedi in chat, aggiorna il dato. Dosaggi, anomalie e giacenze restano visibili. La conferma e la firma sono tue."
+      },
+      {
+        "question": "Il passaggio dei dati è gratuito?",
+        "answer": "Il passaggio dei dati che hai già è gratuito per i primi 200 utenti. Il contatore in pagina mostra 143 e, dopo il 143° account verificato, sale con le registrazioni reali fino a 200."
+      },
       {
         "question": "Cos'è il quaderno di campagna e a cosa serve?",
         "answer": "Il quaderno di campagna è il documento obbligatorio per legge in cui ogni azienda agricola registra tutti i trattamenti fitosanitari effettuati: prodotti usati, dosaggi, date, colture trattate. È richiesto dalla normativa PAC, dal D.Lgs. 150/2012 e dalle normative regionali specifiche. In caso di controllo, la mancanza o l'irregolarità del quaderno può comportare decurtazioni dei contributi PAC."
@@ -362,7 +380,7 @@
     }
   },
   "footer": {
-    "description": "Il quaderno di campagna digitale per agronomi, studi tecnici e cooperative agricole. Conforme PAC, D.Lgs. 150/2012 e normative regionali.",
+    "description": "Il gestionale con AI per l'agricoltura e la manifattura. Raccoglie i dati, prepara i piani e lascia a te la conferma.",
     "productTitle": "Prodotto",
     "productLinks": {
       "how": "Come funziona",
@@ -370,7 +388,8 @@
       "plans": "Piani e prezzi",
       "cooperative": "Per cooperative",
       "faq": "FAQ",
-      "aiInfo": "Informazioni per assistenti AI"
+      "aiInfo": "Informazioni per assistenti AI",
+      "manufacturing": "Per la manifattura"
     },
     "contactTitle": "Contatti",
     "email": "info@seminai.tech",
@@ -381,5 +400,170 @@
     "cookies": "Cookie Policy",
     "terms": "Termini di servizio",
     "copyright": "Seminai © {{year}} · P.IVA xxxxxxxxxxx"
+  },
+  "offer": {
+    "kicker": "Passaggio dati",
+    "title": "Il passaggio dei tuoi dati è gratuito per i primi 200 utenti.",
+    "full": "I 200 passaggi gratuiti sono esauriti.",
+    "fullLabel": "offerta chiusa",
+    "remaining": "{{spots}} posti rimasti",
+    "progressLabel": "Utenti con il passaggio dati gratuito"
+  },
+  "show": {
+    "title": "Guardalo fare, <em>passo per passo.</em>",
+    "lead": "Un cursore compie le azioni che faresti tu. Niente schemi: si vede il dato che cambia.",
+    "invoice": {
+      "url": "app.seminai.tech / registro · Tenuta La Sorgente",
+      "caption": "Carichi una fattura e le righe entrano nel registro.",
+      "eyebrow": "Registro · 2026",
+      "title": "Tenuta La Sorgente",
+      "upload": "Carica fattura",
+      "empty": "Il registro è vuoto. Il cursore sta per caricare la fattura.",
+      "note": "3 prodotti nel registro, pronti per il quaderno.",
+      "headers": [
+        "Data",
+        "Prodotto",
+        "Dose"
+      ],
+      "rows": [
+        {
+          "date": "12 Mar",
+          "product": "Ridomil Gold",
+          "dose": "2,5 kg/ha"
+        },
+        {
+          "date": "18 Mar",
+          "product": "Karate Zeon",
+          "dose": "0,15 L/ha"
+        },
+        {
+          "date": "24 Mar",
+          "product": "Mancozeb 75",
+          "dose": "3,2 kg/ha"
+        }
+      ]
+    },
+    "plan": {
+      "url": "app.seminai.tech / piano · settimana prossima",
+      "caption": "Confermi il piano dei trattamenti della settimana successiva.",
+      "eyebrow": "Piano operazioni",
+      "title": "Settimana 31 mar – 6 apr",
+      "confirm": "Conferma piano",
+      "confirmed": "Piano confermato",
+      "rows": [
+        {
+          "date": "31 Mar",
+          "place": "Vigneto Sud",
+          "product": "Ridomil Gold"
+        },
+        {
+          "date": "2 Apr",
+          "place": "Vigneto Nord",
+          "product": "Karate Zeon"
+        },
+        {
+          "date": "4 Apr",
+          "place": "Vigneto Sud",
+          "product": "Topas 100"
+        }
+      ]
+    },
+    "chat": {
+      "url": "app.seminai.tech / chat · quaderno",
+      "caption": "Scrivi in chat e la dose nel registro cambia.",
+      "eyebrow": "Chat · modifica un dato",
+      "date": "Data",
+      "product": "Prodotto",
+      "dose": "Dose",
+      "original": "3,2 kg/ha",
+      "fixed": "2,5 kg/ha",
+      "prompt": "Porta la dose del 24 marzo a 2,5 kg/ha",
+      "reply": "Fatto. La dose rispetta il limite di etichetta.",
+      "placeholder": "Scrivi cosa vuoi cambiare…"
+    }
+  },
+  "manufacturing": {
+    "hero": {
+      "title": "Il gestionale per la manifattura.<br /><em>Documenti, magazzino, chat.</em>",
+      "subtitle": "Leggi un DDT. Accetta un carico. <span class=\"earth\">Chiedi all'AI di sistemare i dati.</span>",
+      "body": "Seminai legge i documenti di trasporto, aggiorna le giacenze e ti lascia correggere tutto in chat. Raccogli i dati, prepara i movimenti futuri e lascia che l'AI tenga il magazzino allineato. Tu confermi.",
+      "ctaPrimary": "Entra in Seminai",
+      "ctaSecondary": "Parla con noi"
+    },
+    "show": {
+      "title": "Tre cose che si capiscono <em>senza manuale.</em>",
+      "lead": "Il cursore fa il gesto. Il numero a schermo cambia. È lo stesso gestionale, con i documenti del magazzino."
+    },
+    "ddt": {
+      "url": "app.seminai.tech / documenti · DDT 1842",
+      "caption": "Apri un documento di trasporto e i campi si compilano da soli.",
+      "eyebrow": "Documento di trasporto",
+      "title": "DDT 1842",
+      "read": "Leggi documento",
+      "lines": [
+        {
+          "label": "Fornitore",
+          "value": "Acciai Rossi srl"
+        },
+        {
+          "label": "Articolo",
+          "value": "Lamiera 2 mm"
+        },
+        {
+          "label": "Quantità",
+          "value": "80 pezzi"
+        }
+      ]
+    },
+    "load": {
+      "url": "app.seminai.tech / magazzino · carico",
+      "caption": "Accetti il carico e la giacenza di magazzino sale.",
+      "eyebrow": "Magazzino A",
+      "title": "Carico in attesa",
+      "pending": "In attesa",
+      "accepted": "Accettato",
+      "item": "Lamiera 2 mm",
+      "qty": "80 pezzi",
+      "stockLabel": "Giacenza",
+      "stockBefore": "40 pezzi",
+      "stockAfter": "120 pezzi",
+      "accept": "Accetta carico"
+    },
+    "chat": {
+      "url": "app.seminai.tech / chat · magazzino",
+      "caption": "Scrivi in chat e le giacenze dei due magazzini cambiano.",
+      "eyebrow": "Chat · sposta merce",
+      "title": "Giacenze",
+      "warehouseA": "Magazzino A",
+      "warehouseB": "Magazzino B",
+      "stockABefore": "80 pezzi",
+      "stockAAfter": "60 pezzi",
+      "stockBBefore": "10 pezzi",
+      "stockBAfter": "30 pezzi",
+      "prompt": "Sposta 20 pezzi di lamiera nel magazzino B",
+      "reply": "Fatto. 20 pezzi spostati da A a B.",
+      "placeholder": "Scrivi il movimento…"
+    },
+    "faq": {
+      "title": "Domande sulla manifattura.",
+      "items": [
+        {
+          "question": "Seminai legge un documento di trasporto?",
+          "answer": "Sì. Apri il DDT, Seminai compila fornitore, articolo e quantità. Controlli i campi prima di salvarli nel gestionale."
+        },
+        {
+          "question": "Come si accetta un carico a magazzino?",
+          "answer": "Quando il documento è a posto clicchi Accetta carico. La giacenza del magazzino aumenta della quantità letta sul DDT."
+        },
+        {
+          "question": "La chat può modificare i dati?",
+          "answer": "Sì. Scrivi cosa vuoi cambiare, per esempio spostare dei pezzi da un magazzino all'altro. Seminai aggiorna le giacenze e ti mostra il risultato prima che tu chiuda."
+        },
+        {
+          "question": "Il passaggio dei dati è gratuito?",
+          "answer": "Il passaggio dei dati che hai già (documenti, anagrafiche, giacenze) è gratuito per i primi 200 utenti. Il contatore in pagina parte da 143 e segue gli account verificati dopo quel numero, fino a 200."
+        }
+      ]
+    }
   }
 }

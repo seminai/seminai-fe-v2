@@ -11,7 +11,7 @@ export const SITE_URL = "https://seminai.tech";
 export const SITE_NAME = "Seminai";
 export const THEME_COLOR = "#234D34";
 export const GEO_DESCRIPTION =
-  "Seminai produce il quaderno di campagna digitale in pochi minuti, partendo dalle fatture (WhatsApp, email, PDF). Verifica dosaggi e conformità su fonti normative ufficiali; l'agronomo rivede, approva e firma.";
+  "Seminai raccoglie fatture, DDT e messaggi in un gestionale, prepara i piani delle operazioni e usa l'AI per ottimizzare dosi, giacenze e conformità. Il quaderno di campagna lo rivedi e lo firmi tu. Passaggio dati gratuito per i primi 200 utenti.";
 
 /** OG/Twitter share image. Keep it lightweight because it is emitted into public HTML. */
 export const OG_IMAGE = `${SITE_URL}/og/og-image.jpg`;
@@ -42,15 +42,22 @@ export function absoluteUrl(path: string): string {
 }
 
 export const SEO: Record<
-  "home" | "privacy" | "cookie" | "terms" | "beta" | "auth",
+  "home" | "manufacturing" | "privacy" | "cookie" | "terms" | "beta" | "auth",
   SeoMeta
 > = {
   home: {
-    title: "Quaderno di Campagna Digitale — Automatico in Minuti | Seminai",
+    title: "Gestionale agricolo con AI — Quaderno di campagna | Seminai",
     description: GEO_DESCRIPTION,
     canonical: absoluteUrl("/"),
     locale: "it_IT",
     hreflang: true,
+  },
+  manufacturing: {
+    title: "Gestionale di magazzino con AI per la manifattura | Seminai",
+    description:
+      "Leggi i documenti di trasporto, accetta i carichi a magazzino e modifica le giacenze in chat. Seminai è il gestionale con AI per officine e magazzini. Passaggio dati gratuito per i primi 200 utenti.",
+    canonical: absoluteUrl("/manifattura"),
+    locale: "it_IT",
   },
   privacy: {
     title: "Privacy Policy | Seminai",

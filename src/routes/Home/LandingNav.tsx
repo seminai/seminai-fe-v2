@@ -50,6 +50,7 @@ export function LandingNav() {
           aria-label={isEnglish ? "Main" : "Navigazione principale"}
         >
           <a href={ANCHORS.how}>{t("landing.nav.how")}</a>
+          <a href={ANCHORS.manufacturing}>{t("landing.nav.manufacturing")}</a>
           <a href={ANCHORS.who}>{t("landing.nav.who")}</a>
           <a href={ANCHORS.plans}>{t("landing.nav.plans")}</a>
           <a href={ANCHORS.faq}>{t("landing.nav.faq")}</a>
