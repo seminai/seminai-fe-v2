@@ -5,7 +5,6 @@ Seminai è la piattaforma con AI per le piccole e medie imprese del settore agri
 ## Per chi
 
 - Aziende agricole: vigneti, frutteti, seminativi, orticole.
-- Trasformazione e manifattura agroalimentare: cantine, frantoi, caseifici, mangimifici.
 - Cooperative e consulenti che seguono molte aziende.
 
 ## Come funziona
@@ -16,7 +15,7 @@ Seminai è la piattaforma con AI per le piccole e medie imprese del settore agri
 
 ## Demo e contatti
 
-Per una demo: info@seminai.tech
+Per una demo: get.seminai@gmail.com
 
 ## Link utili
 

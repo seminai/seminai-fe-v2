@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { ANCHORS, CONTACT_URL, DEMO_URL, LEGAL_ROUTES } from "./constants";
+import { ANCHORS, CONTACT_URL, LEGAL_ROUTES } from "./constants";
 import { LandingBrand } from "./LandingNav";
 
 export function LandingFooter() {
@@ -21,20 +21,7 @@ export function LandingFooter() {
                 <a href={ANCHORS.how}>{t("landing.footer.productLinks.how")}</a>
               </li>
               <li>
-                <a href={ANCHORS.capabilities}>
-                  {t("landing.footer.productLinks.capabilities")}
-                </a>
-              </li>
-              <li>
-                <a href={ANCHORS.sources}>{t("landing.footer.productLinks.sources")}</a>
-              </li>
-              <li>
-                <a href={ANCHORS.who}>{t("landing.footer.productLinks.who")}</a>
-              </li>
-              <li>
-                <a href={ANCHORS.manufacturing}>
-                  {t("landing.footer.productLinks.manufacturing")}
-                </a>
+                <a href={ANCHORS.useCases}>{t("landing.footer.productLinks.useCases")}</a>
               </li>
               <li>
                 <a href={ANCHORS.faq}>{t("landing.footer.productLinks.faq")}</a>
@@ -51,7 +38,7 @@ export function LandingFooter() {
                 <a href={CONTACT_URL}>{t("landing.footer.email")}</a>
               </li>
               <li>
-                <a href={DEMO_URL}>{t("landing.footer.demo")}</a>
+                <a href={ANCHORS.booking}>{t("landing.footer.demo")}</a>
               </li>
               <li>
                 <a href={CONTACT_URL}>{t("landing.footer.contact")}</a>

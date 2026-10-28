@@ -1,23 +1,16 @@
 import { APP_LOGO_SRCSET, APP_LOGO_URL } from "@/config/brand";
 
 export const LANDING_LOGIN_URL = "https://app.seminai.tech/login";
-export const LANDING_REGISTER_URL = "https://app.seminai.tech/register";
-export const MANUFACTURING_CONTACT_URL =
-  "mailto:info@seminai.tech?subject=Seminai%20manifattura";
-export const DEMO_URL = "mailto:info@seminai.tech?subject=Richiesta%20demo%20Seminai";
-export const CONTACT_URL = "mailto:info@seminai.tech";
+export const CONTACT_URL = "mailto:get.seminai@gmail.com";
 
 export const LANDING_LOGO = APP_LOGO_URL;
 export const LANDING_LOGO_SRCSET = APP_LOGO_SRCSET;
 
 export const ANCHORS = {
   how: "/#come-funziona",
-  capabilities: "/#cosa-puoi-fare",
-  who: "/#per-chi",
+  useCases: "/#cosa-puoi-fare",
   faq: "/#faq",
-  manufacturing: "/manifattura",
-  sources: "/#fonti",
-  contact: "/#contatti",
+  booking: "/#prenota",
 } as const;
 
 export const LEGAL_ROUTES = {

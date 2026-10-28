@@ -18,24 +18,11 @@ interface InvoiceWalkthroughProps {
   readonly onCycleComplete?: () => void;
 }
 
-interface PlanRow {
-  date: string;
-  place: string;
-  product: string;
-}
-
 const INVOICE_STEPS: readonly CursorStep[] = [
   { x: 88, y: 14 },
   { x: 88, y: 14, click: true },
   { x: 46, y: 62 },
   { x: 30, y: 86 },
-];
-
-const PLAN_STEPS: readonly CursorStep[] = [
-  { x: 12, y: 42 },
-  { x: 12, y: 42, click: true },
-  { x: 72, y: 86 },
-  { x: 72, y: 86, click: true },
 ];
 
 const CHAT_STEPS: readonly CursorStep[] = [
@@ -116,44 +103,6 @@ function InvoiceLine({ row, isNew = false }: { row: InvoiceRow; isNew?: boolean 
       <span>{row.dose}</span>
       <span className={`tag ${tone}`}>{row.status}</span>
     </div>
-  );
-}
-
-export function PlanWalkthrough() {
-  const { t } = useTranslation();
-  const rows = t("landing.show.plan.rows", { returnObjects: true }) as PlanRow[];
-
-  return (
-    <CursorWalkthrough
-      steps={PLAN_STEPS}
-      url={t("landing.show.plan.url")}
-      caption={t("landing.show.plan.caption")}
-    >
-      {(step) => (
-        <>
-          <div className="demo-eyebrow">{t("landing.show.plan.eyebrow")}</div>
-          <div className="demo-h">{t("landing.show.plan.title")}</div>
-          <div className="scene-list">
-            {rows.map((row, index) => {
-              const checked = step >= 3 || (step >= 1 && index === 0);
-              return (
-                <div key={row.date} className="scene-line">
-                  <span className={`scene-check${checked ? " on" : ""}`} />
-                  <span>{row.date}</span>
-                  <span>{row.place}</span>
-                  <span>{row.product}</span>
-                </div>
-              );
-            })}
-          </div>
-          <div className="scene-toolbar scene-toolbar-end">
-            <span className={`scene-btn${step >= 3 ? " is-idle" : ""}`}>
-              {step >= 3 ? t("landing.show.plan.confirmed") : t("landing.show.plan.confirm")}
-            </span>
-          </div>
-        </>
-      )}
-    </CursorWalkthrough>
   );
 }
 

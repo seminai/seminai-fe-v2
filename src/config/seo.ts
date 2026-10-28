@@ -42,7 +42,7 @@ export function absoluteUrl(path: string): string {
 }
 
 export const SEO: Record<
-  "home" | "manufacturing" | "privacy" | "cookie" | "terms" | "beta" | "auth",
+  "home" | "privacy" | "cookie" | "terms" | "beta" | "auth",
   SeoMeta
 > = {
   home: {
@@ -51,13 +51,6 @@ export const SEO: Record<
     canonical: absoluteUrl("/"),
     locale: "it_IT",
     hreflang: true,
-  },
-  manufacturing: {
-    title: "Gestionale di magazzino con AI per la manifattura | Seminai",
-    description:
-      "Leggi i documenti di trasporto, accetta i carichi a magazzino e modifica le giacenze in chat. Seminai è il gestionale con AI per officine e magazzini. Passaggio dati gratuito per i primi 200 utenti.",
-    canonical: absoluteUrl("/manifattura"),
-    locale: "it_IT",
   },
   privacy: {
     title: "Privacy Policy | Seminai",

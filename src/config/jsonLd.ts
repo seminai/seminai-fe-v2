@@ -156,37 +156,3 @@ export function buildHomeGraph(faqItems: FaqItem[]) {
   };
 }
 
-const MANUFACTURING_DESCRIPTION =
-  "Leggi i documenti di trasporto, accetta i carichi a magazzino e modifica le giacenze in chat.";
-
-/** JSON-LD for the manufacturing landing. */
-export function buildManufacturingGraph(faqItems: FaqItem[]) {
-  return {
-    "@context": "https://schema.org",
-    "@graph": [
-      buildOrganization(),
-      {
-        "@type": "WebPage",
-        "@id": `${SITE_URL}/manifattura#webpage`,
-        url: `${SITE_URL}/manifattura`,
-        name: "Seminai per la manifattura",
-        description: MANUFACTURING_DESCRIPTION,
-        isPartOf: { "@id": WEBSITE_ID },
-        inLanguage: "it-IT",
-      },
-      buildFaqPage(faqItems, `${SITE_URL}/manifattura#faq`),
-      {
-        "@type": "BreadcrumbList",
-        itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
-          {
-            "@type": "ListItem",
-            position: 2,
-            name: "Manifattura",
-            item: `${SITE_URL}/manifattura`,
-          },
-        ],
-      },
-    ],
-  };
-}

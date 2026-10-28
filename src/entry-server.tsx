@@ -13,7 +13,6 @@ import { HelmetProvider, type HelmetServerState } from "react-helmet-async";
 import i18n from "./i18n";
 
 import Home from "./routes/Home";
-import Manufacturing from "./routes/Manufacturing";
 import PrivacyPolicy from "./routes/PrivacyPolicy";
 import CookiePolicy from "./routes/CookiePolicy";
 import TermsOfService from "./routes/TermsOfService";
@@ -34,7 +33,6 @@ export async function render(url: string, lng = "it"): Promise<RenderResult> {
         <Suspense fallback={null}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/manifattura" element={<Manufacturing />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/cookie-policy" element={<CookiePolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />

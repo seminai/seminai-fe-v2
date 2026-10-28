@@ -7,7 +7,6 @@ Seminai raccoglie in un solo posto i documenti dell'azienda, in qualsiasi format
 
 ## Per chi
 - Aziende agricole: vigneti, frutteti, seminativi, orticole.
-- Trasformazione e manifattura agroalimentare: cantine, frantoi, caseifici, mangimifici. Dettagli: https://seminai.tech/manifattura
 - Cooperative e consulenti che seguono molte aziende.
 
 ## Fatti chiave
@@ -19,11 +18,10 @@ Seminai raccoglie in un solo posto i documenti dell'azienda, in qualsiasi format
 - Server europei, dati cifrati e conformi GDPR, mai usati per addestrare modelli AI; l'uso dei contenuti pubblici per indicizzazione, input AI e training e' consentito tramite Content-Signal.
 
 ## Demo e contatti
-Per una demo o informazioni commerciali: info@seminai.tech
+Per una demo o informazioni commerciali: get.seminai@gmail.com
 
 ## Link
 - Sito: https://seminai.tech/
-- Manifattura: https://seminai.tech/manifattura
 - App / login: https://app.seminai.tech/login
 - Privacy: https://seminai.tech/privacy-policy
 - Cookie: https://seminai.tech/cookie-policy

@@ -1,182 +1,238 @@
 {
   "nav": {
     "how": "How it works",
-    "capabilities": "What you can do",
-    "who": "Who it's for",
-    "manufacturing": "Manufacturing",
+    "useCases": "What you can do",
     "faq": "FAQ",
     "login": "Login",
-    "demo": "Book a demo"
+    "demo": "Book 20 minutes"
   },
   "hero": {
-    "title": "Your farm's paperwork.<br /><em>Finally usable.</em>",
-    "body": "Invoices, delivery notes, labels, farm records, handwritten notes: upload them to Seminai. It extracts the data, organizes it and makes it ready for whatever you need: a question in chat, an Excel report, the field logbook.",
-    "ctaPrimary": "Book a demo",
-    "ctaSecondary": "Contact us",
-    "ticker": [
-      "Invoices, delivery notes, labels, records, handwritten notes",
-      "Chat with your data",
-      "PDF and Excel export",
+    "titleBefore": "We turn",
+    "titleAfter": "into data you can use.",
+    "body": "Seminai reads the documents your farm already receives and makes them usable: in chat, in Excel, in the field logbook. Without changing how you work.",
+    "ctaPrimary": "Book 20 minutes",
+    "ctaSecondary": "See how it works",
+    "stageLabel": "Example: a document goes in, data comes out",
+    "extracted": "Extracted data",
+    "from": "from",
+    "outputs": [
+      "Chat",
+      "Excel",
+      "PDF",
       "Field logbook"
+    ],
+    "docs": [
+      {
+        "word": "invoices",
+        "source": "Invoice 2026/0611",
+        "alt": "Agri Supply invoice with a handwritten note: Field 11",
+        "fields": [
+          [
+            "Supplier",
+            "Agri Supply"
+          ],
+          [
+            "Tervalon 250 EC",
+            "15 L"
+          ],
+          [
+            "Soybean seed",
+            "20 bags"
+          ],
+          [
+            "Diesel",
+            "400 L"
+          ],
+          [
+            "Plot",
+            "Field 11"
+          ],
+          [
+            "Total",
+            "€ 2,220.50"
+          ]
+        ]
+      },
+      {
+        "word": "delivery notes",
+        "source": "Delivery note D-2026-118",
+        "alt": "Handwritten delivery note: soybean, 38.2 tonnes",
+        "fields": [
+          [
+            "From",
+            "Frank's farm"
+          ],
+          [
+            "To",
+            "North Feed Mill"
+          ],
+          [
+            "Date",
+            "02/10/2026"
+          ],
+          [
+            "Goods",
+            "Soybean"
+          ],
+          [
+            "Net weight",
+            "38.2 t"
+          ]
+        ]
+      },
+      {
+        "word": "handwritten logs",
+        "source": "Field log",
+        "alt": "Handwritten notebook page about Field 11",
+        "fields": [
+          [
+            "Plot",
+            "Field 11"
+          ],
+          [
+            "Area",
+            "12.4 ha"
+          ],
+          [
+            "Sprayed",
+            "11/06"
+          ],
+          [
+            "Harvest",
+            "End of September"
+          ],
+          [
+            "Contact",
+            "Luca"
+          ]
+        ]
+      },
+      {
+        "word": "field notes",
+        "source": "Field note #11",
+        "alt": "Field note: soybean harvest on Monday, call Luca",
+        "fields": [
+          [
+            "Task",
+            "Soybean harvest"
+          ],
+          [
+            "Plot",
+            "Field 11"
+          ],
+          [
+            "When",
+            "Monday"
+          ],
+          [
+            "To do",
+            "Call Luca"
+          ]
+        ]
+      }
     ]
   },
   "problem": {
-    "title": "The data is already there. <em><span class=\"serif-i\">It's just scattered.</span></em>",
-    "lead": "Every day your farm produces valuable information. But it sits in WhatsApp, in email, in drawers, in PDFs nobody opens again.",
+    "title": "More software doesn't mean less paper.",
+    "lead": "Farms run on phone calls, WhatsApp, notebooks and paper invoices. Management software stays empty because nobody has time to retype it all.",
     "cards": [
       {
-        "title": "Scattered.",
-        "body": "Supplier invoices, delivery notes in the warehouse, operator notes, farm records at the co-op. One piece in each place."
+        "title": "Work the way you do today.",
+        "body": "Documents and messages keep coming through the usual channels. Forward them to Seminai and it takes care of the rest."
       },
       {
-        "title": "Locked.",
-        "body": "You can't query a PDF or a photo. To know what you spent or how much product is left, you have to reread everything."
+        "title": "The right data, in the right place.",
+        "body": "Even a pen note on an invoice ends up on the right plot.",
+        "tag": "Plot: Field 11"
       },
       {
-        "title": "Retyped.",
-        "body": "Hours copying the same data for the accountant, the advisor, the certifier, the inspections."
+        "title": "No endless setup.",
+        "body": "No 35 steps before you can start: upload your documents and the farm records build up from there."
       }
-    ],
-    "bridge": "Seminai collects it, reads it and puts it in order. <em>Just once.</em>"
+    ]
   },
-  "solution": {
-    "title": "How it works: <em>upload, extract, use.</em>",
+  "how": {
+    "title": "How it works.",
     "lead": "Three steps. The first takes thirty seconds.",
+    "tabsLabel": "Seminai's three steps",
     "steps": [
       {
-        "label": "Upload",
-        "heading": "Upload any document.",
-        "body": "Photos, PDFs, emails, scans. Invoices, delivery notes, labels, farm records, handwritten notes. <strong>Messy is fine, from any source.</strong>"
+        "tab": "Reads",
+        "title": "Reads messy documents.",
+        "body": "Crooked photos, scans, PDFs, handwritten notes: Seminai extracts products, quantities, lots, dates and plots."
       },
       {
-        "label": "Extract",
-        "heading": "Seminai extracts and organizes.",
-        "body": "Products, quantities, lots, suppliers, dates, plots. <strong>Every value linked to the others and to its source document.</strong>"
+        "tab": "Connects",
+        "title": "Connects the data.",
+        "body": "The same harvest goes from the field to the truck to the silo. Seminai keeps together the documents that talk about the same thing."
       },
       {
-        "label": "Use",
-        "heading": "Use the data for whatever you need.",
-        "body": "Ask in chat, download as PDF or Excel, fill in the field logbook. <strong>Your data works for you.</strong>"
+        "tab": "Returns",
+        "title": "Gives it back the way you need it.",
+        "body": "Ask in chat, download as Excel or PDF, fill in the field logbook."
       }
     ],
-    "ctaPrimary": "Book a demo",
-    "ctaNote": "20 minutes, on your own documents"
+    "chain": [
+      {
+        "label": "Field 11",
+        "sub": "Soybean, harvested"
+      },
+      {
+        "label": "Delivery D-2026-118",
+        "sub": "38.2 t on the road"
+      },
+      {
+        "label": "North Feed Mill",
+        "sub": "Delivery recorded"
+      }
+    ],
+    "outputs": {
+      "pdfLabel": "Spray plan as PDF",
+      "excelLabel": "Excel export",
+      "excelRows": [
+        "Field 11 · Soybean · 38.2 t",
+        "Field 11 · Tervalon · 15 L",
+        "Field 11 · Diesel · 400 L"
+      ]
+    }
   },
-  "capabilities": {
-    "title": "One place for your data. <em>Endless ways to use it.</em>",
+  "useCases": {
+    "title": "What you can do with your data.",
     "lead": "Once extracted, the data is yours: query it, export it, reuse it.",
     "items": [
-      {
-        "title": "Ask in chat.",
-        "body": "“How much copper did I apply to the north vineyard this year?” The answer comes back in seconds, with the source document."
-      },
-      {
-        "title": "Download as PDF and Excel.",
-        "body": "Reports ready for your accountant, bank, certifier or management software."
-      },
-      {
-        "title": "Fill in the field logbook.",
-        "body": "Treatments go in automatically, with doses checked against the label."
-      },
-      {
-        "title": "Keep stock and records aligned.",
-        "body": "Every invoice and delivery note updates your inventory."
-      }
-    ]
-  },
-  "trust": {
-    "title": "And the field logbook <em>fills itself in.</em>",
-    "lead": "From your uploaded documents Seminai prepares the logbook and checks every treatment against official sources. If something is off, it flags it with the source and the fix.",
-    "sources": [
-      {
-        "num": "SOURCE 01",
-        "title": "Ministerial product label"
-      },
-      {
-        "num": "SOURCE 02",
-        "title": "Production protocols"
-      },
-      {
-        "num": "SOURCE 03",
-        "title": "European regulation"
-      },
-      {
-        "num": "SOURCE 04",
-        "title": "Regional bulletins and derogations"
-      }
+      "Field logbook",
+      "Treatment register",
+      "Inventory",
+      "Questions in chat",
+      "Excel export",
+      "PDF export",
+      "Reports for your accountant",
+      "Documents for your certifier"
     ],
-    "foot": "You review. You approve. <em>You sign.</em> Responsibility stays where it belongs."
-  },
-  "fork": {
-    "title": "Built for people who work <em>in agriculture</em>, every day.",
-    "lead": "From a single farm to the whole supply chain: same documents, one place.",
-    "profiles": [
-      {
-        "eyebrow": "Farms",
-        "title": "For farms.",
-        "intro": "Vineyards, orchards, arable, vegetables. Every document of the farm in one place, the logbook ready when you need it.",
-        "items": [
-          "Invoices, delivery notes and farm records in order.",
-          "Field logbook filled in from your documents.",
-          "PDF and Excel reports for whoever supports you."
-        ]
-      },
-      {
-        "eyebrow": "Manufacturing",
-        "title": "For agri-food processing.",
-        "intro": "Wineries, olive mills, dairies, feed mills. Delivery notes, lots and inventory always aligned.",
-        "items": [
-          "Delivery notes read themselves.",
-          "Loads and stock updated with every document.",
-          "Warehouse moves, even from chat."
-        ],
-        "cta": "See Seminai for manufacturing →"
-      },
-      {
-        "eyebrow": "Co-ops and advisors",
-        "title": "For co-ops and advisors.",
-        "intro": "Follow many farms from one platform, with each one's data already in order.",
-        "items": [
-          "One view across every farm you follow.",
-          "Data collected without chasing members.",
-          "API integration with the systems you already use."
-        ]
-      }
-    ]
-  },
-  "security": {
-    "title": "Your data stays yours.",
-    "items": [
-      "Encrypted data",
-      "European servers",
-      "Never used to train AI models",
-      "Export or delete everything anytime"
-    ]
-  },
-  "cta": {
-    "title": "Bring one of your real documents. <em>We'll show you what comes out.</em>",
-    "lead": "In a 20-minute demo you see Seminai work on your data, not on a sample.",
-    "primary": "Book a demo",
-    "secondary": "Contact us"
+    "cta": "Tell us about your case →"
   },
   "faq": {
     "title": "Frequently asked questions.",
     "items": [
       {
-        "question": "What documents can I upload?",
-        "answer": "Invoices, delivery notes, labels, farm records and handwritten notes. As photos, PDFs, scans or forwarded emails. No need to sort them first."
+        "question": "How is Seminai different from management software?",
+        "answer": "It doesn't ask you to change habits or retype data. It starts from the documents you already receive and turns them into organized data. It fills the system for you."
       },
       {
-        "question": "What can I do with the extracted data?",
-        "answer": "Query it in chat, download it as PDF or Excel, fill in the field logbook and keep inventory and records up to date. Every value links back to the document it came from."
+        "question": "What documents does it read?",
+        "answer": "Invoices, delivery notes, labels, farm records, handwritten logs and notes. As photos, PDFs, scans or forwarded emails. No need to sort them first."
       },
       {
-        "question": "Do I need to change how I work?",
-        "answer": "No. You keep receiving documents as you do today and upload them to Seminai. If you already use management software, Seminai integrates through APIs."
+        "question": "Can it read handwriting?",
+        "answer": "Yes: notes, notebooks and pen annotations on invoices. Every value stays linked to the original document, so you can check it in a moment."
       },
       {
-        "question": "Is the field logbook compliant? Who signs it?",
-        "answer": "Seminai checks every treatment against the ministerial label, production protocols, European regulation and regional bulletins, and flags anomalies with the source. You review, approve and sign the logbook."
+        "question": "What if it reads a value wrong?",
+        "answer": "Every value links back to its source document. If something is off you see it right away and fix it in one click. You review, approve and sign the field logbook."
+      },
+      {
+        "question": "Does it connect to the software I already use?",
+        "answer": "Yes, through APIs. Or export the data to Excel or PDF and take it wherever you need."
       },
       {
         "question": "Is my data safe?",
@@ -184,41 +240,86 @@
       }
     ]
   },
-  "footer": {
-    "description": "The AI platform that turns farm documents into usable data: chat, PDF and Excel export, field logbook.",
-    "productTitle": "Product",
-    "productLinks": {
-      "how": "How it works",
-      "capabilities": "What you can do",
-      "who": "Who it's for",
-      "sources": "Field logbook",
-      "manufacturing": "For manufacturing",
-      "faq": "FAQ",
-      "aiInfo": "Information for AI assistants"
+  "booking": {
+    "title": "Let's talk about your farm.",
+    "lead": "Tell us what slows you down: in 20 minutes we'll see what Seminai can do with your documents.",
+    "fields": {
+      "name": "Full name",
+      "email": "Email",
+      "sector": "Sector",
+      "interests": "Why you're interested",
+      "day": "Preferred day",
+      "time": "Preferred time",
+      "notes": "Notes"
     },
+    "placeholders": {
+      "name": "Jane Smith",
+      "email": "jane@farm.com",
+      "sector": "Choose your sector",
+      "time": "Choose a time",
+      "notes": "What would you like to see in the demo?"
+    },
+    "sectors": [
+      "Vineyards",
+      "Orchards",
+      "Arable crops",
+      "Vegetables",
+      "Olives",
+      "Livestock",
+      "Co-op or consortium",
+      "Agronomy consulting",
+      "Other"
+    ],
+    "interests": [
+      "Field logbook",
+      "Invoices and delivery notes",
+      "Excel and PDF reports",
+      "Inventory",
+      "Other"
+    ],
+    "submit": "Book the demo",
+    "submitting": "Sending…",
+    "privacy": "By sending this request you accept the <a href=\"/privacy-policy\">privacy policy</a>.",
+    "successTitle": "Request sent.",
+    "success": "We'll write to {{email}} to confirm the day and time.",
+    "error": "Sending failed. Try again or write to <a href=\"mailto:get.seminai@gmail.com\">get.seminai@gmail.com</a>.",
+    "errors": {
+      "name": "Enter your full name.",
+      "email": "Enter a valid email.",
+      "sector": "Choose a sector.",
+      "interests": "Choose at least one reason.",
+      "day": "Choose a weekday from tomorrow on.",
+      "time": "Choose a time."
+    },
+    "emailSubject": "Demo request from the website",
+    "emailLines": {
+      "day": "Preferred day",
+      "time": "Preferred time",
+      "sector": "Sector",
+      "interests": "Interest",
+      "notes": "Notes"
+    }
+  },
+  "footer": {
+    "productTitle": "Product",
     "contactTitle": "Contact",
-    "email": "info@seminai.tech",
+    "email": "get.seminai@gmail.com",
     "legalTitle": "Legal",
     "privacy": "Privacy Policy",
     "cookies": "Cookie Policy",
     "terms": "Terms of Service",
-    "copyright": "Seminai © {{year}} · VAT xxxxxxxxxxx",
-    "demo": "Book a demo",
-    "contact": "Contact us"
-  },
-  "offer": {
-    "kicker": "Data migration",
-    "title": "Moving your data in is free for the first 200 users.",
-    "full": "The 200 free data migrations are full.",
-    "fullLabel": "offer closed",
-    "remaining": "{{spots}} spots left",
-    "progressLabel": "Users with free data migration",
-    "url": "seminai.tech / data migration",
-    "caption": "Moving the data you already have stays free while spots remain."
+    "description": "The AI platform that turns farm documents into usable data.",
+    "productLinks": {
+      "how": "How it works",
+      "useCases": "What you can do",
+      "faq": "FAQ",
+      "aiInfo": "Information for AI assistants"
+    },
+    "demo": "Book 20 minutes",
+    "contact": "Write to us",
+    "copyright": "Seminai © {{year}}"
   },
   "show": {
-    "title": "Watch it work. <em>Step by step.</em>",
-    "lead": "The cursor makes the moves you would make, and the data on screen changes.",
     "invoice": {
       "url": "app.seminai.tech / register · Tenuta La Sorgente",
       "caption": "You upload an invoice and the rows land in the register.",
@@ -277,31 +378,6 @@
         "tone": "warn"
       }
     },
-    "plan": {
-      "url": "app.seminai.tech / plan · next week",
-      "caption": "You confirm next week's treatment plan.",
-      "eyebrow": "Operation plan",
-      "title": "Week of 31 Mar – 6 Apr",
-      "confirm": "Confirm plan",
-      "confirmed": "Plan confirmed",
-      "rows": [
-        {
-          "date": "31 Mar",
-          "place": "South vineyard",
-          "product": "Ridomil Gold"
-        },
-        {
-          "date": "2 Apr",
-          "place": "North vineyard",
-          "product": "Karate Zeon"
-        },
-        {
-          "date": "4 Apr",
-          "place": "South vineyard",
-          "product": "Topas 100"
-        }
-      ]
-    },
     "chat": {
       "url": "app.seminai.tech / chat · logbook",
       "caption": "You write in chat and the dose in the register changes.",
@@ -314,102 +390,6 @@
       "prompt": "Set the 24 March dose to 2.5 kg/ha",
       "reply": "Done. The dose now matches the label limit.",
       "placeholder": "Write what you want to change…"
-    },
-    "demos": {
-      "chat": {
-        "eyebrow": "Demo 01",
-        "heading": "Ask in chat, the data updates.",
-        "body": "Type what you want to know or change: Seminai answers and updates the register, citing the rule."
-      },
-      "plan": {
-        "eyebrow": "Demo 02",
-        "heading": "From documents to next week's plan.",
-        "body": "From the collected data Seminai prepares the next operations. You confirm them in one click."
-      }
-    }
-  },
-  "manufacturing": {
-    "hero": {
-      "title": "The management system for manufacturing.<br /><em>Documents, warehouse, chat.</em>",
-      "subtitle": "Read a delivery note. Accept a load. <span class=\"earth\">Ask AI to fix the records.</span>",
-      "body": "Seminai reads delivery documents, updates stock and lets you correct everything in chat. Collect the data, prepare the next movements and let AI keep the warehouse aligned. You confirm.",
-      "ctaPrimary": "Enter Seminai",
-      "ctaSecondary": "Talk to us"
-    },
-    "show": {
-      "title": "Three actions you understand <em>without a manual.</em>",
-      "lead": "The cursor makes the gesture. The number on screen changes. Same system, with warehouse documents."
-    },
-    "ddt": {
-      "url": "app.seminai.tech / documents · DN 1842",
-      "caption": "You open a delivery note and the fields fill in by themselves.",
-      "eyebrow": "Delivery note",
-      "title": "DN 1842",
-      "read": "Read document",
-      "lines": [
-        {
-          "label": "Supplier",
-          "value": "Acciai Rossi srl"
-        },
-        {
-          "label": "Item",
-          "value": "Sheet metal 2 mm"
-        },
-        {
-          "label": "Quantity",
-          "value": "80 pieces"
-        }
-      ]
-    },
-    "load": {
-      "url": "app.seminai.tech / warehouse · inbound",
-      "caption": "You accept the load and the warehouse stock goes up.",
-      "eyebrow": "Warehouse A",
-      "title": "Load waiting",
-      "pending": "Waiting",
-      "accepted": "Accepted",
-      "item": "Sheet metal 2 mm",
-      "qty": "80 pieces",
-      "stockLabel": "On hand",
-      "stockBefore": "40 pieces",
-      "stockAfter": "120 pieces",
-      "accept": "Accept load"
-    },
-    "chat": {
-      "url": "app.seminai.tech / chat · warehouse",
-      "caption": "You write in chat and the stock in both warehouses changes.",
-      "eyebrow": "Chat · move stock",
-      "title": "On hand",
-      "warehouseA": "Warehouse A",
-      "warehouseB": "Warehouse B",
-      "stockABefore": "80 pieces",
-      "stockAAfter": "60 pieces",
-      "stockBBefore": "10 pieces",
-      "stockBAfter": "30 pieces",
-      "prompt": "Move 20 pieces of sheet metal to warehouse B",
-      "reply": "Done. 20 pieces moved from A to B.",
-      "placeholder": "Write the movement…"
-    },
-    "faq": {
-      "title": "Questions about manufacturing.",
-      "items": [
-        {
-          "question": "Does Seminai read a delivery note?",
-          "answer": "Yes. Open the document and Seminai fills in supplier, item and quantity. You check the fields before they are saved."
-        },
-        {
-          "question": "How do I accept a warehouse load?",
-          "answer": "When the document looks right, click Accept load. On-hand stock increases by the quantity read from the delivery note."
-        },
-        {
-          "question": "Can chat change the records?",
-          "answer": "Yes. Write what you want to change, for example moving pieces from one warehouse to another. Seminai updates the stock and shows you the result."
-        },
-        {
-          "question": "Is moving my data in free?",
-          "answer": "Moving the data you already have (documents, master data, stock) is free for the first 200 users. The counter on the page starts at 143 and then follows verified accounts past that number, up to 200."
-        }
-      ]
     }
   }
 }

@@ -22,7 +22,6 @@ Le anomalie sono segnalate con la fonte e la correzione. Il quaderno lo rivede, 
 
 ## Per chi
 - Aziende agricole: vigneti, frutteti, seminativi, orticole.
-- Trasformazione e manifattura agroalimentare: cantine, frantoi, caseifici, mangimifici (https://seminai.tech/manifattura).
 - Cooperative e consulenti che seguono molte aziende.
 
 ## FAQ
@@ -43,9 +42,9 @@ Seminai controlla ogni trattamento su etichetta ministeriale, disciplinari, norm
 Sono cifrati in transito e a riposo, su server europei. Non vengono condivisi con terze parti né usati per addestrare modelli AI. Puoi esportarli o cancellarli quando vuoi.
 
 ## Demo e contatti
-Per una demo o informazioni commerciali: info@seminai.tech
+Per una demo o informazioni commerciali: get.seminai@gmail.com
 
 ## Link
 - Sito: https://seminai.tech/
 - App / login: https://app.seminai.tech/login
-- Contatti: info@seminai.tech
+- Contatti: get.seminai@gmail.com

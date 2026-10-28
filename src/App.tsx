@@ -1,7 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import Home from "./routes/Home";
-import Manufacturing from "./routes/Manufacturing";
 import TermsOfService from "./routes/TermsOfService";
 import PrivacyPolicy from "./routes/PrivacyPolicy";
 import CookiePolicy from "./routes/CookiePolicy";
@@ -51,7 +50,6 @@ function App() {
     <Suspense fallback={null}>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/manifattura" element={<Manufacturing />} />
         <Route path="/auth" element={<Auth />}>
           <Route index element={<LoginRegister />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
