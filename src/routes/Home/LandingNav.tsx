@@ -6,6 +6,7 @@ import {
 } from "@/i18n";
 import {
   ANCHORS,
+  DEMO_URL,
   LANDING_LOGIN_URL,
   LANDING_LOGO,
   LANDING_LOGO_SRCSET,
@@ -50,9 +51,9 @@ export function LandingNav() {
           aria-label={isEnglish ? "Main" : "Navigazione principale"}
         >
           <a href={ANCHORS.how}>{t("landing.nav.how")}</a>
-          <a href={ANCHORS.manufacturing}>{t("landing.nav.manufacturing")}</a>
+          <a href={ANCHORS.capabilities}>{t("landing.nav.capabilities")}</a>
           <a href={ANCHORS.who}>{t("landing.nav.who")}</a>
-          <a href={ANCHORS.plans}>{t("landing.nav.plans")}</a>
+          <a href={ANCHORS.manufacturing}>{t("landing.nav.manufacturing")}</a>
           <a href={ANCHORS.faq}>{t("landing.nav.faq")}</a>
         </nav>
         <div className="nav-actions">
@@ -77,9 +78,12 @@ export function LandingNav() {
             href={LANDING_LOGIN_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="nav-cta"
+            className="nav-login"
           >
             {t("landing.nav.login")}
+          </a>
+          <a href={DEMO_URL} className="nav-cta">
+            {t("landing.nav.demo")}
           </a>
         </div>
       </header>

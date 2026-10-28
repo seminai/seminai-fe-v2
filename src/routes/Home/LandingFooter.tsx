@@ -1,12 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { ANCHORS, LEGAL_ROUTES } from "./constants";
+import { ANCHORS, CONTACT_URL, DEMO_URL, LEGAL_ROUTES } from "./constants";
 import { LandingBrand } from "./LandingNav";
 
-interface LandingFooterProps {
-  onOpenSendInvoices: () => void;
-}
-
-export function LandingFooter({ onOpenSendInvoices }: LandingFooterProps) {
+export function LandingFooter() {
   const { t } = useTranslation();
   const year = new Date().getFullYear();
 
@@ -25,18 +21,20 @@ export function LandingFooter({ onOpenSendInvoices }: LandingFooterProps) {
                 <a href={ANCHORS.how}>{t("landing.footer.productLinks.how")}</a>
               </li>
               <li>
+                <a href={ANCHORS.capabilities}>
+                  {t("landing.footer.productLinks.capabilities")}
+                </a>
+              </li>
+              <li>
                 <a href={ANCHORS.sources}>{t("landing.footer.productLinks.sources")}</a>
               </li>
               <li>
-                <a href={ANCHORS.plans}>{t("landing.footer.productLinks.plans")}</a>
+                <a href={ANCHORS.who}>{t("landing.footer.productLinks.who")}</a>
               </li>
               <li>
                 <a href={ANCHORS.manufacturing}>
                   {t("landing.footer.productLinks.manufacturing")}
                 </a>
-              </li>
-              <li>
-                <a href={ANCHORS.who}>{t("landing.footer.productLinks.cooperative")}</a>
               </li>
               <li>
                 <a href={ANCHORS.faq}>{t("landing.footer.productLinks.faq")}</a>
@@ -50,15 +48,13 @@ export function LandingFooter({ onOpenSendInvoices }: LandingFooterProps) {
             <div className="foot-title">{t("landing.footer.contactTitle")}</div>
             <ul>
               <li>
-                <a href="mailto:info@seminai.tech">{t("landing.footer.email")}</a>
+                <a href={CONTACT_URL}>{t("landing.footer.email")}</a>
               </li>
               <li>
-                <button type="button" className="foot-link-btn" onClick={onOpenSendInvoices}>
-                  {t("landing.footer.sendInvoices")}
-                </button>
+                <a href={DEMO_URL}>{t("landing.footer.demo")}</a>
               </li>
               <li>
-                <a href={ANCHORS.trial}>{t("landing.footer.trial")}</a>
+                <a href={CONTACT_URL}>{t("landing.footer.contact")}</a>
               </li>
             </ul>
           </div>

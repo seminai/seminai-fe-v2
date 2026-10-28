@@ -1,33 +1,25 @@
 # Seminai
 
-> Seminai è il gestionale con AI per l'agricoltura e la manifattura. Raccoglie fatture, DDT e messaggi, prepara i piani delle operazioni e ottimizza dosi, giacenze e conformità. Il quaderno di campagna lo rivedi e lo firmi tu. Il passaggio dei dati è gratuito per i primi 200 utenti.
+> Seminai è la piattaforma con AI per le piccole e medie imprese del settore agricolo. Carichi fatture, DDT, etichette, fascicoli aziendali e note manuali: Seminai estrae i dati e li rende utilizzabili. Puoi chattare sui dati, scaricarli in PDF ed Excel e compilare il quaderno di campagna.
 
 ## Cos'è
-Seminai tiene aziende, magazzino, registri e documenti nello stesso posto. In agricoltura produce il quaderno di campagna e i piani dei trattamenti. In manifattura legge i documenti di trasporto, accetta i carichi e aggiorna le giacenze, anche da chat.
+Seminai raccoglie in un solo posto i documenti dell'azienda, in qualsiasi formato (foto, PDF, scansioni, email), ed estrae prodotti, quantità, lotti, fornitori, date e appezzamenti. Ogni dato resta collegato al documento da cui viene. I dati si interrogano in chat, si esportano in PDF ed Excel, aggiornano magazzino e registri e compilano il quaderno di campagna.
 
 ## Per chi
-- Agronomi e liberi professionisti che gestiscono più aziende agricole.
-- Studi tecnici (10–80 farm).
-- Cooperative e consorzi agricoli (piano Network).
-- Officine e magazzini: https://seminai.tech/manifattura
+- Aziende agricole: vigneti, frutteti, seminativi, orticole.
+- Trasformazione e manifattura agroalimentare: cantine, frantoi, caseifici, mangimifici. Dettagli: https://seminai.tech/manifattura
+- Cooperative e consulenti che seguono molte aziende.
 
 ## Fatti chiave
-- Verifica conformità su 4 livelli normativi: etichetta ministeriale, disciplinari, normativa europea/PAC, bollettini regionali.
-- Copertura delle 20 regioni italiane, con aggiornamento automatico dei bollettini.
-- OCR di fatture e documenti di trasporto da WhatsApp, PDF ed email; export PDF pronto per i controlli PAC.
-- Piani delle operazioni future e chat che modifica i dati, con conferma dell'utente.
-- Server europei, dati cifrati e conformi GDPR; l'uso dei contenuti pubblici per indicizzazione, input AI e training e' consentito tramite Content-Signal.
-- Risparmio tipico: ~6 ore a settimana di lavoro manuale per agronomo.
-- Passaggio dati gratuito per i primi 200 utenti.
+- Documenti supportati: fatture, DDT, etichette, fascicolo aziendale, note scritte a mano.
+- Chat sui dati estratti, con rimando al documento di origine.
+- Export in PDF ed Excel.
+- Quaderno di campagna compilato dai documenti, con verifica su etichetta ministeriale, disciplinari, normativa europea e bollettini regionali. Il quaderno lo rivede, lo approva e lo firma l'utente.
+- Integrazione API con i gestionali esistenti.
+- Server europei, dati cifrati e conformi GDPR, mai usati per addestrare modelli AI; l'uso dei contenuti pubblici per indicizzazione, input AI e training e' consentito tramite Content-Signal.
 
-## Prezzi (annuali, listino)
-- Solo (fino a 3 farm): €297
-- Studio 10 (10 farm): €697
-- Studio 30 (30 farm): €1.497
-- Studio 80 (80 farm): €3.497
-- Network (cooperative/consorzi, 80+ farm): pricing su misura
-- Offerta Founding Member 2026: −30% a vita per i primi 100 studi.
-- Trial: 14 giorni senza carta di credito.
+## Demo e contatti
+Per una demo o informazioni commerciali: info@seminai.tech
 
 ## Link
 - Sito: https://seminai.tech/
@@ -37,6 +29,3 @@ Seminai tiene aziende, magazzino, registri e documenti nello stesso posto. In ag
 - Cookie: https://seminai.tech/cookie-policy
 - Termini: https://seminai.tech/terms-of-service
 - Dettagli completi (FAQ, procedura): https://seminai.tech/llms-full.txt
-
-## Contatti
-Email: info@seminai.tech

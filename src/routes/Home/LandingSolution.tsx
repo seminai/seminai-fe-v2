@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { ANCHORS } from "./constants";
+import { DEMO_URL } from "./constants";
 import { RichHtml } from "./RichHtml";
 import { useStepperAnimation } from "./useStepperAnimation";
 
@@ -15,12 +15,6 @@ export function LandingSolution() {
   const steps = t("landing.solution.steps", {
     returnObjects: true,
   }) as SolutionStep[];
-  const doorBefore = t("landing.solution.doorBefore", {
-    returnObjects: true,
-  }) as string[];
-  const doorAfter = t("landing.solution.doorAfter", {
-    returnObjects: true,
-  }) as string[];
 
   return (
     <section className="row" id="come-funziona">
@@ -65,30 +59,8 @@ export function LandingSolution() {
           </div>
         </div>
 
-        <div className="sliding-doors" aria-label="Trasformazione">
-          <div className="door door-before">
-            <div className="door-label">{t("landing.solution.doorBeforeLabel")}</div>
-            <ul>
-              {doorBefore.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="door-arrow" aria-hidden="true">
-            &rarr;
-          </div>
-          <div className="door door-after">
-            <div className="door-label">{t("landing.solution.doorAfterLabel")}</div>
-            <ul>
-              {doorAfter.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
         <div className="solution-cta-row">
-          <a href={ANCHORS.trial} className="btn-primary">
+          <a href={DEMO_URL} className="btn-primary">
             {t("landing.solution.ctaPrimary")}
             <span className="arrow" />
           </a>

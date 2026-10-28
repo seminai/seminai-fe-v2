@@ -1,151 +1,100 @@
 {
   "nav": {
     "how": "How it works",
+    "capabilities": "What you can do",
     "who": "Who it's for",
-    "plans": "Plans & pricing",
+    "manufacturing": "Manufacturing",
     "faq": "FAQ",
     "login": "Login",
-    "manufacturing": "Manufacturing"
+    "demo": "Book a demo"
   },
   "hero": {
-    "title": "Collect the data. Prepare the plans.<br /><em>AI optimizes the rest.</em>",
-    "subtitle": "You review. You approve. <span class=\"earth\">You sign.</span>",
-    "body": "Seminai is the management system for farms: invoices, delivery notes and messages become records, warehouse stock and the field logbook. AI prepares upcoming operations and flags what to fix. You review, approve and sign.",
-    "ctaPrimary": "Send invoices via email",
-    "ctaSecondary": "Running a cooperative? See the Network plan →",
-    "demoUrl": "app.seminai.tech / logbook · Tenuta La Sorgente",
-    "demoEyebrow": "Field Logbook · 2026",
-    "demoTitle": "Tenuta La Sorgente, South Vineyard",
-    "demoStatus": "CAP compliant",
-    "demoCaption": "Preview · reviewable output",
-    "demoAnomaly": "<strong>Anomaly 24 Mar</strong>: dose 3.2 kg/ha exceeds label limit (max 2.5 kg/ha). <em>Reduce to 2.5 kg/ha.</em>",
-    "demoHeaders": [
-      "Date",
-      "Product",
-      "Crop",
-      "Dose",
-      "Status"
-    ],
-    "demoRows": [
-      {
-        "date": "12 Mar",
-        "product": "Ridomil Gold",
-        "crop": "Grapevine",
-        "dose": "2.5 kg/ha",
-        "status": "ok"
-      },
-      {
-        "date": "18 Mar",
-        "product": "Karate Zeon",
-        "crop": "Grapevine",
-        "dose": "0.15 L/ha",
-        "status": "ok"
-      },
-      {
-        "date": "24 Mar",
-        "product": "Mancozeb 75",
-        "crop": "Grapevine",
-        "dose": "3.2 kg/ha",
-        "status": "warn"
-      },
-      {
-        "date": "02 Apr",
-        "product": "Topas 100",
-        "crop": "Grapevine",
-        "dose": "0.4 L/ha",
-        "status": "ok"
-      },
-      {
-        "date": "09 Apr",
-        "product": "Switch",
-        "crop": "Grapevine",
-        "dose": "0.8 kg/ha",
-        "status": "ok"
-      }
-    ],
-    "statusOk": "OK",
-    "statusWarn": "Anomaly",
+    "title": "Your farm's paperwork.<br /><em>Finally usable.</em>",
+    "body": "Invoices, delivery notes, labels, farm records, handwritten notes: upload them to Seminai. It extracts the data, organizes it and makes it ready for whatever you need: a question in chat, an Excel report, the field logbook.",
+    "ctaPrimary": "Book a demo",
+    "ctaSecondary": "Contact us",
     "ticker": [
-      "Records, warehouse and registers in one place",
-      "Plans for upcoming operations",
-      "AI that optimizes doses and anomalies",
-      "CAP compliant",
-      "Invoices, delivery notes, WhatsApp, PDF"
-    ],
-    "ctaManufacturing": "In manufacturing? See how it works →",
-    "sliderLabel": "Product preview",
-    "slideLabel": "Slide {{index}}: {{name}}",
-    "slides": ["Register", "Data migration"]
+      "Invoices, delivery notes, labels, records, handwritten notes",
+      "Chat with your data",
+      "PDF and Excel export",
+      "Field logbook"
+    ]
   },
   "problem": {
-    "eyebrow": "01, The Problem",
-    "title": "The field logbook isn't hard. <em><span class=\"serif-i\">It's slow.</span></em> And the data always lives in the wrong place.",
-    "lead": "Client WhatsApp. Supplier email. Paper invoice. Handwritten note. Out-of-date spreadsheet. Collecting and cross-checking it all, before you even start the logbook, takes hours. Every time. For every farm.",
+    "title": "The data is already there. <em><span class=\"serif-i\">It's just scattered.</span></em>",
+    "lead": "Every day your farm produces valuable information. But it sits in WhatsApp, in email, in drawers, in PDFs nobody opens again.",
     "cards": [
       {
-        "title": "6 hours lost every week.",
-        "body": "Just to gather data from different sources and transcribe it into the right format. Hours you don't bill, and could spend on new clients."
+        "title": "Scattered.",
+        "body": "Supplier invoices, delivery notes in the warehouse, operator notes, farm records at the co-op. One piece in each place."
       },
       {
-        "title": "34% of farms have at least one anomaly.",
-        "body": "Off-label dosage, unregistered treatment, harvest interval violated. Invisible errors until the inspection arrives: at that point the average CAP deduction is €4,200 per farm."
+        "title": "Locked.",
+        "body": "You can't query a PDF or a photo. To know what you spent or how much product is left, you have to reread everything."
       },
       {
-        "title": "4 regulations to cross-check every time.",
-        "body": "Product label. National pesticide regulation. Current CAP rules. Region-specific rules. They change every year: keeping them up to date by hand while producing logbooks is impossible."
+        "title": "Retyped.",
+        "body": "Hours copying the same data for the accountant, the advisor, the certifier, the inspections."
       }
     ],
-    "bridge": "Seminai solves all three. <em>In minutes.</em> Without taking away the professional responsibility that belongs to you."
+    "bridge": "Seminai collects it, reads it and puts it in order. <em>Just once.</em>"
   },
   "solution": {
-    "eyebrow": "02, How it works",
-    "title": "How it works: <em>collect, plan, optimize.</em>",
-    "lead": "Three steps. Data lands in the system, Seminai prepares the plan, AI proposes the corrections. The signature stays yours.",
+    "title": "How it works: <em>upload, extract, use.</em>",
+    "lead": "Three steps. The first takes thirty seconds.",
     "steps": [
       {
-        "label": "Collect",
-        "heading": "Documents become records in the system.",
-        "body": "Invoices, delivery notes, photos and messages. Seminai fills in master data, stock and logbook rows. <strong>Even when they arrive from different places.</strong>"
+        "label": "Upload",
+        "heading": "Upload any document.",
+        "body": "Photos, PDFs, emails, scans. Invoices, delivery notes, labels, farm records, handwritten notes. <strong>Messy is fine, from any source.</strong>"
       },
       {
-        "label": "Plan",
-        "heading": "Prepare upcoming operations.",
-        "body": "The register turns into next week's plan: what to do, on which plot, with which product. <strong>You confirm it before it becomes work.</strong>"
+        "label": "Extract",
+        "heading": "Seminai extracts and organizes.",
+        "body": "Products, quantities, lots, suppliers, dates, plots. <strong>Every value linked to the others and to its source document.</strong>"
       },
       {
-        "label": "Optimize",
-        "heading": "AI fixes doses and anomalies.",
-        "body": "Ask the chat to correct a dose or a stock level: the record changes, with the rule that explains why. <strong>You approve and sign.</strong>"
+        "label": "Use",
+        "heading": "Use the data for whatever you need.",
+        "body": "Ask in chat, download as PDF or Excel, fill in the field logbook. <strong>Your data works for you.</strong>"
       }
     ],
-    "doorBeforeLabel": "Without Seminai",
-    "doorAfterLabel": "With Seminai",
-    "doorBefore": [
-      "Sunday 10:30 PM still at the PC closing the logbook.",
-      "Client calling in panic about a CAP inspection.",
-      "You turn down the fifth new practice: no capacity."
-    ],
-    "doorAfter": [
-      "Saturday in the field. Sunday off.",
-      "Monday: new client signed without hesitation.",
-      "Wednesday: 30 logbooks reviewed in one morning.",
-      "CAP deductions for your clients: zero."
-    ],
-    "ctaPrimary": "Try it now",
-    "ctaNote": "14 days · no credit card"
+    "ctaPrimary": "Book a demo",
+    "ctaNote": "20 minutes, on your own documents"
+  },
+  "capabilities": {
+    "title": "One place for your data. <em>Endless ways to use it.</em>",
+    "lead": "Once extracted, the data is yours: query it, export it, reuse it.",
+    "items": [
+      {
+        "title": "Ask in chat.",
+        "body": "“How much copper did I apply to the north vineyard this year?” The answer comes back in seconds, with the source document."
+      },
+      {
+        "title": "Download as PDF and Excel.",
+        "body": "Reports ready for your accountant, bank, certifier or management software."
+      },
+      {
+        "title": "Fill in the field logbook.",
+        "body": "Treatments go in automatically, with doses checked against the label."
+      },
+      {
+        "title": "Keep stock and records aligned.",
+        "body": "Every invoice and delivery note updates your inventory."
+      }
+    ]
   },
   "trust": {
-    "eyebrow": "03, Sources",
-    "title": "What Seminai's <em>checks</em> are based on.",
-    "lead": "Seminai doesn't invent rules. It applies them from official sources, updated automatically whenever regulations change.",
+    "title": "And the field logbook <em>fills itself in.</em>",
+    "lead": "From your uploaded documents Seminai prepares the logbook and checks every treatment against official sources. If something is off, it flags it with the source and the fix.",
     "sources": [
       {
         "num": "SOURCE 01",
-        "title": "Ministerial product label."
+        "title": "Ministerial product label"
       },
       {
         "num": "SOURCE 02",
-        "title": "Disciplinary codes"
+        "title": "Production protocols"
       },
       {
         "num": "SOURCE 03",
@@ -156,253 +105,107 @@
         "title": "Regional bulletins and derogations"
       }
     ],
-    "foot": "When a rule changes, you get an alert. <em>The next logbook is already compliant.</em> You don't have to track updates yourself.",
+    "foot": "You review. You approve. <em>You sign.</em> Responsibility stays where it belongs.",
     "illustrationAria": "Robot approving compliance on a clipboard"
   },
   "fork": {
-    "eyebrow": "04, Who it's for",
-    "title": "Are you a <em>freelance agronomist</em> or do you run a <em>cooperative?</em>",
-    "lead": "The problem is the same. The scale is different. So are the plans.",
-    "studiosEyebrow": "Technical practices",
-    "studiosTitle": "For agronomists and technical practices.",
-    "studiosIntro": "You manage 10, 20, 50 farms. The field logbook is the part of the job that eats the most hours without direct billable value.",
-    "studiosItems": [
-      "Logbooks ready for review in <strong>minutes, not hours</strong>.",
-      "All data in one place, WhatsApp, email, PDF, photos.",
-      "Anomalies flagged <strong>before</strong> the inspection, not after.",
-      "You review and approve. Professional responsibility stays yours."
-    ],
-    "studiosPrice": "Plans from €297/year (3 farms) to €3,497/year (80 farms).",
-    "studiosCta": "See plans for agronomists →",
-    "networkEyebrow": "Network",
-    "networkTitle": "For agricultural cooperatives and consortia.",
-    "networkIntro": "You don't have a single-farm problem, but a systemic one: hundreds of members, each with their own invoices, workflows and channels.",
-    "networkItems": [
-      "Compliant logbooks for <strong>all members</strong> in minutes.",
-      "Aggregated reports for your technical office.",
-      "One compliance checkpoint for the whole network.",
-      "API integration with your existing systems."
-    ],
-    "networkPrice": "Network plan, custom pricing for your volume.",
-    "networkCta": "Talk to us →"
-  },
-  "pricing": {
-    "eyebrow": "05, Plans",
-    "title": "Clear plans. <em>No surprises.</em>",
-    "foundingEyebrow": "Founding Member 2026",
-    "foundingTitle": "−30% <em>forever.</em> First 100 practices.",
-    "foundingBody": "We're building the regional regulatory database together with the first 100 practices. In exchange for their feedback: <em>price locked for life.</em> The discount stays on every renewal, as long as the plan exists.",
-    "foundingCounter": "47",
-    "foundingCounterLabel": "spots left",
-    "anchorLeft": "What does producing field logbooks cost <em><span class=\"serif-i\">without</span></em> Seminai?",
-    "anchorRight": "6 hours of manual work per agronomist per week. Across 10 farms in a season, dozens of hours you can't bill but can't cut.<br /><br /><em>Seminai Studio 10: €697/year.</em> You get all those hours back.",
-    "featuredBadge": "Most popular",
-    "foundingTag": "Founding −30%",
-    "perYear": "/year",
-    "perMonth": "per month",
-    "perFarmMonth": "per farm/month",
-    "startCta": "Start →",
-    "plans": [
+    "title": "Built for people who work <em>in agriculture</em>, every day.",
+    "lead": "From a single farm to the whole supply chain: same documents, one place.",
+    "profiles": [
       {
-        "name": "Solo",
-        "farms": "3 farms",
-        "oldPrice": "€297",
-        "price": "€207",
-        "monthly": "€17.25",
-        "perFarm": "€5.75",
-        "who": "Agronomist with a few farms or a single farmer."
+        "eyebrow": "Farms",
+        "title": "For farms.",
+        "intro": "Vineyards, orchards, arable, vegetables. Every document of the farm in one place, the logbook ready when you need it.",
+        "items": [
+          "Invoices, delivery notes and farm records in order.",
+          "Field logbook filled in from your documents.",
+          "PDF and Excel reports for whoever supports you."
+        ]
       },
       {
-        "name": "Studio 10",
-        "farms": "10 farms",
-        "oldPrice": "€697",
-        "price": "€487",
-        "monthly": "€40.58",
-        "perFarm": "€4.06",
-        "who": "Mid-size technical practice. Best hours-saved-per-euro ratio.",
-        "featured": true
+        "eyebrow": "Manufacturing",
+        "title": "For agri-food processing.",
+        "intro": "Wineries, olive mills, dairies, feed mills. Delivery notes, lots and inventory always aligned.",
+        "items": [
+          "Delivery notes read themselves.",
+          "Loads and stock updated with every document.",
+          "Warehouse moves, even from chat."
+        ],
+        "cta": "See Seminai for manufacturing →"
       },
       {
-        "name": "Studio 30",
-        "farms": "30 farms",
-        "oldPrice": "€1,497",
-        "price": "€1,047",
-        "monthly": "€87.25",
-        "perFarm": "€2.91",
-        "who": "Structured practice with a team of technicians."
-      },
-      {
-        "name": "Studio 80",
-        "farms": "80 farms",
-        "oldPrice": "€3,497",
-        "price": "€2,447",
-        "monthly": "€203.92",
-        "perFarm": "€2.55",
-        "who": "Large practice or small consortium."
+        "eyebrow": "Co-ops and advisors",
+        "title": "For co-ops and advisors.",
+        "intro": "Follow many farms from one platform, with each one's data already in order.",
+        "items": [
+          "One view across every farm you follow.",
+          "Data collected without chasing members.",
+          "API integration with the systems you already use."
+        ]
       }
-    ],
-    "networkName": "Network",
-    "networkFarms": "80+ farms",
-    "networkPrice": "Quote, custom pricing",
-    "networkWho": "Cooperatives and consortia. API, SSO, dedicated technical office.",
-    "networkCta": "Talk to us →",
-    "featuresTitle": "Included in all plans",
-    "features": [
-      "Field logbooks for your farms.",
-      "Automatic OCR, WhatsApp photos or PDF upload.",
-      "Compliance checks across 4 official regulatory layers.",
-      "Anomalies flagged with source and specific correction.",
-      "Automatic alerts on regulatory updates.",
-      "Direct WhatsApp and Telegram support.",
-      "PDF export ready for CAP inspections.",
-      "European servers, encrypted data."
     ]
   },
-  "magnet": {
-    "eyebrow": "06, Free trial",
-    "title": "Not ready for a trial yet? <em>Send us your invoices.</em> We'll return a clean Excel. <em>Free.</em>",
-    "cta": "Send invoices via email",
-    "note": "Available for the first 5 new contacts each month.",
-    "chatAria": "WhatsApp chat with invoice sent to Seminai",
-    "chatStatus": "Seminai · online · replies in minutes",
-    "chatDate": "today · 09:42",
-    "chatOut1": "Hi! Sending this morning's invoice, pesticides for the vineyard.",
-    "chatIn": "Got it 👍 Extracting products and updating the logbook for Antonio's vineyard.",
-    "chatTypingAria": "Seminai is typing",
-    "chatInput": "Type a message…",
-    "invoiceBrand": "Agrifornitura Rossi srl",
-    "invoiceNum": "No. 1284/2026",
-    "invoiceTitle": "Invoice dated 14/05/2026",
-    "invoiceLines": [
-      {
-        "label": "Ridomil Gold 1kg ×4",
-        "amount": "148.00"
-      },
-      {
-        "label": "Vitipec Cu 5L ×2",
-        "amount": "89.40"
-      },
-      {
-        "label": "Score 25 EC 1L ×1",
-        "amount": "62.10"
-      }
-    ],
-    "invoiceTotal": "€ 365.86",
-    "photoCaption": "IMG_2841.jpg · 1.2 MB"
+  "security": {
+    "title": "Your data stays yours.",
+    "items": [
+      "Encrypted data",
+      "European servers",
+      "Never used to train AI models",
+      "Export or delete everything anytime"
+    ]
+  },
+  "cta": {
+    "title": "Bring one of your real documents. <em>We'll show you what comes out.</em>",
+    "lead": "In a 20-minute demo you see Seminai work on your data, not on a sample.",
+    "primary": "Book a demo",
+    "secondary": "Contact us"
   },
   "faq": {
-    "eyebrow": "07, FAQ",
     "title": "Frequently asked questions.",
     "items": [
       {
-        "question": "Is Seminai a management system?",
-        "answer": "Yes. Farms, warehouse, registers and the field logbook live in one place. Invoices, delivery notes and messages become records you can look up and correct, not only a PDF to sign."
+        "question": "What documents can I upload?",
+        "answer": "Invoices, delivery notes, labels, farm records and handwritten notes. As photos, PDFs, scans or forwarded emails. No need to sort them first."
       },
       {
-        "question": "Can it prepare plans for upcoming operations?",
-        "answer": "Yes. From the data it has collected, Seminai prepares next week's plan: product, plot and date. You confirm it before it becomes an operation."
+        "question": "What can I do with the extracted data?",
+        "answer": "Query it in chat, download it as PDF or Excel, fill in the field logbook and keep inventory and records up to date. Every value links back to the document it came from."
       },
       {
-        "question": "Does the AI change data on its own?",
-        "answer": "It proposes the correction and, when you ask in chat, updates the record. Doses, anomalies and stock stay visible. Confirmation and the signature are yours."
+        "question": "Do I need to change how I work?",
+        "answer": "No. You keep receiving documents as you do today and upload them to Seminai. If you already use management software, Seminai integrates through APIs."
       },
       {
-        "question": "Is moving my data in free?",
-        "answer": "Moving the data you already have is free for the first 200 users. The counter on the page shows 143 and, after the 143rd verified account, rises with real registrations up to 200."
+        "question": "Is the field logbook compliant? Who signs it?",
+        "answer": "Seminai checks every treatment against the ministerial label, production protocols, European regulation and regional bulletins, and flags anomalies with the source. You review, approve and sign the logbook."
       },
       {
-        "question": "What is the field logbook and what is it for?",
-        "answer": "The field logbook is the legally required document where every farm records all phytosanitary treatments: products used, dosages, dates, treated crops. It is required by CAP rules, D.Lgs. 150/2012 and specific regional regulations. In an inspection, missing or irregular logbooks can lead to CAP contribution cuts."
-      },
-      {
-        "question": "How long does it take to produce a logbook with Seminai?",
-        "answer": "A few minutes from sending the invoices. Without Seminai, an agronomist typically spends 4–6 hours gathering data from different sources and producing the logbook manually."
-      },
-      {
-        "question": "Who approves the logbook produced by Seminai?",
-        "answer": "You: the agronomist or technician in charge. Seminai produces the logbook and flags anomalies with specific corrections. You review, approve and sign. Professional responsibility stays with the professional, where it belongs by law."
-      },
-      {
-        "question": "How are regulations verified?",
-        "answer": "Seminai cross-checks every treatment against 4 automatically updated regulatory layers: ministerial product label; D.Lgs. 150/2012 and amendments; current CAP rules for the campaign; official regional bulletin for the farm's region. If a treatment violates any of the 4 layers, it is flagged as an anomaly with the specific regulatory source and recommended corrective action."
-      },
-      {
-        "question": "How does invoice OCR work?",
-        "answer": "You send invoice photos on WhatsApp or upload PDFs. The platform automatically extracts: date, supplier, commercial product, active ingredient, quantity purchased, lot number, unit price. Extracted data is cross-checked with farm data to produce the field logbook."
-      },
-      {
-        "question": "What happens when regulations change?",
-        "answer": "Seminai automatically updates regulatory databases whenever rules change (CAP, national regulation, regional rules). You receive an alert if a change impacts farms you manage. The next logbook is already compliant without you doing anything."
-      },
-      {
-        "question": "Are my farm data secure?",
-        "answer": "Data is encrypted in transit and at rest. It is not shared with third parties or used to train AI models. You can export or delete all data at any time."
-      },
-      {
-        "question": "Does it work for all Italian regions?",
-        "answer": "Yes. Seminai covers regional regulations for all 20 Italian regions. Regulations are updated automatically whenever changes are published in official regional bulletins."
-      },
-      {
-        "question": "Can I integrate Seminai with software I already use?",
-        "answer": "Yes. Seminai offers open, documented APIs for integration with existing management systems, accounting software and cooperative management systems. Contact us for a free technical assessment."
-      },
-      {
-        "question": "How does the 14-day free trial work?",
-        "answer": "Access the platform with no credit card. You can load up to 2 trial farms with real data. After 14 days, the account becomes read-only: your data stays accessible, it is not deleted. No automatic charges. No obligation to convert."
+        "question": "Is my data safe?",
+        "answer": "It is encrypted in transit and at rest, on European servers. It is not shared with third parties or used to train AI models. You can export or delete it anytime."
       }
     ]
   },
-  "emailFallback": {
-    "teaser": "If you'd rather not message us on WhatsApp, use email instead:",
-    "teaserLink": "send your invoices by email",
-    "dialogTitle": "Send invoices by email",
-    "dialogDescription": "Fill in the fields and attach your invoices as PDF or images. We'll get back to you soon.",
-    "fields": {
-      "name": "Full name *",
-      "email": "Email *",
-      "message": "Message (optional)",
-      "files": "Invoice attachments *"
-    },
-    "placeholders": {
-      "name": "Mario Rossi",
-      "email": "mario@example.com",
-      "message": "Briefly describe the invoices you're sending..."
-    },
-    "filesHint": "PDF, JPG, PNG or WEBP, you can select multiple files.",
-    "removeFile": "Remove",
-    "defaultBody": "Invoice submission from Seminai landing, {{name}}",
-    "validation": {
-      "required": "Please fill in name, email and attach at least one invoice.",
-      "invalidEmail": "Please enter a valid email address."
-    },
-    "status": {
-      "submitting": "Sending...",
-      "submit": "Send invoices",
-      "success": "Invoices sent successfully. We'll reply by email.",
-      "error": "Unable to send. Please try again in a few minutes."
-    }
-  },
   "footer": {
-    "description": "The AI management system for agriculture and manufacturing. It collects the data, prepares the plans and leaves the confirmation to you.",
+    "description": "The AI platform that turns farm documents into usable data: chat, PDF and Excel export, field logbook.",
     "productTitle": "Product",
     "productLinks": {
       "how": "How it works",
-      "sources": "Regulatory sources",
-      "plans": "Plans & pricing",
-      "cooperative": "For cooperatives",
+      "capabilities": "What you can do",
+      "who": "Who it's for",
+      "sources": "Field logbook",
+      "manufacturing": "For manufacturing",
       "faq": "FAQ",
-      "aiInfo": "Information for AI assistants",
-      "manufacturing": "For manufacturing"
+      "aiInfo": "Information for AI assistants"
     },
     "contactTitle": "Contact",
     "email": "info@seminai.tech",
-    "sendInvoices": "Send invoices via email",
-    "trial": "14-day trial",
     "legalTitle": "Legal",
     "privacy": "Privacy Policy",
     "cookies": "Cookie Policy",
     "terms": "Terms of Service",
-    "copyright": "Seminai © {{year}} · VAT xxxxxxxxxxx"
+    "copyright": "Seminai © {{year}} · VAT xxxxxxxxxxx",
+    "demo": "Book a demo",
+    "contact": "Contact us"
   },
   "offer": {
     "kicker": "Data migration",
@@ -424,7 +227,12 @@
       "title": "Tenuta La Sorgente",
       "tab": "Register · Tenuta La Sorgente",
       "navActive": "Register",
-      "nav": ["Home", "Archive", "Register", "Chat"],
+      "nav": [
+        "Home",
+        "Archive",
+        "Register",
+        "Chat"
+      ],
       "upload": "Upload invoice",
       "empty": "The register is empty. The cursor is about to upload the invoice.",
       "note": "4 products in the register, ready for the logbook.",

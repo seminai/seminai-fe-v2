@@ -1,13 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { ANCHORS } from "./constants";
-import { HeroPreviewSlider } from "./HeroPreviewSlider";
+import { InvoiceWalkthrough } from "./AgriScenes";
+import { CONTACT_URL, DEMO_URL } from "./constants";
 import { RichHtml } from "./RichHtml";
 
-interface LandingHeroProps {
-  onOpenSendInvoices: () => void;
-}
-
-export function LandingHero({ onOpenSendInvoices }: LandingHeroProps) {
+export function LandingHero() {
   const { t } = useTranslation();
   const tickerItems = t("landing.hero.ticker", { returnObjects: true }) as string[];
 
@@ -17,19 +13,16 @@ export function LandingHero({ onOpenSendInvoices }: LandingHeroProps) {
         <h1 className="hero-title">
           <RichHtml html={t("landing.hero.title")} />
         </h1>
-        <p className="hero-subtitle">
-          <RichHtml html={t("landing.hero.subtitle")} />
-        </p>
         <p className="hero-sub">
           <RichHtml html={t("landing.hero.body")} />
         </p>
         <div className="hero-ctas">
-          <button type="button" className="btn-primary" onClick={onOpenSendInvoices}>
+          <a href={DEMO_URL} className="btn-primary">
             {t("landing.hero.ctaPrimary")}
             <span className="arrow" aria-hidden="true" />
-          </button>
-          <a href={ANCHORS.manufacturing} className="btn-secondary">
-            {t("landing.hero.ctaManufacturing")}
+          </a>
+          <a href={CONTACT_URL} className="btn-secondary">
+            {t("landing.hero.ctaSecondary")}
           </a>
         </div>
         <p className="hero-meta">
@@ -44,7 +37,9 @@ export function LandingHero({ onOpenSendInvoices }: LandingHeroProps) {
             </span>
           ))}
         </p>
-        <HeroPreviewSlider />
+        <div className="hero-preview">
+          <InvoiceWalkthrough />
+        </div>
       </div>
     </section>
   );

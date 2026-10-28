@@ -1,18 +1,22 @@
 # Seminai
 
-Seminai produce il quaderno di campagna digitale in pochi minuti, partendo dalle fatture (WhatsApp, email, PDF). Verifica dosaggi e conformita' su fonti normative ufficiali; l'agronomo rivede, approva e firma.
+Seminai è la piattaforma con AI per le piccole e medie imprese del settore agricolo. Carichi fatture, DDT, etichette, fascicoli aziendali e note manuali: Seminai estrae i dati e li rende utilizzabili. Puoi chattare sui dati, scaricarli in PDF ed Excel e compilare il quaderno di campagna.
 
 ## Per chi
 
-- Agronomi e studi tecnici che gestiscono aziende agricole.
-- Cooperative e consorzi agricoli con molti soci.
-- Aziende che devono produrre quaderni conformi PAC, D.Lgs. 150/2012 e normative regionali.
+- Aziende agricole: vigneti, frutteti, seminativi, orticole.
+- Trasformazione e manifattura agroalimentare: cantine, frantoi, caseifici, mangimifici.
+- Cooperative e consulenti che seguono molte aziende.
 
 ## Come funziona
 
-1. Carichi fatture e documenti da WhatsApp, email o PDF.
-2. Seminai estrae i dati, verifica dosaggi e segnala anomalie con fonte normativa.
-3. L'agronomo rivede, approva, corregge se necessario e firma il quaderno.
+1. Carichi i documenti, in foto, PDF, scansione o email.
+2. Seminai estrae e organizza i dati, collegando ognuno al documento da cui viene.
+3. Usi i dati: chat, export PDF ed Excel, quaderno di campagna, magazzino e registri.
+
+## Demo e contatti
+
+Per una demo: info@seminai.tech
 
 ## Link utili
 

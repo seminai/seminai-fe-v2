@@ -1,4 +1,3 @@
-import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Seo } from "@/components/molecules/Seo/Seo";
 import { SEO } from "@/config/seo";
@@ -19,15 +18,8 @@ import {
 } from "./ManufacturingScenes";
 import "../Home/landing.css";
 
-const SendInvoicesEmailDialog = lazy(() =>
-  import("@/components/organism/SendInvoicesEmailDialog").then((module) => ({
-    default: module.SendInvoicesEmailDialog,
-  })),
-);
-
 export default function Manufacturing() {
   const { t } = useTranslation();
-  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const faqItems = t("landing.manufacturing.faq.items", {
     returnObjects: true,
   }) as FaqItem[];
@@ -82,15 +74,7 @@ export default function Manufacturing() {
           itemsKey="landing.manufacturing.faq.items"
         />
       </main>
-      <LandingFooter onOpenSendInvoices={() => setInvoiceDialogOpen(true)} />
-      {invoiceDialogOpen ? (
-        <Suspense fallback={null}>
-          <SendInvoicesEmailDialog
-            open={invoiceDialogOpen}
-            onOpenChange={setInvoiceDialogOpen}
-          />
-        </Suspense>
-      ) : null}
+      <LandingFooter />
     </div>
   );
 }

@@ -71,80 +71,49 @@ function buildSoftwareApplication() {
     url: SITE_URL,
     inLanguage: "it-IT",
     datePublished: "2025-01-01",
-    dateModified: "2026-10-27",
+    dateModified: "2026-10-28",
     publisher: { "@id": ORG_ID },
     featureList: [
-      "Raccolta dati da fatture, DDT, WhatsApp, PDF ed email",
-      "Piani delle operazioni future",
-      "AI che ottimizza dosi, anomalie e giacenze",
-      "Verifica conformità su 4 livelli normativi",
-      "Aggiornamento automatico bollettini regionali (20 regioni)",
+      "Estrazione dati da fatture, DDT, etichette, fascicoli aziendali e note manuali",
+      "Chat sui dati estratti",
+      "Export PDF ed Excel",
+      "Compilazione del quaderno di campagna",
+      "Verifica dei trattamenti su fonti normative ufficiali",
+      "Magazzino e registri aggiornati dai documenti",
       "Server europei — conforme GDPR",
-      "Esportazione PDF firmabile dall'agronomo",
     ],
-    offers: {
-      "@type": "AggregateOffer",
-      lowPrice: "297",
-      highPrice: "3497",
-      priceCurrency: "EUR",
-      offerCount: "4",
-      availability: "https://schema.org/InStock",
-    },
   };
-}
-
-const PLAN_DATA: ReadonlyArray<{ name: string; price: string; desc: string }> = [
-  { name: "Seminai Solo", price: "297", desc: "Piano per agronomi liberi professionisti con poche aziende o singoli agricoltori. Fino a 3 farm." },
-  { name: "Seminai Studio 10", price: "697", desc: "Piano per studi tecnici medi. Fino a 10 farm." },
-  { name: "Seminai Studio 30", price: "1497", desc: "Piano per studi strutturati con team di tecnici. Fino a 30 farm." },
-  { name: "Seminai Studio 80", price: "3497", desc: "Piano per grandi studi o piccoli consorzi. Fino a 80 farm." },
-];
-
-function buildProducts() {
-  return PLAN_DATA.map((plan) => ({
-    "@type": "Product",
-    name: plan.name,
-    description: plan.desc,
-    brand: { "@id": ORG_ID },
-    offers: {
-      "@type": "Offer",
-      price: plan.price,
-      priceCurrency: "EUR",
-      availability: "https://schema.org/InStock",
-      url: `${SITE_URL}/#piani`,
-    },
-  }));
 }
 
 function buildHowTo() {
   const url = `${SITE_URL}/#come-funziona`;
   return {
     "@type": "HowTo",
-    name: "Come funziona Seminai: raccogli, pianifica, ottimizza",
+    name: "Come funziona Seminai: carica, estrai, usa",
     description:
-      "Tre passi: i documenti entrano nel gestionale, Seminai prepara il piano delle operazioni, l'AI propone le correzioni. La firma resta del professionista.",
+      "Tre passi: carichi i documenti, Seminai estrae e organizza i dati, tu li usi in chat, in PDF o Excel e nel quaderno di campagna.",
     totalTime: "PT5M",
     inLanguage: "it-IT",
     step: [
       {
         "@type": "HowToStep",
         position: 1,
-        name: "Raccogli i dati",
-        text: "Carica fatture, DDT, foto e messaggi. Seminai li trasforma in anagrafiche, giacenze e righe del quaderno.",
+        name: "Carica i documenti",
+        text: "Fatture, DDT, etichette, fascicolo aziendale e note a mano, in foto, PDF, scansione o email.",
         url,
       },
       {
         "@type": "HowToStep",
         position: 2,
-        name: "Prepara il piano",
-        text: "Dal registro esce il piano delle operazioni future: cosa fare, su quale appezzamento, con quale prodotto. Lo confermi prima che diventi lavoro.",
+        name: "Seminai estrae e organizza",
+        text: "Prodotti, quantità, lotti, fornitori, date e appezzamenti, ognuno collegato al documento da cui viene.",
         url,
       },
       {
         "@type": "HowToStep",
         position: 3,
-        name: "Ottimizza e approva",
-        text: "L'AI segnala dosi e anomalie. In chat puoi correggere un dato e vederlo cambiare. Rivedi, approvi e firmi tu.",
+        name: "Usa i dati",
+        text: "Chiedi in chat, scarica in PDF o Excel, compila il quaderno di campagna.",
         url,
       },
     ],
@@ -180,7 +149,6 @@ export function buildHomeGraph(faqItems: FaqItem[]) {
       buildWebSite(),
       buildOrganization(),
       buildSoftwareApplication(),
-      ...buildProducts(),
       buildHowTo(),
       buildFaqPage(faqItems),
       buildBreadcrumb(),

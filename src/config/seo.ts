@@ -11,12 +11,12 @@ export const SITE_URL = "https://seminai.tech";
 export const SITE_NAME = "Seminai";
 export const THEME_COLOR = "#234D34";
 export const GEO_DESCRIPTION =
-  "Seminai raccoglie fatture, DDT e messaggi in un gestionale, prepara i piani delle operazioni e usa l'AI per ottimizzare dosi, giacenze e conformità. Il quaderno di campagna lo rivedi e lo firmi tu. Passaggio dati gratuito per i primi 200 utenti.";
+  "Carica fatture, DDT, etichette e fascicoli aziendali: Seminai estrae i dati e li rende utilizzabili. Chat sui tuoi dati, export PDF ed Excel e quaderno di campagna.";
 
 /** OG/Twitter share image. Keep it lightweight because it is emitted into public HTML. */
 export const OG_IMAGE = `${SITE_URL}/og/og-image.jpg`;
 export const OG_IMAGE_ALT =
-  "Seminai — quaderno di campagna digitale per agronomi e cooperative agricole";
+  "Seminai — piattaforma AI per i dati delle aziende agricole";
 
 export type SeoLocale = "it_IT" | "en_US";
 
@@ -46,7 +46,7 @@ export const SEO: Record<
   SeoMeta
 > = {
   home: {
-    title: "Gestionale agricolo con AI — Quaderno di campagna | Seminai",
+    title: "Seminai — Piattaforma AI per i dati delle aziende agricole",
     description: GEO_DESCRIPTION,
     canonical: absoluteUrl("/"),
     locale: "it_IT",
