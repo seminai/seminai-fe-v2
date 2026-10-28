@@ -28,7 +28,7 @@ export function LandingFork() {
           </div>
         </div>
 
-        <div className="fork-grid fork-grid-3">
+        <div className="fork-grid">
           {profiles.map((profile) => (
             <div key={profile.title} className="fork-card">
               <div className="eyebrow">{profile.eyebrow}</div>

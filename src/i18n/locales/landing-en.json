@@ -105,8 +105,7 @@
         "title": "Regional bulletins and derogations"
       }
     ],
-    "foot": "You review. You approve. <em>You sign.</em> Responsibility stays where it belongs.",
-    "illustrationAria": "Robot approving compliance on a clipboard"
+    "foot": "You review. You approve. <em>You sign.</em> Responsibility stays where it belongs."
   },
   "fork": {
     "title": "Built for people who work <em>in agriculture</em>, every day.",
@@ -218,8 +217,8 @@
     "caption": "Moving the data you already have stays free while spots remain."
   },
   "show": {
-    "title": "Watch it work, <em>step by step.</em>",
-    "lead": "A cursor does the same actions you would. No diagrams: you see the record change.",
+    "title": "Watch it work. <em>Step by step.</em>",
+    "lead": "The cursor makes the moves you would make, and the data on screen changes.",
     "invoice": {
       "url": "app.seminai.tech / register · Tenuta La Sorgente",
       "caption": "You upload an invoice and the rows land in the register.",
@@ -315,6 +314,18 @@
       "prompt": "Set the 24 March dose to 2.5 kg/ha",
       "reply": "Done. The dose now matches the label limit.",
       "placeholder": "Write what you want to change…"
+    },
+    "demos": {
+      "chat": {
+        "eyebrow": "Demo 01",
+        "heading": "Ask in chat, the data updates.",
+        "body": "Type what you want to know or change: Seminai answers and updates the register, citing the rule."
+      },
+      "plan": {
+        "eyebrow": "Demo 02",
+        "heading": "From documents to next week's plan.",
+        "body": "From the collected data Seminai prepares the next operations. You confirm them in one click."
+      }
     }
   },
   "manufacturing": {

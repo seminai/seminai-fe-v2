@@ -105,8 +105,7 @@
         "title": "Bollettini e deroghe regionali"
       }
     ],
-    "foot": "Tu rivedi. Tu approvi. <em>Tu firmi.</em> La responsabilità resta dove deve stare.",
-    "illustrationAria": "Robot che approva conformità su clipboard"
+    "foot": "Tu rivedi. Tu approvi. <em>Tu firmi.</em> La responsabilità resta dove deve stare."
   },
   "fork": {
     "title": "Pensato per chi lavora <em>in agricoltura</em>, ogni giorno.",
@@ -218,8 +217,8 @@
     "caption": "Il passaggio dei dati che hai già resta gratuito finché ci sono posti."
   },
   "show": {
-    "title": "Guardalo fare, <em>passo per passo.</em>",
-    "lead": "Un cursore compie le azioni che faresti tu. Niente schemi: si vede il dato che cambia.",
+    "title": "Guardalo lavorare. <em>Passo per passo.</em>",
+    "lead": "Il cursore compie i gesti che faresti tu, e il dato a schermo cambia.",
     "invoice": {
       "url": "app.seminai.tech / registro · Tenuta La Sorgente",
       "caption": "Carichi una fattura e le righe entrano nel registro.",
@@ -315,6 +314,18 @@
       "prompt": "Porta la dose del 24 marzo a 2,5 kg/ha",
       "reply": "Fatto. La dose rispetta il limite di etichetta.",
       "placeholder": "Scrivi cosa vuoi cambiare…"
+    },
+    "demos": {
+      "chat": {
+        "eyebrow": "Demo 01",
+        "heading": "Chiedi in chat, il dato si aggiorna.",
+        "body": "Scrivi cosa vuoi sapere o cambiare: Seminai risponde e aggiorna il registro, con la fonte della regola."
+      },
+      "plan": {
+        "eyebrow": "Demo 02",
+        "heading": "Dai documenti al piano della settimana.",
+        "body": "Dai dati raccolti Seminai prepara le operazioni successive. Le confermi con un clic."
+      }
     }
   },
   "manufacturing": {

@@ -36,13 +36,8 @@
   box-sizing: border-box;
 }
 
-.landing-page h1,
-.landing-page h2,
-.landing-page h3,
-.landing-page h4,
-.landing-page p,
-.landing-page figure,
-.landing-page ul {
+/* :where keeps this reset weaker than component classes, so their margins (e.g. margin-inline: auto) apply */
+.landing-page :where(h1, h2, h3, h4, p, figure, ul) {
   margin: 0;
 }
 
@@ -504,6 +499,7 @@
   gap: 44px;
   border-top: 1px solid var(--line);
   padding-top: 34px;
+  text-align: center;
 }
 
 .problem-grid {
@@ -618,6 +614,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 36px;
+  text-align: center;
   border-top: 1px solid var(--line);
   margin-top: 28px;
   padding-top: 28px;
@@ -702,48 +699,27 @@
 }
 
 .trust-foot {
-  display: grid;
-  grid-template-columns: 1.4fr 0.8fr;
-  gap: 40px;
-  align-items: center;
   margin-top: 48px;
+  text-align: center;
   color: var(--muted);
   font-size: 15px;
 }
 
-.trust-illust img {
-  margin-left: auto;
-  border-radius: 12px;
-  filter: grayscale(0.35);
-}
-
 .fork-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
 
 .fork-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
   border: 1px solid var(--line);
   border-radius: 24px;
   padding: 32px 28px;
   background: #fff;
-}
-
-.fork-card.dark {
-  background: var(--soft);
-}
-
-.fork-card .illust {
-  width: 72px;
-  margin-bottom: 18px;
-}
-
-.fork-card .illust img {
-  width: 72px;
-  height: 72px;
-  object-fit: contain;
-  filter: grayscale(0.4);
 }
 
 .fork-card .eyebrow {
@@ -751,35 +727,25 @@
 }
 
 .fork-card .intro {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .fork-card ul {
   list-style: none;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  width: 100%;
+  border-top: 1px solid var(--line);
 }
 
 .fork-card li {
-  padding-left: 16px;
-  position: relative;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
 }
 
-.fork-card li::before {
-  content: "";
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--green);
-  position: absolute;
-  left: 0;
-  top: 0.55em;
-}
-
-.fork-card .price-note {
-  margin-top: 18px;
+.fork-card .cta-row {
+  margin-top: auto;
+  padding-top: 24px;
+  justify-content: center;
 }
 
 .pricing-container {
@@ -1173,13 +1139,15 @@
 
 .faq-grid {
   display: grid;
-  grid-template-columns: 0.7fr 1.3fr;
-  gap: 48px;
-  align-items: start;
+  gap: 40px;
+  max-width: 760px;
+  margin-inline: auto;
+  text-align: center;
 }
 
 .faq-list {
   border-bottom: 1px solid var(--line);
+  text-align: left;
 }
 
 .q {
@@ -1342,8 +1310,6 @@
   .migration-offer,
   .scene-grid,
   .magnet-grid,
-  .faq-grid,
-  .trust-foot,
   .foot-top {
     grid-template-columns: 1fr;
   }
@@ -1776,12 +1742,43 @@
   color: #000;
 }
 
-.fork-grid-3 {
-  grid-template-columns: repeat(3, 1fr);
+.demo-showcase {
+  display: flex;
+  flex-direction: column;
+  gap: 96px;
+  max-width: 960px;
+  margin-inline: auto;
 }
 
-.fork-grid-3 .cta-row {
-  margin-top: 22px;
+.demo-item-head {
+  max-width: 560px;
+  margin: 0 auto 28px;
+  text-align: center;
+}
+
+.demo-item-head .eyebrow {
+  margin-bottom: 12px;
+}
+
+.demo-item-head h3 {
+  font-size: clamp(22px, 2.2vw, 28px);
+  letter-spacing: -0.8px;
+  margin-bottom: 10px;
+}
+
+.demo-item-head p {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.demo-item .walkthrough-stage {
+  min-height: 320px;
+  padding: 32px 36px 28px;
+}
+
+.demo-item .demo-caption,
+.hero-preview .demo-caption {
+  font-size: 12px;
 }
 
 .trust-card p {
@@ -1844,12 +1841,6 @@
   top: 0.6em;
 }
 
-@media (max-width: 1000px) {
-  .fork-grid-3 {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 880px) {
   .security-strip {
     margin-bottom: 48px;
@@ -1857,7 +1848,16 @@
 
   .security-strip ul {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+  }
+
+  .demo-showcase {
+    gap: 64px;
+  }
+
+  .demo-item .walkthrough-stage {
+    min-height: 260px;
+    padding: 22px 18px 18px;
   }
 }
 
