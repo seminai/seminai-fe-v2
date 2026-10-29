@@ -10,6 +10,7 @@ import { LandingHowItWorks } from "./LandingHowItWorks";
 import { LandingNav } from "./LandingNav";
 import { LandingProblem } from "./LandingProblem";
 import { LandingUseCases } from "./LandingUseCases";
+import { MobileCtaBar } from "./MobileCtaBar";
 import "./landing.css";
 import "./home.css";
 
@@ -31,6 +32,7 @@ export default function Home() {
         <LandingBooking />
       </main>
       <LandingFooter />
+      <MobileCtaBar />
     </div>
   );
 }
