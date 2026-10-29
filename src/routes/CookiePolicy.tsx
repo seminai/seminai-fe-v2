@@ -73,7 +73,7 @@ export default function CookiePolicy() {
           </p>
           <div className="bg-agri-green-50 p-4 rounded-lg">
             <p className="text-gray-700">
-              <strong>Email:</strong> info@seminai.tech
+              <strong>Email:</strong> get.seminai@gmail.com
             </p>
           </div>
         </section>
