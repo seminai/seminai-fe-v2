@@ -5,18 +5,28 @@ import { RichHtml } from "./RichHtml";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** Optional leading +, then 8-15 digits once spaces, dots, dashes and brackets are ignored. */
+function isValidPhone(value: string): boolean {
+  return /^\+?\d{8,15}$/.test(value.replace(/[\s.\-()/]/g, ""));
+}
+
+const CONTACT_PREFERENCES = ["email", "phone"] as const;
+type ContactPreference = (typeof CONTACT_PREFERENCES)[number];
+
 /** 09:00 to 17:30, every 30 minutes. */
 const TIME_SLOTS = Array.from({ length: 18 }, (_, slot) => {
   const minutes = 9 * 60 + slot * 30;
   return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 });
 
-type Field = "name" | "email" | "sector" | "interests" | "day" | "time";
+type Field = "name" | "email" | "phone" | "sector" | "interests" | "day" | "time";
 type Status = "idle" | "submitting" | "success" | "error";
 
 interface Values {
   name: string;
   email: string;
+  phone: string;
+  contactPreference: ContactPreference;
   sector: string;
   interests: string[];
   day: string;
@@ -24,7 +34,17 @@ interface Values {
   notes: string;
 }
 
-const EMPTY: Values = { name: "", email: "", sector: "", interests: [], day: "", time: "", notes: "" };
+const EMPTY: Values = {
+  name: "",
+  email: "",
+  phone: "",
+  contactPreference: "email",
+  sector: "",
+  interests: [],
+  day: "",
+  time: "",
+  notes: "",
+};
 
 function toIsoDate(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -76,6 +96,11 @@ export function DemoRequestForm() {
     const found: Partial<Record<Field, string>> = {};
     if (values.name.trim().length < 2) found.name = t("landing.booking.errors.name");
     if (!EMAIL_REGEX.test(values.email.trim())) found.email = t("landing.booking.errors.email");
+    // The phone is required only for visitors who want a call; if given anyway it must be valid.
+    const phone = values.phone.trim();
+    if ((values.contactPreference === "phone" || phone) && !isValidPhone(phone)) {
+      found.phone = t("landing.booking.errors.phone");
+    }
     if (!values.sector) found.sector = t("landing.booking.errors.sector");
     if (values.interests.length === 0) found.interests = t("landing.booking.errors.interests");
     const day = parseIsoDate(values.day);
@@ -104,6 +129,8 @@ export function DemoRequestForm() {
     const lines = [
       `${t("landing.booking.emailSubject")} seminai.tech`,
       "",
+      `${t("landing.booking.emailLines.contactPref")}: ${t(`landing.booking.contactOptions.${values.contactPreference}`)}`,
+      `${t("landing.booking.emailLines.phone")}: ${values.phone.trim() || "-"}`,
       `${t("landing.booking.emailLines.day")}: ${dayLabel}`,
       `${t("landing.booking.emailLines.time")}: ${values.time}`,
       `${t("landing.booking.emailLines.sector")}: ${values.sector}`,
@@ -128,7 +155,11 @@ export function DemoRequestForm() {
     return (
       <div className="booking-form booking-success" role="status">
         <p className="booking-success-title">{t("landing.booking.successTitle")}</p>
-        <p>{t("landing.booking.success", { email: values.email.trim() })}</p>
+        <p>
+          {values.contactPreference === "phone"
+            ? t("landing.booking.successPhone", { phone: values.phone.trim() })
+            : t("landing.booking.success", { email: values.email.trim() })}
+        </p>
       </div>
     );
   }
@@ -172,6 +203,47 @@ export function DemoRequestForm() {
           />
           {errorFor("email")}
         </label>
+      </div>
+
+      <div className="field-row">
+        <label className="field" htmlFor={fieldId("phone")}>
+          <span>
+            {t("landing.booking.fields.phone")}
+            {values.contactPreference === "phone" ? " *" : ""}
+          </span>
+          <input
+            id={fieldId("phone")}
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            value={values.phone}
+            placeholder={t("landing.booking.placeholders.phone")}
+            aria-invalid={Boolean(errors.phone)}
+            aria-describedby={describedBy("phone")}
+            onChange={(event) => set("phone", event.target.value)}
+          />
+          {errorFor("phone")}
+        </label>
+        <fieldset className="field">
+          <legend>{t("landing.booking.fields.contactPref")} *</legend>
+          <div className="interest-chips">
+            {CONTACT_PREFERENCES.map((option) => {
+              const checked = values.contactPreference === option;
+              return (
+                <label key={option} className={`chip chip-toggle${checked ? " is-on" : ""}`}>
+                  <input
+                    type="radio"
+                    name={fieldId("contact-preference")}
+                    value={option}
+                    checked={checked}
+                    onChange={() => set("contactPreference", option)}
+                  />
+                  {t(`landing.booking.contactOptions.${option}`)}
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
       </div>
 
       <label className="field" htmlFor={fieldId("sector")}>

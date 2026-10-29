@@ -250,14 +250,17 @@
       "interests": "Perché ti interessa",
       "day": "Giorno preferito",
       "time": "Ora preferita",
-      "notes": "Note"
+      "notes": "Note",
+      "phone": "Cellulare",
+      "contactPref": "Ti contattiamo via"
     },
     "placeholders": {
       "name": "Mario Rossi",
       "email": "mario@azienda.it",
       "sector": "Scegli il settore",
       "time": "Scegli l'ora",
-      "notes": "Cosa vorresti vedere nella demo?"
+      "notes": "Cosa vorresti vedere nella demo?",
+      "phone": "+39 333 123 4567"
     },
     "sectors": [
       "Viticoltura",
@@ -289,7 +292,8 @@
       "sector": "Scegli un settore.",
       "interests": "Scegli almeno un motivo.",
       "day": "Scegli un giorno feriale da domani in poi.",
-      "time": "Scegli un orario."
+      "time": "Scegli un orario.",
+      "phone": "Inserisci un numero di cellulare valido."
     },
     "emailSubject": "Richiesta demo dal sito",
     "emailLines": {
@@ -297,8 +301,15 @@
       "time": "Ora preferita",
       "sector": "Settore",
       "interests": "Interesse",
-      "notes": "Note"
-    }
+      "notes": "Note",
+      "phone": "Cellulare",
+      "contactPref": "Contatto preferito"
+    },
+    "contactOptions": {
+      "email": "Email",
+      "phone": "Cellulare"
+    },
+    "successPhone": "Ti chiamiamo al {{phone}} per confermare giorno e ora."
   },
   "footer": {
     "productTitle": "Prodotto",

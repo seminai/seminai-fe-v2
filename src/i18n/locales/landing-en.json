@@ -250,14 +250,17 @@
       "interests": "Why you're interested",
       "day": "Preferred day",
       "time": "Preferred time",
-      "notes": "Notes"
+      "notes": "Notes",
+      "phone": "Mobile phone",
+      "contactPref": "Contact me by"
     },
     "placeholders": {
       "name": "Jane Smith",
       "email": "jane@farm.com",
       "sector": "Choose your sector",
       "time": "Choose a time",
-      "notes": "What would you like to see in the demo?"
+      "notes": "What would you like to see in the demo?",
+      "phone": "+39 333 123 4567"
     },
     "sectors": [
       "Vineyards",
@@ -289,7 +292,8 @@
       "sector": "Choose a sector.",
       "interests": "Choose at least one reason.",
       "day": "Choose a weekday from tomorrow on.",
-      "time": "Choose a time."
+      "time": "Choose a time.",
+      "phone": "Enter a valid mobile number."
     },
     "emailSubject": "Demo request from the website",
     "emailLines": {
@@ -297,8 +301,15 @@
       "time": "Preferred time",
       "sector": "Sector",
       "interests": "Interest",
-      "notes": "Notes"
-    }
+      "notes": "Notes",
+      "phone": "Mobile phone",
+      "contactPref": "Preferred contact"
+    },
+    "contactOptions": {
+      "email": "Email",
+      "phone": "Phone"
+    },
+    "successPhone": "We will call you at {{phone}} to confirm the day and time."
   },
   "footer": {
     "productTitle": "Product",
