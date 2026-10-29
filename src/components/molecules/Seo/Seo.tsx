@@ -21,10 +21,10 @@ export interface SeoProps {
   jsonLd?: object | object[];
 }
 
-const TWITTER_LOCALE: Record<SeoLocale, string> = {
-  it_IT: "Quaderno di Campagna Digitale — Seminai",
-  en_US: "Digital Field Logbook — Seminai",
-};
+/** Markdown twin of a page, generated at build time by scripts/agent-docs.mjs. */
+function markdownUrl(canonical: string): string {
+  return canonical === `${SITE_URL}/` ? `${SITE_URL}/index.md` : `${canonical}.md`;
+}
 
 /**
  * Presentational head manager. Renders identical tags in the prerendered HTML and on
@@ -63,6 +63,18 @@ export function Seo({
         type="text/html"
       />
 
+      {noindex ? null : (
+        <link rel="alternate" type="text/markdown" href={markdownUrl(canonical)} />
+      )}
+      {hreflang ? (
+        <link
+          rel="alternate"
+          type="text/markdown"
+          hrefLang="en"
+          href={`${SITE_URL}/index.en.md`}
+        />
+      ) : null}
+
       {hreflang ? (
         <link rel="alternate" hrefLang="it" href={`${SITE_URL}/`} />
       ) : null}
@@ -82,7 +94,7 @@ export function Seo({
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={TWITTER_LOCALE[locale]} />
+      <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />
       <meta name="twitter:image:alt" content={imageAlt} />

@@ -13,8 +13,9 @@ Seminai currently supports human user authentication through the web application
 
 Agents may read public content from:
 
-- https://seminai.tech/llms.txt
-- https://seminai.tech/llms-full.txt
+- https://seminai.tech/llms.txt (index of the Markdown pages)
+- https://seminai.tech/llms-full.txt (every public page in one file)
+- https://seminai.tech/index.md and https://seminai.tech/index.en.md (homepage)
 - https://seminai.tech/sitemap.xml
 - https://seminai.tech/.well-known/api-catalog
 - https://seminai.tech/.well-known/agent-skills/index.json
@@ -23,4 +24,4 @@ Agents that need protected user data must direct the user to authenticate in the
 
 ## Contact
 
-For API access or integration requests, contact info@seminai.tech.
+For API access or integration requests, contact get.seminai@gmail.com.

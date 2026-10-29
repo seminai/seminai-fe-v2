@@ -3,10 +3,11 @@ Allow: /
 Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 # Agent-readable context
-# LLM summary: https://seminai.tech/llms.txt
-# Full LLM context: https://seminai.tech/llms-full.txt
+# Index of the Markdown pages: https://seminai.tech/llms.txt
+# Full context in one file: https://seminai.tech/llms-full.txt
+# Every page has a Markdown twin, e.g. https://seminai.tech/index.md
 
-# Bot AI / GEO (Generative Engine Optimization)
+# AI search and assistant bots
 User-agent: GPTBot
 Allow: /
 
@@ -16,25 +17,31 @@ Allow: /
 User-agent: OAI-SearchBot
 Allow: /
 
-User-agent: PerplexityBot
-Allow: /
-
-User-agent: Google-Extended
-Allow: /
-
 User-agent: ClaudeBot
 Allow: /
 
-User-agent: Claude-Web
+User-agent: Claude-User
 Allow: /
 
-User-agent: anthropic-ai
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
 Allow: /
 
 User-agent: Bingbot
 Allow: /
 
 User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
 Allow: /
 
 Sitemap: https://seminai.tech/sitemap.xml
