@@ -23,9 +23,10 @@ translationKey: "spray-records-2027"   # same value in IT and EN: links them (hr
 category: "quaderno-di-campagna"
 keyword: "quaderno di campagna digitale 2027"
 tags: ["quaderno di campagna"]
-image: "/news/heroes/<name>.webp"      # optional, files in public/news/
+image: "/news/<it-slug>.webp"          # optional cover photo, 1200x800 (3:2), files in public/news/
 imageAlt: "..."
-relatedKeys: ["other-translation-key"] # optional "Da leggere insieme"
+excerpt: "..."                         # optional card teaser; default: the first paragraph
+relatedKeys: ["other-translation-key"] # optional "Da leggere insieme", shown after the CTA
 faqs:                                  # optional, also emitted as FAQPage JSON-LD
   - question: "..."
     answer: "..."

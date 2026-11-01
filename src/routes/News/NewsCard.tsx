@@ -1,23 +1,21 @@
-import { formatNewsDate, type NewsPost } from "@/lib/news";
+import { newsLabel, type NewsPost } from "@/lib/news";
 
+/** Magazine card: photo, label, title, a short rule, the opening of the article. */
 export function NewsCard({ post }: { post: NewsPost }) {
+  const label = newsLabel(post);
+
   return (
     <article className="news-card">
       <a href={post.path} className="news-card-link">
         <div className="news-card-visual" aria-hidden="true">
           {post.image ? (
-            <img src={post.image} alt="" loading="lazy" width={600} height={338} />
-          ) : (
-            <span className="news-card-tag">{post.category ?? post.tags[0] ?? "Seminai"}</span>
-          )}
+            <img src={post.image} alt="" loading="lazy" width={600} height={400} />
+          ) : null}
         </div>
-        <div className="news-card-body">
-          <time dateTime={post.date} className="news-card-date">
-            {formatNewsDate(post.date, post.lang)}
-          </time>
-          <h3>{post.title}</h3>
-          <p>{post.description}</p>
-        </div>
+        <p className="news-card-label">{label}</p>
+        <h3>{post.title}</h3>
+        <span className="news-card-rule" aria-hidden="true" />
+        <p className="news-card-excerpt">{post.excerpt || post.description}</p>
       </a>
     </article>
   );

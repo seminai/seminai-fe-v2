@@ -30,10 +30,11 @@ const frontmatterSchema = z.object({
   category: z.string().optional(),
   keyword: z.string().optional(),
   tags: z.array(z.string()).default([]),
+  /** Cover photo (cards and top of the article), files in public/news/. */
   image: z.string().optional(),
   imageAlt: z.string().optional(),
-  diagram: z.string().optional(),
-  diagramAlt: z.string().optional(),
+  /** Card teaser; defaults to the first paragraph (see the news-frontmatter plugin). */
+  excerpt: z.string().default(""),
   series: z.string().optional(),
   seriesOrder: z.number().int().optional(),
   relatedKeys: z.array(z.string()).default([]),
@@ -95,6 +96,11 @@ export function postsByLang(lang: NewsLang): NewsPost[] {
 
 export function findPost(lang: NewsLang, slug: string): NewsPost | undefined {
   return NEWS_POSTS.find((post) => post.lang === lang && post.slug === slug);
+}
+
+/** Short label above the card title: the category, else the first tag. */
+export function newsLabel(post: NewsPost): string {
+  return (post.category ?? post.tags[0] ?? "Seminai").replace(/-/g, " ");
 }
 
 /** The other-language version of a post, when it exists. */

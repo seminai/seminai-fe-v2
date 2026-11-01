@@ -17,11 +17,7 @@ export function LandingNews() {
   return (
     <section className="row" id="news">
       <div className="container">
-        <div className="section-head">
-          <p className="eyebrow">{t("landing.news.eyebrow")}</p>
-          <h2>{t("landing.news.title")}</h2>
-          <p className="lead">{t("landing.news.lead")}</p>
-        </div>
+        <h2 className="news-home-head eyebrow">{t("landing.news.eyebrow")}</h2>
         <div className="news-grid">
           {posts.map((post) => (
             <NewsCard key={post.slug} post={post} />

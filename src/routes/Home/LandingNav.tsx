@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router-dom";
 import {
   LANGUAGE_OPTIONS,
   normalizeLanguage,
@@ -42,6 +43,7 @@ export function LandingNav({ languageLinks }: LandingNavProps = {}) {
   const { t, i18n } = useTranslation();
   const currentLanguage = normalizeLanguage(i18n.language);
   const isEnglish = currentLanguage === "en";
+  const isNewsPage = /^\/(en\/)?news(\/|$)/.test(useLocation().pathname);
 
   const changeLanguage = (language: SupportedLanguage) => {
     void i18n.changeLanguage(language);
@@ -61,7 +63,12 @@ export function LandingNav({ languageLinks }: LandingNavProps = {}) {
           <a href={ANCHORS.how}>{t("landing.nav.how")}</a>
           <a href={ANCHORS.useCases}>{t("landing.nav.useCases")}</a>
           <a href={ANCHORS.faq}>{t("landing.nav.faq")}</a>
-          <a href={newsIndexPath(currentLanguage)}>{t("landing.nav.news")}</a>
+          <a
+            href={newsIndexPath(currentLanguage)}
+            aria-current={isNewsPage ? "page" : undefined}
+          >
+            {t("landing.nav.news")}
+          </a>
         </nav>
         <div className="nav-actions">
           <div

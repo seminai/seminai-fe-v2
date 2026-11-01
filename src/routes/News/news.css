@@ -5,27 +5,12 @@
  * may load this file before landing.css, and the scope keeps these rules winning.
  */
 
-/* Cards (index + homepage) */
+/* Cards (index, homepage, related): magazine layout, no frame */
 
 .landing-page .news-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 18px;
-}
-
-.landing-page .news-card {
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  background: #fff;
-  overflow: hidden;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-
-.landing-page .news-card:hover {
-  border-color: var(--frame);
-  box-shadow: 0 24px 60px -36px rgb(20 30 12 / 35%);
+  gap: 44px 32px;
 }
 
 .landing-page .news-card-link {
@@ -37,7 +22,9 @@
 .landing-page .news-card-visual {
   display: grid;
   place-items: center;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 3 / 2;
+  margin-bottom: 18px;
+  border-radius: var(--radius);
   background: var(--soft);
   overflow: hidden;
 }
@@ -46,63 +33,94 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.4s ease;
 }
 
-.landing-page .news-card-tag {
-  padding: 6px 14px;
-  border-radius: 100px;
-  background: #fff;
+.landing-page .news-card-link:hover .news-card-visual img {
+  transform: scale(1.03);
+}
+
+.landing-page .news-card-label {
+  margin-bottom: 10px;
   color: var(--green);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.landing-page .news-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 18px 18px 22px;
-}
-
-.landing-page .news-card-date {
-  color: var(--faint);
-  font-size: 13px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
 }
 
 .landing-page .news-card h3 {
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1.22;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.5px;
 }
 
-.landing-page .news-card p {
-  color: var(--muted);
-  font-size: 15px;
-  line-height: 1.5;
+.landing-page .news-card-link:hover h3 {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
 }
+
+.landing-page .news-card-rule {
+  display: block;
+  width: 72px;
+  height: 1px;
+  margin: 18px 0 16px;
+  background: var(--ink);
+}
+
+.landing-page .news-card-excerpt {
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
 /* Index */
 
 .landing-page .news-index {
-  padding-top: 44px;
+  padding-top: 40px;
   padding-bottom: 72px;
 }
 
-.landing-page .news-index-head {
-  max-width: 720px;
-  margin-bottom: 32px;
+.landing-page .news-index-title {
+  margin-bottom: 28px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
 }
 
-.landing-page .news-index-head h1 {
-  margin-top: 10px;
-  font-size: clamp(36px, 9vw, 60px);
-  letter-spacing: -1.6px;
-}
 /* Homepage section */
 
-.landing-page .news-home-foot {
-  margin-top: 28px;
+.landing-page .news-home-head {
+  margin-bottom: 28px;
   text-align: center;
 }
+
+.landing-page .news-home-foot {
+  margin-top: 40px;
+  text-align: center;
+}
+
+/* Related articles, after the CTA */
+
+.landing-page .news-related {
+  padding-top: 8px;
+  padding-bottom: 80px;
+}
+
+.landing-page .news-related > h2 {
+  margin-bottom: 28px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
 /* Article */
 
 .landing-page .news-article {
@@ -345,7 +363,6 @@
   background: #fff;
 }
 
-.landing-page .news-related,
 .landing-page .news-faq {
   margin-top: 40px;
 }
@@ -420,11 +437,11 @@
 @media (min-width: 881px) {
   .landing-page .news-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 22px;
+    gap: 56px 40px;
   }
 
   .landing-page .news-index {
-    padding-top: 64px;
+    padding-top: 56px;
   }
 
   .landing-page .news-article {
@@ -441,4 +458,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Current section in the header (News while reading the news). */
+.landing-page .nav-links a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--green);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 8px;
 }

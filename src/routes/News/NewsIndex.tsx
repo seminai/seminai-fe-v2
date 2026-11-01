@@ -24,11 +24,7 @@ export default function NewsIndex({ lang }: { lang: NewsLang }) {
         ]}
       />
       <section className="news-index container">
-        <header className="news-index-head">
-          <p className="eyebrow">Seminai</p>
-          <h1>{copy.indexHeading}</h1>
-          <p className="lead">{copy.indexLead}</p>
-        </header>
+        <h1 className="news-index-title">{copy.indexHeading}</h1>
         <div className="news-grid">
           {posts.map((post) => (
             <NewsCard key={post.slug} post={post} />

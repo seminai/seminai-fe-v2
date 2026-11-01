@@ -13,8 +13,6 @@ export const NEWS_COPY = {
     section: "News",
     indexTitle: "News | Seminai",
     indexHeading: "News",
-    indexLead:
-      "Quaderno di campagna, regole, PAC, dati e intelligenza artificiale spiegati in modo semplice, con fonti verificabili.",
     indexDescription:
       "Articoli di Seminai su quaderno di campagna, normativa fitosanitaria, PAC, dati agricoli e intelligenza artificiale, spiegati in modo semplice.",
     home: "Home",
@@ -30,15 +28,11 @@ export const NEWS_COPY = {
     ctaText:
       "Prova Seminai gratis per 14 giorni. Carica le fatture, ricevi il quaderno pronto da rivedere.",
     ctaButton: "Inizia la prova gratuita",
-    allNews: "Tutte le news",
-    readMore: "Leggi",
   },
   en: {
     section: "News",
     indexTitle: "News | Seminai",
     indexHeading: "News",
-    indexLead:
-      "Spray records, rules, the CAP, farm data and artificial intelligence explained simply, with sources you can check.",
     indexDescription:
       "Seminai articles on Italian spray records, plant protection rules, the CAP, farm data and artificial intelligence, explained simply.",
     home: "Home",
@@ -53,7 +47,5 @@ export const NEWS_COPY = {
     infographic: "Infographic coming soon",
     ctaText: "Try Seminai free for 14 days. Upload your invoices, get a register ready for review.",
     ctaButton: "Start the free trial",
-    allNews: "All news",
-    readMore: "Read",
   },
 } satisfies Record<NewsLang, Record<string, string>>;

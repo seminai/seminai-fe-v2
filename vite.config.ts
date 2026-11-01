@@ -32,9 +32,30 @@ function newsFrontmatter(): Plugin {
       this.addWatchFile(file);
       const source = await readFile(file, "utf-8");
       const match = source.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-      return `export default ${JSON.stringify(match ? parseYaml(match[1]) : {})};`;
+      const meta = match ? parseYaml(match[1]) : {};
+      const body = match ? source.slice(match[0].length) : source;
+      return `export default ${JSON.stringify({ excerpt: excerptOf(body), ...meta })};`;
     },
   };
+}
+
+const EXCERPT_LENGTH = 220;
+
+/** First prose paragraph of an article as plain text, cut at a word near EXCERPT_LENGTH. */
+function excerptOf(body: string): string {
+  const paragraph =
+    body
+      .split(/\r?\n\s*\r?\n/)
+      .map((block) => block.trim())
+      .find((block) => block && !/^(import |export |#|<|\{|-|\*\s|\d+\.|>|```|\|)/.test(block)) ?? "";
+  const text = paragraph
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[*_`]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (text.length <= EXCERPT_LENGTH) return text;
+  const cut = text.slice(0, EXCERPT_LENGTH);
+  return `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:.]$/, "")}…`;
 }
 
 // https://vite.dev/config/

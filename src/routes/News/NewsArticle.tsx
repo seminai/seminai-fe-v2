@@ -14,6 +14,7 @@ import {
 } from "@/lib/news";
 import { NEWS_COPY, NEWS_SIGNUP_URL } from "./copy";
 import { buildMdxComponents } from "./mdxComponents";
+import { NewsCard } from "./NewsCard";
 import { NewsLayout } from "./NewsLayout";
 
 export default function NewsArticle({ lang }: { lang: NewsLang }) {
@@ -114,26 +115,6 @@ export default function NewsArticle({ lang }: { lang: NewsLang }) {
             <Body components={components} />
           </Suspense>
 
-          {post.diagram && post.diagramAlt ? (
-            <figure className="news-figure">
-              <img src={post.diagram} alt={post.diagramAlt} width={720} height={360} loading="lazy" />
-              <figcaption>{post.diagramAlt}</figcaption>
-            </figure>
-          ) : null}
-
-          {related.length > 0 ? (
-            <section className="news-related">
-              <h2>{copy.readAlso}</h2>
-              <ul>
-                {related.map((item) => (
-                  <li key={item.slug}>
-                    <a href={item.path}>{item.title}</a>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
           {post.faqs.length > 0 ? (
             <section className="news-faq">
               <h2>{copy.faq}</h2>
@@ -170,6 +151,17 @@ export default function NewsArticle({ lang }: { lang: NewsLang }) {
           </section>
         ) : null}
       </article>
+
+      {related.length > 0 ? (
+        <section className="news-related container">
+          <h2>{copy.readAlso}</h2>
+          <div className="news-grid">
+            {related.map((item) => (
+              <NewsCard key={item.slug} post={item} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </NewsLayout>
   );
 }

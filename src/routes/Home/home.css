@@ -1079,6 +1079,12 @@
     height: auto;
   }
 
+  /* The crates cut-out is cropped flat at the bottom in the source file: fade that edge out. */
+  .use-cases-photo-left {
+    -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 96%);
+    mask-image: linear-gradient(to bottom, #000 62%, transparent 96%);
+  }
+
   .chips {
     gap: 10px;
   }
