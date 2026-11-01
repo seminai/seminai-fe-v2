@@ -1,9 +1,11 @@
 import { useTranslation } from "react-i18next";
+import { normalizeLanguage } from "@/i18n";
+import { newsIndexPath } from "@/lib/news";
 import { ANCHORS, CONTACT_URL, LEGAL_ROUTES } from "./constants";
 import { LandingBrand } from "./LandingNav";
 
 export function LandingFooter() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const year = new Date().getFullYear();
 
   return (
@@ -25,6 +27,11 @@ export function LandingFooter() {
               </li>
               <li>
                 <a href={ANCHORS.faq}>{t("landing.footer.productLinks.faq")}</a>
+              </li>
+              <li>
+                <a href={newsIndexPath(normalizeLanguage(i18n.language))}>
+                  {t("landing.footer.productLinks.news")}
+                </a>
               </li>
               <li>
                 <a href="/llms.txt">{t("landing.footer.productLinks.aiInfo")}</a>

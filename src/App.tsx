@@ -4,6 +4,8 @@ import Home from "./routes/Home";
 import TermsOfService from "./routes/TermsOfService";
 import PrivacyPolicy from "./routes/PrivacyPolicy";
 import CookiePolicy from "./routes/CookiePolicy";
+import NewsIndex from "./routes/News/NewsIndex";
+import NewsArticle from "./routes/News/NewsArticle";
 
 const Auth = lazy(() => import("./routes/Auth"));
 const LoginRegister = lazy(() => import("./routes/Auth/LoginRegister"));
@@ -63,6 +65,10 @@ function App() {
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/cookie-policy" element={<CookiePolicy />} />
+        <Route path="/news" element={<NewsIndex lang="it" />} />
+        <Route path="/news/:slug" element={<NewsArticle lang="it" />} />
+        <Route path="/en/news" element={<NewsIndex lang="en" />} />
+        <Route path="/en/news/:slug" element={<NewsArticle lang="en" />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/settings" element={<Settings />} />

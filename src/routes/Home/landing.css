@@ -201,7 +201,8 @@
   background: #eeefeb;
 }
 
-.lang-toggle button {
+.lang-toggle button,
+.lang-toggle a {
   appearance: none;
   min-width: 38px;
   min-height: 34px;
@@ -216,7 +217,8 @@
   line-height: 1;
 }
 
-.lang-toggle button[aria-pressed="true"] {
+.lang-toggle button[aria-pressed="true"],
+.lang-toggle a[aria-current="page"] {
   background: var(--ink);
   color: #fff;
 }
@@ -921,7 +923,8 @@
     gap: 12px;
   }
 
-  .lang-toggle button {
+  .lang-toggle button,
+  .lang-toggle a {
     min-width: 0;
     min-height: 0;
     padding: 6px 10px;

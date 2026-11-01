@@ -4,6 +4,7 @@ import {
   normalizeLanguage,
   type SupportedLanguage,
 } from "@/i18n";
+import { newsIndexPath } from "@/lib/news";
 import {
   ANCHORS,
   LANDING_LOGIN_URL,
@@ -29,7 +30,15 @@ export function LandingBrand() {
   );
 }
 
-export function LandingNav() {
+type LandingNavProps = {
+  /**
+   * Pages whose language comes from the URL (news) pass the IT / EN destinations:
+   * the switch then navigates instead of changing the i18n language in place.
+   */
+  languageLinks?: Record<SupportedLanguage, string>;
+};
+
+export function LandingNav({ languageLinks }: LandingNavProps = {}) {
   const { t, i18n } = useTranslation();
   const currentLanguage = normalizeLanguage(i18n.language);
   const isEnglish = currentLanguage === "en";
@@ -52,6 +61,7 @@ export function LandingNav() {
           <a href={ANCHORS.how}>{t("landing.nav.how")}</a>
           <a href={ANCHORS.useCases}>{t("landing.nav.useCases")}</a>
           <a href={ANCHORS.faq}>{t("landing.nav.faq")}</a>
+          <a href={newsIndexPath(currentLanguage)}>{t("landing.nav.news")}</a>
         </nav>
         <div className="nav-actions">
           <div
@@ -59,7 +69,18 @@ export function LandingNav() {
             role="group"
             aria-label={t("language.publicSwitcherAria")}
           >
-            {LANGUAGE_OPTIONS.map((option) => (
+            {LANGUAGE_OPTIONS.map((option) =>
+              languageLinks ? (
+                <a
+                  key={option.value}
+                  href={languageLinks[option.value]}
+                  hrefLang={option.value}
+                  data-lang={option.value}
+                  aria-current={currentLanguage === option.value ? "page" : undefined}
+                >
+                  {option.value === "it" ? "IT" : "EN"}
+                </a>
+              ) : (
               <button
                 key={option.value}
                 type="button"
@@ -69,7 +90,8 @@ export function LandingNav() {
               >
                 {option.value === "it" ? "IT" : "EN"}
               </button>
-            ))}
+              ),
+            )}
           </div>
           <a
             href={LANDING_LOGIN_URL}

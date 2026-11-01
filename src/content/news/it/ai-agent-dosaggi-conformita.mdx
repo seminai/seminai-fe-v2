@@ -1,0 +1,54 @@
+---
+title: "AI agent per dosaggi e conformità fitosanitaria"
+description: "Come funziona un agente conversazionale AI che calcola dosaggi di prodotti fitosanitari e verifica la conformità ai disciplinari agronomici applicabili."
+date: 2026-04-07
+author: "Redazione Seminai"
+tags: ["AI agent", "dosaggi", "conformità", "chat"]
+
+lang: it
+---
+
+Calcolare il dosaggio corretto di un prodotto fitosanitario richiede di incrociare più informazioni contemporaneamente: la superficie o il volume del trattamento, la coltura, il disciplinare applicabile per quella zona e coltura, il tempo di carenza, e (sempre più spesso) la storia dei trattamenti già effettuati sulla stessa parcella nella stagione. Farlo a mano, consultando etichette e disciplinari in PDF, è lento ed è il punto in cui si insidiano **gli errori più costosi**: un dosaggio fuori norma o un tempo di carenza non rispettato.
+
+Un agente AI conversazionale specializzato in agronomia può automatizzare gran parte di questo lavoro, restando comunque **uno strumento di supporto alla decisione** dell'agronomo, non un sostituto.
+
+## Cos'è un agente ReAct applicato all'agronomia
+
+L'architettura **ReAct** (Reason + Act) fa alternare al modello linguistico un ciclo di ragionamento e azione: il modello non risponde direttamente, ma decide quali strumenti (tool) invocare (ricerca prodotto, calcolo dosaggio, verifica disciplinare, lettura storico trattamenti), osserva il risultato di ciascuno e decide il passo successivo, fino ad avere abbastanza informazioni per una risposta operativa.
+
+Nel caso del `dosage_agent` di Seminai, questo significa che a una domanda come *"quanto Confidor devo usare su 2 hectari di vite per la cicalina, rispettando il disciplinare biologico Veneto?"* il sistema:
+
+1. Riconosce il prodotto e recupera principio attivo e dosaggio di etichetta.
+2. Verifica se il prodotto è ammesso nel disciplinare assegnato all'azienda per quella coltura e regione (interrogando la base vettorializzata dei disciplinari, le stesse [regole pubblicate nel marketplace](https://app.seminai.tech/hub/rules/) se l'azienda le ha adottate).
+3. Calcola il dosaggio per la superficie indicata, segnalando eventuali limiti massimi imposti dal disciplinare.
+4. Controlla lo storico dei trattamenti già registrati sulla parcella, per evitare superamenti del numero massimo di interventi stagionali quando previsto.
+5. Restituisce una risposta con il calcolo, la fonte normativa e un avviso se qualcosa richiede attenzione (tempo di carenza, prodotto non ammesso, dato mancante).
+
+## Perché la verifica di conformità non è un passaggio opzionale
+
+Un calcolo di dosaggio senza verifica di conformità è solo aritmetica: utile, ma incompleto. Il valore aggiunto di un agente agronomico è **collegare il calcolo al contesto normativo specifico dell'azienda**: due aziende sulla stessa coltura ma in regioni diverse, o con certificazioni diverse (biologico vs. produzione integrata), possono avere limiti diversi per lo stesso prodotto.
+
+Questo è anche il motivo per cui in Seminai i disciplinari (modulo **Rules**) sono assegnati esplicitamente ad aziende e colture, non genericamente disponibili: l'agente deve sapere *quale* disciplinare applicare per *quella* azienda, non applicare una regola generica che potrebbe non essere quella corretta.
+
+## I limiti di un agente AI in questo contesto
+
+È importante essere chiari sui limiti:
+
+- **Non sostituisce la responsabilità dell'agronomo.** Il calcolo e la verifica sono un supporto, la decisione finale e la responsabilità normativa restano di chi firma il piano di trattamento.
+- **È tanto affidabile quanto i dati che ha.** Se un disciplinare non è stato caricato o è una versione superata, l'agente non può segnalare una non conformità che non conosce: da qui l'importanza di mantenere aggiornati i disciplinari assegnati.
+- **Richiede una base di conoscenza di dominio**, non un modello linguistico generico: nomi commerciali, principi attivi, unità di misura agronomiche e struttura dei disciplinari italiani sono conoscenza specialistica che va integrata esplicitamente, non "sperata" dal modello.
+
+## Cosa guardare in un agente agronomico
+
+Se stai valutando uno strumento simile per il tuo studio o la tua azienda, alcune domande utili:
+
+1. **Il calcolo del dosaggio è collegato a un disciplinare reale, o è generico?** Un agente che non conosce le regole specifiche della tua zona/certificazione dà risposte incomplete.
+2. **Tiene traccia dello storico dei trattamenti?** Senza memoria della stagione, non può verificare superamenti del numero massimo di interventi.
+3. **Segnala la fonte della risposta?** Un dosaggio senza riferimento a quale disciplinare o etichetta lo ha generato è difficile da verificare e da difendere in un controllo.
+4. **È aggiornabile?** I disciplinari cambiano ogni campagna: un sistema statico invecchia rapidamente, uno collegato a un catalogo di regole vive aggiornabili resta utile nel tempo.
+
+## Dalla conversazione al registro trattamenti
+
+Il passo finale, spesso sottovalutato, è che il risultato di questa interazione non deve rimanere "nella chat": va **registrato in modo strutturato**, collegato alla parcella e alla data, così da alimentare automaticamente il registro dei trattamenti e la reportistica di conformità di fine stagione, chiudendo il cerchio tra decisione operativa e obbligo documentale.
+
+Se vuoi vedere come Seminai struttura i disciplinari che alimentano questo tipo di verifica, il [catalogo pubblico di regole](https://app.seminai.tech/hub/rules/) è un buon punto di partenza per capire il livello di dettaglio richiesto per rendere una regola davvero utilizzabile da un agente.

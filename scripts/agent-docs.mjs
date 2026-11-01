@@ -3,6 +3,8 @@
  *
  *   index.md, index.en.md        homepage as Markdown, from the landing i18n copy
  *   <legal-page>.md              legal pages as Markdown, from their prerendered HTML
+ *   news.md, en/news.md          news index (article list) per language
+ *   news/<slug>.md, en/news/<slug>.md   each article, from its prerendered HTML
  *   llms.txt                     llmstxt.org index: summary + links to every .md page
  *   llms-full.txt                all of the above in one file
  *   .well-known/agent-skills/index.json   sha256 of each SKILL.md recomputed
@@ -12,9 +14,10 @@
  * Generating on every build keeps the agent-facing files in sync with the site.
  */
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse as parseYaml } from "yaml";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
@@ -27,6 +30,30 @@ const landing = {
   it: JSON.parse(readFileSync(join(root, "src/i18n/locales/landing-it.json"), "utf-8")),
   en: JSON.parse(readFileSync(join(root, "src/i18n/locales/landing-en.json"), "utf-8")),
 };
+
+/** News articles, newest first. Same layout as src/lib/news.ts: src/content/news/<lang>/<slug>.mdx. */
+const NEWS = ["it", "en"]
+  .flatMap((lang) =>
+    readdirSync(join(root, "src/content/news", lang))
+      .filter((file) => file.endsWith(".mdx"))
+      .map((file) => {
+        const source = readFileSync(join(root, "src/content/news", lang, file), "utf-8");
+        const front = parseYaml(source.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? "") ?? {};
+        const slug = file.slice(0, -".mdx".length);
+        const base = lang === "en" ? "en/news" : "news";
+        return {
+          lang,
+          slug,
+          title: front.title,
+          description: front.description,
+          date: String(front.date),
+          htmlFile: `${base}/${slug}/index.html`,
+          mdFile: `${base}/${slug}.md`,
+          url: `${SITE}/${base}/${slug}/`,
+        };
+      }),
+  )
+  .sort((a, b) => b.date.localeCompare(a.date));
 
 const LEGAL_PAGES = [
   {
@@ -242,6 +269,32 @@ function legalMarkdown(page) {
   ].join("\n");
 }
 
+function newsArticleMarkdown(post) {
+  const html = readFileSync(join(distDir, post.htmlFile), "utf-8");
+  const article = html.match(/<article class="news-article[^"]*">([\s\S]*?)<\/article>/i);
+  if (!article) throw new Error(`agent-docs: no <article> in dist/${post.htmlFile}`);
+  const note = post.lang === "en" ? "Markdown version of" : "Versione Markdown di";
+  return [
+    htmlToMarkdown(article[1]).replace(/^# .*/m, (h1) => `${h1}\n\n> ${note} ${post.url}`),
+    "",
+  ].join("\n");
+}
+
+function newsIndexMarkdown(lang) {
+  const isIt = lang === "it";
+  const url = `${SITE}/${isIt ? "news" : "en/news"}/`;
+  return [
+    "# Seminai News",
+    "",
+    `> ${isIt ? "Versione Markdown di" : "Markdown version of"} ${url}`,
+    "",
+    ...NEWS.filter((post) => post.lang === lang).map(
+      (post) => `- [${post.title}](${SITE}/${post.mdFile}) (${post.date}): ${post.description}`,
+    ),
+    "",
+  ].join("\n");
+}
+
 function llmsTxt() {
   const it = landing.it;
   const summary =
@@ -257,6 +310,13 @@ function llmsTxt() {
     "",
     `- [Home](${SITE}/index.md): cosa fa Seminai, come funziona, casi d'uso, FAQ e come prenotare una demo`,
     `- [Home (English)](${SITE}/index.en.md): the same homepage content in English`,
+    "",
+    "## News",
+    "",
+    ...NEWS.filter((post) => post.lang === "it").map(
+      (post) => `- [${post.title}](${SITE}/${post.mdFile}): ${post.description}`,
+    ),
+    `- [News (English)](${SITE}/en/news.md): English articles`,
     "",
     "## Legale",
     "",
@@ -281,6 +341,9 @@ const pages = [
   { file: "index.md", body: homeMarkdown("it") },
   { file: "index.en.md", body: homeMarkdown("en") },
   ...LEGAL_PAGES.map((page) => ({ file: `${page.slug}.md`, body: legalMarkdown(page) })),
+  { file: "news.md", body: newsIndexMarkdown("it") },
+  { file: "en/news.md", body: newsIndexMarkdown("en") },
+  ...NEWS.map((post) => ({ file: post.mdFile, body: newsArticleMarkdown(post) })),
 ];
 
 for (const page of pages) {

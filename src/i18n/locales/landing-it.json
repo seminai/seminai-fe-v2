@@ -4,7 +4,8 @@
     "useCases": "Cosa puoi fare",
     "faq": "FAQ",
     "login": "Login",
-    "demo": "Prenota 20 minuti"
+    "demo": "Prenota 20 minuti",
+    "news": "News"
   },
   "hero": {
     "titleBefore": "Trasformiamo",
@@ -211,6 +212,12 @@
     ],
     "cta": "Raccontaci il tuo caso →"
   },
+  "news": {
+    "eyebrow": "News",
+    "title": "Dalle news",
+    "lead": "Quaderno di campagna, regole e dati agricoli spiegati in modo semplice.",
+    "all": "Tutte le news"
+  },
   "faq": {
     "title": "Domande frequenti.",
     "items": [
@@ -324,7 +331,8 @@
       "how": "Come funziona",
       "useCases": "Cosa puoi fare",
       "faq": "FAQ",
-      "aiInfo": "Informazioni per assistenti AI"
+      "aiInfo": "Informazioni per assistenti AI",
+      "news": "News"
     },
     "demo": "Prenota 20 minuti",
     "contact": "Scrivici",

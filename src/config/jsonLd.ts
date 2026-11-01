@@ -156,3 +156,49 @@ export function buildHomeGraph(faqItems: FaqItem[]) {
   };
 }
 
+export interface ArticleGraphInput {
+  url: string;
+  title: string;
+  description: string;
+  author: string;
+  date: string;
+  updated?: string;
+  image?: string;
+  lang: "it" | "en";
+  keyword?: string;
+  faqs: FaqItem[];
+  breadcrumb: Array<{ name: string; url: string }>;
+}
+
+/** @graph for a news article: Article (author "Redazione Seminai"), breadcrumb, FAQ. */
+export function buildArticleGraph(input: ArticleGraphInput) {
+  const graph: object[] = [
+    {
+      "@type": "Article",
+      "@id": `${input.url}#article`,
+      headline: input.title,
+      description: input.description,
+      url: input.url,
+      mainEntityOfPage: input.url,
+      inLanguage: input.lang === "en" ? "en-GB" : "it-IT",
+      datePublished: input.date,
+      dateModified: input.updated ?? input.date,
+      author: { "@type": "Organization", name: input.author, url: SITE_URL },
+      publisher: buildOrganization(),
+      ...(input.image ? { image: input.image } : {}),
+      ...(input.keyword ? { keywords: input.keyword } : {}),
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: input.breadcrumb.map((item, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: item.name,
+        item: item.url,
+      })),
+    },
+  ];
+  if (input.faqs.length > 0) graph.push(buildFaqPage(input.faqs, `${input.url}#faq`));
+  return { "@context": "https://schema.org", "@graph": graph };
+}
+

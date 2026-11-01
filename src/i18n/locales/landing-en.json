@@ -4,7 +4,8 @@
     "useCases": "What you can do",
     "faq": "FAQ",
     "login": "Login",
-    "demo": "Book 20 minutes"
+    "demo": "Book 20 minutes",
+    "news": "News"
   },
   "hero": {
     "titleBefore": "We turn",
@@ -211,6 +212,12 @@
     ],
     "cta": "Tell us about your case →"
   },
+  "news": {
+    "eyebrow": "News",
+    "title": "Latest news",
+    "lead": "Spray records, rules and farm data explained simply.",
+    "all": "All news"
+  },
   "faq": {
     "title": "Frequently asked questions.",
     "items": [
@@ -324,7 +331,8 @@
       "how": "How it works",
       "useCases": "What you can do",
       "faq": "FAQ",
-      "aiInfo": "Information for AI assistants"
+      "aiInfo": "Information for AI assistants",
+      "news": "News"
     },
     "demo": "Book 20 minutes",
     "contact": "Write to us",

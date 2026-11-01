@@ -17,6 +17,12 @@ export interface SeoProps {
   locale?: SeoLocale;
   /** Emit it + x-default hreflang alternates (homepage). */
   hreflang?: boolean;
+  /** Explicit hreflang alternates (news articles). */
+  alternates?: Array<{ hrefLang: string; href: string }>;
+  /** og:type, "article" for news posts. */
+  ogType?: "website" | "article";
+  /** Markdown twin URL; defaults to <canonical>.md. */
+  markdownHref?: string;
   /** Schema.org JSON-LD object (or array) injected as <script type="application/ld+json">. */
   jsonLd?: object | object[];
 }
@@ -39,6 +45,9 @@ export function Seo({
   noindex = false,
   locale = "it_IT",
   hreflang = false,
+  alternates = [],
+  ogType = "website",
+  markdownHref,
   jsonLd,
 }: SeoProps) {
   const robots = noindex
@@ -64,7 +73,11 @@ export function Seo({
       />
 
       {noindex ? null : (
-        <link rel="alternate" type="text/markdown" href={markdownUrl(canonical)} />
+        <link
+          rel="alternate"
+          type="text/markdown"
+          href={markdownHref ?? markdownUrl(canonical)}
+        />
       )}
       {hreflang ? (
         <link
@@ -82,8 +95,17 @@ export function Seo({
         <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/`} />
       ) : null}
 
+      {alternates.map((alternate) => (
+        <link
+          key={alternate.hrefLang}
+          rel="alternate"
+          hrefLang={alternate.hrefLang}
+          href={alternate.href}
+        />
+      ))}
+
       {/* Open Graph */}
-      <meta property="og:type" content="website" />
+      <meta property="og:type" content={ogType} />
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:locale" content={locale} />
       <meta property="og:url" content={canonical} />

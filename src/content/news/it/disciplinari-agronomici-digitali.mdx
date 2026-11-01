@@ -1,0 +1,54 @@
+---
+title: "Disciplinari agronomici digitali: guida completa"
+description: "Cosa sono i disciplinari di produzione integrata e biologica, perché digitalizzarli e come condividerli tra studi agronomici e consorzi con un marketplace di regole."
+date: 2026-02-03
+author: "Redazione Seminai"
+tags: ["disciplinari", "conformità", "consorzi", "produzione integrata"]
+
+lang: it
+---
+
+Un disciplinare agronomico (di produzione integrata, biologica o di filiera) definisce le **regole che un'azienda agricola deve rispettare** per una certificazione o per l'accesso a un marchio consortile: prodotti fitosanitari ammessi, dosaggi massimi, tempi di carenza, epoche di intervento. Sono documenti tecnici densi, spesso in PDF di decine di pagine, aggiornati ogni campagna dalle Regioni o dagli enti certificatori.
+
+Il problema pratico per uno studio agronomico che segue decine di aziende su disciplinari diversi è duplice: **tenerli aggiornati** e **verificarne il rispetto** trattamento per trattamento, senza dover consultare il PDF ogni volta.
+
+## Perché un PDF non basta più
+
+Un disciplinare in PDF è un buon documento di riferimento normativo, ma ha limiti operativi evidenti:
+
+- **Non è consultabile durante un trattamento**: un agronomo in campo non ha tempo di scorrere 40 pagine per verificare se un prodotto è ammesso per quella coltura.
+- **Non si aggiorna automaticamente**: ogni Regione pubblica revisioni annuali; senza un processo di monitoraggio, si rischia di applicare una versione superata.
+- **Non si collega ai dati aziendali**: sapere che un prodotto è ammesso non basta, serve sapere se il dosaggio applicato in una specifica fattura rispetta il limite del disciplinare per quella coltura e quella zona.
+
+## Cosa significa digitalizzare un disciplinare
+
+Digitalizzare un disciplinare non vuol dire solo scansionarlo: significa trasformarlo in una **struttura di dati interrogabile**: categoria (disciplinare, standard di certificazione, best practice), regione di applicazione, colture coperte, prodotti ammessi con relativi dosaggi e tempi di carenza, validità temporale.
+
+In Seminai questo avviene tramite il modulo **Rules**: ogni disciplinare caricato viene vettorializzato (per la ricerca semantica durante la chat agronomica) e strutturato con metadati (categoria, regione, validità, fonte) che permettono di:
+
+1. **Assegnarlo alle aziende giuste**, per coltura e zona, così che il chat agent agronomico sappia quale disciplinare applicare quando calcola un dosaggio o verifica una conformità.
+2. **Cercarlo semanticamente**, chiedendo in linguaggio naturale "questo prodotto è ammesso per il disciplinare biologico Veneto su vite?" invece di scorrere il PDF.
+3. **Condividerlo** con altri studi agronomici o aziende, se il disciplinare è di dominio pubblico (una circolare regionale, uno standard di certificazione), evitando che ogni studio lo digitalizzi da zero.
+
+## Il marketplace delle regole: perché condividere ha senso
+
+Molti disciplinari (quelli regionali di produzione integrata, gli standard GlobalGAP o biologico) sono identici per tutte le aziende della stessa zona e coltura. Se uno studio agronomico li digitalizza e li pubblica come regola pubblica nel marketplace, ogni altro studio che segue aziende nella stessa regione può **duplicarli invece di ripartire dal PDF** originale.
+
+Questo è il principio dietro il [catalogo di regole pubbliche di Seminai](https://app.seminai.tech/hub/rules/): un disciplinare pubblicato come pubblico da un utente diventa una pagina consultabile con categoria, regione, fonte originale e autore, che chiunque può vedere e (con un account gratuito) **duplicare come bozza privata** da personalizzare per la propria azienda.
+
+Non è un repository statico: ogni volta che un disciplinare viene assegnato a un'azienda o duplicato, il conteggio degli utilizzi cresce, dando visibilità a chi cura le regole più utili alla community.
+
+## Come strutturare un disciplinare per renderlo davvero utile
+
+Quando digitalizzi un disciplinare, alcuni accorgimenti fanno la differenza tra un documento "archiviato" e una regola operativa:
+
+- **Categorizzalo correttamente**: disciplinare regionale, standard di certificazione, best practice interna o metodologia di applicazione sono cose diverse e vanno filtrate diversamente da chi le cerca.
+- **Specifica la regione e la validità temporale**: un disciplinare Veneto 2025 non è lo stesso di uno Piemonte 2026: la data di validità evita di applicare versioni scadute.
+- **Collega la fonte originale**: un link alla circolare regionale o allo standard ufficiale dà autorevolezza e permette di verificare aggiornamenti futuri.
+- **Carica il PDF per la ricerca semantica**: la vettorializzazione permette al chat agent di rispondere a domande specifiche senza che l'utente debba sapere esattamente dove guardare nel documento.
+
+## Da disciplinare statico a regola viva
+
+L'obiettivo finale non è solo avere un PDF cercabile, ma un disciplinare che partecipa attivamente alle decisioni operative: quando un agronomo chiede al chat agent un dosaggio, il sistema verifica automaticamente se il prodotto e la quantità richiesta rispettano i disciplinari assegnati a quell'azienda, **segnalando eventuali non conformità** prima che diventino un problema in un controllo.
+
+Se gestisci disciplinari per più aziende o consorzi, vale la pena esplorare il [catalogo pubblico](https://app.seminai.tech/hub/rules/) per vedere cosa è già condiviso dalla community prima di digitalizzare da zero, e considerare di pubblicare i tuoi disciplinari più generali, per farti conoscere come referente nella tua zona.

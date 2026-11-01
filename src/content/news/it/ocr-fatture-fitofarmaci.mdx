@@ -1,0 +1,65 @@
+---
+title: "Come estrarre dati da fatture fitofarmaci con OCR"
+description: "Guida pratica per agronomi e aziende agricole su come automatizzare l'estrazione di prodotti, dosaggi e quantità dalle fatture dei fitofarmaci con OCR e AI."
+date: 2026-01-12
+author: "Redazione Seminai"
+tags: ["OCR", "fitofarmaci", "documenti", "agronomia"]
+
+lang: it
+---
+
+Ogni campagna agronomica produce decine, spesso centinaia, di fatture di acquisto fitofarmaci, fertilizzanti e agrofarmaci. Ognuna contiene righe prodotto con nome commerciale, principio attivo, quantità, lotto e prezzo: informazioni che servono per il registro dei trattamenti, il calcolo dei dosaggi e la verifica di conformità. Trascriverle a mano in un foglio Excel è lento, ripetitivo e soggetto a errori di trascrizione che possono **costare una non conformità in un controllo**.
+
+In questo articolo vediamo come funziona l'estrazione OCR di dati agronomici da fatture fitofarmaci, quali sono le difficoltà specifiche di questo tipo di documenti e come un sistema come Seminai le affronta.
+
+## Perché l'OCR generico non basta
+
+I motori OCR generici (quelli integrati in molti scanner o app di produttività) leggono bene testo semplice su layout puliti, ma faticano su:
+
+- **Tabelle fitosanitarie multi-colonna**, dove il nome prodotto, la confezione, il prezzo unitario e lo sconto sono su colonne strette e disallineate tra fornitori diversi.
+- **Nomi commerciali e principi attivi**, che non sono parole di dizionario e vengono facilmente confusi da un correttore linguistico generico (es. "Confidor" letto come "Confider").
+- **Numeri di registrazione e lotti**, sequenze alfanumeriche dove un solo carattere errato invalida il dato per la tracciabilità.
+- **Scansioni di media qualità** da fotocamera di smartphone, comuni quando la fattura arriva in formato cartaceo o come foto da campo.
+
+Un OCR di dominio agricolo deve quindi combinare riconoscimento del testo con una **base di conoscenza dei prodotti fitosanitari italiani**, per validare e correggere ciò che legge.
+
+## Come funziona la pipeline di estrazione
+
+La pipeline che usiamo in Seminai per l'estrazione di fatture fitofarmaci segue quattro passaggi:
+
+### 1. Ingestione
+
+Il documento (PDF, immagine o XML FatturaPA) viene caricato e normalizzato. I formati misti (fatture elettroniche con allegato PDF, scansioni multi-pagina) vengono gestiti automaticamente.
+
+### 2. OCR e parsing strutturato
+
+Un motore OCR ibrido, che combina riconoscimento del testo classico con modelli vision-language, legge il layout della fattura e identifica le righe prodotto, separando quantità, unità di misura, prezzo e sconti anche su tabelle non standard.
+
+### 3. Validazione di dominio
+
+Ogni prodotto riconosciuto viene incrociato con un catalogo di prodotti fitosanitari registrati in Italia: nome commerciale, principio attivo, numero di registrazione, azienda produttrice. Questo passaggio corregge ambiguità OCR (caratteri simili, abbreviazioni) e **segnala prodotti non riconosciuti per revisione manuale**.
+
+### 4. Integrazione operativa
+
+I dati validati diventano righe di magazzino, movimenti di inventario o input per il registro dei trattamenti, pronti per essere consultati nella chat agronomica o esportati per un controllo SOIVRE o di certificazione.
+
+## Cosa guardare quando si valuta un sistema OCR agronomico
+
+Se stai valutando uno strumento di estrazione documentale per la tua azienda o il tuo studio agronomico, queste sono le domande da porre:
+
+1. **Riconosce i prodotti fitosanitari italiani per nome commerciale?** Un OCR generico estrae solo testo grezzo; un sistema di dominio arricchisce il dato con principio attivo e numero di registrazione.
+2. **Gestisce scansioni di qualità variabile?** Foto da campo, fax, scansioni vecchie: il tasso di recall su documenti reali conta più del benchmark su PDF puliti.
+3. **Si integra con il resto del flusso operativo?** L'estrazione da sola vale poco se poi bisogna copiare i dati a mano altrove: cerca un output che alimenti direttamente magazzino, conformità e reportistica.
+4. **Quanto costa in tempo, non solo in euro?** Un servizio che richiede revisione manuale riga per riga può costare più tempo di quello che fa risparmiare.
+
+## Un caso concreto: dalla fattura al registro trattamenti in un giorno
+
+Un'azienda vitivinicola con tre appezzamenti e un fornitore principale di fitofarmaci riceve in media da 8 a 10 fatture al mese durante la stagione dei trattamenti. Digitalizzarle manualmente richiede dai 20 ai 30 minuti circa a fattura tra trascrizione e verifica: **da 3 a 4 ore al mese** solo per questo compito, senza contare gli errori di trascrizione che emergono in un controllo.
+
+Con un'estrazione OCR di dominio, lo stesso volume di fatture viene elaborato **in pochi minuti totali**, con un tasso di correzione manuale limitato ai casi realmente ambigui (prodotti nuovi non ancora a catalogo, scansioni molto degradate). Il tempo risparmiato si traduce in più ore dedicate all'agronomia vera e propria, non alla trascrizione.
+
+## Excel gratuito in 24 ore
+
+Se vuoi provare l'estrazione OCR sulle tue fatture fitofarmaci senza impegno, Seminai offre una **conversione gratuita in Excel entro 24 ore**: un buon modo per verificare la qualità dell'estrazione sui tuoi documenti reali prima di adottare un flusso completo.
+
+Per chi gestisce anche disciplinari di produzione integrata o biologica, può essere utile abbinare l'estrazione documentale al [catalogo di regole agronomiche pubbliche](https://app.seminai.tech/hub/rules/) di Seminai, per verificare la conformità dei trattamenti registrati rispetto al disciplinare applicabile.

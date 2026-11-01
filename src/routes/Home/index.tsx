@@ -8,6 +8,7 @@ import { LandingFooter } from "./LandingFooter";
 import { LandingHero } from "./LandingHero";
 import { LandingHowItWorks } from "./LandingHowItWorks";
 import { LandingNav } from "./LandingNav";
+import { LandingNews } from "./LandingNews";
 import { LandingProblem } from "./LandingProblem";
 import { LandingUseCases } from "./LandingUseCases";
 import { MobileCtaBar } from "./MobileCtaBar";
@@ -28,6 +29,7 @@ export default function Home() {
         <LandingProblem />
         <LandingHowItWorks />
         <LandingUseCases />
+        <LandingNews />
         <LandingFaq />
         <LandingBooking />
       </main>
