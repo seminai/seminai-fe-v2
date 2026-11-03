@@ -334,7 +334,15 @@
     },
     "demo": "Book 20 minutes",
     "contact": "Write to us",
-    "copyright": "Seminai © {{year}} · VAT IT02750410207"
+    "copyright": "Seminai © {{year}} · VAT IT02750410207",
+    "cookiePreferences": "Cookie preferences"
+  },
+  "cookieBanner": {
+    "label": "Cookie consent",
+    "text": "We use Google Analytics to understand how the site is used, only if you accept. Without consent we use only the necessary cookies.",
+    "more": "Cookie Policy",
+    "accept": "Accept",
+    "reject": "Necessary only"
   },
   "show": {
     "invoice": {

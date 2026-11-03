@@ -334,7 +334,15 @@
     },
     "demo": "Prenota 20 minuti",
     "contact": "Scrivici",
-    "copyright": "Seminai © {{year}} · P.IVA 02750410207"
+    "copyright": "Seminai © {{year}} · P.IVA 02750410207",
+    "cookiePreferences": "Preferenze cookie"
+  },
+  "cookieBanner": {
+    "label": "Consenso ai cookie",
+    "text": "Usiamo Google Analytics per capire come viene usato il sito, solo se accetti. Senza consenso usiamo solo i cookie necessari.",
+    "more": "Cookie Policy",
+    "accept": "Accetta",
+    "reject": "Solo necessari"
   },
   "show": {
     "invoice": {

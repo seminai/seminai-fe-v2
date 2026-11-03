@@ -1,7 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { normalizeLanguage } from "@/i18n";
+import { openCookiePreferences } from "@/lib/analytics";
 import { newsIndexPath } from "@/lib/news";
 import { ANCHORS, CONTACT_URL, LEGAL_ROUTES } from "./constants";
+import { CookieConsent } from "./CookieConsent";
 import { LandingBrand } from "./LandingNav";
 
 export function LandingFooter() {
@@ -64,6 +66,11 @@ export function LandingFooter() {
               <li>
                 <a href={LEGAL_ROUTES.terms}>{t("landing.footer.terms")}</a>
               </li>
+              <li>
+                <button type="button" className="foot-link" onClick={openCookiePreferences}>
+                  {t("landing.footer.cookiePreferences")}
+                </button>
+              </li>
             </ul>
           </div>
         </div>
@@ -74,6 +81,7 @@ export function LandingFooter() {
           </span>
         </div>
       </div>
+      <CookieConsent />
     </footer>
   );
 }
