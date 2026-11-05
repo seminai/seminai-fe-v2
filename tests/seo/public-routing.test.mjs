@@ -1,5 +1,6 @@
 import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
+import gateway from "../../cloudflare/agent-readiness-worker.js";
 import {
   routePublicRequest,
   wantsMarkdown,
@@ -56,6 +57,16 @@ test("markdown has an HTML canonical and separate Accept variant", async () => {
   );
   assert.match(response.headers.get("Vary"), /Accept/);
   assert.match(response.headers.get("Content-Type"), /text\/markdown/);
+});
+test("the gateway preserves homepage discovery alongside Markdown canonical headers", async () => {
+  globalThis.fetch = async () => new Response("# Seminai");
+  const response = await gateway.fetch(new Request("https://seminai.tech/en/", {
+    headers: { Accept: "text/markdown" },
+  }));
+  assert.match(response.headers.get("Link"), /seminai.tech\/en\/.*canonical/);
+  assert.match(response.headers.get("Link"), /rel="api-catalog"/);
+  assert.match(response.headers.get("Link"), /openapi.json/);
+  assert.equal(response.headers.get("x-markdown-tokens"), "3");
 });
 test("missing public paths produce a real noindex 404", async () => {
   globalThis.fetch = async () => new Response("<h1>Not found</h1>");

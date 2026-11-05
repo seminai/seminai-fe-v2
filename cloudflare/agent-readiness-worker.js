@@ -203,9 +203,18 @@ export default {
     const publicResponse = await routePublicRequest(request, env);
     if (publicResponse) {
       const responseHeaders = new Headers(publicResponse.headers);
+      let body = publicResponse.body;
+      if (["/", "/en/", "/index.md", "/index.en.md"].includes(url.pathname)) {
+        addHomeDiscoveryHeaders(responseHeaders);
+        if (responseHeaders.get("Content-Type")?.includes("text/markdown")) {
+          const markdown = await publicResponse.text();
+          responseHeaders.set("x-markdown-tokens", String(estimateMarkdownTokens(markdown)));
+          body = request.method === "HEAD" ? null : markdown;
+        }
+      }
       if (!["seminai.tech", "www.seminai.tech"].includes(url.hostname))
         responseHeaders.set("X-Robots-Tag", "noindex, nofollow");
-      return new Response(publicResponse.body, {
+      return new Response(body, {
         status: publicResponse.status,
         headers: responseHeaders,
       });
@@ -422,7 +431,8 @@ async function serveMarkdownHome(request) {
 }
 
 function addHomeDiscoveryHeaders(headers) {
-  headers.set("Link", HOME_LINK_HEADER);
+  if (!headers.get("Link")?.includes('rel="api-catalog"'))
+    headers.append("Link", HOME_LINK_HEADER);
   appendVary(headers, "Accept");
 }
 
