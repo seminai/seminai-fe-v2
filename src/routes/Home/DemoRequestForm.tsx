@@ -1,3 +1,5 @@
+import { useRef } from "react";
+import { trackDemoEvent } from "@/lib/analytics";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { emailApiService } from "@/api/email";
@@ -19,7 +21,8 @@ const TIME_SLOTS = Array.from({ length: 18 }, (_, slot) => {
   return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 });
 
-type Field = "name" | "email" | "phone" | "sector" | "interests" | "day" | "time";
+type Field =
+  "name" | "email" | "phone" | "sector" | "interests" | "day" | "time";
 type Status = "idle" | "submitting" | "success" | "error";
 
 interface Values {
@@ -64,11 +67,13 @@ function isWeekday(date: Date): boolean {
 }
 
 export function DemoRequestForm() {
+  const started = useRef(false);
   const { t, i18n } = useTranslation();
   const id = useId();
   const [values, setValues] = useState<Values>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [status, setStatus] = useState<Status>("idle");
+  const [ready, setReady] = useState(false);
   // Computed on the client only, so the prerendered HTML and hydration agree.
   const [minDay, setMinDay] = useState<string | undefined>(undefined);
 
@@ -76,10 +81,15 @@ export function DemoRequestForm() {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     setMinDay(toIsoDate(tomorrow));
+    setReady(true);
   }, []);
 
-  const sectors = t("landing.booking.sectors", { returnObjects: true }) as string[];
-  const interests = t("landing.booking.interests", { returnObjects: true }) as string[];
+  const sectors = t("landing.booking.sectors", {
+    returnObjects: true,
+  }) as string[];
+  const interests = t("landing.booking.interests", {
+    returnObjects: true,
+  }) as string[];
 
   const set = <K extends keyof Values>(key: K, value: Values[K]) =>
     setValues((current) => ({ ...current, [key]: value }));
@@ -94,17 +104,27 @@ export function DemoRequestForm() {
 
   function validate(): Partial<Record<Field, string>> {
     const found: Partial<Record<Field, string>> = {};
-    if (values.name.trim().length < 2) found.name = t("landing.booking.errors.name");
-    if (!EMAIL_REGEX.test(values.email.trim())) found.email = t("landing.booking.errors.email");
+    if (values.name.trim().length < 2)
+      found.name = t("landing.booking.errors.name");
+    if (!EMAIL_REGEX.test(values.email.trim()))
+      found.email = t("landing.booking.errors.email");
     // The phone is required only for visitors who want a call; if given anyway it must be valid.
     const phone = values.phone.trim();
-    if ((values.contactPreference === "phone" || phone) && !isValidPhone(phone)) {
+    if (
+      (values.contactPreference === "phone" || phone) &&
+      !isValidPhone(phone)
+    ) {
       found.phone = t("landing.booking.errors.phone");
     }
     if (!values.sector) found.sector = t("landing.booking.errors.sector");
-    if (values.interests.length === 0) found.interests = t("landing.booking.errors.interests");
+    if (values.interests.length === 0)
+      found.interests = t("landing.booking.errors.interests");
     const day = parseIsoDate(values.day);
-    if (!day || !isWeekday(day) || (minDay !== undefined && values.day < minDay)) {
+    if (
+      !day ||
+      !isWeekday(day) ||
+      (minDay !== undefined && values.day < minDay)
+    ) {
       found.day = t("landing.booking.errors.day");
     }
     if (!values.time) found.time = t("landing.booking.errors.time");
@@ -140,13 +160,17 @@ export function DemoRequestForm() {
 
     setStatus("submitting");
     try {
-      await emailApiService.sendContactEmail({
+      const result = await emailApiService.sendContactEmail({
         name: values.name.trim(),
         email: values.email.trim(),
         body: lines.join("\n"),
       });
+      if (result.status !== "success")
+        throw new Error("Contact request not accepted");
+      trackDemoEvent("demo_request_success");
       setStatus("success");
     } catch {
+      trackDemoEvent("demo_request_error");
       setStatus("error");
     }
   }
@@ -154,7 +178,9 @@ export function DemoRequestForm() {
   if (status === "success") {
     return (
       <div className="booking-form booking-success" role="status">
-        <p className="booking-success-title">{t("landing.booking.successTitle")}</p>
+        <p className="booking-success-title">
+          {t("landing.booking.successTitle")}
+        </p>
         <p>
           {values.contactPreference === "phone"
             ? t("landing.booking.successPhone", { phone: values.phone.trim() })
@@ -171,178 +197,206 @@ export function DemoRequestForm() {
         {errors[field]}
       </span>
     ) : null;
-  const describedBy = (field: Field) => (errors[field] ? fieldId(`${field}-error`) : undefined);
+  const describedBy = (field: Field) =>
+    errors[field] ? fieldId(`${field}-error`) : undefined;
 
   return (
-    <form className="booking-form" onSubmit={handleSubmit} noValidate>
-      <div className="field-row">
-        <label className="field" htmlFor={fieldId("name")}>
-          <span>{t("landing.booking.fields.name")} *</span>
-          <input
-            id={fieldId("name")}
-            autoComplete="name"
-            value={values.name}
-            placeholder={t("landing.booking.placeholders.name")}
-            aria-invalid={Boolean(errors.name)}
-            aria-describedby={describedBy("name")}
-            onChange={(event) => set("name", event.target.value)}
-          />
-          {errorFor("name")}
-        </label>
-        <label className="field" htmlFor={fieldId("email")}>
-          <span>{t("landing.booking.fields.email")} *</span>
-          <input
-            id={fieldId("email")}
-            type="email"
-            autoComplete="email"
-            value={values.email}
-            placeholder={t("landing.booking.placeholders.email")}
-            aria-invalid={Boolean(errors.email)}
-            aria-describedby={describedBy("email")}
-            onChange={(event) => set("email", event.target.value)}
-          />
-          {errorFor("email")}
-        </label>
-      </div>
+    <form
+      onFocus={() => {
+        if (!started.current) {
+          started.current = true;
+          trackDemoEvent("demo_form_start");
+        }
+      }}
+      className="booking-form"
+      onSubmit={handleSubmit}
+      noValidate
+    >
+      <fieldset
+        className="booking-fields"
+        disabled={!ready || status === "submitting"}
+      >
+        <div className="field-row">
+          <label className="field" htmlFor={fieldId("name")}>
+            <span>{t("landing.booking.fields.name")} *</span>
+            <input
+              id={fieldId("name")}
+              autoComplete="name"
+              value={values.name}
+              placeholder={t("landing.booking.placeholders.name")}
+              aria-invalid={Boolean(errors.name)}
+              aria-describedby={describedBy("name")}
+              onChange={(event) => set("name", event.target.value)}
+            />
+            {errorFor("name")}
+          </label>
+          <label className="field" htmlFor={fieldId("email")}>
+            <span>{t("landing.booking.fields.email")} *</span>
+            <input
+              id={fieldId("email")}
+              type="email"
+              autoComplete="email"
+              value={values.email}
+              placeholder={t("landing.booking.placeholders.email")}
+              aria-invalid={Boolean(errors.email)}
+              aria-describedby={describedBy("email")}
+              onChange={(event) => set("email", event.target.value)}
+            />
+            {errorFor("email")}
+          </label>
+        </div>
 
-      <div className="field-row">
-        <label className="field" htmlFor={fieldId("phone")}>
-          <span>
-            {t("landing.booking.fields.phone")}
-            {values.contactPreference === "phone" ? " *" : ""}
-          </span>
-          <input
-            id={fieldId("phone")}
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            value={values.phone}
-            placeholder={t("landing.booking.placeholders.phone")}
-            aria-invalid={Boolean(errors.phone)}
-            aria-describedby={describedBy("phone")}
-            onChange={(event) => set("phone", event.target.value)}
-          />
-          {errorFor("phone")}
+        <div className="field-row">
+          <label className="field" htmlFor={fieldId("phone")}>
+            <span>
+              {t("landing.booking.fields.phone")}
+              {values.contactPreference === "phone" ? " *" : ""}
+            </span>
+            <input
+              id={fieldId("phone")}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={values.phone}
+              placeholder={t("landing.booking.placeholders.phone")}
+              aria-invalid={Boolean(errors.phone)}
+              aria-describedby={describedBy("phone")}
+              onChange={(event) => set("phone", event.target.value)}
+            />
+            {errorFor("phone")}
+          </label>
+          <fieldset className="field">
+            <legend>{t("landing.booking.fields.contactPref")} *</legend>
+            <div className="interest-chips">
+              {CONTACT_PREFERENCES.map((option) => {
+                const checked = values.contactPreference === option;
+                return (
+                  <label
+                    key={option}
+                    className={`chip chip-toggle${checked ? " is-on" : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      name={fieldId("contact-preference")}
+                      value={option}
+                      checked={checked}
+                      onChange={() => set("contactPreference", option)}
+                    />
+                    {t(`landing.booking.contactOptions.${option}`)}
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        </div>
+
+        <label className="field" htmlFor={fieldId("sector")}>
+          <span>{t("landing.booking.fields.sector")} *</span>
+          <select
+            id={fieldId("sector")}
+            value={values.sector}
+            aria-invalid={Boolean(errors.sector)}
+            aria-describedby={describedBy("sector")}
+            onChange={(event) => set("sector", event.target.value)}
+          >
+            <option value="">{t("landing.booking.placeholders.sector")}</option>
+            {sectors.map((sector) => (
+              <option key={sector} value={sector}>
+                {sector}
+              </option>
+            ))}
+          </select>
+          {errorFor("sector")}
         </label>
-        <fieldset className="field">
-          <legend>{t("landing.booking.fields.contactPref")} *</legend>
+
+        <fieldset className="field" aria-describedby={describedBy("interests")}>
+          <legend>{t("landing.booking.fields.interests")} *</legend>
           <div className="interest-chips">
-            {CONTACT_PREFERENCES.map((option) => {
-              const checked = values.contactPreference === option;
+            {interests.map((interest) => {
+              const checked = values.interests.includes(interest);
               return (
-                <label key={option} className={`chip chip-toggle${checked ? " is-on" : ""}`}>
+                <label
+                  key={interest}
+                  className={`chip chip-toggle${checked ? " is-on" : ""}`}
+                >
                   <input
-                    type="radio"
-                    name={fieldId("contact-preference")}
-                    value={option}
+                    type="checkbox"
                     checked={checked}
-                    onChange={() => set("contactPreference", option)}
+                    onChange={() => toggleInterest(interest)}
                   />
-                  {t(`landing.booking.contactOptions.${option}`)}
+                  {interest}
                 </label>
               );
             })}
           </div>
+          {errorFor("interests")}
         </fieldset>
-      </div>
 
-      <label className="field" htmlFor={fieldId("sector")}>
-        <span>{t("landing.booking.fields.sector")} *</span>
-        <select
-          id={fieldId("sector")}
-          value={values.sector}
-          aria-invalid={Boolean(errors.sector)}
-          aria-describedby={describedBy("sector")}
-          onChange={(event) => set("sector", event.target.value)}
-        >
-          <option value="">{t("landing.booking.placeholders.sector")}</option>
-          {sectors.map((sector) => (
-            <option key={sector} value={sector}>
-              {sector}
-            </option>
-          ))}
-        </select>
-        {errorFor("sector")}
-      </label>
-
-      <fieldset className="field" aria-describedby={describedBy("interests")}>
-        <legend>{t("landing.booking.fields.interests")} *</legend>
-        <div className="interest-chips">
-          {interests.map((interest) => {
-            const checked = values.interests.includes(interest);
-            return (
-              <label key={interest} className={`chip chip-toggle${checked ? " is-on" : ""}`}>
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() => toggleInterest(interest)}
-                />
-                {interest}
-              </label>
-            );
-          })}
+        <div className="field-row">
+          <label className="field" htmlFor={fieldId("day")}>
+            <span>{t("landing.booking.fields.day")} *</span>
+            <input
+              id={fieldId("day")}
+              type="date"
+              min={minDay}
+              value={values.day}
+              aria-invalid={Boolean(errors.day)}
+              aria-describedby={describedBy("day")}
+              onChange={(event) => set("day", event.target.value)}
+            />
+            {errorFor("day")}
+          </label>
+          <label className="field" htmlFor={fieldId("time")}>
+            <span>{t("landing.booking.fields.time")} *</span>
+            <select
+              id={fieldId("time")}
+              value={values.time}
+              aria-invalid={Boolean(errors.time)}
+              aria-describedby={describedBy("time")}
+              onChange={(event) => set("time", event.target.value)}
+            >
+              <option value="">{t("landing.booking.placeholders.time")}</option>
+              {TIME_SLOTS.map((slot) => (
+                <option key={slot} value={slot}>
+                  {slot}
+                </option>
+              ))}
+            </select>
+            {errorFor("time")}
+          </label>
         </div>
-        {errorFor("interests")}
-      </fieldset>
 
-      <div className="field-row">
-        <label className="field" htmlFor={fieldId("day")}>
-          <span>{t("landing.booking.fields.day")} *</span>
-          <input
-            id={fieldId("day")}
-            type="date"
-            min={minDay}
-            value={values.day}
-            aria-invalid={Boolean(errors.day)}
-            aria-describedby={describedBy("day")}
-            onChange={(event) => set("day", event.target.value)}
+        <label className="field" htmlFor={fieldId("notes")}>
+          <span>{t("landing.booking.fields.notes")}</span>
+          <textarea
+            id={fieldId("notes")}
+            rows={2}
+            maxLength={1500}
+            value={values.notes}
+            placeholder={t("landing.booking.placeholders.notes")}
+            onChange={(event) => set("notes", event.target.value)}
           />
-          {errorFor("day")}
         </label>
-        <label className="field" htmlFor={fieldId("time")}>
-          <span>{t("landing.booking.fields.time")} *</span>
-          <select
-            id={fieldId("time")}
-            value={values.time}
-            aria-invalid={Boolean(errors.time)}
-            aria-describedby={describedBy("time")}
-            onChange={(event) => set("time", event.target.value)}
-          >
-            <option value="">{t("landing.booking.placeholders.time")}</option>
-            {TIME_SLOTS.map((slot) => (
-              <option key={slot} value={slot}>
-                {slot}
-              </option>
-            ))}
-          </select>
-          {errorFor("time")}
-        </label>
-      </div>
 
-      <label className="field" htmlFor={fieldId("notes")}>
-        <span>{t("landing.booking.fields.notes")}</span>
-        <textarea
-          id={fieldId("notes")}
-          rows={2}
-          maxLength={1500}
-          value={values.notes}
-          placeholder={t("landing.booking.placeholders.notes")}
-          onChange={(event) => set("notes", event.target.value)}
-        />
-      </label>
+        {status === "error" ? (
+          <p className="form-error" role="alert">
+            <RichHtml html={t("landing.booking.error")} />
+          </p>
+        ) : null}
 
-      {status === "error" ? (
-        <p className="form-error" role="alert">
-          <RichHtml html={t("landing.booking.error")} />
+        <button
+          type="submit"
+          className="btn-primary booking-submit"
+          disabled={status === "submitting"}
+        >
+          {status === "submitting"
+            ? t("landing.booking.submitting")
+            : t("landing.booking.submit")}
+        </button>
+        <p className="booking-privacy">
+          <RichHtml html={t("landing.booking.privacy")} />
         </p>
-      ) : null}
-
-      <button type="submit" className="btn-primary booking-submit" disabled={status === "submitting"}>
-        {status === "submitting" ? t("landing.booking.submitting") : t("landing.booking.submit")}
-      </button>
-      <p className="booking-privacy">
-        <RichHtml html={t("landing.booking.privacy")} />
-      </p>
+      </fieldset>
     </form>
   );
 }

@@ -4,54 +4,31 @@
     "useCases": "Cosa puoi fare",
     "faq": "FAQ",
     "login": "Login",
-    "demo": "Prenota 20 minuti",
+    "demo": "Richiedi una demo",
     "news": "News"
   },
   "hero": {
     "titleBefore": "Trasformiamo",
     "titleAfter": "in dati pronti all'uso.",
-    "body": "Seminai legge i documenti che la tua azienda agricola riceve già e li rende utilizzabili: in chat, in Excel, nel quaderno di campagna. Senza cambiare il modo in cui lavori.",
+    "body": "Seminai aiuta a trasformare i documenti che la tua azienda agricola riceve già in dati utilizzabili: in chat, in Excel e nel quaderno di campagna da rivedere.",
     "ctaPrimary": "Prenota 20 minuti",
     "ctaSecondary": "Guarda come funziona",
     "stageLabel": "Esempio: un documento entra, i dati escono",
     "extracted": "Dati estratti",
     "from": "da",
-    "outputs": [
-      "Chat",
-      "Excel",
-      "PDF",
-      "Quaderno di campagna"
-    ],
+    "outputs": ["Chat", "Excel", "PDF", "Quaderno di campagna"],
     "docs": [
       {
         "word": "le fatture",
         "source": "Fattura 2026/0611",
         "alt": "Fattura di Agri Supply con un'annotazione a mano: Field 11",
         "fields": [
-          [
-            "Fornitore",
-            "Agri Supply"
-          ],
-          [
-            "Tervalon 250 EC",
-            "15 L"
-          ],
-          [
-            "Seme di soia",
-            "20 sacchi"
-          ],
-          [
-            "Gasolio",
-            "400 L"
-          ],
-          [
-            "Appezzamento",
-            "Campo 11"
-          ],
-          [
-            "Totale",
-            "€ 2.220,50"
-          ]
+          ["Fornitore", "Agri Supply"],
+          ["Tervalon 250 EC", "15 L"],
+          ["Seme di soia", "20 sacchi"],
+          ["Gasolio", "400 L"],
+          ["Appezzamento", "Campo 11"],
+          ["Totale", "€ 2.220,50"]
         ]
       },
       {
@@ -59,26 +36,11 @@
         "source": "DDT D-2026-118",
         "alt": "Documento di trasporto scritto a mano: soia, 38,2 tonnellate",
         "fields": [
-          [
-            "Mittente",
-            "Frank's farm"
-          ],
-          [
-            "Destinatario",
-            "North Feed Mill"
-          ],
-          [
-            "Data",
-            "02/10/2026"
-          ],
-          [
-            "Merce",
-            "Soia"
-          ],
-          [
-            "Peso netto",
-            "38,2 t"
-          ]
+          ["Mittente", "Frank's farm"],
+          ["Destinatario", "North Feed Mill"],
+          ["Data", "02/10/2026"],
+          ["Merce", "Soia"],
+          ["Peso netto", "38,2 t"]
         ]
       },
       {
@@ -86,26 +48,11 @@
         "source": "Quaderno di campagna",
         "alt": "Pagina di quaderno scritta a mano sul Campo 11",
         "fields": [
-          [
-            "Appezzamento",
-            "Campo 11"
-          ],
-          [
-            "Superficie",
-            "12,4 ha"
-          ],
-          [
-            "Trattamento",
-            "11/06"
-          ],
-          [
-            "Raccolta",
-            "Fine settembre"
-          ],
-          [
-            "Referente",
-            "Luca"
-          ]
+          ["Appezzamento", "Campo 11"],
+          ["Superficie", "12,4 ha"],
+          ["Trattamento", "11/06"],
+          ["Raccolta", "Fine settembre"],
+          ["Referente", "Luca"]
         ]
       },
       {
@@ -113,22 +60,10 @@
         "source": "Nota di campo #11",
         "alt": "Nota di campo: raccolta della soia lunedì, chiamare Luca",
         "fields": [
-          [
-            "Attività",
-            "Raccolta soia"
-          ],
-          [
-            "Appezzamento",
-            "Campo 11"
-          ],
-          [
-            "Quando",
-            "Lunedì"
-          ],
-          [
-            "Da fare",
-            "Chiamare Luca"
-          ]
+          ["Attività", "Raccolta soia"],
+          ["Appezzamento", "Campo 11"],
+          ["Quando", "Lunedì"],
+          ["Da fare", "Chiamare Luca"]
         ]
       }
     ]
@@ -237,17 +172,17 @@
       },
       {
         "question": "Si collega al gestionale che uso già?",
-        "answer": "Sì, tramite API. In alternativa esporti i dati in Excel o PDF e li porti dove ti servono."
+        "answer": "API e formati di export possono supportare l’integrazione. La compatibilità con il tuo software va verificata con il team: non è automatica."
       },
       {
         "question": "I miei dati sono al sicuro?",
-        "answer": "Sono cifrati in transito e a riposo, su server europei. Non vengono condivisi con terze parti né usati per addestrare modelli AI. Puoi esportarli o cancellarli quando vuoi."
+        "answer": "Modalità di trattamento, fornitori e diritti sono descritti nell’informativa privacy. Prima di usare documenti reali, concordiamo con il team accessi, trattamento e requisiti di conservazione."
       }
     ]
   },
   "booking": {
     "title": "Parliamo della tua azienda.",
-    "lead": "Raccontaci cosa vi fa perdere tempo: in 20 minuti vediamo cosa può fare Seminai sui tuoi documenti.",
+    "lead": "Raccontaci il tuo flusso e indica una preferenza. Il team ti contatterà per concordare e confermare l’appuntamento.",
     "fields": {
       "name": "Nome e cognome",
       "email": "Email",
@@ -285,7 +220,7 @@
       "Magazzino",
       "Altro"
     ],
-    "submit": "Prenota la demo",
+    "submit": "Richiedi una demo",
     "submitting": "Invio in corso…",
     "privacy": "Inviando la richiesta accetti la <a href=\"/privacy-policy\">privacy policy</a>.",
     "successTitle": "Richiesta inviata.",
@@ -352,22 +287,11 @@
       "title": "Tenuta La Sorgente",
       "tab": "Registro · Tenuta La Sorgente",
       "navActive": "Registro",
-      "nav": [
-        "Home",
-        "Archivio",
-        "Registro",
-        "Chat"
-      ],
+      "nav": ["Home", "Archivio", "Registro", "Chat"],
       "upload": "Carica fattura",
       "empty": "Il registro è vuoto. Il cursore sta per caricare la fattura.",
       "note": "4 prodotti nel registro, pronti per il quaderno.",
-      "headers": [
-        "Data",
-        "Prodotto",
-        "Appezzamento",
-        "Dose",
-        "Stato"
-      ],
+      "headers": ["Data", "Prodotto", "Appezzamento", "Dose", "Stato"],
       "rows": [
         {
           "date": "12 Mar",

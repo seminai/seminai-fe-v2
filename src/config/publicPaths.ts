@@ -1,0 +1,9 @@
+export type PublicLanguage = "it" | "en";
+export const homePath = (lang: PublicLanguage) =>
+  lang === "en" ? "/en/" : "/";
+export const demoPath = (lang: PublicLanguage) =>
+  lang === "en" ? "/en/request-a-demo/" : "/richiedi-demo/";
+export const resourcesPath = (lang: PublicLanguage) =>
+  lang === "en" ? "/en/resources/" : "/risorse/";
+export const rulesPath = (lang: PublicLanguage) =>
+  lang === "en" ? "/en/rules/" : "/regole/";

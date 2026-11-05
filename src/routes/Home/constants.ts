@@ -1,3 +1,4 @@
+import i18n from "i18next";
 import { APP_LOGO_SRCSET, APP_LOGO_URL } from "@/config/brand";
 
 export const LANDING_LOGIN_URL = "https://app.seminai.tech/login";
@@ -10,7 +11,11 @@ export const ANCHORS = {
   how: "/#come-funziona",
   useCases: "/#cosa-puoi-fare",
   faq: "/#faq",
-  booking: "/#prenota",
+  get booking() {
+    return i18n.language.startsWith("en")
+      ? "/en/request-a-demo/"
+      : "/richiedi-demo/";
+  },
 } as const;
 
 export const LEGAL_ROUTES = {

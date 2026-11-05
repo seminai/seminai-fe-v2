@@ -1,0 +1,52 @@
+---
+import {env} from 'cloudflare:workers';
+import CatalogPage from '../components/CatalogPage.astro';
+import {getRule, listRules, listCategories, PublicApiError, type PublicRule, type RulePage} from '../lib/api';
+import {rulesPath, categoryLabels, absolute, type Language} from '../lib/paths';
+const originalPath=Astro.url.pathname;
+const markdown=originalPath.endsWith('.md') || (Astro.request.headers.get('accept')??'').split(',').some(item=>{ const [type,...params]=item.trim().split(';'); const q=params.map(value=>value.trim()).find(value=>value.startsWith('q=')); return type==='text/markdown' && (!q || Number(q.slice(2))>0); });
+const path=originalPath.endsWith('.md')?`${originalPath.slice(0,-3)}/`:originalPath;
+const lang: Language=path.startsWith('/en/')?'en':'it';
+const base=rulesPath(lang);
+let status=200;
+let rule: PublicRule|undefined;
+let listing: RulePage|undefined;
+let category: string|undefined;
+let categories: Array<{category:string;count:number}>=[];
+const suffix=path.startsWith(base)?path.slice(base.length).replace(/\/$/,''):null;
+try {
+ if(suffix===null) throw new PublicApiError(404);
+ const categoryPrefix=lang==='en'?'category/':'categoria/';
+ if(suffix.startsWith(categoryPrefix)) {
+  category=suffix.slice(categoryPrefix.length).toUpperCase();
+  if(!Object.hasOwn(categoryLabels,category)) throw new PublicApiError(404);
+ } else if(suffix) {
+  if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(suffix)) throw new PublicApiError(404);
+  rule=await getRule(env.HUB_API_BASE_URL,suffix);
+ }
+ if(!rule) {
+  const query=new URLSearchParams({limit:'50',page:'1'});
+  for(const key of ['page','search','region']) { const value=Astro.url.searchParams.get(key); if(value) query.set(key,value); }
+  if(!/^\d+$/.test(query.get('page')??'') || Number(query.get('page'))<1) throw new PublicApiError(404);
+  if(category) query.set('category',category);
+  [listing,categories]=await Promise.all([listRules(env.HUB_API_BASE_URL,query),listCategories(env.HUB_API_BASE_URL)]);
+  if(listing.page>1 && listing.items.length===0) throw new PublicApiError(404);
+ }
+} catch(error) {
+ status=error instanceof PublicApiError ? error.status:503;
+ if(status===503) console.error(JSON.stringify({event:'public_catalog_upstream_error',status:503}));
+}
+Astro.response.status=status;
+Astro.response.headers.set('Cache-Control',status===200?'public, max-age=0, s-maxage=60, must-revalidate':'no-store');
+Astro.response.headers.set('Vary','Accept');
+if(status!==200) Astro.response.headers.set('X-Robots-Tag','noindex');
+if(status===503) Astro.response.headers.set('Retry-After','60');
+const canonical=absolute(path)+(listing && listing.page>1?`?page=${listing.page}`:'');
+Astro.response.headers.set('Link',`<${canonical}>; rel="canonical"`);
+if(markdown) {
+ const title=rule?.name??(lang==='en'?'Public agronomic rules':'Regole agronomiche pubbliche');
+ const body=status===200?[`# ${title}`,`Original content / Contenuto originale: language not specified by the publisher API / lingua non specificata dall’API`,rule?.description??'',...(listing?.items.map(item=>`- [${item.name}](${absolute(`${base}${item.slug}/`)}): ${item.description??''}`)??[]),...(rule?.sourceUrl?[`Source / Fonte: ${rule.sourceUrl}`]:[])].join('\n\n'):(status===404?'Not found':'Service temporarily unavailable');
+ return new Response(body,{status,headers:{...Object.fromEntries(Astro.response.headers),'Content-Type':'text/markdown; charset=utf-8'}});
+}
+---
+<CatalogPage lang={lang} path={path} rule={rule} listing={listing} category={category} categories={categories} status={status}/>

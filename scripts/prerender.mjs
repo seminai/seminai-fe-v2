@@ -19,12 +19,6 @@ const ssrEntry = pathToFileURL(join(ssrDir, "entry-server.js")).href;
 // url -> output path (relative to dist/). nginx `try_files $uri $uri/ /index.html`
 // serves `<route>/index.html` for `/<route>`.
 // News routes (index + one page per article) come from the SSR bundle, see newsRoutes().
-const ROUTES = [
-  { url: "/", out: "index.html", lng: "it" },
-  { url: "/privacy-policy", out: "privacy-policy/index.html", lng: "it" },
-  { url: "/cookie-policy", out: "cookie-policy/index.html", lng: "it" },
-  { url: "/terms-of-service", out: "terms-of-service/index.html", lng: "it" },
-];
 
 const SITE = "https://seminai.tech";
 
@@ -42,8 +36,11 @@ if (!template.includes(ROOT_DIV)) {
   throw new Error(`prerender: '${ROOT_DIV}' not found in dist/index.html`);
 }
 
-const { render, newsRoutes, newsSitemap } = await import(ssrEntry);
+const { render, newsRoutes, newsSitemap, staticRoutes } = await import(
+  ssrEntry
+);
 
+const ROUTES = staticRoutes();
 for (const route of [...ROUTES, ...newsRoutes()]) {
   const { html, head } = await render(route.url, route.lng);
   const body = html.replace(RESOURCE_HINT_LINK, "");
@@ -58,27 +55,41 @@ for (const route of [...ROUTES, ...newsRoutes()]) {
   console.log(`✓ prerendered ${route.url} -> dist/${route.out}`);
 }
 
-// Append the news pages, with hreflang alternates, to the static sitemap copied from public/.
-const sitemapPath = join(distDir, "sitemap.xml");
-const newsUrls = newsSitemap()
-  .map(({ path, lastmod, alternates }) =>
-    [
-      "  <url>",
-      `    <loc>${SITE}${path}</loc>`,
-      `    <lastmod>${lastmod}</lastmod>`,
-      ...alternates.map(
-        (alt) =>
-          `    <xhtml:link rel="alternate" hreflang="${alt.hrefLang}" href="${SITE}${alt.path}" />`,
-      ),
-      "  </url>",
-    ].join("\n"),
+// One sitemap index joins stable pages with the request-rendered public catalogue.
+const staticEntries = ROUTES.map(({ url, lng }) => ({
+  path: url,
+  alternates: [],
+  lang: lng,
+}));
+const sitemapEntries = [...staticEntries, ...newsSitemap()];
+const urls = sitemapEntries
+  .map(
+    ({ path, lastmod, alternates }) =>
+      `<url><loc>${SITE}${path}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}${alternates.map((alt) => `<xhtml:link rel="alternate" hreflang="${alt.hrefLang}" href="${SITE}${alt.path}" />`).join("")}</url>`,
   )
   .join("\n");
-const sitemap = readFileSync(sitemapPath, "utf-8").replace(/\r\n/g, "\n");
-if (!sitemap.includes("</urlset>")) throw new Error("prerender: </urlset> not found in sitemap.xml");
-writeFileSync(sitemapPath, sitemap.replace("</urlset>", `${newsUrls}\n</urlset>`), "utf-8");
-console.log(`✓ sitemap: ${newsSitemap().length} news URLs added`);
-
+writeFileSync(
+  join(distDir, "sitemap-pages.xml"),
+  `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">${urls}</urlset>`,
+);
+writeFileSync(
+  join(distDir, "sitemap.xml"),
+  `<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>${SITE}/sitemap-pages.xml</loc></sitemap><sitemap><loc>${SITE}/sitemap-rules.xml</loc></sitemap></sitemapindex>`,
+);
+const notFound = await render("/404/", "it");
+writeFileSync(
+  join(distDir, "404.html"),
+  template
+    .replace(
+      ROOT_DIV,
+      `<div id="root">${notFound.html.replace(RESOURCE_HINT_LINK, "")}</div>`,
+    )
+    .replace("</head>", `${notFound.head}</head>`),
+);
+writeFileSync(
+  join(distDir, "public-routes.json"),
+  JSON.stringify(sitemapEntries.map((entry) => entry.path)),
+);
 // The SSR bundle is a build artifact only; remove it from the shipped image.
 rmSync(ssrDir, { recursive: true, force: true });
 console.log("✓ prerender complete");

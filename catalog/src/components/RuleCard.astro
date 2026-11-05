@@ -1,0 +1,12 @@
+---
+import type {PublicRule} from '../lib/api';
+import {rulesPath, label, type Language} from '../lib/paths';
+interface Props {rule: PublicRule; lang: Language}
+const {rule, lang} = Astro.props;
+---
+<article class="rule-card">
+ <p class="kicker">{label(rule.category,lang)} {rule.region ? `· ${rule.region}` : ''}</p>
+ <h2><a href={`${rulesPath(lang)}${rule.slug}/`} lang="">{rule.name}</a></h2>
+ {rule.description && <p lang="">{rule.description}</p>}
+ <p class="meta">{lang === 'en' ? 'Original publisher content · language not specified' : 'Contenuto originale del pubblicatore · lingua non specificata'}</p>
+</article>

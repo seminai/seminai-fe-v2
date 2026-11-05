@@ -55,7 +55,7 @@ export const SEO: Record<
   privacy: {
     title: "Privacy Policy | Seminai",
     description:
-      "Informativa privacy di Seminai: come trattiamo i dati personali in conformità al GDPR (Reg. UE 2016/679). Server europei, dati cifrati, nessun uso per addestrare modelli AI.",
+      "Informativa privacy di Seminai: modalità di trattamento dei dati personali, finalità, conservazione, contatti e diritti degli interessati.",
     canonical: absoluteUrl("/privacy-policy"),
     locale: "it_IT",
   },

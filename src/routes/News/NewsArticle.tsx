@@ -1,5 +1,7 @@
+import { demoPath } from "@/config/publicPaths";
+import { NotFound } from "../Public/NotFound";
 import { Suspense, useMemo } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Seo } from "@/components/molecules/Seo/Seo";
 import { absoluteUrl } from "@/config/seo";
 import { buildArticleGraph } from "@/config/jsonLd";
@@ -12,7 +14,7 @@ import {
   translationOf,
   type NewsLang,
 } from "@/lib/news";
-import { NEWS_COPY, NEWS_SIGNUP_URL } from "./copy";
+import { NEWS_COPY } from "./copy";
 import { buildMdxComponents } from "./mdxComponents";
 import { NewsCard } from "./NewsCard";
 import { NewsLayout } from "./NewsLayout";
@@ -22,7 +24,7 @@ export default function NewsArticle({ lang }: { lang: NewsLang }) {
   const post = findPost(lang, slug);
   const components = useMemo(() => buildMdxComponents(lang), [lang]);
 
-  if (!post) return <Navigate to={newsIndexPath(lang)} replace />;
+  if (!post) return <NotFound />;
 
   const copy = NEWS_COPY[lang];
   const Body = articleComponent(post);
@@ -71,7 +73,7 @@ export default function NewsArticle({ lang }: { lang: NewsLang }) {
           keyword: post.keyword,
           faqs: post.faqs,
           breadcrumb: [
-            { name: copy.home, url: absoluteUrl("/") },
+            { name: copy.home, url: absoluteUrl(lang === "en" ? "/en/" : "/") },
             { name: copy.section, url: absoluteUrl(newsIndexPath(lang)) },
             { name: post.title, url },
           ],
@@ -79,7 +81,7 @@ export default function NewsArticle({ lang }: { lang: NewsLang }) {
       />
       <article className="news-article container">
         <nav className="news-crumbs" aria-label={copy.breadcrumb}>
-          <a href="/">{copy.home}</a>
+          <a href={lang === "en" ? "/en/" : "/"}>{copy.home}</a>
           <span aria-hidden="true">/</span>
           <a href={newsIndexPath(lang)}>{copy.section}</a>
         </nav>
@@ -94,19 +96,44 @@ export default function NewsArticle({ lang }: { lang: NewsLang }) {
           ) : null}
           <h1>{post.title}</h1>
           <p className="news-meta">
-            {post.author} · <time dateTime={post.date}>{formatNewsDate(post.date, lang)}</time>
+            {post.author} ·{" "}
+            <time dateTime={post.date}>{formatNewsDate(post.date, lang)}</time>
           </p>
           {post.showUpdated && post.updated ? (
             <p className="news-updated">
-              {copy.updatedAt} <time dateTime={post.updated}>{formatNewsDate(post.updated, lang)}</time>
+              {copy.updatedAt}{" "}
+              <time dateTime={post.updated}>
+                {formatNewsDate(post.updated, lang)}
+              </time>
             </p>
           ) : null}
+          <p className="news-meta">
+            <a
+              href={
+                lang === "en"
+                  ? "/en/editorial-policy/"
+                  : "/politica-editoriale/"
+              }
+            >
+              {lang === "en"
+                ? "Sources and editorial policy"
+                : "Fonti e politica editoriale"}
+            </a>
+          </p>
           <p className="news-summary">{post.description}</p>
         </header>
 
         {post.image ? (
           <figure className="news-figure news-hero">
-            <img src={post.image} alt={post.imageAlt ?? ""} width={1200} height={675} />
+            <img
+              src={post.image}
+              alt={post.imageAlt ?? ""}
+              width={1200}
+              height={800}
+              srcSet={`${post.image.replace(".webp", "-640.webp")} 640w, ${post.image} 1200w`}
+              sizes="(max-width: 760px) calc(100vw - 56px), 900px"
+              fetchPriority="high"
+            />
           </figure>
         ) : null}
 
@@ -129,8 +156,16 @@ export default function NewsArticle({ lang }: { lang: NewsLang }) {
         </div>
 
         <aside className="news-cta">
+          <p>
+            <a href={lang === "en" ? "/en/resources/" : "/risorse/"}>
+              {lang === "en"
+                ? "Product guides and public catalogue"
+                : "Guide al prodotto e catalogo pubblico"}{" "}
+              →
+            </a>
+          </p>
           <p>{copy.ctaText}</p>
-          <a className="btn-primary" href={NEWS_SIGNUP_URL} rel="noopener">
+          <a className="btn-primary" href={demoPath(lang)} rel="noopener">
             {copy.ctaButton}
           </a>
         </aside>
@@ -141,7 +176,11 @@ export default function NewsArticle({ lang }: { lang: NewsLang }) {
             <ol>
               {post.sources.map((source) => (
                 <li key={source.url}>
-                  <a href={source.url} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     {source.title}
                   </a>
                   , {copy.accessed} {formatNewsDate(source.accessed, lang)}

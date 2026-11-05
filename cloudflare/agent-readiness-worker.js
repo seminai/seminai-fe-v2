@@ -1,3 +1,4 @@
+import { routePublicRequest } from "./public-routing.js";
 const HOME_LINK_HEADER = [
   '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"',
   '</llms.txt>; rel="describedby"; type="text/plain"',
@@ -70,7 +71,8 @@ const OAUTH_PROTECTED_RESOURCE = {
 };
 
 const MCP_SERVER_CARD = {
-  $schema: "https://static.modelcontextprotocol.io/schemas/mcp-server-card/v1.json",
+  $schema:
+    "https://static.modelcontextprotocol.io/schemas/mcp-server-card/v1.json",
   serverInfo: {
     name: "seminai-public-discovery",
     title: "Seminai Public Discovery",
@@ -189,26 +191,45 @@ const MCP_TOOLS = [
   },
   {
     name: "seminai_get_auth_policy",
-    description: "Return Seminai public authentication and agent registration policy.",
+    description:
+      "Return Seminai public authentication and agent registration policy.",
     inputSchema: emptyInputSchema(),
   },
 ];
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
+    const publicResponse = await routePublicRequest(request, env);
+    if (publicResponse) {
+      const responseHeaders = new Headers(publicResponse.headers);
+      if (!["seminai.tech", "www.seminai.tech"].includes(url.hostname))
+        responseHeaders.set("X-Robots-Tag", "noindex, nofollow");
+      return new Response(publicResponse.body, {
+        status: publicResponse.status,
+        headers: responseHeaders,
+      });
+    }
     const isReadRequest = request.method === "GET" || request.method === "HEAD";
 
     if (request.method === "OPTIONS" && url.pathname === MCP_RPC_PATH) {
       return emptyCorsResponse();
     }
 
-    if (isReadRequest && HOME_PATHS.has(url.pathname) && wantsMarkdown(request)) {
+    if (
+      isReadRequest &&
+      HOME_PATHS.has(url.pathname) &&
+      wantsMarkdown(request)
+    ) {
       return serveMarkdownHome(request);
     }
 
     if (isReadRequest && url.pathname === AUTH_MD_PATH) {
-      return textResponse(AUTH_POLICY, "text/markdown; charset=utf-8", request.method === "HEAD");
+      return textResponse(
+        AUTH_POLICY,
+        "text/markdown; charset=utf-8",
+        request.method === "HEAD",
+      );
     }
 
     if (isReadRequest && url.pathname === OAUTH_PROTECTED_RESOURCE_PATH) {
@@ -225,6 +246,8 @@ export default {
 
     const response = await fetch(request);
     const headers = new Headers(response.headers);
+    if (!["seminai.tech", "www.seminai.tech"].includes(url.hostname))
+      headers.set("X-Robots-Tag", "noindex, nofollow");
 
     if (isReadRequest && HOME_PATHS.has(url.pathname)) {
       addHomeDiscoveryHeaders(headers);
@@ -287,7 +310,11 @@ async function handleMcpRequest(request) {
 function handleJsonRpcMessage(message) {
   const id = message && Object.hasOwn(message, "id") ? message.id : null;
 
-  if (!message || message.jsonrpc !== "2.0" || typeof message.method !== "string") {
+  if (
+    !message ||
+    message.jsonrpc !== "2.0" ||
+    typeof message.method !== "string"
+  ) {
     return makeJsonRpcError(id, -32600, "Invalid Request");
   }
 
@@ -379,7 +406,8 @@ async function serveMarkdownHome(request) {
   const markdownUrl = new URL("/index.md", request.url);
   const markdownRequest = new Request(markdownUrl, request);
   const markdownResponse = await fetch(markdownRequest);
-  const markdown = request.method === "HEAD" ? "" : await markdownResponse.text();
+  const markdown =
+    request.method === "HEAD" ? "" : await markdownResponse.text();
 
   const headers = new Headers(markdownResponse.headers);
   addHomeDiscoveryHeaders(headers);
@@ -406,7 +434,9 @@ function wantsMarkdown(request) {
     .split(",")
     .map((part) => part.trim())
     .some((part) => {
-      const [mediaType, ...params] = part.split(";").map((value) => value.trim());
+      const [mediaType, ...params] = part
+        .split(";")
+        .map((value) => value.trim());
       if (mediaType.toLowerCase() !== "text/markdown") return false;
 
       const q = params.find((param) => param.toLowerCase().startsWith("q="));
@@ -433,7 +463,9 @@ function estimateMarkdownTokens(markdown) {
 }
 
 function isHtmlResponse(headers) {
-  return headers.get("Content-Type")?.toLowerCase().includes("text/html") ?? false;
+  return (
+    headers.get("Content-Type")?.toLowerCase().includes("text/html") ?? false
+  );
 }
 
 function applyCacheHeaders(pathname, headers) {

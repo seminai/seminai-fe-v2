@@ -1,5 +1,5 @@
 ---
-title: "API Seminai: integrare OCR documenti agricoli in 15 minuti"
+title: "API Seminai: integrare documenti agricoli con un contratto verificabile"
 description: "Guida rapida per developer e software house su come integrare l'Extraction API di Seminai per estrarre dati da fatture e DDT agricoli via API key."
 date: 2026-03-10
 author: "Redazione Seminai"
@@ -7,88 +7,47 @@ tags: ["API", "developer", "OCR", "integrazione"]
 image: "/news/api-seminai-integrazione-15-minuti.webp"
 imageAlt: "Un portatile con una fattura sulla tastiera, sopra una scrivania con classificatori e documenti"
 lang: it
+updated: 2026-11-05
+showUpdated: true
+translationKey: "product-api-seminai-integrazione-15-minuti"
+sources:
+  - title: "Seminai Extraction API — current contract"
+    url: "https://seminai-be-v2-661301438659.europe-west1.run.app/developer/docs/"
+    accessed: 2026-11-05
 ---
 
-Se stai costruendo un gestionale per aziende agricole, un ERP di filiera o un software per consorzi, probabilmente ti sei scontrato con lo stesso problema: i tuoi utenti ricevono fatture e DDT in PDF o foto, e tu devi trasformarli in dati strutturati senza costruire da zero un motore OCR specializzato nel dominio agricolo. È esattamente il problema che risolve la **Seminai Extraction API**.
+Un'integrazione affidabile parte dal contratto pubblicato, non da un esempio copiato senza controllare versione e campi. L'API di estrazione di Seminai riceve un documento e propone dati strutturati che il software chiamante deve verificare prima di usarli in un processo reale.
 
-Questa guida mostra come ottenere una API key, fare la prima chiamata e interpretare la risposta, in circa 15 minuti.
+## Accesso e documentazione
 
-## Cosa fa l'Extraction API
+Il [portale developer](https://seminai-be-v2-661301438659.europe-west1.run.app/developer/) e la [documentazione dell'Extraction API](https://seminai-be-v2-661301438659.europe-west1.run.app/developer/docs/) descrivono accesso e operazioni. La registrazione corrente richiede nome, email, password e codice d'invito. L'accesso e le condizioni economiche si confermano con il team: questa guida non promette crediti gratuiti o una chiave immediata dopo la sola email.
 
-L'API riceve un documento (PDF o immagine) e un tipo di documento (`invoice`, `ddt`, `field-note`) e restituisce **un JSON con i campi estratti**: righe prodotto, quantità, prezzi, lotti, dati del fornitore/destinatario, e, per i documenti fitosanitari, il riconoscimento dei prodotti con principio attivo e numero di registrazione.
+La chiave API deve restare sul backend dell'integrazione. Non inserirla in una pagina web, in un repository o nei log. Per l'estrazione viene trasmessa nell'header `X-Api-Key`.
 
-È pensata per essere **integrata in un backend esistente**, non per essere usata come applicazione standalone: autenticazione via API key, fatturazione a pagine processate, nessun vincolo di formato di risposta oltre al JSON.
+## Una richiesta minima
 
-## Passo 1: registrazione e API key
-
-Il developer portal è accessibile da [`/developer`](https://seminai-be-v2-661301438659.europe-west1.run.app/developer) sul backend Seminai. La registrazione richiede email e nome del progetto; alla conferma **ottieni una API key** (`sk_live_...`) e un piccolo credito di pagine per il trial.
+L'endpoint è `POST /api/v1/extract/document`. Il corpo è `multipart/form-data`, con `file` e `documentType`. I valori accettati sono `invoice`, `ddt` e `auto`. `field-note` non fa parte di questo contratto.
 
 ```bash
-# La tua API key va nell'header X-Api-Key su ogni richiesta
-export SEMINAI_API_KEY="sk_live_xxxxxxxxxxxxxxxx"
-```
-
-## Passo 2: prima chiamata, estrazione di una fattura
-
-```bash
-curl -X POST \
+curl --request POST \
   'https://seminai-be-v2-661301438659.europe-west1.run.app/api/v1/extract/document' \
-  -H "X-Api-Key: $SEMINAI_API_KEY" \
-  -F 'file=@fattura.pdf' \
-  -F 'documentType=invoice'
+  --header "X-Api-Key: $SEMINAI_API_KEY" \
+  --form 'file=@documento-dimostrativo.pdf' \
+  --form 'documentType=invoice'
 ```
 
-La risposta è un JSON con lo stato dell'elaborazione. Per documenti semplici la risposta è sincrona; per PDF multi-pagina o batch, l'API espone un **endpoint di stato job** da interrogare (polling) finché lo stato non è `completed`.
+Il nome del file è illustrativo. L'esempio non contiene una chiave reale e non è una chiamata già eseguita.
 
-```json
-{
-  "status": "success",
-  "data": {
-    "documentType": "invoice",
-    "supplier": { "name": "Agrifornitura Rossi SRL", "vatNumber": "IT01234567890" },
-    "lines": [
-      {
-        "productName": "Confidor 200 SL",
-        "activeIngredient": "Imidacloprid",
-        "quantity": 2,
-        "unit": "L",
-        "unitPrice": 34.5,
-        "batchNumber": "LOT2026-0341"
-      }
-    ]
-  }
-}
-```
+## Risposta ed errori
 
-## Passo 3: gestire il rate limiting
+Il controller corrente attende l'estrazione e restituisce un envelope con `status` e `data`. Non è documentato qui un endpoint di polling: non aggiungerlo all'integrazione sulla base di questa guida. La struttura interna di `data` va verificata nello schema e su documenti di prova autorizzati.
 
-L'API applica **un limite per API key** per proteggere l'infrastruttura da abusi. Se superi il limite ricevi un `429` con header `Retry-After`:
+Gestisci separatamente un documento non valido, una chiave non accettata, un limite di utilizzo e un errore temporaneo. Non assumere valori fissi per le soglie o la presenza di `Retry-After`: rispetta gli header quando vengono restituiti e concorda la strategia con il servizio. Un retry non deve creare registrazioni definitive duplicate nel tuo gestionale.
 
-```
-HTTP/1.1 429 Too Many Requests
-Retry-After: 60
-X-RateLimit-Limit: 60
-X-RateLimit-Remaining: 0
-```
+## Dall'estrazione al lavoro aziendale
 
-Best practice per l'integrazione:
+Un dato letto non dimostra che un trattamento sia stato eseguito. Nome prodotto, quantità, lotto e unità vanno confrontati con il documento. Un acquisto resta distinto da un'operazione di campo.
 
-- **Non fare retry immediati aggressivi**: rispetta `Retry-After`.
-- **Raggruppa le chiamate** in batch quando possibile, invece di una chiamata per singolo file se stai processando un lotto.
-- **Monitora i 429** lato tuo backend: un numero alto indica che il piano attuale non è dimensionato per il tuo volume.
+Parti da un campione rappresentativo e misura campi corretti, correzioni e tempo di revisione. Non esiste in questa guida un risultato garantito in quindici minuti: il vecchio slug dell'articolo viene conservato per mantenere validi i collegamenti.
 
-## Passo 4: documentazione OpenAPI completa
-
-L'intero contratto dell'API (schemi di richiesta/risposta, codici di errore, tipi di documento supportati) è pubblicato in formato OpenAPI/Swagger su [`/developer/docs`](https://seminai-be-v2-661301438659.europe-west1.run.app/developer/docs). È il **riferimento da tenere aperto durante l'integrazione**, soprattutto per i campi opzionali specifici di ogni tipo di documento (fattura, DDT, brogliaccio).
-
-## Quando ha senso integrare vs. usare l'app
-
-Se il tuo caso d'uso è "un'azienda che vuole gestire i propri documenti", probabilmente ha più senso **indirizzarla verso l'app Seminai completa**, che include già magazzino, conformità e chat agent. L'Extraction API ha senso quando:
-
-- Hai già un gestionale o ERP proprietario e vuoi solo il layer di estrazione documentale, senza duplicare UI che già possiedi.
-- Servi più aziende clienti e vuoi processare i loro documenti in batch dal tuo backend.
-- Stai costruendo un prodotto verticale (es. gestione di filiera, tracciabilità) che ha bisogno di dati strutturati da fatture/DDT come input, non come output finale.
-
-## Prossimi passi
-
-Dopo la prima integrazione, vale la pena esplorare gli endpoint di estrazione batch per volumi più alti, e, se il tuo prodotto tocca anche la parte di conformità agronomica, il [catalogo di regole pubbliche](https://app.seminai.tech/hub/rules/) per capire come Seminai struttura disciplinari e standard di certificazione, nel caso volessi arricchire la tua integrazione con verifiche di conformità oltre alla semplice estrazione dati.
+Per il flusso operativo leggi [come valutare l'OCR delle fatture](/news/ocr-fatture-fitofarmaci/) e la [pagina sulle integrazioni API](/api-agricoltura/). Per accesso e demo, [contatta il team](/richiedi-demo/).

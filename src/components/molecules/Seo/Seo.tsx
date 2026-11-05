@@ -29,7 +29,9 @@ export interface SeoProps {
 
 /** Markdown twin of a page, generated at build time by scripts/agent-docs.mjs. */
 function markdownUrl(canonical: string): string {
-  return canonical === `${SITE_URL}/` ? `${SITE_URL}/index.md` : `${canonical}.md`;
+  return canonical === `${SITE_URL}/`
+    ? `${SITE_URL}/index.md`
+    : `${canonical.replace(/\/$/, "")}.md`;
 }
 
 /**

@@ -8,6 +8,16 @@ image: "/news/ocr-fatture-fitofarmaci.webp"
 imageAlt: "Una mano con il guanto che tiene uno smartphone, sopra un tavolo con fatture e ricevute"
 
 lang: it
+updated: 2026-11-05
+showUpdated: true
+translationKey: "product-ocr-fatture-fitofarmaci"
+sources:
+  - title: "Big Data in Smart Farming — A review (Wolfert et al., 2017)"
+    url: "https://doi.org/10.1016/j.agsy.2017.01.023"
+    accessed: 2026-11-05
+  - title: "Seminai Extraction API — current contract"
+    url: "https://seminai-be-v2-661301438659.europe-west1.run.app/developer/docs/"
+    accessed: 2026-11-05
 ---
 
 Ogni campagna agronomica produce decine, spesso centinaia, di fatture di acquisto fitofarmaci, fertilizzanti e agrofarmaci. Ognuna contiene righe prodotto con nome commerciale, principio attivo, quantità, lotto e prezzo: informazioni che servono per il registro dei trattamenti, il calcolo dei dosaggi e la verifica di conformità. Trascriverle a mano in un foglio Excel è lento, ripetitivo e soggetto a errori di trascrizione che possono **costare una non conformità in un controllo**.
@@ -27,15 +37,15 @@ Un OCR di dominio agricolo deve quindi combinare riconoscimento del testo con un
 
 ## Come funziona la pipeline di estrazione
 
-La pipeline che usiamo in Seminai per l'estrazione di fatture fitofarmaci segue quattro passaggi:
+Per valutare l’estrazione e il suo inserimento nel lavoro aziendale, considera quattro passaggi:
 
 ### 1. Ingestione
 
-Il documento (PDF, immagine o XML FatturaPA) viene caricato e normalizzato. I formati misti (fatture elettroniche con allegato PDF, scansioni multi-pagina) vengono gestiti automaticamente.
+Verifica i formati accettati nel contratto corrente e su un campione concordato. Non assumere che ogni XML, allegato o scansione sia supportato.
 
 ### 2. OCR e parsing strutturato
 
-Un motore OCR ibrido, che combina riconoscimento del testo classico con modelli vision-language, legge il layout della fattura e identifica le righe prodotto, separando quantità, unità di misura, prezzo e sconti anche su tabelle non standard.
+Il sistema propone intestazioni e righe prodotto. Confronta quantità, unità di misura, prezzo e sconti con la fattura, soprattutto quando le colonne non sono allineate.
 
 ### 3. Validazione di dominio
 
@@ -43,7 +53,7 @@ Ogni prodotto riconosciuto viene incrociato con un catalogo di prodotti fitosani
 
 ### 4. Integrazione operativa
 
-I dati validati diventano righe di magazzino, movimenti di inventario o input per il registro dei trattamenti, pronti per essere consultati nella chat agronomica o esportati per un controllo SOIVRE o di certificazione.
+I dati validati diventano righe di magazzino, movimenti di inventario o input per il registro dei trattamenti, da controllare prima di usarli in magazzino o nei registri. Un acquisto non dimostra da solo che un trattamento sia avvenuto.
 
 ## Cosa guardare quando si valuta un sistema OCR agronomico
 
@@ -54,14 +64,10 @@ Se stai valutando uno strumento di estrazione documentale per la tua azienda o i
 3. **Si integra con il resto del flusso operativo?** L'estrazione da sola vale poco se poi bisogna copiare i dati a mano altrove: cerca un output che alimenti direttamente magazzino, conformità e reportistica.
 4. **Quanto costa in tempo, non solo in euro?** Un servizio che richiede revisione manuale riga per riga può costare più tempo di quello che fa risparmiare.
 
-## Un caso concreto: dalla fattura al registro trattamenti in un giorno
+## Un esempio illustrativo, non un risultato misurato
 
-Un'azienda vitivinicola con tre appezzamenti e un fornitore principale di fitofarmaci riceve in media da 8 a 10 fatture al mese durante la stagione dei trattamenti. Digitalizzarle manualmente richiede dai 20 ai 30 minuti circa a fattura tra trascrizione e verifica: **da 3 a 4 ore al mese** solo per questo compito, senza contare gli errori di trascrizione che emergono in un controllo.
+Consideriamo un'azienda viticola dimostrativa che riceve fatture da più fornitori. Il confronto utile è tra lettura manuale e lettura assistita sullo stesso campione: campi corretti, errori, tempo di verifica e correzioni. Questa è una situazione sintetica, non un caso cliente né una misura pubblicata delle prestazioni di Seminai.
 
-Con un'estrazione OCR di dominio, lo stesso volume di fatture viene elaborato **in pochi minuti totali**, con un tasso di correzione manuale limitato ai casi realmente ambigui (prodotti nuovi non ancora a catalogo, scansioni molto degradate). Il tempo risparmiato si traduce in più ore dedicate all'agronomia vera e propria, non alla trascrizione.
+La qualità dipende dai documenti e dal controllo richiesto. Non promettiamo qui un tempo universale, un tasso di precisione o una conversione gratuita entro 24 ore. Le condizioni di un'eventuale prova si concordano con il team.
 
-## Excel gratuito in 24 ore
-
-Se vuoi provare l'estrazione OCR sulle tue fatture fitofarmaci senza impegno, Seminai offre una **conversione gratuita in Excel entro 24 ore**: un buon modo per verificare la qualità dell'estrazione sui tuoi documenti reali prima di adottare un flusso completo.
-
-Per chi gestisce anche disciplinari di produzione integrata o biologica, può essere utile abbinare l'estrazione documentale al [catalogo di regole agronomiche pubbliche](https://app.seminai.tech/hub/rules/) di Seminai, per verificare la conformità dei trattamenti registrati rispetto al disciplinare applicabile.
+Il percorso continua nella [pagina OCR](/ocr-documenti-agricoli/) e nella [guida all'integrazione API](/news/api-seminai-integrazione-15-minuti/). [Richiedi una demo](/richiedi-demo/) per definire un campione adatto al tuo flusso.

@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { LandingFooter } from "./LandingFooter";
 import { LandingNav } from "./LandingNav";
-import "./landing.css";
 
 type LegalPageLayoutProps = {
   children: ReactNode;

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { normalizeLanguage } from "@/i18n";
+import { normalizeLanguage } from "@/i18n/language";
 import { openCookiePreferences } from "@/lib/analytics";
 import { newsIndexPath } from "@/lib/news";
 import { ANCHORS, CONTACT_URL, LEGAL_ROUTES } from "./constants";
@@ -22,10 +22,58 @@ export function LandingFooter() {
             <div className="foot-title">{t("landing.footer.productTitle")}</div>
             <ul>
               <li>
+                <a
+                  href={
+                    i18n.language.startsWith("en")
+                      ? "/en/resources/"
+                      : "/risorse/"
+                  }
+                >
+                  {i18n.language.startsWith("en") ? "Resources" : "Risorse"}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={
+                    i18n.language.startsWith("en") ? "/en/rules/" : "/regole/"
+                  }
+                >
+                  {i18n.language.startsWith("en")
+                    ? "Public rules"
+                    : "Regole pubbliche"}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={
+                    i18n.language.startsWith("en")
+                      ? "/en/about/"
+                      : "/chi-siamo/"
+                  }
+                >
+                  {i18n.language.startsWith("en") ? "About" : "Chi siamo"}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={
+                    i18n.language.startsWith("en")
+                      ? "/en/editorial-policy/"
+                      : "/politica-editoriale/"
+                  }
+                >
+                  {i18n.language.startsWith("en")
+                    ? "Editorial policy"
+                    : "Politica editoriale"}
+                </a>
+              </li>
+              <li>
                 <a href={ANCHORS.how}>{t("landing.footer.productLinks.how")}</a>
               </li>
               <li>
-                <a href={ANCHORS.useCases}>{t("landing.footer.productLinks.useCases")}</a>
+                <a href={ANCHORS.useCases}>
+                  {t("landing.footer.productLinks.useCases")}
+                </a>
               </li>
               <li>
                 <a href={ANCHORS.faq}>{t("landing.footer.productLinks.faq")}</a>
@@ -36,7 +84,9 @@ export function LandingFooter() {
                 </a>
               </li>
               <li>
-                <a href="/llms.txt">{t("landing.footer.productLinks.aiInfo")}</a>
+                <a href="/llms.txt">
+                  {t("landing.footer.productLinks.aiInfo")}
+                </a>
               </li>
             </ul>
           </div>
@@ -67,7 +117,11 @@ export function LandingFooter() {
                 <a href={LEGAL_ROUTES.terms}>{t("landing.footer.terms")}</a>
               </li>
               <li>
-                <button type="button" className="foot-link" onClick={openCookiePreferences}>
+                <button
+                  type="button"
+                  className="foot-link"
+                  onClick={openCookiePreferences}
+                >
                   {t("landing.footer.cookiePreferences")}
                 </button>
               </li>

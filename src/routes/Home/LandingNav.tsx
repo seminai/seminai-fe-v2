@@ -4,7 +4,7 @@ import {
   LANGUAGE_OPTIONS,
   normalizeLanguage,
   type SupportedLanguage,
-} from "@/i18n";
+} from "@/i18n/language";
 import { newsIndexPath } from "@/lib/news";
 import {
   ANCHORS,
@@ -14,8 +14,9 @@ import {
 } from "./constants";
 
 export function LandingBrand() {
+  const { i18n } = useTranslation();
   return (
-    <a href="/" className="brand">
+    <a href={i18n.language.startsWith("en") ? "/en/" : "/"} className="brand">
       <span className="brand-mark">
         <img
           src={LANDING_LOGO}
@@ -45,9 +46,7 @@ export function LandingNav({ languageLinks }: LandingNavProps = {}) {
   const isEnglish = currentLanguage === "en";
   const isNewsPage = /^\/(en\/)?news(\/|$)/.test(useLocation().pathname);
 
-  const changeLanguage = (language: SupportedLanguage) => {
-    void i18n.changeLanguage(language);
-  };
+  const links = languageLinks ?? { it: "/", en: "/en/" };
 
   return (
     <>
@@ -60,14 +59,21 @@ export function LandingNav({ languageLinks }: LandingNavProps = {}) {
           className="nav-links"
           aria-label={isEnglish ? "Main" : "Navigazione principale"}
         >
-          <a href={ANCHORS.how}>{t("landing.nav.how")}</a>
-          <a href={ANCHORS.useCases}>{t("landing.nav.useCases")}</a>
-          <a href={ANCHORS.faq}>{t("landing.nav.faq")}</a>
+          <a href={`${isEnglish ? "/en/" : "/"}#come-funziona`}>
+            {t("landing.nav.how")}
+          </a>
+          <a href={`${isEnglish ? "/en/" : "/"}#cosa-puoi-fare`}>
+            {t("landing.nav.useCases")}
+          </a>
+          <a href={`${isEnglish ? "/en/" : "/"}#faq`}>{t("landing.nav.faq")}</a>
           <a
             href={newsIndexPath(currentLanguage)}
             aria-current={isNewsPage ? "page" : undefined}
           >
             {t("landing.nav.news")}
+          </a>
+          <a href={isEnglish ? "/en/resources/" : "/risorse/"}>
+            {isEnglish ? "Resources" : "Risorse"}
           </a>
         </nav>
         <div className="nav-actions">
@@ -76,29 +82,19 @@ export function LandingNav({ languageLinks }: LandingNavProps = {}) {
             role="group"
             aria-label={t("language.publicSwitcherAria")}
           >
-            {LANGUAGE_OPTIONS.map((option) =>
-              languageLinks ? (
-                <a
-                  key={option.value}
-                  href={languageLinks[option.value]}
-                  hrefLang={option.value}
-                  data-lang={option.value}
-                  aria-current={currentLanguage === option.value ? "page" : undefined}
-                >
-                  {option.value === "it" ? "IT" : "EN"}
-                </a>
-              ) : (
-              <button
+            {LANGUAGE_OPTIONS.map((option) => (
+              <a
                 key={option.value}
-                type="button"
+                href={links[option.value]}
+                hrefLang={option.value}
                 data-lang={option.value}
-                aria-pressed={currentLanguage === option.value}
-                onClick={() => changeLanguage(option.value)}
+                aria-current={
+                  currentLanguage === option.value ? "page" : undefined
+                }
               >
                 {option.value === "it" ? "IT" : "EN"}
-              </button>
-              ),
-            )}
+              </a>
+            ))}
           </div>
           <a
             href={LANDING_LOGIN_URL}

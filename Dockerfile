@@ -1,5 +1,5 @@
 # Fase di build
-FROM node:21-alpine AS build
+FROM node:24-alpine AS build
 
 # Imposta la directory di lavoro
 WORKDIR /app
@@ -49,4 +49,4 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 8080
 
 # Comando per avviare Nginx in foreground
-CMD ["nginx", "-g", "daemon off;"] 
+CMD ["nginx", "-g", "daemon off;"]

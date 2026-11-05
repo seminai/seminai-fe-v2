@@ -1,0 +1,59 @@
+{
+  "tool": "Lighthouse mobile 13.6.0",
+  "measuredAt": "2026-11-05T21:34:34.214Z",
+  "environment": "Local production builds; gzip static origin and synthetic public catalogue API. No live email or AI inference.",
+  "field_data": false,
+  "note": "These are lab medians, not real-user p75 or INP. Field metrics require post-release data.",
+  "results": [
+    {
+      "template": "home",
+      "runs": 3,
+      "mobile_median": {
+        "performance": 87,
+        "lcp_ms": 4065.431,
+        "cls": 0,
+        "tbt_ms": 0
+      }
+    },
+    {
+      "template": "article",
+      "runs": 3,
+      "mobile_median": {
+        "performance": 91,
+        "lcp_ms": 3464.677,
+        "cls": 0,
+        "tbt_ms": 0
+      }
+    },
+    {
+      "template": "commercial",
+      "runs": 3,
+      "mobile_median": {
+        "performance": 100,
+        "lcp_ms": 752.092,
+        "cls": 0,
+        "tbt_ms": 0
+      }
+    },
+    {
+      "template": "catalogue",
+      "runs": 3,
+      "mobile_median": {
+        "performance": 100,
+        "lcp_ms": 1357.574,
+        "cls": 0.028,
+        "tbt_ms": 0
+      }
+    },
+    {
+      "template": "rule",
+      "runs": 3,
+      "mobile_median": {
+        "performance": 100,
+        "lcp_ms": 1203.908,
+        "cls": 0.026,
+        "tbt_ms": 0
+      }
+    }
+  ]
+}

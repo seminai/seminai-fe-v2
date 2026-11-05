@@ -1,0 +1,48 @@
+---
+title: "How to evaluate OCR for agricultural invoices"
+description: "What to check when extracting products and quantities from agricultural invoices: source quality, review and use in farm records."
+date: 2026-01-12
+updated: 2026-11-05
+showUpdated: true
+author: "Redazione Seminai"
+lang: en
+translationKey: "product-ocr-fatture-fitofarmaci"
+image: "/news/ocr-fatture-fitofarmaci.webp"
+imageAlt: "Illustrative agricultural document workflow"
+tags: ["farm data", "sources", "review"]
+sources:
+  - title: "Big Data in Smart Farming \u2014 A review (Wolfert et al., 2017)"
+    url: "https://doi.org/10.1016/j.agsy.2017.01.023"
+    accessed: 2026-11-05
+  - title: "Seminai Extraction API \u2014 current contract"
+    url: "https://seminai-be-v2-661301438659.europe-west1.run.app/developer/docs/"
+    accessed: 2026-11-05
+---
+
+Agricultural invoices contain information needed in several workflows: purchases, stock, supplier records and traceability. Copying the same lines into separate tools creates opportunities for inconsistent names, units or quantities.
+
+OCR proposes a reading of the document. Its usefulness depends on what a person must verify before that reading can be used.
+
+## Begin with the source
+
+Check the supported file formats and choose a representative sample. Include documents from different suppliers and realistic photo quality. Do not assume every XML, attachment or scan is supported.
+
+A product name, pack size and batch number may sit in neighbouring columns. Compare quantities, prices and discounts with the original page, especially when a table is misaligned or the image is blurred.
+
+## Check meaning, not just characters
+
+Recognising a word is different from establishing which registered product or unit it represents. Keep ambiguous lines visible for review rather than replacing them with confident guesses. The source document should remain available to the person correcting the result.
+
+A purchase is not a treatment record. It does not establish which plot was treated, on what date or at what dose. Those facts need their own evidence and confirmation.
+
+## An illustrative example
+
+Consider a demonstration vineyard receiving invoices from several suppliers. Compare manual and assisted reading on the same sample: correct fields, errors, corrections and review time. This is a synthetic scenario, not a customer case or a published measurement of Seminai performance.
+
+No universal processing time, accuracy rate or free conversion within 24 hours is promised here. Any trial conditions are agreed with the team.
+
+## Connect the reviewed result
+
+Decide which reviewed data should become stock information and which facts still need confirmation before reaching a register. Clear boundaries reduce the chance that a convenient extraction becomes an incorrect operational record.
+
+Continue with the [document OCR guide](/en/agricultural-document-ocr/), the [API guide](/en/news/agricultural-document-extraction-api/) or [request a demo](/en/request-a-demo/) to agree a suitable sample.

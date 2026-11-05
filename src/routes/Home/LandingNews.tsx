@@ -1,8 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { normalizeLanguage } from "@/i18n";
+import { normalizeLanguage } from "@/i18n/language";
 import { newsIndexPath, postsByLang } from "@/lib/news";
 import { NewsCard } from "../News/NewsCard";
-import "../News/news.css";
 
 const LATEST_COUNT = 3;
 

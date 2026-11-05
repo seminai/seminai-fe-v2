@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "seminai-agent-readiness",
+  "main": "cloudflare/agent-readiness-worker.js",
+  "compatibility_date": "2026-11-05",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "seminai.tech/*",
+      "zone_name": "seminai.tech"
+    },
+    {
+      "pattern": "www.seminai.tech/*",
+      "zone_name": "seminai.tech"
+    }
+  ],
+  "services": [
+    {
+      "binding": "CATALOG",
+      "service": "seminai-public-catalog"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  }
+}

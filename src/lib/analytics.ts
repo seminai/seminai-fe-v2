@@ -27,7 +27,9 @@ export function readStoredConsent(): ConsentStatus | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { status?: string; version?: number };
     if (parsed.version !== CONSENT_VERSION) return null;
-    return parsed.status === "granted" || parsed.status === "denied" ? parsed.status : null;
+    return parsed.status === "granted" || parsed.status === "denied"
+      ? parsed.status
+      : null;
   } catch {
     return null;
   }
@@ -37,7 +39,11 @@ function writeStoredConsent(status: ConsentStatus): void {
   try {
     localStorage.setItem(
       CONSENT_STORAGE_KEY,
-      JSON.stringify({ status, version: CONSENT_VERSION, timestamp: new Date().toISOString() }),
+      JSON.stringify({
+        status,
+        version: CONSENT_VERSION,
+        timestamp: new Date().toISOString(),
+      }),
     );
   } catch {
     /* storage blocked: the banner shows again on the next visit */
@@ -107,4 +113,32 @@ export function openCookiePreferences(): void {
 export function onCookiePreferencesRequest(listener: () => void): () => void {
   window.addEventListener(PREFERENCES_EVENT, listener);
   return () => window.removeEventListener(PREFERENCES_EVENT, listener);
+}
+
+export type DemoEvent =
+  | "demo_cta_click"
+  | "demo_form_start"
+  | "demo_request_success"
+  | "demo_request_error";
+/** No form values, search terms or query strings are sent to analytics. */
+export function trackDemoEvent(event: DemoEvent): void {
+  if (readStoredConsent() !== "granted") return;
+  loadGoogleAnalytics();
+  window.gtag?.("event", event, {
+    language: location.pathname.startsWith("/en/") ? "en" : "it",
+    page_type: location.pathname.includes("news") ? "article" : "public_page",
+  });
+}
+export function installDemoClickTracking(): void {
+  document.addEventListener("click", (event) => {
+    const anchor =
+      event.target instanceof Element ? event.target.closest("a") : null;
+    if (!anchor) return;
+    const url = new URL(anchor.href, location.origin);
+    if (
+      url.origin === location.origin &&
+      ["/richiedi-demo/", "/en/request-a-demo/"].includes(url.pathname)
+    )
+      trackDemoEvent("demo_cta_click");
+  });
 }

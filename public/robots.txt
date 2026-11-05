@@ -1,6 +1,6 @@
 User-agent: *
 Allow: /
-Content-Signal: search=yes, ai-input=yes, ai-train=yes
+Content-Signal: search=yes, ai-input=yes, ai-train=no
 
 # Agent-readable context
 # Index of the Markdown pages: https://seminai.tech/llms.txt
@@ -9,7 +9,7 @@ Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 # AI search and assistant bots
 User-agent: GPTBot
-Allow: /
+Disallow: /
 
 User-agent: ChatGPT-User
 Allow: /
@@ -18,7 +18,7 @@ User-agent: OAI-SearchBot
 Allow: /
 
 User-agent: ClaudeBot
-Allow: /
+Disallow: /
 
 User-agent: Claude-User
 Allow: /
@@ -33,7 +33,7 @@ User-agent: Perplexity-User
 Allow: /
 
 User-agent: Google-Extended
-Allow: /
+Disallow: /
 
 User-agent: Bingbot
 Allow: /
@@ -42,6 +42,6 @@ User-agent: Applebot
 Allow: /
 
 User-agent: Applebot-Extended
-Allow: /
+Disallow: /
 
 Sitemap: https://seminai.tech/sitemap.xml
