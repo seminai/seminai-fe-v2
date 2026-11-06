@@ -5,9 +5,9 @@ const origin = "https://seminai.tech";
 const routes = [
   "/",
   "/en/",
-  "/privacy-policy",
-  "/cookie-policy",
-  "/terms-of-service",
+  "/privacy-policy/",
+  "/cookie-policy/",
+  "/terms-of-service/",
   "/richiedi-demo/",
   "/en/request-a-demo/",
   ...PUBLIC_PAGES.map((page) => page.path),

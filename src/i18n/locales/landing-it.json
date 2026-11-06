@@ -222,7 +222,7 @@
     ],
     "submit": "Richiedi una demo",
     "submitting": "Invio in corso…",
-    "privacy": "Inviando la richiesta accetti la <a href=\"/privacy-policy\">privacy policy</a>.",
+    "privacy": "Inviando la richiesta accetti la <a href=\"/privacy-policy/\">privacy policy</a>.",
     "successTitle": "Richiesta inviata.",
     "success": "Ti scriviamo a {{email}} per confermare giorno e ora.",
     "error": "Invio non riuscito. Riprova o scrivici a <a href=\"mailto:get.seminai@gmail.com\">get.seminai@gmail.com</a>.",

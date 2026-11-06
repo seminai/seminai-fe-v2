@@ -154,7 +154,7 @@ export function staticRoutes(): PublicRoute[] {
     { url: "/", out: "index.html", lng: "it" },
     { url: "/en/", out: "en/index.html", lng: "en" },
     ...["privacy-policy", "cookie-policy", "terms-of-service"].map((slug) => ({
-      url: `/${slug}`,
+      url: `/${slug}/`,
       out: `${slug}/index.html`,
       lng: "it" as const,
     })),
