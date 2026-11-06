@@ -24,7 +24,7 @@ export interface RulePage {
 export class PublicApiError extends Error {
   readonly status: number;
   constructor(status: number) {
-    super(`Public rules API returned ${status}`);
+    super(`Public catalogue API returned ${status}`);
     this.status = status;
   }
 }

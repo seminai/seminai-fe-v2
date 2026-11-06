@@ -74,7 +74,7 @@ writeFileSync(
 );
 writeFileSync(
   join(distDir, "sitemap.xml"),
-  `<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>${SITE}/sitemap-pages.xml</loc></sitemap><sitemap><loc>${SITE}/sitemap-rules.xml</loc></sitemap></sitemapindex>`,
+  `<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>${SITE}/sitemap-pages.xml</loc></sitemap><sitemap><loc>${SITE}/sitemap-rules.xml</loc></sitemap><sitemap><loc>${SITE}/sitemap-skills.xml</loc></sitemap></sitemapindex>`,
 );
 const notFound = await render("/404/", "it");
 writeFileSync(

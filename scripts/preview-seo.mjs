@@ -2,11 +2,11 @@ import { createServer } from "node:http";
 createServer(async (request, response) => {
   const path = new URL(request.url, "http://127.0.0.1").pathname;
   const port =
-    /^\/(?:regole(?:\/|$)|en\/rules(?:\/|$)|catalog-assets\/|sitemap-rules.xml)/.test(
+    /^\/(?:regole(?:\/|$)|en\/rules(?:\/|$)|(?:en\/)?skills(?:\/|\.md$|$)|catalog-assets\/|sitemap-(?:rules|skills).xml)/.test(
       path,
     )
-      ? 8769
-      : 8765;
+      ? Number(process.env.SEO_CATALOG_PORT ?? 8769)
+      : Number(process.env.SEO_STATIC_PORT ?? 8765);
   try {
     const upstream = await fetch(`http://127.0.0.1:${port}${request.url}`, {
       method: request.method,
@@ -24,6 +24,6 @@ createServer(async (request, response) => {
     response.statusCode = 503;
     response.end("Local preview unavailable");
   }
-}).listen(8770, "127.0.0.1", () =>
-  console.log("Unified noindex preview on 127.0.0.1:8770"),
+}).listen(Number(process.env.SEO_PREVIEW_PORT ?? 8770), "127.0.0.1", () =>
+  console.log(`Unified noindex preview on 127.0.0.1:${process.env.SEO_PREVIEW_PORT ?? 8770}`),
 );

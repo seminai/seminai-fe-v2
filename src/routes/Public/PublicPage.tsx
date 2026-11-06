@@ -6,6 +6,7 @@ import {
   homePath,
   resourcesPath,
   rulesPath,
+  skillsPath,
 } from "@/config/publicPaths";
 import { findPost, newsIndexPath } from "@/lib/news";
 import { NewsLayout } from "../News/NewsLayout";
@@ -87,6 +88,9 @@ export function PublicPage({ page }: { page: Page }) {
           </a>
           <a className="btn-secondary" href={rulesPath(page.lang)}>
             {en ? "Public rules catalogue" : "Catalogo regole pubbliche"}
+          </a>
+          <a className="btn-secondary" href={skillsPath(page.lang)}>
+            {en ? "Public AI skills" : "Skill AI pubbliche"}
           </a>
         </div>
         {page.id === "api" && (

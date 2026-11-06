@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 test("English home is complete without JavaScript", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
-  await page.goto("http://127.0.0.1:8765/en/");
+  await page.goto(`${process.env.SEO_STATIC_BASE ?? 'http://127.0.0.1:8765'}/en/`);
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("h1")).toContainText("We turn");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(

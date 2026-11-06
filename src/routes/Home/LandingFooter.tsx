@@ -32,6 +32,7 @@ export function LandingFooter() {
                   {i18n.language.startsWith("en") ? "Resources" : "Risorse"}
                 </a>
               </li>
+              <li><a href={i18n.language.startsWith("en") ? "/en/skills/" : "/skills/"}>{i18n.language.startsWith("en") ? "AI skills" : "Skill AI"}</a></li>
               <li>
                 <a
                   href={

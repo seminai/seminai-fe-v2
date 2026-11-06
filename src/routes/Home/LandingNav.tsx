@@ -75,6 +75,9 @@ export function LandingNav({ languageLinks }: LandingNavProps = {}) {
           <a href={isEnglish ? "/en/resources/" : "/risorse/"}>
             {isEnglish ? "Resources" : "Risorse"}
           </a>
+          <a href={isEnglish ? "/en/skills/" : "/skills/"}>
+            {isEnglish ? "AI skills" : "Skill AI"}
+          </a>
         </nav>
         <div className="nav-actions">
           <div

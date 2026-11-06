@@ -1,0 +1,1010 @@
+{
+  "checkedAt": "2026-11-06T20:42:30.290Z",
+  "environment": "Compiled production Worker under local Wrangler, using an anonymous public-source snapshot; not deployed",
+  "skills": 50,
+  "htmlPages": 100,
+  "markdownPages": 100,
+  "sitemapEntries": 106,
+  "rows": [
+    {
+      "path": "/skills/analisi-stato-fenologico/",
+      "lang": "it",
+      "title": "Analisi dello stato fenologico",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/analisi-stato-fenologico/",
+      "lang": "en",
+      "title": "Vine phenological stage analysis",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/annual-fertilization-calendar/",
+      "lang": "it",
+      "title": "Calendario concimazione annuale",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/annual-fertilization-calendar/",
+      "lang": "en",
+      "title": "Annual fertilization calendar",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/bom-cost-breakdown/",
+      "lang": "it",
+      "title": "Scomposizione costi di distinta base",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/bom-cost-breakdown/",
+      "lang": "en",
+      "title": "Bill of materials cost breakdown",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/calcolo-dosaggio-fitosanitario/",
+      "lang": "it",
+      "title": "Calcolo dosaggio fitosanitario",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/calcolo-dosaggio-fitosanitario/",
+      "lang": "en",
+      "title": "Plant protection product dose calculation",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/calcolo-intervallo-sicurezza/",
+      "lang": "it",
+      "title": "Calcolo intervallo di sicurezza",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/calcolo-intervallo-sicurezza/",
+      "lang": "en",
+      "title": "Pre-harvest interval calculation",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/calendario-operazioni-vigneto/",
+      "lang": "it",
+      "title": "Calendario operazioni di vigneto",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/calendario-operazioni-vigneto/",
+      "lang": "en",
+      "title": "Vineyard operations calendar",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/canopy-management-advisor/",
+      "lang": "it",
+      "title": "Gestione della chioma",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/canopy-management-advisor/",
+      "lang": "en",
+      "title": "Canopy management advisor",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/cellar-yield-estimator/",
+      "lang": "it",
+      "title": "Stima resa in cantina",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/cellar-yield-estimator/",
+      "lang": "en",
+      "title": "Cellar yield estimator",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/ddt-courier-summary/",
+      "lang": "it",
+      "title": "Riepilogo corriere DDT",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/ddt-courier-summary/",
+      "lang": "en",
+      "title": "Delivery note courier summary",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/diagnosi-stress-idrico/",
+      "lang": "it",
+      "title": "Diagnosi stress idrico",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/diagnosi-stress-idrico/",
+      "lang": "en",
+      "title": "Vine water stress diagnosis",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/downy-mildew-model/",
+      "lang": "it",
+      "title": "Modello previsionale peronospora",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/downy-mildew-model/",
+      "lang": "en",
+      "title": "Downy mildew risk model",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/drone-flight-planner/",
+      "lang": "it",
+      "title": "Pianificazione volo drone multispettrale",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/drone-flight-planner/",
+      "lang": "en",
+      "title": "Multispectral drone flight planner",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/field-kpi-dashboard/",
+      "lang": "it",
+      "title": "Cruscotto indicatori di campo",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/field-kpi-dashboard/",
+      "lang": "en",
+      "title": "Field indicator dashboard",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/foliar-feeding-advisor/",
+      "lang": "it",
+      "title": "Consulente fertirrigazione foliare",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/foliar-feeding-advisor/",
+      "lang": "en",
+      "title": "Fertigation and foliar feeding advisor",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/frost-risk-assessment/",
+      "lang": "it",
+      "title": "Valutazione rischio gelate primaverili",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/frost-risk-assessment/",
+      "lang": "en",
+      "title": "Spring frost risk assessment",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/grape-must-analysis-report/",
+      "lang": "it",
+      "title": "Report analisi mosto e uva",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/grape-must-analysis-report/",
+      "lang": "en",
+      "title": "Grape and must analysis report",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/harvest-logistics-scheduler/",
+      "lang": "it",
+      "title": "Programma logistico vendemmia",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/harvest-logistics-scheduler/",
+      "lang": "en",
+      "title": "Harvest logistics scheduler",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/harvest-window-planner/",
+      "lang": "it",
+      "title": "Pianificazione finestra di vendemmia",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/harvest-window-planner/",
+      "lang": "en",
+      "title": "Harvest window planner",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/irrigation-schedule-vineyard/",
+      "lang": "it",
+      "title": "Programma di irrigazione vigneto",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/irrigation-schedule-vineyard/",
+      "lang": "en",
+      "title": "Vineyard irrigation schedule",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/label-compliance-check/",
+      "lang": "it",
+      "title": "Verifica conformità etichetta",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/label-compliance-check/",
+      "lang": "en",
+      "title": "Product label compliance check",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/leaf-tissue-analysis-report/",
+      "lang": "it",
+      "title": "Report analisi tessuto foliare",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/leaf-tissue-analysis-report/",
+      "lang": "en",
+      "title": "Leaf tissue analysis report",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/meteo-risk-assessment/",
+      "lang": "it",
+      "title": "Valutazione rischio meteo",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/meteo-risk-assessment/",
+      "lang": "en",
+      "title": "Weather risk assessment",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/mosto-quality-check/",
+      "lang": "it",
+      "title": "Verifica qualità mosto",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/mosto-quality-check/",
+      "lang": "en",
+      "title": "Must quality check",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/mrl-compliance-check/",
+      "lang": "it",
+      "title": "Verifica limite residui MRL",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/mrl-compliance-check/",
+      "lang": "en",
+      "title": "Maximum residue limit check",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/nitrogen-balance-calculator/",
+      "lang": "it",
+      "title": "Bilancio dell'azoto",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/nitrogen-balance-calculator/",
+      "lang": "en",
+      "title": "Nitrogen balance calculator",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/nutrient-deficiency-diagnosis/",
+      "lang": "it",
+      "title": "Diagnosi carenze nutrizionali da immagine",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/nutrient-deficiency-diagnosis/",
+      "lang": "en",
+      "title": "Visual nutrient deficiency diagnosis",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/organic-amendment-plan/",
+      "lang": "it",
+      "title": "Piano di ammendamento organico",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/organic-amendment-plan/",
+      "lang": "en",
+      "title": "Organic soil amendment plan",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/patentino-expiry-reminder/",
+      "lang": "it",
+      "title": "Promemoria patentino e scadenze",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/patentino-expiry-reminder/",
+      "lang": "en",
+      "title": "Pesticide operator license expiry reminder",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/payment-reminder-assistant/",
+      "lang": "it",
+      "title": "Promemoria pagamenti clienti",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/payment-reminder-assistant/",
+      "lang": "en",
+      "title": "Customer payment reminder assistant",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/piano-difesa-integrata/",
+      "lang": "it",
+      "title": "Piano di difesa integrata",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/piano-difesa-integrata/",
+      "lang": "en",
+      "title": "Integrated pest management plan",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/piano-diradamento-grappoli/",
+      "lang": "it",
+      "title": "Piano di diradamento grappoli",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/piano-diradamento-grappoli/",
+      "lang": "en",
+      "title": "Cluster thinning plan",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/piano-fertilizzazione-vite/",
+      "lang": "it",
+      "title": "Piano di fertilizzazione vite",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/piano-fertilizzazione-vite/",
+      "lang": "en",
+      "title": "Vineyard fertilization plan",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/piano-green-pruning/",
+      "lang": "it",
+      "title": "Piano di potatura verde",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/piano-green-pruning/",
+      "lang": "en",
+      "title": "Green pruning plan",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/powdery-mildew-model/",
+      "lang": "it",
+      "title": "Modello previsionale oidio",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/powdery-mildew-model/",
+      "lang": "en",
+      "title": "Powdery mildew risk model",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/production-batch-tracker/",
+      "lang": "it",
+      "title": "Tracciamento lotto di produzione",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/production-batch-tracker/",
+      "lang": "en",
+      "title": "Production batch tracker",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/production-line-oee-report/",
+      "lang": "it",
+      "title": "Report OEE linea produttiva",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/production-line-oee-report/",
+      "lang": "en",
+      "title": "Production line OEE report",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/proforma-generator/",
+      "lang": "it",
+      "title": "Generatore proforma",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/proforma-generator/",
+      "lang": "en",
+      "title": "Proforma invoice generator",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/quality-hold-release/",
+      "lang": "it",
+      "title": "Gestione blocco qualità",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/quality-hold-release/",
+      "lang": "en",
+      "title": "Quality hold and release",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/registro-trattamenti-qdc/",
+      "lang": "it",
+      "title": "Registro trattamenti QDC",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/registro-trattamenti-qdc/",
+      "lang": "en",
+      "title": "Field treatment register entry",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/rotazione-principi-attivi/",
+      "lang": "it",
+      "title": "Rotazione principi attivi",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/rotazione-principi-attivi/",
+      "lang": "en",
+      "title": "Active ingredient rotation",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/sales-order-from-inbox/",
+      "lang": "it",
+      "title": "Creazione ordine da inbox",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/sales-order-from-inbox/",
+      "lang": "en",
+      "title": "Sales order draft from inbox",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/satellite-ndvi-summary/",
+      "lang": "it",
+      "title": "Riepilogo NDVI satellitare",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/satellite-ndvi-summary/",
+      "lang": "en",
+      "title": "Satellite NDVI summary",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/soil-analysis-interpreter/",
+      "lang": "it",
+      "title": "Interprete analisi del suolo",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/soil-analysis-interpreter/",
+      "lang": "en",
+      "title": "Soil analysis interpreter",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/tank-mix-compatibility-check/",
+      "lang": "it",
+      "title": "Analisi compatibilità miscele",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/tank-mix-compatibility-check/",
+      "lang": "en",
+      "title": "Tank mix compatibility check",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/trap-monitoring-scout/",
+      "lang": "it",
+      "title": "Monitoraggio trappole scout",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/trap-monitoring-scout/",
+      "lang": "en",
+      "title": "Pest trap monitoring",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/treatment-report-certification/",
+      "lang": "it",
+      "title": "Report trattamenti per certificazione",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/treatment-report-certification/",
+      "lang": "en",
+      "title": "Treatment report for certification",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/valutazione-carico-produttivo/",
+      "lang": "it",
+      "title": "Valutazione carico produttivo",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/valutazione-carico-produttivo/",
+      "lang": "en",
+      "title": "Vineyard crop load assessment",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/weather-station-report/",
+      "lang": "it",
+      "title": "Report centralina agrometeo",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/weather-station-report/",
+      "lang": "en",
+      "title": "Farm weather station report",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/weekly-vigor-report/",
+      "lang": "it",
+      "title": "Report stato vegetativo settimanale",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/weekly-vigor-report/",
+      "lang": "en",
+      "title": "Weekly vineyard vigor report",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/skills/wine-registry-entry/",
+      "lang": "it",
+      "title": "Registrazione registro vitivinicolo",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    },
+    {
+      "path": "/en/skills/wine-registry-entry/",
+      "lang": "en",
+      "title": "Wine registry entry",
+      "html": 200,
+      "markdown": 200,
+      "canonical": true,
+      "hreflang": true,
+      "contentEquivalent": true
+    }
+  ]
+}

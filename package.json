@@ -17,6 +17,7 @@
     "worker:check": "wrangler deploy --dry-run --outdir .wrangler/check",
     "images:news": "node scripts/news-images.mjs",
     "test:catalog:http": "node --test tests/seo/catalog-http.test.mjs",
+    "test:skills:http": "node --test tests/seo/skills-http.test.mjs",
     "test:seo:browser": "playwright test --config playwright.seo.config.ts"
   },
   "dependencies": {

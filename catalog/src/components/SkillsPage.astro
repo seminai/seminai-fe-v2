@@ -1,0 +1,54 @@
+---
+import CatalogNavigation from './CatalogNavigation.astro';
+import {absolute, demoPath, skillsPath} from '../lib/paths';
+import type {SkillView} from '../lib/skill-page';
+import '../styles/catalog.css';
+interface Props {view: SkillView}
+const {view}=Astro.props;
+const {lang,skill,listing,path,title,description,canonical,status}=view;
+const en=lang==='en';
+const pageQuery=listing && listing.page>1?`?page=${listing.page}`:'';
+const italian=path.replace(/^\/en\/skills\//,'/skills/');
+const english=path.startsWith('/en/')?path:`/en${path}`;
+const linksQuery=(page:number)=>`?${new URLSearchParams({...view.search?{search:view.search}:{},page:String(page)})}`;
+const base=skillsPath(lang);
+const breadcrumbs=[{name:'Home',url:absolute(en?'/en/':'/')},{name:en?'AI skills':'Skill AI',url:absolute(base)},...(skill?[{name:skill.name,url:canonical}]:[])];
+const graph={'@context':'https://schema.org','@graph':[
+ skill?{'@type':'CreativeWork','@id':canonical,url:canonical,name:skill.name,description:skill.description,...(skill.translated?{inLanguage:lang}:{}),text:skill.instructions}:
+ {'@type':'CollectionPage','@id':canonical,url:canonical,name:title,description,inLanguage:lang,mainEntity:{'@type':'ItemList',itemListElement:listing?.items.map((item,index)=>({'@type':'ListItem',position:(listing.page-1)*listing.limit+index+1,url:absolute(`${base}${item.slug}/`),name:item.name}))??[]}},
+ {'@type':'BreadcrumbList',itemListElement:breadcrumbs.map((item,index)=>({'@type':'ListItem',position:index+1,name:item.name,item:item.url}))}
+]};
+---
+<!doctype html><html lang={lang}><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>{title} | Seminai</title><meta name="description" content={description.slice(0,170)}/><meta name="robots" content={view.noindex?'noindex, follow':'index, follow, max-image-preview:large'}/>
+<link rel="canonical" href={canonical}/>
+{status===200 && (!skill || skill.translated) && <><link rel="alternate" hreflang="it" href={absolute(italian)+pageQuery}/><link rel="alternate" hreflang="en" href={absolute(english)+pageQuery}/><link rel="alternate" hreflang="x-default" href={absolute(italian)+pageQuery}/></>}
+<link rel="alternate" type="text/markdown" href={absolute(path.replace(/\/$/,'.md'))+pageQuery}/><link rel="describedby" href="/llms.txt"/><link rel="icon" href="/icons/favicon-64.png"/>
+<meta property="og:type" content="website"/><meta property="og:title" content={`${title} | Seminai`}/><meta property="og:description" content={description}/><meta property="og:url" content={canonical}/><meta property="og:locale" content={en?'en_US':'it_IT'}/><meta property="og:image" content="https://seminai.tech/og/og-image.jpg"/>
+{status===200 && <script type="application/ld+json" set:html={JSON.stringify(graph).replace(/</g,'\\u003c')}/>}
+<script>
+ import {installDemoClickTracking,loadGoogleAnalytics,readStoredConsent} from '../../../src/lib/analytics';
+ installDemoClickTracking();
+ if(readStoredConsent()==='granted') loadGoogleAnalytics();
+</script>
+</head><body>
+<header><a href={en?'/en/':'/'}>SeminAI</a><nav aria-label={en?'Main navigation':'Navigazione'}><a href={en?'/en/resources/':'/risorse/'}>{en?'Resources':'Risorse'}</a><a href={en?'/en/news/':'/news/'}>News</a><a href={italian+pageQuery} hreflang="it" lang="it">IT</a><a href={english+pageQuery} hreflang="en" lang="en">EN</a><a class="button" href={demoPath(lang)}>{en?'Request a demo':'Richiedi una demo'}</a></nav></header>
+<main><CatalogNavigation lang={lang} active="skills" skillCount={listing?.publicTotal} ruleCount={view.ruleCount}/>
+<nav class="breadcrumbs" aria-label={en?'Breadcrumb':'Percorso'}>{breadcrumbs.map((item,index)=><>{index>0 && <span aria-hidden="true">/</span>}<a href={new URL(item.url).pathname}>{item.name}</a></>)}</nav>
+<p class="kicker">{en?'Seminai · Public AI workflows':'Seminai · Workflow AI pubblici'}</p><h1>{title}</h1>
+{status===503?<p>{en?'The source service is temporarily unavailable. Please try again shortly.':'Il servizio delle fonti è temporaneamente non disponibile. Riprova tra poco.'}</p>:status===404?<p>{en?'This skill is not publicly available.':'Questa skill non è disponibile pubblicamente.'}</p>:skill?<>
+<p class="lead">{skill.description}</p>
+{!skill.translated && <p class="language-note" role="status">{en?'Original publisher content. Translation pending review; the source language is not declared.':'Contenuto originale del pubblicatore. Traduzione in attesa di revisione; lingua sorgente non dichiarata.'}</p>}
+<section class="skill-workflow" aria-labelledby="workflow-title"><h2 id="workflow-title">{en?'Workflow instructions':'Istruzioni del workflow'}</h2><div class="skill-instructions" lang={skill.translated?lang:undefined}>{skill.instructions}</div></section>
+<p class="source">{en?'This page documents a workflow. Browsing does not execute a skill or certify an outcome. Review the required data and operating limits before using it.':'Questa pagina descrive un workflow. La consultazione non esegue una skill e non certifica un risultato. Verifica dati richiesti e limiti operativi prima dell’utilizzo.'}</p>
+<a class="button" href={demoPath(lang)}>{en?'Discuss this workflow in a demo':'Parliamone in demo'}</a>
+</>:listing && <>
+<p class="lead">{description}</p><p>{en?'AI skills describe operational workflows. Rules are published standards, methods and production specifications, available in their separate catalogue.':'Le skill AI descrivono workflow operativi. Regole, standard, metodologie e disciplinari si consultano nel catalogo dedicato.'}</p>
+<form method="get" class="filters skill-search"><label>{en?'Search skills':'Cerca skill'}<input type="search" name="search" value={view.search} maxlength="200" placeholder={en?'For example: weather, sales, production':'Per esempio: meteo, vendite, produzione'}/></label><button type="submit">{en?'Search':'Cerca'}</button>{view.search && <a href={base}>{en?'Clear search':'Cancella ricerca'}</a>}</form>
+<p class="results-count">{listing.total} {view.search?(en?'matching skills':'skill corrispondenti'):(en?'public skills':'skill pubbliche')}</p>
+<div class="grid">{listing.items.map(item=><article class="rule-card skill-card"><p class="kicker">{en?'AI skill':'Skill AI'}</p><h2><a href={`${base}${item.slug}/`}>{item.name}</a></h2>{item.description && <p>{item.description}</p>}{!item.translated && <p class="meta">{en?'Original content · translation pending review':'Contenuto originale · traduzione in attesa di revisione'}</p>}<a class="skill-detail-link" href={`${base}${item.slug}/`}>{en?'Explore the workflow':'Scopri il workflow'} <span aria-hidden="true">↗</span></a></article>)}</div>
+{listing.total===0 && <p>{en?'No public skills match this search.':'Nessuna skill pubblica corrisponde alla ricerca.'}</p>}
+<nav class="pagination" aria-label={en?'Pagination':'Paginazione'}>{listing.page>1 && <a rel="prev" href={linksQuery(listing.page-1)}>← {en?'Previous':'Precedente'}</a>}<span>{en?'Page':'Pagina'} {listing.page}</span>{listing.hasNextPage && <a rel="next" href={linksQuery(listing.page+1)}>{en?'Next':'Successiva'} →</a>}</nav>
+</>}
+</main><footer><nav><a href={base}>{en?'AI skills':'Skill AI'}</a><a href={en?'/en/rules/':'/regole/'}>{en?'Public rules':'Regole pubbliche'}</a><a href={en?'/en/editorial-policy/':'/politica-editoriale/'}>{en?'Editorial policy':'Politica editoriale'}</a><a href="/privacy-policy/">Privacy</a><a href="/cookie-policy/">Cookie</a><a href={demoPath(lang)}>{en?'Request a demo':'Richiedi una demo'}</a></nav></footer>
+</body></html>

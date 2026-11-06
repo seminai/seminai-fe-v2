@@ -117,3 +117,16 @@ test("directory routes stay reachable after the static origin adds a trailing sl
     assert.equal(await routePublicRequest(new Request(`https://seminai.tech${path}/`)), null);
   }
 });
+test('skills negotiate Markdown using a different internal URL and preserve query and credentials isolation',async()=>{
+ const paths=[];
+ const binding={fetch:async request=>{paths.push(new URL(request.url).pathname+new URL(request.url).search);assert.equal(request.headers.get('Cookie'),null);assert.equal(request.headers.get('Authorization'),null);return new Response('synthetic');}};
+ for(const accept of ['text/html','text/markdown']) await routePublicRequest(new Request('https://seminai.tech/en/skills/synthetic-skill/?utm_source=synthetic',{headers:{Accept:accept,Cookie:'synthetic',Authorization:'Bearer synthetic'}}),{CATALOG:binding});
+ assert.deepEqual(paths,['/en/skills/synthetic-skill/?utm_source=synthetic','/en/skills/synthetic-skill.md?utm_source=synthetic']);
+ assert.equal(isCataloguePath('/skills.md'),true);assert.equal(isCataloguePath('/en/skills.md'),true);assert.equal(isCataloguePath('/skills-extra/'),false);
+});
+test('skill directory aliases redirect once and retain parameters',async()=>{
+ for(const path of ['/skills','/en/skills','/skills/synthetic-skill','/en/skills/synthetic-skill']) {
+  const response=await routePublicRequest(new Request(`https://seminai.tech${path}?utm_source=synthetic`));
+  assert.equal(response.status,301);assert.equal(response.headers.get('location'),`https://seminai.tech${path}/?utm_source=synthetic`);
+ }
+});
