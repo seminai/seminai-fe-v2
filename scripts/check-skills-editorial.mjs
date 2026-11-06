@@ -1,0 +1,35 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+const dictionary=JSON.parse(readFileSync(new URL('../catalog/src/content/skills.json',import.meta.url),'utf8'));
+const base=process.env.SEO_CATALOG_BASE??'http://127.0.0.1:4322';
+const rows=[];
+const decode=text=>text.replace(/&(?:amp|lt|gt|quot|#39|apos);/g,entity=>({'&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&#39;':"'",'&apos;':"'"}[entity]));
+for(const [slug,entry] of Object.entries(dictionary)) for(const lang of ['it','en']) {
+ const path=`${lang==='en'?'/en':''}/skills/${slug}/`;
+ const response=await fetch(base+path),html=await response.text();
+ assert.equal(response.status,200,path);
+ assert.match(html,new RegExp(`<html lang="${lang}"`));
+ assert.doesNotMatch(html,/content="noindex/);
+ assert.ok(html.includes(`href="https://seminai.tech${path}"`));
+ assert.match(html,/hreflang="it"/);assert.match(html,/hreflang="en"/);
+ assert.equal(decode(html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)[1]),entry[lang].name);
+ assert.equal(decode(html.match(/class="skill-instructions"[^>]*>([\s\S]*?)<\/div>/)[1]),entry[lang].instructions);
+ const structured=JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+ assert.equal(structured['@graph'][0].text,entry[lang].instructions);
+ assert.equal(structured['@graph'][0].inLanguage,lang);
+ assert.ok(!html.includes('PRIVATE RULE MUST NEVER APPEAR'));
+ const markdownResponse=await fetch(base+path.replace(/\/$/,'.md'));
+ const markdown=await markdownResponse.text();
+ assert.equal(markdownResponse.status,200);
+ assert.equal(markdownResponse.headers.get('content-type'),'text/markdown; charset=utf-8');
+ assert.ok(markdownResponse.headers.get('link').includes(`https://seminai.tech${path}`));
+ const escaped=entry[lang].instructions.replace(/([\\`*_{}[\]()#+!<>])/g,'\\$1');
+ assert.ok(markdown.includes(escaped),path);
+ rows.push({path,lang,title:entry[lang].name,html:response.status,markdown:markdownResponse.status,canonical:true,hreflang:true,contentEquivalent:true});
+}
+const sitemap=await(await fetch(base+'/sitemap-skills.xml')).text();
+assert.equal((sitemap.match(/<loc>/g)??[]).length,106);
+for(const row of rows) assert.ok(sitemap.includes(`https://seminai.tech${row.path}`));
+const report={checkedAt:new Date().toISOString(),environment:'Local Worker with anonymous public-source snapshot; no production deployment',skills:Object.keys(dictionary).length,htmlPages:rows.length,markdownPages:rows.length,sitemapEntries:106,rows};
+if(process.env.SEO_SKILLS_REPORT) writeFileSync(process.env.SEO_SKILLS_REPORT,JSON.stringify(report,null,2)+'\n');
+console.log(JSON.stringify({skills:report.skills,htmlPages:report.htmlPages,markdownPages:report.markdownPages,sitemapEntries:report.sitemapEntries}));

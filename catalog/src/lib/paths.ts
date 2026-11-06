@@ -1,5 +1,6 @@
 export type Language = 'it' | 'en';
 export const rulesPath = (lang: Language) => lang === 'en' ? '/en/rules/' : '/regole/';
+export const skillsPath = (lang: Language) => lang === 'en' ? '/en/skills/' : '/skills/';
 export const categoryPath = (lang: Language, category: string) => `${rulesPath(lang)}${lang === 'en' ? 'category' : 'categoria'}/${category.toLowerCase()}/`;
 export const demoPath = (lang: Language) => lang === 'en' ? '/en/request-a-demo/' : '/richiedi-demo/';
 export const absolute = (path: string) => `https://seminai.tech${path}`;

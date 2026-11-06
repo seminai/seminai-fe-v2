@@ -1,4 +1,6 @@
 import { createServer } from "node:http";
+import {createHash} from "node:crypto";
+import {readFileSync} from "node:fs";
 let mode = "published";
 const rules = Array.from({ length: 53 }, (_, index) => ({
   id: `synthetic-${index + 1}`,
@@ -18,6 +20,11 @@ const rules = Array.from({ length: 53 }, (_, index) => ({
   validUntil: null,
   isTemplate: true,
 }));
+const skills=Array.from({length:53},(_,index)=>({
+ slug:`synthetic-skill-${index+1}`, name:`Skill sintetica ${index+1}`, description:'Descrizione sintetica per test. Nessun dato cliente.',
+ instructions:'Obiettivo: analizzare dati sintetici.\nInput richiesti: dati sintetici.\nPassi operativi:\n1. Verifica i dati.\n2. Prepara una bozza.\n3. Richiedi revisione.\nOutput atteso: bozza sintetica.\nGuardrail: non eseguire azioni reali.'
+}));
+const fingerprint=skill=>createHash('sha256').update(JSON.stringify([skill.name,skill.description,skill.instructions])).digest('hex');
 createServer((request, response) => {
   const url = new URL(request.url, "http://127.0.0.1");
   response.setHeader("Content-Type", "application/json");
@@ -32,7 +39,29 @@ createServer((request, response) => {
     response.end("{}");
     return;
   }
-  const items =
+  if (url.pathname.startsWith('/public/skills')) {
+    let source=mode==='editorial' && process.env.SEO_SKILLS_PUBLIC_SNAPSHOT
+      ? JSON.parse(readFileSync(process.env.SEO_SKILLS_PUBLIC_SNAPSHOT,'utf8')) : skills;
+    if(mode==='removed') source=source.slice(1);
+    if(mode==='empty') source=[];
+    const current=source.map((skill,index)=>{
+      const entry=mode==='updated' && index===0?{...skill,instructions:'Revised synthetic instructions; review pending.'}:skill;
+      const hostile=mode==='hostile' && index===0?{...entry,name:'<script>alert("synthetic")</script>',instructions:'<img src=x onerror="alert(1)">'}:entry;
+      return {...hostile,sourceFingerprint:fingerprint(hostile),sourceRuleName:'PRIVATE RULE MUST NEVER APPEAR',creatorName:'PRIVATE CREATOR MUST NEVER APPEAR'};
+    });
+    if(mode==='malformed') {response.end(JSON.stringify({status:'success',data:{skills:{items:[],total:'broken'}}}));return;}
+    let data;
+    if(url.pathname==='/public/skills') {
+      const page=Number(url.searchParams.get('page')??1),limit=Number(url.searchParams.get('limit')??20);
+      data={skills:{items:current.slice((page-1)*limit,page*limit).map(({instructions,...item})=>item),total:current.length,page,limit,hasNextPage:page*limit<current.length}};
+    } else {
+      const skill=current.find(item=>url.pathname===`/public/skills/${item.slug}`);
+      if(!skill) {response.statusCode=404;response.end('{}');return;}
+      data={skill};
+    }
+    response.end(JSON.stringify({status:'success',data}));return;
+  }
+  const items = mode === 'editorial' ? [] :
     mode === "removed"
       ? rules.slice(1)
       : rules.map((rule) =>

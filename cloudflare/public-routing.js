@@ -8,8 +8,9 @@ const cataloguePath = (path) =>
   path.startsWith("/regole/") ||
   path === "/en/rules" ||
   path.startsWith("/en/rules/") ||
+  /^\/(?:en\/)?skills(?:\/|\.md$|$)/.test(path) ||
   path.startsWith("/catalog-assets/") ||
-  path === "/sitemap-rules.xml";
+  path === "/sitemap-rules.xml" || path === "/sitemap-skills.xml";
 export function wantsMarkdown(request) {
   return (request.headers.get("Accept") ?? "").split(",").some((item) => {
     const [type, ...parameters] = item.trim().split(";");
@@ -53,7 +54,9 @@ export async function routePublicRequest(request, env = {}) {
   const url = new URL(request.url);
   const path = url.pathname;
   if (cataloguePath(path)) {
-    if (["/regole", "/en/rules"].includes(path))
+    if (/^\/(?:en\/)?skills\/.+/.test(path) && !path.endsWith('/') && !path.endsWith('.md'))
+      return Response.redirect(`${site.origin}${path}/${url.search}`, 301);
+    if (["/regole", "/en/rules", "/skills", "/en/skills"].includes(path))
       return Response.redirect(`${site.origin}${path}/${url.search}`, 301);
     if (!env.CATALOG)
       return new Response("Catalogue temporarily unavailable", {
@@ -67,8 +70,13 @@ export async function routePublicRequest(request, env = {}) {
     const headers = new Headers(request.headers);
     headers.delete("Cookie");
     headers.delete("Authorization");
+    // Negotiate on the public URL, fetch a separate internal URL so HTML and Markdown
+    // cannot share a CDN cache key. Explicit .md requests use this same route.
+    const target = new URL(url);
+    if (/^\/(?:en\/)?skills\//.test(path) && wantsMarkdown(request))
+      target.pathname = path.replace(/\/$/, "") + ".md";
     const response = await env.CATALOG.fetch(
-      new Request(request, { headers, redirect: "manual" }),
+      new Request(target, { method: request.method, headers, redirect: "manual" }),
     );
     return response;
   }

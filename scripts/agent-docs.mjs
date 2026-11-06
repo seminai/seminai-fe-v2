@@ -376,6 +376,8 @@ function llmsTxt() {
       .map((page) => `- [${page.file}](${SITE}/${page.file})`),
     `- [Catalogo pubblico vivo](${SITE}/regole/): le regole vengono lette dalle API pubbliche, non copiate nel contesto aggregato.`,
     `- [Live public catalogue (English)](${SITE}/en/rules/)`,
+    `- [Skill AI pubbliche](${SITE}/skills/): workflow pubblici con istruzioni bilingui, distinti dalle regole. Consulta il catalogo vivo per disponibilità e contenuti aggiornati.`,
+    `- [Public AI skills (English)](${SITE}/en/skills/): live public workflows with bilingual instructions, separate from rules.`,
     "",
     "## Legale",
     "",

@@ -333,9 +333,9 @@ add(
   {
     title: "Guide e risorse per i dati agricoli",
     description:
-      "Guide su documenti, quaderno di campagna e magazzino, con il catalogo delle regole pubbliche di Seminai.",
+      "Guide su documenti, quaderno di campagna e magazzino, con i cataloghi delle skill AI e delle regole pubbliche di Seminai.",
     intro:
-      "Un punto di partenza per collegare ciò che arriva dai documenti al lavoro dei campi e ai registri. Le guide spiegano i passaggi; il catalogo permette di consultare le regole rese pubbliche.",
+      "Un punto di partenza per collegare ciò che arriva dai documenti al lavoro dei campi e ai registri. Le guide spiegano i passaggi; i cataloghi distinguono i workflow AI dalle regole rese pubbliche.",
     sections: [
       {
         title: "Scegli il tuo percorso",
@@ -351,9 +351,9 @@ add(
   {
     title: "Farm data guides and resources",
     description:
-      "Guides to farm documents, field logbooks and stock records, alongside Seminai's public rules catalogue.",
+      "Guides to farm documents, field logbooks and stock records, alongside Seminai's public AI skills and rules catalogues.",
     intro:
-      "Start connecting incoming documents with field work and registers. Guides explain the steps; the catalogue lets you consult rules that publishers have made public.",
+      "Start connecting incoming documents with field work and registers. Guides explain the steps; the catalogues separate public AI workflows from published rules.",
     sections: [
       {
         title: "Choose your starting point",

@@ -1,0 +1,702 @@
+{
+  "analisi-stato-fenologico": {
+    "listFingerprint": "d81c6c060fd774d3bdf86369f3850ddfeffb4083d03ce7027c0afacfa23d2c7f",
+    "detailFingerprint": "57b097c4bdb96133d12685a516e416743777caa4f1447559e7601c102293d9ec",
+    "it": {
+      "name": "Analisi dello stato fenologico",
+      "description": "Determina lo stadio fenologico BBCH del vigneto a partire da osservazioni di campo e foto, con suggerimenti sulle operazioni da programmare.",
+      "instructions": "Obiettivo: identificare lo stadio fenologico BBCH corrente della vite e collegarlo alle operazioni agronomiche consigliate.\nInput richiesti: varietà, data ultimo rilievo, foto o descrizione testuale dei germogli/grappoli.\nPassi operativi:\n1. Confronta la descrizione fornita con la scala BBCH per la vite.\n2. Stima lo stadio più probabile indicando un intervallo di confidenza.\n3. Elenca le operazioni tipiche per lo stadio individuato (potatura verde, difesa, diradamento).\nOutput atteso: stadio BBCH stimato, data prevista per il prossimo rilievo, checklist operativa.\nGuardrail: segnala sempre quando serve una verifica visiva in campo da parte dell'agronomo."
+    },
+    "en": {
+      "name": "Vine phenological stage analysis",
+      "description": "Determine the vineyard's BBCH phenological stage from field observations and photos, with suggestions for operations to schedule.",
+      "instructions": "Goal: identify the vine's current BBCH phenological stage and relate it to recommended agronomic operations.\nRequired input: variety, date of the last observation, photos or a written description of shoots and clusters.\nWorkflow steps:\n1. Compare the description provided with the BBCH scale for grapevines.\n2. Estimate the most likely stage, indicating a confidence interval.\n3. List typical operations for the identified stage (green pruning, crop protection, thinning).\nExpected output: estimated BBCH stage, suggested date for the next observation, operational checklist.\nGuardrail: always indicate when an agronomist needs to perform a visual field check."
+    }
+  },
+  "annual-fertilization-calendar": {
+    "listFingerprint": "178c1dd6449361375f0deb9274285aca3774f8b7ccc8999cc7d8b7ee8bde6197",
+    "detailFingerprint": "7b991478675854f3818662ad09ec98a6a7927d01b0d5e035d91d44bba8fd9ad1",
+    "it": {
+      "name": "Calendario concimazione annuale",
+      "description": "Distribuisce il piano di concimazione annuale su un calendario mensile, evidenziando le finestre di applicazione critiche.",
+      "instructions": "Obiettivo: distribuire un piano di concimazione annuale su un calendario mensile con finestre di applicazione chiare.\nInput richiesti: piano di fertilizzazione annuale (elementi e quantità totali), fasi fenologiche della coltura.\nPassi operativi:\n1. Suddividi le quantità totali di ciascun elemento nelle finestre fenologiche più adatte.\n2. Evidenzia le finestre in cui coincidono più applicazioni.\n3. Segnala eventuali vincoli normativi sulle epoche di spandimento.\nOutput atteso: calendario mensile con elemento, quantità e finestra di applicazione.\nGuardrail: rispetta sempre le finestre di divieto di spandimento previste dalla normativa nitrati, se applicabile."
+    },
+    "en": {
+      "name": "Annual fertilization calendar",
+      "description": "Distribute the annual fertilization plan across a monthly calendar, highlighting critical application windows.",
+      "instructions": "Goal: distribute an annual fertilization plan across a monthly calendar with clear application windows.\nRequired input: annual fertilization plan (nutrients and total quantities), crop phenological stages.\nWorkflow steps:\n1. Allocate the total quantity of each nutrient to the most appropriate phenological windows.\n2. Highlight windows in which several applications coincide.\n3. Flag any regulatory restrictions on application periods.\nExpected output: monthly calendar with nutrient, quantity and application window.\nGuardrail: always respect the application prohibition periods required by nitrate regulations, where applicable."
+    }
+  },
+  "bom-cost-breakdown": {
+    "listFingerprint": "2f6f5886e3aefe730d0de80ae0e9e536a696ee622f80fc29d43a71386d204b18",
+    "detailFingerprint": "94e04a485e1e73ea679f3333c6479a9ce50911368a63352120e21f180b36767b",
+    "it": {
+      "name": "Scomposizione costi di distinta base",
+      "description": "Scompone il costo di produzione di un articolo a partire dalla distinta base (BOM), evidenziando le voci di costo principali.",
+      "instructions": "Obiettivo: scomporre il costo di produzione di un articolo a partire dalla sua distinta base (BOM), evidenziando i principali fattori di costo.\nInput richiesti: componenti della distinta base con quantità e costi unitari, tariffe di manodopera e costi generali se disponibili.\nPassi operativi:\n1. Aggrega il costo dei materiali per componente e somma i risultati per ottenere il costo totale dei materiali.\n2. Aggiungi manodopera e costi generali sulla base delle tariffe fornite.\n3. Ordina le componenti di costo per individuare quelle che contribuiscono maggiormente al totale.\nOutput atteso: costo unitario totale con dettaglio di materiali, manodopera, costi generali e principali fattori di costo.\nGuardrail: segnala ogni componente privo di costo unitario, invece di escluderlo dal totale senza indicarlo."
+    },
+    "en": {
+      "name": "Bill of materials cost breakdown",
+      "description": "Break down an item's production cost from its bill of materials (BOM), highlighting the main cost components.",
+      "instructions": "Goal: break down the production cost of an item from its bill of materials (BOM), highlighting the main cost drivers.\nRequired input: BOM components with quantities and unit costs, labor and overhead rates if available.\nWorkflow steps:\n1. Aggregate material cost per component and sum them into a total material cost.\n2. Add labor and overhead cost based on the provided rates.\n3. Rank cost components to identify the largest contributors to total cost.\nExpected output: total unit cost with a breakdown by material, labor, overhead, and the top cost drivers.\nGuardrail: flag any BOM component missing a unit cost instead of silently excluding it from the total."
+    }
+  },
+  "calcolo-dosaggio-fitosanitario": {
+    "listFingerprint": "c066b52c0a89dfce14db29e7bac917c8a9277949df3a2fcbd88b5246d97ac2b5",
+    "detailFingerprint": "1c8b505f61cac1a46b3f5d3463e8ce4e2492ae16b1c1a095cecb6a0fd84edafb",
+    "it": {
+      "name": "Calcolo dosaggio fitosanitario",
+      "description": "Calcola la quantità di prodotto fitosanitario da preparare in base a dose per ettaro, superficie e capacità della botte.",
+      "instructions": "Obiettivo: calcolare la quantità esatta di prodotto fitosanitario da preparare sulla base della dose di etichetta, della superficie trattata e della capacità della botte.\nInput richiesti: dose (per ha o per hL), superficie da trattare, capacità della botte e volume d'acqua per ha.\nPassi operativi:\n1. Converti la dose di etichetta nella stessa unità degli input disponibili.\n2. Calcola la quantità totale di prodotto necessaria per l'intera superficie.\n3. Ripartisci la quantità per ciascun carico in base alla capacità della botte.\nOutput atteso: quantità totale di prodotto e quantità per carico, mostrando le conversioni delle unità.\nGuardrail: mostra sempre i passaggi intermedi del calcolo affinché l'operatore possa verificarli prima della miscelazione."
+    },
+    "en": {
+      "name": "Plant protection product dose calculation",
+      "description": "Calculate the quantity of plant protection product to prepare from the dose per hectare, treated area and sprayer tank capacity.",
+      "instructions": "Goal: calculate the exact amount of plant protection product to prepare given the label dose rate, treated area, and sprayer tank capacity.\nRequired input: dose rate (per ha or per hL), area to treat, sprayer tank capacity and water volume per ha.\nWorkflow steps:\n1. Convert the label dose rate to the same unit as the available inputs.\n2. Compute total product quantity needed for the full area.\n3. Break down the quantity per tank load based on sprayer capacity.\nExpected output: total product quantity and per-tank quantity, with unit conversions shown.\nGuardrail: always show intermediate calculation steps so the operator can double-check before mixing."
+    }
+  },
+  "calcolo-intervallo-sicurezza": {
+    "listFingerprint": "1351ec3cc0e585162f4f5a009fccc673c2f1ea72e953171ad38ccf34a56119fe",
+    "detailFingerprint": "d2246bb7be72ff226eec74faac3b21e004d3d7478f82dba4ce1d4b60fd9b0a5a",
+    "it": {
+      "name": "Calcolo intervallo di sicurezza",
+      "description": "Calcola l'intervallo di sicurezza (giorni alla raccolta) per un trattamento fitosanitario a partire dall'etichetta del prodotto.",
+      "instructions": "Obiettivo: calcolare l'intervallo di sicurezza (giorni alla raccolta) applicabile a un trattamento fitosanitario.\nInput richiesti: nome commerciale o principio attivo, colture target, data del trattamento.\nPassi operativi:\n1. Recupera l'intervallo di sicurezza dichiarato in etichetta per la coltura indicata.\n2. Calcola la data minima di raccolta a partire dalla data del trattamento.\n3. Segnala eventuali intervalli di sicurezza differenti per usi diversi dello stesso prodotto.\nOutput atteso: intervallo di sicurezza in giorni, data minima di raccolta consentita.\nGuardrail: in caso di ambiguità nell'etichetta, richiedi sempre la verifica del documento ufficiale prima di procedere."
+    },
+    "en": {
+      "name": "Pre-harvest interval calculation",
+      "description": "Calculate the pre-harvest interval for a plant protection treatment using the product label.",
+      "instructions": "Goal: calculate the pre-harvest interval (days before harvest) applicable to a plant protection treatment.\nRequired input: commercial product name or active ingredient, target crops, treatment date.\nWorkflow steps:\n1. Retrieve the pre-harvest interval stated on the label for the specified crop.\n2. Calculate the earliest harvest date from the treatment date.\n3. Flag any different pre-harvest intervals for different uses of the same product.\nExpected output: pre-harvest interval in days, earliest permitted harvest date.\nGuardrail: if the label is ambiguous, always request verification of the official document before proceeding."
+    }
+  },
+  "calendario-operazioni-vigneto": {
+    "listFingerprint": "df30855bd2bdb33a8052948016d826ade62ff4f0cdcf2f947063e62f3241833c",
+    "detailFingerprint": "d8c7266e8b380bf16fa582c1a05e30923c4ff5034149e9eeeb5f30a55cbbdcf4",
+    "it": {
+      "name": "Calendario operazioni di vigneto",
+      "description": "Costruisce un calendario mensile delle principali operazioni di vigneto in base a zona climatica e varietà coltivate.",
+      "instructions": "Obiettivo: costruire un calendario mensile delle principali operazioni di vigneto per l'annata in corso.\nInput richiesti: zona climatica/regione, varietà principali, data di germogliamento registrata (se disponibile).\nPassi operativi:\n1. Allinea le fasi fenologiche tipiche della zona climatica indicata.\n2. Distribuisci le operazioni standard (potatura verde, difesa, diradamento, vendemmia) sul calendario.\n3. Evidenzia le finestre critiche in cui più operazioni si sovrappongono.\nOutput atteso: calendario mensile con operazioni, priorità e note di sovrapposizione.\nGuardrail: aggiorna il calendario se vengono forniti nuovi dati fenologici osservati sul campo."
+    },
+    "en": {
+      "name": "Vineyard operations calendar",
+      "description": "Build a monthly calendar of key vineyard operations based on climate zone and grape varieties.",
+      "instructions": "Goal: build a monthly calendar of the main vineyard operations for the current growing season.\nRequired input: climate zone or region, main varieties, recorded budbreak date if available.\nWorkflow steps:\n1. Align the typical phenological stages with the specified climate zone.\n2. Distribute standard operations (green pruning, crop protection, thinning, harvest) across the calendar.\n3. Highlight critical windows in which several operations overlap.\nExpected output: monthly calendar with operations, priorities and overlap notes.\nGuardrail: update the calendar when new phenological observations from the field are provided."
+    }
+  },
+  "canopy-management-advisor": {
+    "listFingerprint": "2f7a298f152480660c4cbd2b8ac337763c4780cc4ef92e5fbc905875c41c875f",
+    "detailFingerprint": "a66f6b34452a77d37e65825256a59e6541b61f51ad4158f067ff82e4baad0952",
+    "it": {
+      "name": "Gestione della chioma",
+      "description": "Valuta la gestione della chioma (Leaf Area Index, esposizione grappoli) e propone interventi correttivi mirati.",
+      "instructions": "Obiettivo: valutare lo stato di gestione della chioma attraverso indicatori indiretti (indice di area fogliare, esposizione dei grappoli al sole) e proporre azioni correttive.\nInput richiesti: indice di area fogliare stimato o descrizione della densità della chioma, orientamento dei filari, sistema di allevamento.\nPassi operativi:\n1. Valuta se la chioma è poco sviluppata, equilibrata o eccessiva rispetto al sistema di allevamento.\n2. Individua il rischio principale (scarsa esposizione, pressione delle malattie, fotosintesi insufficiente).\n3. Proponi uno o due interventi mirati (sfogliatura, posizionamento dei germogli, cimatura).\nOutput atteso: classificazione dello stato della chioma e breve elenco di interventi ordinati per priorità.\nGuardrail: considera l'orientamento dei filari e il clima locale prima di raccomandare una sfogliatura intensa."
+    },
+    "en": {
+      "name": "Canopy management advisor",
+      "description": "Assess canopy management using leaf area index and cluster exposure, and propose targeted corrective interventions.",
+      "instructions": "Goal: assess canopy management status using proxy indicators (leaf area index, cluster sun exposure) and propose corrective actions.\nRequired input: estimated leaf area index or canopy density description, row orientation, training system.\nWorkflow steps:\n1. Evaluate whether the canopy is under-developed, balanced, or excessive for the training system.\n2. Identify the main risk (poor exposure, disease pressure, insufficient photosynthesis).\n3. Propose one or two targeted interventions (leaf removal, shoot positioning, hedging).\nExpected output: canopy status classification and a short list of prioritized interventions.\nGuardrail: consider row orientation and local climate before recommending aggressive leaf removal."
+    }
+  },
+  "cellar-yield-estimator": {
+    "listFingerprint": "cde5c8dddb3886844ab5c9ff868243b778319712bdf08f10a040120aea0238c4",
+    "detailFingerprint": "6d2a8f4d6ad52fd10aafe7c9a0200284322af841e3ffdca89434e30819778528",
+    "it": {
+      "name": "Stima resa in cantina",
+      "description": "Stima la resa in vino ottenibile da un conferimento di uva in base a resa storica e caratteristiche del lotto.",
+      "instructions": "Obiettivo: stimare la resa in vino attesa da un conferimento di uva, sulla base delle rese storiche e delle caratteristiche del lotto.\nInput richiesti: quantità di uva conferita, varietà, rapporto storico ettolitri per tonnellata se disponibile.\nPassi operativi:\n1. Applica alla quantità conferita il rapporto di resa storico della varietà.\n2. Adegua la stima se sono forniti fattori specifici del lotto (marciume, disidratazione, metodo di estrazione).\n3. Presenta la stima come intervallo anziché come singolo valore fisso.\nOutput atteso: intervallo di resa in vino stimata in ettolitri, con le ipotesi utilizzate.\nGuardrail: dichiara chiaramente che la resa finale dipende dalle scelte di processo in cantina e può essere soltanto stimata, non garantita."
+    },
+    "en": {
+      "name": "Cellar yield estimator",
+      "description": "Estimate the wine yield from a grape delivery using historical yields and batch characteristics.",
+      "instructions": "Goal: estimate the expected wine yield from a grape delivery, based on historical yield ratios and lot characteristics.\nRequired input: grape quantity delivered, variety, historical hectoliters-per-ton ratio if available.\nWorkflow steps:\n1. Apply the historical yield ratio for the variety to the delivered quantity.\n2. Adjust the estimate if lot-specific factors are provided (rot, dehydration, extraction method).\n3. Present the estimate as a range rather than a single fixed number.\nExpected output: estimated wine yield range in hectoliters, with the assumptions used.\nGuardrail: clearly state that the final yield depends on cellar process choices and can only be estimated, not guaranteed."
+    }
+  },
+  "ddt-courier-summary": {
+    "listFingerprint": "926aacc8af56d0b293eb87833e3b774ec1876e75b80a2e400d11a9823fc79819",
+    "detailFingerprint": "d27055c69b6ce8a47664a87ea5f0935127ff95347db4387ca3d2db4e516909e0",
+    "it": {
+      "name": "Riepilogo corriere DDT",
+      "description": "Compila un riepilogo dei documenti di trasporto (DDT) da consegnare al corriere per le spedizioni della giornata.",
+      "instructions": "Obiettivo: compilare un riepilogo dei documenti di trasporto (DDT) da consegnare al corriere per le spedizioni della giornata.\nInput richiesti: elenco dei DDT emessi nella giornata con destinatario, colli e peso.\nPassi operativi:\n1. Raggruppa i DDT per corriere/zona di consegna.\n2. Calcola il numero totale di colli e il peso complessivo per corriere.\n3. Segnala eventuali DDT con dati di spedizione incompleti.\nOutput atteso: riepilogo per corriere con totale colli, peso e lista DDT, pronto per la consegna al corriere.\nGuardrail: non includere nel riepilogo un DDT privo di indirizzo di consegna valido; segnalarlo separatamente."
+    },
+    "en": {
+      "name": "Delivery note courier summary",
+      "description": "Compile a summary of the delivery notes (DDT) to hand to the courier for the day's shipments.",
+      "instructions": "Goal: compile a summary of the delivery notes (DDT) to hand to the courier for the day's shipments.\nRequired input: list of delivery notes issued during the day, including recipient, package count and weight.\nWorkflow steps:\n1. Group delivery notes by courier and delivery area.\n2. Calculate the total package count and total weight for each courier.\n3. Flag delivery notes with incomplete shipping details.\nExpected output: summary per courier with total packages, weight and delivery note list, ready to hand to the courier.\nGuardrail: exclude delivery notes without a valid delivery address from the summary and flag them separately."
+    }
+  },
+  "diagnosi-stress-idrico": {
+    "listFingerprint": "719788b4c5d03f6fbe14c82252522e10115f8ba12ad7ed1b799b48a5d584da7b",
+    "detailFingerprint": "b7a6af8556e50cf873334f11893cd4a19245fd3b518589b378c02be4a69bc83c",
+    "it": {
+      "name": "Diagnosi stress idrico",
+      "description": "Interpreta sintomi visivi e dati di potenziale idrico fogliare per classificare il livello di stress idrico della vite.",
+      "instructions": "Obiettivo: classificare il livello di stress idrico della vite a partire da sintomi visivi e/o misure del potenziale idrico fogliare.\nInput richiesti: descrizione dei sintomi (accartocciamento fogliare, disseccamento dei viticci) e/o potenziale idrico del fusto o delle foglie in bar.\nPassi operativi:\n1. Associa i sintomi o i valori di potenziale riportati a una categoria di stress (assente, lieve, moderato, grave).\n2. Quando sono disponibili entrambi, verifica la coerenza tra sintomi visivi e misure numeriche.\n3. Raccomanda un adeguamento dell'irrigazione coerente con la fase fenologica.\nOutput atteso: categoria di stress, livello di confidenza, raccomandazione di adeguamento dell'irrigazione.\nGuardrail: sottoponi i casi di stress grave a verifica umana immediata anziché ad azioni automatiche."
+    },
+    "en": {
+      "name": "Vine water stress diagnosis",
+      "description": "Interpret visual symptoms and leaf water potential data to classify the vine's level of water stress.",
+      "instructions": "Goal: classify vine water stress level from visual symptoms and/or leaf water potential readings.\nRequired input: symptom description (leaf curling, tendril drying) and/or stem/leaf water potential in bar.\nWorkflow steps:\n1. Map the reported symptoms or potential values to a stress category (none, mild, moderate, severe).\n2. Cross-check consistency between visual symptoms and numeric readings when both are available.\n3. Recommend an irrigation adjustment aligned with the phenological stage.\nExpected output: stress category, confidence level, irrigation adjustment recommendation.\nGuardrail: flag severe stress cases for immediate human review rather than automated action."
+    }
+  },
+  "downy-mildew-model": {
+    "listFingerprint": "a6c11cf96b8395921cd358c0f4375b1b5f2cbff2b67f3498f5ff42f58810ffea",
+    "detailFingerprint": "8c6d4cf134b63d4f58ec1bdd5a8ddabce90b024c7ec6825a25b4c347f267345c",
+    "it": {
+      "name": "Modello previsionale peronospora",
+      "description": "Stima il rischio di infezione da peronospora sulla base di temperatura, umidità/bagnatura fogliare e stadio fenologico.",
+      "instructions": "Obiettivo: stimare il rischio di infezione da peronospora sulla base di temperatura, bagnatura fogliare e stadio fenologico.\nInput richiesti: temperatura media, ore di bagnatura fogliare/umidità relativa, stadio fenologico corrente.\nPassi operativi:\n1. Verifica se le condizioni minime per l'infezione (temperatura e bagnatura) sono soddisfatte.\n2. Classifica il livello di rischio (basso, medio, alto) in base all'intensità e durata delle condizioni.\n3. Suggerisci se è necessario un intervento preventivo nei prossimi giorni.\nOutput atteso: livello di rischio con motivazione, raccomandazione di intervento preventivo.\nGuardrail: considera il modello come supporto decisionale, non sostituisce il monitoraggio visivo diretto in campo."
+    },
+    "en": {
+      "name": "Downy mildew risk model",
+      "description": "Estimate downy mildew infection risk from temperature, humidity or leaf wetness, and phenological stage.",
+      "instructions": "Goal: estimate downy mildew infection risk based on temperature, leaf wetness and phenological stage.\nRequired input: average temperature, leaf wetness hours or relative humidity, current phenological stage.\nWorkflow steps:\n1. Check whether the minimum infection conditions (temperature and wetness) are met.\n2. Classify the risk level (low, medium, high) according to the intensity and duration of the conditions.\n3. Suggest whether a preventive intervention is needed in the coming days.\nExpected output: risk level with reasoning and a preventive intervention recommendation.\nGuardrail: treat the model as decision support; it does not replace direct visual field monitoring."
+    }
+  },
+  "drone-flight-planner": {
+    "listFingerprint": "c616fccbe064f8b33692539171f39a7d86223a4c23b38967499b0d720daf2df4",
+    "detailFingerprint": "314b7bb59512991c6766c4fb11adaeac03db9dfb52c42e1ae50c849ad7b5baff",
+    "it": {
+      "name": "Pianificazione volo drone multispettrale",
+      "description": "Pianifica un volo drone multispettrale su un campo, suggerendo orario, altitudine di volo e overlap per la qualità dei dati.",
+      "instructions": "Obiettivo: pianificare un volo drone multispettrale su un campo, suggerendo orario, altitudine e sovrapposizione per una qualità ottimale dei dati.\nInput richiesti: dimensioni e forma del campo, sensore previsto (multispettrale o termico), risoluzione al suolo desiderata.\nPassi operativi:\n1. Raccomanda una finestra oraria che riduca al minimo ombre e interferenze del vento.\n2. Suggerisci altitudine e percentuale di sovrapposizione coerenti con la risoluzione al suolo desiderata.\n3. Stima la durata del volo e il numero di passaggi necessari per coprire il campo.\nOutput atteso: finestra di volo, altitudine, sovrapposizione e durata stimata consigliate.\nGuardrail: raccomanda sempre di verificare le norme locali sul volo dei droni e le restrizioni dello spazio aereo prima del volo."
+    },
+    "en": {
+      "name": "Multispectral drone flight planner",
+      "description": "Plan a multispectral drone flight over a field, suggesting timing, altitude and overlap for data quality.",
+      "instructions": "Goal: plan a multispectral drone flight over a field, suggesting flight time, altitude, and overlap for optimal data quality.\nRequired input: field size and shape, target sensor (multispectral/thermal), desired ground resolution.\nWorkflow steps:\n1. Recommend a flight time window that minimizes shadows and wind interference.\n2. Suggest an altitude and overlap percentage consistent with the desired ground resolution.\n3. Estimate flight duration and number of passes required to cover the field.\nExpected output: recommended flight window, altitude, overlap, and estimated duration.\nGuardrail: always recommend checking local drone flight regulations and airspace restrictions before the flight."
+    }
+  },
+  "field-kpi-dashboard": {
+    "listFingerprint": "22b09143e1ddda6a4338d7ae320694a3cfc0be80bdd2ae2fb9d3ee6d46744083",
+    "detailFingerprint": "41ea944b9c69f9af584875d5b68a2875974fa0f4047f00daa09a81b3e061a223",
+    "it": {
+      "name": "Cruscotto indicatori di campo",
+      "description": "Aggrega gli indicatori chiave di un campo (vigore, stress idrico, rischio fitosanitario) in un cruscotto sintetico settimanale.",
+      "instructions": "Obiettivo: aggregare gli indicatori chiave disponibili per un campo in un cruscotto sintetico settimanale.\nInput richiesti: indicatori disponibili (vigore, stress idrico, rischio fitosanitario, meteo) per la settimana.\nPassi operativi:\n1. Normalizza gli indicatori disponibili su una scala comune (es. basso/medio/alto).\n2. Combina gli indicatori in una valutazione complessiva dello stato del campo.\n3. Evidenzia l'indicatore più critico della settimana.\nOutput atteso: cruscotto settimanale con stato complessivo e indicatore critico evidenziato.\nGuardrail: non nascondere indicatori mancanti dietro una media aggregata; mostrali sempre come \"dato non disponibile\"."
+    },
+    "en": {
+      "name": "Field indicator dashboard",
+      "description": "Aggregate a field's key indicators, including vigor, water stress and plant health risk, in a concise weekly dashboard.",
+      "instructions": "Goal: aggregate a field's available key indicators into a concise weekly dashboard.\nRequired input: available indicators (vigor, water stress, plant health risk, weather) for the week.\nWorkflow steps:\n1. Normalize the available indicators to a common scale, such as low, medium or high.\n2. Combine the indicators into an overall assessment of field conditions.\n3. Highlight the week's most critical indicator.\nExpected output: weekly dashboard with overall status and the critical indicator highlighted.\nGuardrail: do not hide missing indicators within an aggregate average; always show them as \"data unavailable\"."
+    }
+  },
+  "foliar-feeding-advisor": {
+    "listFingerprint": "fedcd9c67fedd0611d4ae7629331f168448ce09b3bad952fa2f6e2a235f9c3b9",
+    "detailFingerprint": "2377b7012da1622e89af0bc670777552dda7fc71a6375b1af5f7d894068cd435",
+    "it": {
+      "name": "Consulente fertirrigazione foliare",
+      "description": "Suggerisce interventi di fertirrigazione o concimazione foliare per correggere carenze nutrizionali rilevate in campo.",
+      "instructions": "Obiettivo: suggerire interventi di fertirrigazione o concimazione foliare per correggere una carenza nutrizionale rilevata.\nInput richiesti: sintomo o carenza osservata (es. ingiallimento internervale), coltura, fase fenologica.\nPassi operativi:\n1. Associa il sintomo descritto all'elemento nutritivo più probabilmente carente.\n2. Proponi un intervento foliare o in fertirrigazione con dose e concentrazione indicative.\n3. Suggerisci un intervallo per la verifica dell'efficacia dell'intervento.\nOutput atteso: elemento carente ipotizzato, intervento consigliato, timing di verifica.\nGuardrail: raccomanda un'analisi del tessuto foliare per confermare la diagnosi prima di interventi ripetuti."
+    },
+    "en": {
+      "name": "Fertigation and foliar feeding advisor",
+      "description": "Suggest fertigation or foliar feeding interventions to address nutrient deficiencies observed in the field.",
+      "instructions": "Goal: suggest fertigation or foliar feeding interventions to address an observed nutrient deficiency.\nRequired input: observed symptom or deficiency (for example, interveinal yellowing), crop, phenological stage.\nWorkflow steps:\n1. Associate the described symptom with the nutrient most likely to be deficient.\n2. Propose a foliar or fertigation intervention with indicative dose and concentration.\n3. Suggest an interval for checking the intervention's effectiveness.\nExpected output: suspected deficient nutrient, recommended intervention, follow-up timing.\nGuardrail: recommend leaf tissue analysis to confirm the diagnosis before repeated interventions."
+    }
+  },
+  "frost-risk-assessment": {
+    "listFingerprint": "8d4d648ecf1bd758e63e48bf2808ecb036d6d69d7d063e8011709f37256ca7bf",
+    "detailFingerprint": "f38bc017bf8250dd69b8eaf7f19f8c2ffd86441d164ad6bbf19f74baf0d3cd2a",
+    "it": {
+      "name": "Valutazione rischio gelate primaverili",
+      "description": "Valuta il rischio di gelate tardive sul vigneto in base a previsioni meteo e stadio fenologico, indicando misure di protezione.",
+      "instructions": "Obiettivo: valutare il rischio di gelate primaverili tardive nel vigneto sulla base delle previsioni meteo e dello stadio fenologico corrente.\nInput richiesti: temperature minime previste per le prossime 3-5 notti, stadio BBCH corrente, topografia del sito (fondovalle o pendio).\nPassi operativi:\n1. Confronta le temperature minime previste con la soglia di sensibilità al gelo dello stadio fenologico corrente.\n2. Adegua il livello di rischio in base alla topografia (sacche di gelo nelle aree depresse).\n3. Raccomanda misure di protezione (ventilatori, candele antigelo, irrigazione) proporzionate al livello di rischio.\nOutput atteso: livello di rischio (basso, medio, alto) per ogni notte, misure di protezione consigliate.\nGuardrail: raccomanda sempre strumenti di verifica sul posto (termometri), anziché fare affidamento soltanto sulle previsioni regionali."
+    },
+    "en": {
+      "name": "Spring frost risk assessment",
+      "description": "Assess late frost risk in the vineyard from weather forecasts and phenological stage, indicating protective measures.",
+      "instructions": "Goal: assess late spring frost risk for the vineyard based on weather forecast and current phenological stage.\nRequired input: minimum temperature forecast for the next 3-5 nights, current BBCH stage, site topography (valley floor vs slope).\nWorkflow steps:\n1. Compare forecasted minimum temperatures with the frost sensitivity threshold of the current phenological stage.\n2. Adjust risk level based on topography (frost pockets in low-lying areas).\n3. Recommend protective measures (wind machines, candles, irrigation) proportional to the risk level.\nExpected output: risk level (low/medium/high) per night, recommended protective measures.\nGuardrail: always recommend on-site verification devices (thermometers) rather than relying solely on regional forecasts."
+    }
+  },
+  "grape-must-analysis-report": {
+    "listFingerprint": "af1447fb0370e91fc2b4e529d69b15b27c95b4ca39e27d9ae2bf0fa1e5597d1c",
+    "detailFingerprint": "3870fd3bc132a1339c6a6814e7dbce8d7b137b24712023152fbf56562babe213",
+    "it": {
+      "name": "Report analisi mosto e uva",
+      "description": "Genera un report comparativo delle analisi di uva e mosto raccolte durante la vendemmia, per parcella e per giornata.",
+      "instructions": "Obiettivo: generare un report comparativo delle analisi di uva e mosto raccolte durante la vendemmia, suddiviso per parcella e per giornata.\nInput richiesti: risultati delle analisi (Brix, pH, acidità) per parcella e per giornata di campionamento.\nPassi operativi:\n1. Organizza i risultati per parcella e giornata per evidenziare l'andamento della maturazione.\n2. Evidenzia le parcelle in anticipo o in ritardo rispetto alla curva di maturazione media.\n3. Riassumi l'andamento complessivo della qualità della vendemmia nel periodo campionato.\nOutput atteso: report comparativo strutturato con andamento per parcella e riepilogo generale.\nGuardrail: evita conclusioni basate su un solo dato per parcella; richiedi almeno due date di campionamento per descrivere un andamento."
+    },
+    "en": {
+      "name": "Grape and must analysis report",
+      "description": "Generate a comparative report of grape and must analyses collected during harvest, by plot and sampling day.",
+      "instructions": "Goal: generate a comparative report of grape and must analysis results collected during harvest, broken down by plot and by day.\nRequired input: analysis results (Brix, pH, acidity) per plot and per sampling day.\nWorkflow steps:\n1. Organize the results by plot and by day to reveal maturation trends.\n2. Highlight plots that are ahead of or behind the average maturation curve.\n3. Summarize the overall harvest quality trend across the sampled period.\nExpected output: structured comparative report with plot-level trends and an overall summary.\nGuardrail: avoid drawing conclusions from a single data point per plot; require at least two sampling dates for a trend statement."
+    }
+  },
+  "harvest-logistics-scheduler": {
+    "listFingerprint": "a3666c09feadfde91310a6a67f37291ef130a0734a68b56aa099d2e70afb67d7",
+    "detailFingerprint": "78963724be976c0215366e5bcd3208ae6ceb7d3473fc81f7709676d3dd7f3b3a",
+    "it": {
+      "name": "Programma logistico vendemmia",
+      "description": "Organizza il programma logistico di vendemmia (squadre, mezzi, conferimenti in cantina) su più giornate e parcelle.",
+      "instructions": "Obiettivo: organizzare il programma logistico di vendemmia su più giornate e parcelle, coordinando squadre, mezzi e conferimenti in cantina.\nInput richiesti: elenco delle parcelle da vendemmiare con priorità, squadre e mezzi disponibili, capacità di ricezione in cantina.\nPassi operativi:\n1. Ordina le parcelle per priorità di raccolta (maturazione, rischio meteo).\n2. Assegna squadre e mezzi alle parcelle rispettando la capacità giornaliera.\n3. Distribuisci i conferimenti in cantina evitando colli di bottiglia in ricezione.\nOutput atteso: programma giorno per giorno con parcella, squadra, mezzo e orario di conferimento.\nGuardrail: non pianificare un carico di conferimenti superiore alla capacità di ricezione dichiarata dalla cantina."
+    },
+    "en": {
+      "name": "Harvest logistics scheduler",
+      "description": "Organize harvest logistics, including teams, vehicles and cellar deliveries, across multiple days and plots.",
+      "instructions": "Goal: organize the harvest logistics schedule across multiple days and plots, coordinating teams, vehicles and cellar deliveries.\nRequired input: list of plots to harvest with priorities, available teams and vehicles, cellar reception capacity.\nWorkflow steps:\n1. Order plots by harvest priority (ripeness, weather risk).\n2. Assign teams and vehicles to plots while respecting daily capacity.\n3. Distribute cellar deliveries to avoid reception bottlenecks.\nExpected output: daily schedule with plot, team, vehicle and delivery time.\nGuardrail: do not schedule deliveries above the reception capacity declared by the cellar."
+    }
+  },
+  "harvest-window-planner": {
+    "listFingerprint": "ac09e5fc99dabd669350c8e72d6ffb32175bc70cd53ea4a14057608f9a655757",
+    "detailFingerprint": "d613da88cf3b021d08bc03eaa2598b7f0569d65045b42cdefbfffb6e440961be",
+    "it": {
+      "name": "Pianificazione finestra di vendemmia",
+      "description": "Suggerisce la finestra ottimale di vendemmia per un vigneto in base a maturazione zuccherina, acidità e previsioni meteo.",
+      "instructions": "Obiettivo: suggerire la finestra ottimale di vendemmia in base a maturazione zuccherina, acidità e previsioni meteo.\nInput richiesti: ultimi valori di grado zuccherino (Brix) e acidità totale, previsioni meteo per i prossimi giorni, stile di vino target.\nPassi operativi:\n1. Confronta i valori attuali con la soglia target per lo stile di vino desiderato.\n2. Stima i giorni necessari al raggiungimento della soglia in base al trend di maturazione.\n3. Verifica che la finestra stimata non coincida con eventi meteo a rischio (piogge intense, grandine).\nOutput atteso: finestra di vendemmia consigliata con motivazione e alternative in caso di rischio meteo.\nGuardrail: privilegia sempre la sicurezza della raccolta (evitare piogge prima della vendemmia) rispetto a un incremento marginale di Brix."
+    },
+    "en": {
+      "name": "Harvest window planner",
+      "description": "Suggest the optimal vineyard harvest window from sugar ripeness, acidity and weather forecasts.",
+      "instructions": "Goal: suggest the optimal harvest window based on sugar ripeness, acidity and weather forecasts.\nRequired input: latest sugar content (Brix) and total acidity readings, weather forecasts for the coming days, target wine style.\nWorkflow steps:\n1. Compare current readings with the target threshold for the desired wine style.\n2. Estimate the days needed to reach the threshold from the ripening trend.\n3. Check that the estimated window does not coincide with hazardous weather events (heavy rain, hail).\nExpected output: recommended harvest window with reasoning and alternatives in case of weather risk.\nGuardrail: always prioritize harvest safety (avoiding rain before harvest) over a marginal increase in Brix."
+    }
+  },
+  "irrigation-schedule-vineyard": {
+    "listFingerprint": "ad7bafc03bf581e0c0e1973da162d16a66e8df5df87e3d8dcfbfa31a98337245",
+    "detailFingerprint": "b6271d1a334e5f9a7cc8845101a81652afdba2383c1a4b82c209a08599044ea4",
+    "it": {
+      "name": "Programma di irrigazione vigneto",
+      "description": "Propone un programma di irrigazione a goccia basato su fase fenologica, tipo di suolo e dati meteo recenti.",
+      "instructions": "Obiettivo: costruire un programma di irrigazione a goccia coerente con fase fenologica e disponibilità idrica del suolo.\nInput richiesti: tipo di suolo, portata degli erogatori, precipitazioni ultimi 15 giorni, fase fenologica.\nPassi operativi:\n1. Stima l'evapotraspirazione di riferimento (ET0) dai dati meteo disponibili.\n2. Calcola il fabbisogno idrico netto sottraendo le piogge utili.\n3. Proponi volume e frequenza di irrigazione per la settimana successiva.\nOutput atteso: piano settimanale con volumi in m3/ha e giorni consigliati.\nGuardrail: riduci i volumi in prossimità della vendemmia per non diluire gli zuccheri, salvo stress idrico severo."
+    },
+    "en": {
+      "name": "Vineyard irrigation schedule",
+      "description": "Propose a drip irrigation schedule based on phenological stage, soil type and recent weather data.",
+      "instructions": "Goal: build a drip irrigation schedule consistent with phenological stage and soil water availability.\nRequired input: soil type, emitter flow rate, rainfall over the last 15 days, phenological stage.\nWorkflow steps:\n1. Estimate reference evapotranspiration (ET0) from available weather data.\n2. Calculate net water requirements by subtracting effective rainfall.\n3. Propose irrigation volume and frequency for the following week.\nExpected output: weekly plan with volumes in m3/ha and suggested days.\nGuardrail: reduce volumes close to harvest to avoid diluting sugars, except in cases of severe water stress."
+    }
+  },
+  "label-compliance-check": {
+    "listFingerprint": "df697fa6de39431ac2e3261d134e30d9bdf3edce929dda96c3551cf3f050a8e2",
+    "detailFingerprint": "5745d2f757881f67b85a8fd5dac06e371444bbf8d2428f98e6aa6a89b351a0fc",
+    "it": {
+      "name": "Verifica conformità etichetta",
+      "description": "Verifica che l'uso previsto di un prodotto fitosanitario (coltura, dose, avversità) sia conforme a quanto riportato in etichetta.",
+      "instructions": "Obiettivo: verificare che l'uso previsto di un prodotto fitosanitario (coltura, dose, avversità) sia conforme all'etichetta registrata.\nInput richiesti: nome o numero di registrazione del prodotto, coltura, avversità o malattia target, dose prevista.\nPassi operativi:\n1. Recupera gli usi registrati (coltura, avversità, intervallo di dose) dall'etichetta o dal contesto RAG.\n2. Confronta l'uso previsto con ciascuna condizione registrata.\n3. Segnala ogni difformità (coltura non registrata, dose fuori intervallo, avversità non registrata).\nOutput atteso: stato di conformità (conforme, non conforme, incerto) con spiegazione chiara.\nGuardrail: quando i dati di etichetta sono incompleti, indica sempre \"incerto, richiede verifica manuale\" anziché formulare ipotesi."
+    },
+    "en": {
+      "name": "Product label compliance check",
+      "description": "Check whether the intended crop, dose and target pest for a plant protection product comply with its label.",
+      "instructions": "Goal: verify that the intended use of a plant protection product (crop, dose, target pest) is compliant with the registered label.\nRequired input: product name/registration number, target crop, target pest/disease, intended dose.\nWorkflow steps:\n1. Retrieve the registered uses (crop, target, dose range) from the label/RAG context.\n2. Compare the intended use against each registered condition.\n3. Flag any mismatch (unregistered crop, dose out of range, unregistered target).\nExpected output: compliance status (compliant/non-compliant/uncertain) with a clear explanation.\nGuardrail: default to \"uncertain, requires manual review\" whenever label data is incomplete rather than guessing."
+    }
+  },
+  "leaf-tissue-analysis-report": {
+    "listFingerprint": "e19d93296c0c22969596c543e8f621ea79f1237c3dc8e9537948dceee1c66216",
+    "detailFingerprint": "c2de8c705cc7712af044264f346e6952fbe903e05f95f839a150b805e5d4df91",
+    "it": {
+      "name": "Report analisi tessuto foliare",
+      "description": "Interpreta i risultati di un'analisi del tessuto foliare confrontandoli con i range di riferimento per la coltura e la fase fenologica.",
+      "instructions": "Obiettivo: interpretare i risultati dell'analisi del tessuto foliare confrontandoli con gli intervalli di riferimento per la coltura e la fase fenologica.\nInput richiesti: risultati dell'analisi del tessuto foliare (macro e microelementi), coltura, fase di campionamento.\nPassi operativi:\n1. Confronta il valore di ogni elemento nutritivo con l'intervallo di riferimento per la fase di campionamento.\n2. Classifica ciascun elemento come carente, adeguato o eccessivo.\n3. Raccomanda concimazioni correttive soltanto per gli elementi al di fuori dell'intervallo adeguato.\nOutput atteso: classificazione per elemento nutritivo con raccomandazioni correttive mirate.\nGuardrail: considera gli antagonismi tra nutrienti (per esempio, un eccesso di K che riduce l'assorbimento di Mg) prima di raccomandare correzioni isolate."
+    },
+    "en": {
+      "name": "Leaf tissue analysis report",
+      "description": "Interpret leaf tissue analysis results against reference ranges for the crop and phenological stage.",
+      "instructions": "Goal: interpret leaf tissue analysis results by comparing them with reference ranges for the crop and phenological stage.\nRequired input: leaf tissue analysis results (macro and micronutrients), crop, sampling stage.\nWorkflow steps:\n1. Compare each nutrient value against the reference range for the sampling stage.\n2. Classify each nutrient as deficient, adequate, or excessive.\n3. Recommend corrective fertilization only for nutrients outside the adequate range.\nExpected output: nutrient-by-nutrient classification with targeted corrective recommendations.\nGuardrail: consider nutrient antagonisms (e.g. excess K reducing Mg uptake) before recommending isolated corrections."
+    }
+  },
+  "meteo-risk-assessment": {
+    "listFingerprint": "2b84d6f533959938ee6f8be4aa7cefd65765f0c3b40a1ab75752ab6473638b88",
+    "detailFingerprint": "43328d4244183c45cbb08ff07b93f2c56b3fc72dbf5688f367408c053a364068",
+    "it": {
+      "name": "Valutazione rischio meteo",
+      "description": "Valuta il rischio agronomico (grandine, gelo, ondate di calore) nei prossimi giorni a partire dalle previsioni meteo disponibili.",
+      "instructions": "Obiettivo: valutare il rischio agronomico nei prossimi giorni (grandine, gelo, ondate di calore, piogge intense) a partire dalle previsioni disponibili.\nInput richiesti: previsioni meteo per i prossimi 3-7 giorni, coltura e fase fenologica corrente.\nPassi operativi:\n1. Individua gli eventi meteo critici previsti nel periodo.\n2. Collega ciascun evento al rischio specifico per la fase fenologica corrente.\n3. Suggerisci misure preventive proporzionate al livello di rischio.\nOutput atteso: elenco degli eventi a rischio con livello di severità e misure preventive consigliate.\nGuardrail: aggiorna la valutazione se le previsioni cambiano significativamente rispetto all'ultimo aggiornamento."
+    },
+    "en": {
+      "name": "Weather risk assessment",
+      "description": "Assess agronomic risks such as hail, frost and heatwaves in the coming days using available weather forecasts.",
+      "instructions": "Goal: assess agronomic risk in the coming days (hail, frost, heatwaves, heavy rain) using available forecasts.\nRequired input: weather forecasts for the next 3-7 days, crop and current phenological stage.\nWorkflow steps:\n1. Identify the critical weather events forecast for the period.\n2. Relate each event to the specific risk for the current phenological stage.\n3. Suggest preventive measures proportional to the risk level.\nExpected output: list of risk events with severity levels and recommended preventive measures.\nGuardrail: update the assessment if forecasts change significantly compared with the last update."
+    }
+  },
+  "mosto-quality-check": {
+    "listFingerprint": "076ef4df097cccfa44d5f3242c21a39f0aef65aea6ba8db167c379800c3dc975",
+    "detailFingerprint": "98aadb44f86bbd910d5789e8542de399832fd4ed005eefe5dc6bbb75dc6e41bd",
+    "it": {
+      "name": "Verifica qualità mosto",
+      "description": "Valuta i parametri analitici del mosto (Brix, pH, acidità) rispetto agli standard per la tipologia di vino da produrre.",
+      "instructions": "Obiettivo: valutare i parametri analitici del mosto (Brix, pH, acidità totale) rispetto agli standard della tipologia di vino prevista.\nInput richiesti: risultati dell'analisi del mosto (Brix, pH, acidità totale), tipologia o stile di vino previsto.\nPassi operativi:\n1. Confronta ciascun parametro con l'intervallo di riferimento per lo stile di vino previsto.\n2. Segnala i parametri al di fuori dell'intervallo accettabile.\n3. Suggerisci azioni correttive in cantina (acidificazione, disacidificazione) se necessarie e consentite dalla normativa.\nOutput atteso: valutazione parametro per parametro con suggerimenti correttivi dove applicabili.\nGuardrail: suggerisci soltanto azioni correttive legalmente consentite dalla denominazione o dalla normativa pertinente."
+    },
+    "en": {
+      "name": "Must quality check",
+      "description": "Assess must analysis parameters, including Brix, pH and acidity, against standards for the intended wine type.",
+      "instructions": "Goal: evaluate must analytical parameters (Brix, pH, total acidity) against standards for the intended wine type.\nRequired input: must analysis results (Brix, pH, total acidity), intended wine type/style.\nWorkflow steps:\n1. Compare each parameter with the reference range for the intended wine style.\n2. Flag parameters outside the acceptable range.\n3. Suggest corrective cellar actions (acidification, deacidification) if needed and permitted by regulation.\nExpected output: parameter-by-parameter assessment with corrective action suggestions where applicable.\nGuardrail: only suggest corrective actions that are legally permitted for the relevant appellation/regulation."
+    }
+  },
+  "mrl-compliance-check": {
+    "listFingerprint": "241d090deca4d5e6eb9f95e0b1b5fd6353690b835389e61d046edf69aa5f1f89",
+    "detailFingerprint": "d068aba2f834412f19f974a9365ec34ee8bc39f67a842c09ecbb79df4883f097",
+    "it": {
+      "name": "Verifica limite residui MRL",
+      "description": "Verifica che l'intervallo di sicurezza pianificato garantisca il rispetto dei limiti massimi di residuo (MRL) sul prodotto raccolto.",
+      "instructions": "Obiettivo: verificare che l'intervallo di sicurezza pianificato mantenga i residui fitosanitari entro il limite massimo di residuo (MRL) previsto per il mercato di destinazione.\nInput richiesti: prodotto utilizzato, data del trattamento, data prevista di raccolta, mercato di destinazione (UE o paese di esportazione, se pertinente).\nPassi operativi:\n1. Recupera l'intervallo di sicurezza e il riferimento MRL per la combinazione prodotto, coltura e mercato.\n2. Verifica che la data prevista di raccolta rispetti l'intervallo minimo di sicurezza.\n3. Segnala MRL di esportazione più restrittivi se il mercato di destinazione differisce da quello nazionale.\nOutput atteso: stato di conformità per mercato, con la prima data di raccolta sicura.\nGuardrail: considera più restrittivi gli MRL del mercato di esportazione, salvo dati espliciti che dimostrino il contrario."
+    },
+    "en": {
+      "name": "Maximum residue limit check",
+      "description": "Check whether the planned pre-harvest interval meets maximum residue limit (MRL) requirements for the harvested product.",
+      "instructions": "Goal: verify that the planned pre-harvest interval will keep pesticide residues within the maximum residue limit (MRL) for the target market.\nRequired input: product used, treatment date, planned harvest date, destination market (EU, export country if relevant).\nWorkflow steps:\n1. Retrieve the pre-harvest interval and MRL reference for the product/crop/market combination.\n2. Check that the planned harvest date respects the minimum pre-harvest interval.\n3. Flag stricter export MRLs if the destination market differs from the domestic one.\nExpected output: compliance status per market, with the earliest safe harvest date.\nGuardrail: treat export market MRLs as stricter by default unless explicit data proves otherwise."
+    }
+  },
+  "nitrogen-balance-calculator": {
+    "listFingerprint": "55bf0f3840bb75b4e6ef1de3652cdbf1b1ef1955aefa59fab52217251d04d483",
+    "detailFingerprint": "e832d78ea4234984924f547ac2b8e3408fa19c4d6125d9171e06036c3a0214c0",
+    "it": {
+      "name": "Bilancio dell'azoto",
+      "description": "Calcola il bilancio dell'azoto per una coltura confrontando apporti (concimazione, mineralizzazione) e asporti previsti.",
+      "instructions": "Obiettivo: calcolare il bilancio dell'azoto di una coltura confrontando gli apporti (concimazione, mineralizzazione) con gli assorbimenti previsti.\nInput richiesti: concimazione azotata pianificata, mineralizzazione stimata della sostanza organica, resa obiettivo.\nPassi operativi:\n1. Somma tutti gli apporti di azoto (fertilizzante e mineralizzazione stimata).\n2. Stima l'assorbimento di azoto sulla base della resa obiettivo e dei coefficienti di assorbimento specifici della coltura.\n3. Calcola il bilancio (surplus o deficit) e le sue implicazioni ambientali.\nOutput atteso: bilancio dell'azoto in kg/ha con classificazione di surplus o deficit.\nGuardrail: segnala ogni piano con un elevato surplus di azoto come potenziale rischio di lisciviazione o di non conformità."
+    },
+    "en": {
+      "name": "Nitrogen balance calculator",
+      "description": "Calculate a crop's nitrogen balance by comparing inputs from fertilization and mineralization with expected uptake.",
+      "instructions": "Goal: calculate the nitrogen balance for a crop by comparing inputs (fertilization, mineralization) against expected uptake.\nRequired input: planned nitrogen fertilization, estimated organic matter mineralization, target yield.\nWorkflow steps:\n1. Sum all nitrogen inputs (fertilizer plus estimated mineralization).\n2. Estimate nitrogen uptake based on target yield and crop-specific uptake coefficients.\n3. Compute the balance (surplus or deficit) and its environmental implications.\nExpected output: nitrogen balance in kg/ha with a surplus/deficit classification.\nGuardrail: flag any plan resulting in a large nitrogen surplus as a potential leaching/compliance risk."
+    }
+  },
+  "nutrient-deficiency-diagnosis": {
+    "listFingerprint": "640719a9fd773ed902512376fc90c7052d7e62ef5b0b0eab17a5758c4b5e7340",
+    "detailFingerprint": "a3c6958b61bf17edece32b139a6b9836f435bc87d2996cfa7af69ec3c2f33fcb",
+    "it": {
+      "name": "Diagnosi carenze nutrizionali da immagine",
+      "description": "Analizza la descrizione visiva di foglie o grappoli per ipotizzare la carenza nutrizionale più probabile.",
+      "instructions": "Obiettivo: analizzare una descrizione visiva di foglie o grappoli per ipotizzare la carenza nutrizionale più probabile.\nInput richiesti: descrizione dei sintomi (colore, distribuzione, parte della pianta interessata) e coltura.\nPassi operativi:\n1. Associa l'aspetto descritto (clorosi internervale, necrosi marginale e altri sintomi) ai segni noti delle carenze.\n2. Ordina le carenze più probabili per probabilità.\n3. Raccomanda una verifica di conferma (analisi del tessuto o del suolo) prima di un'azione correttiva.\nOutput atteso: elenco ordinato delle carenze probabili con livello di confidenza e verifica di conferma raccomandata.\nGuardrail: non presentare mai una carenza come certa senza conferma di laboratorio; descrivila sempre come ipotesi."
+    },
+    "en": {
+      "name": "Visual nutrient deficiency diagnosis",
+      "description": "Analyze a visual description of leaves or clusters to identify the most likely nutrient deficiency hypothesis.",
+      "instructions": "Goal: analyze a visual description of leaves or clusters to hypothesize the most likely nutrient deficiency.\nRequired input: description of symptoms (color, pattern, affected plant part) and crop.\nWorkflow steps:\n1. Match the described pattern (interveinal chlorosis, marginal necrosis, etc.) to known deficiency signatures.\n2. Rank the most likely deficiencies by probability.\n3. Recommend a confirmatory test (tissue or soil analysis) before corrective action.\nExpected output: ranked list of probable deficiencies with confidence and recommended confirmatory test.\nGuardrail: never state a deficiency as certain without lab confirmation; always frame it as a hypothesis."
+    }
+  },
+  "organic-amendment-plan": {
+    "listFingerprint": "65eb2466d44b5b281419b9b713be2ad47e71d533049946ecd71b6e2e538390cd",
+    "detailFingerprint": "ff5fea063d82f002b6bfd0745bfaa287dc140729049ef9822820c7787b26f1f3",
+    "it": {
+      "name": "Piano di ammendamento organico",
+      "description": "Propone un piano di ammendamento organico (compost, letame) per migliorare struttura e fertilità del suolo nel tempo.",
+      "instructions": "Obiettivo: proporre un piano pluriennale di ammendamento organico per migliorare struttura e fertilità del suolo.\nInput richiesti: contenuto attuale di sostanza organica, tipo di ammendante disponibile, superficie da trattare.\nPassi operativi:\n1. Confronta il contenuto di sostanza organica con l'obiettivo agronomico desiderato.\n2. Calcola la dose di ammendante necessaria per raggiungere l'obiettivo in un periodo pluriennale.\n3. Distribuisci il piano su più stagioni per evitare eccessi puntuali.\nOutput atteso: piano pluriennale con dosi annuali e periodo di applicazione consigliato.\nGuardrail: verifica sempre il rispetto dei limiti normativi sull'uso agronomico di ammendanti di origine zootecnica."
+    },
+    "en": {
+      "name": "Organic soil amendment plan",
+      "description": "Propose an organic amendment plan using compost or manure to improve soil structure and fertility over time.",
+      "instructions": "Goal: propose a multi-year organic amendment plan to improve soil structure and fertility.\nRequired input: current organic matter content, type of amendment available, area to treat.\nWorkflow steps:\n1. Compare organic matter content with the desired agronomic target.\n2. Calculate the amendment dose needed to reach the target over several years.\n3. Spread the plan across multiple seasons to avoid isolated excesses.\nExpected output: multi-year plan with annual doses and a recommended application period.\nGuardrail: always check compliance with regulatory limits on the agricultural use of livestock-derived amendments."
+    }
+  },
+  "patentino-expiry-reminder": {
+    "listFingerprint": "640904350a1d19bdf1d6cdf774c0fcb9d4bd55092d8513982ef410be5e5f00b1",
+    "detailFingerprint": "d22f37725a2e5f0bdfd8e411f0bc1b1e08c108158426ad5a3a1d4c9513303805",
+    "it": {
+      "name": "Promemoria patentino e scadenze",
+      "description": "Monitora le scadenze del patentino fitosanitario degli operatori e genera promemoria in tempo utile per il rinnovo.",
+      "instructions": "Obiettivo: monitorare le scadenze del patentino fitosanitario degli operatori e generare promemoria tempestivi per il rinnovo.\nInput richiesti: nome dell'operatore, data di scadenza del patentino, anticipo richiesto per il rinnovo nella regione se noto.\nPassi operativi:\n1. Calcola i giorni rimanenti fino alla scadenza del patentino.\n2. Classifica l'urgenza (regolare, da rinnovare a breve, scaduto) in base ai giorni rimanenti.\n3. Prepara una bozza di promemoria per l'operatore o l'amministratore del workspace.\nOutput atteso: classificazione dell'urgenza e messaggio di promemoria pronto per l'invio.\nGuardrail: non suggerire mai che un operatore possa legalmente eseguire trattamenti con un patentino scaduto, indipendentemente dalla classificazione dell'urgenza."
+    },
+    "en": {
+      "name": "Pesticide operator license expiry reminder",
+      "description": "Monitor pesticide operator license expiry dates and prepare reminders in time for renewal.",
+      "instructions": "Goal: monitor pesticide operator license (patentino) expiry dates and generate timely renewal reminders.\nRequired input: operator name, license expiry date, regional renewal lead time if known.\nWorkflow steps:\n1. Calculate the number of days remaining until license expiry.\n2. Classify urgency (ok, renew soon, expired) based on the remaining days.\n3. Draft a reminder message for the operator or workspace administrator.\nExpected output: urgency classification and a ready-to-send reminder message.\nGuardrail: never suggest an operator can legally treat with an expired license, regardless of urgency classification."
+    }
+  },
+  "payment-reminder-assistant": {
+    "listFingerprint": "12f2ec9a4ee2d9d845a58167163600656def1794fd0367e27f046ca8bbb564f7",
+    "detailFingerprint": "4ab9133e958bc27e689c52542498856dc6446595a4b637e958a8f7636dcd13d3",
+    "it": {
+      "name": "Promemoria pagamenti clienti",
+      "description": "Individua le fatture scadute o in scadenza e prepara promemoria di pagamento personalizzati per i clienti.",
+      "instructions": "Obiettivo: individuare le fatture scadute o prossime alla scadenza e preparare promemoria di pagamento personalizzati per i clienti.\nInput richiesti: elenco delle fatture aperte con scadenze e importi, recapiti dei clienti.\nPassi operativi:\n1. Classifica le fatture come scadute, in prossimità della scadenza o non ancora in scadenza in base alla data.\n2. Dai priorità alle fatture scadute, in particolare a quelle con ritardo significativo.\n3. Prepara una bozza di promemoria personalizzato per ciascun cliente, adeguando il tono alla gravità del ritardo.\nOutput atteso: elenco di fatture ordinato per priorità con un messaggio di promemoria pronto per l'invio per ciascuna.\nGuardrail: mantieni un tono professionale e non intimidatorio, indipendentemente dall'entità del ritardo."
+    },
+    "en": {
+      "name": "Customer payment reminder assistant",
+      "description": "Identify overdue or soon-to-be-due invoices and prepare personalized customer payment reminders.",
+      "instructions": "Goal: identify overdue or soon-to-be-due invoices and prepare personalized payment reminders for customers.\nRequired input: list of open invoices with due dates and amounts, customer contact information.\nWorkflow steps:\n1. Classify invoices as overdue, due soon, or not yet due based on the due date.\n2. Prioritize overdue invoices, especially those significantly past due.\n3. Draft a personalized reminder message per customer, adjusting tone to overdue severity.\nExpected output: prioritized list of invoices with a ready-to-send reminder message for each.\nGuardrail: keep the reminder tone professional and non-threatening regardless of how overdue the invoice is."
+    }
+  },
+  "piano-difesa-integrata": {
+    "listFingerprint": "ceca03bff08690903e5bb56473c6b0adea1db66b117817d167cca6aa2a423350",
+    "detailFingerprint": "5efd21ea10328d1afd19c373f1de31d53953926b37d9fc648a7cac019b84a649",
+    "it": {
+      "name": "Piano di difesa integrata",
+      "description": "Propone un piano di difesa integrata stagionale per una coltura, basato su avversità principali e principi della lotta integrata.",
+      "instructions": "Obiettivo: proporre un piano di difesa integrata stagionale per la coltura target, coerente con i principi della lotta integrata (IPM).\nInput richiesti: coltura, principali avversità note nella zona, disciplinare di riferimento se disponibile.\nPassi operativi:\n1. Elenca le avversità prioritarie per fase fenologica.\n2. Proponi interventi preventivi e soglie di intervento prima del trattamento chimico.\n3. Suggerisci principi attivi alternati per evitare resistenze, quando il trattamento è necessario.\nOutput atteso: piano stagionale con avversità, soglie di intervento e rotazione dei principi attivi.\nGuardrail: privilegia sempre misure agronomiche e biologiche prima del trattamento chimico, se compatibili con la soglia di danno."
+    },
+    "en": {
+      "name": "Integrated pest management plan",
+      "description": "Propose a seasonal integrated pest management plan for a crop based on key pests and IPM principles.",
+      "instructions": "Goal: propose a seasonal integrated pest management (IPM) plan for the target crop, consistent with IPM principles.\nRequired input: crop, main pests or diseases known in the area, reference production specification if available.\nWorkflow steps:\n1. List priority pests or diseases by phenological stage.\n2. Propose preventive interventions and action thresholds before chemical treatment.\n3. Suggest alternating active ingredients to avoid resistance when treatment is necessary.\nExpected output: seasonal plan with pests or diseases, action thresholds and active ingredient rotation.\nGuardrail: always prioritize agronomic and biological measures before chemical treatment when compatible with the damage threshold."
+    }
+  },
+  "piano-diradamento-grappoli": {
+    "listFingerprint": "41c424c66508b39c07536f16e281406c5b6fbe2e2074bc79ebde0030a330e75a",
+    "detailFingerprint": "40fd2bcda393679c2e0e5230f66e8dabfc189f30becc8b3c641a6dd9e9545583",
+    "it": {
+      "name": "Piano di diradamento grappoli",
+      "description": "Definisce criteri e tempistica per il diradamento dei grappoli in funzione dell'equilibrio vegeto-produttivo rilevato.",
+      "instructions": "Obiettivo: definire criteri e finestra temporale per il diradamento grappoli in funzione dell'equilibrio vegeto-produttivo.\nInput richiesti: rapporto foglie/grappolo stimato, fase fenologica (invaiatura o pre-invaiatura), varietà.\nPassi operativi:\n1. Valuta l'equilibrio vegeto-produttivo dal rapporto foglie/grappolo fornito.\n2. Determina la finestra temporale ottimale (pre-invaiatura vs invaiatura) per il diradamento.\n3. Suggerisci la percentuale di grappoli da eliminare per fascia di equilibrio.\nOutput atteso: finestra temporale consigliata, percentuale di diradamento, criterio di selezione dei grappoli.\nGuardrail: evita diradamenti tardivi post-invaiatura che non migliorano la qualità e riducono solo la quantità."
+    },
+    "en": {
+      "name": "Cluster thinning plan",
+      "description": "Define cluster thinning criteria and timing based on the observed balance between vegetative growth and crop load.",
+      "instructions": "Goal: define criteria and a timing window for cluster thinning according to the balance between vegetative growth and crop load.\nRequired input: estimated leaf-to-cluster ratio, phenological stage (veraison or pre-veraison), variety.\nWorkflow steps:\n1. Assess the balance between vegetative growth and crop load from the provided leaf-to-cluster ratio.\n2. Determine the optimal thinning window (pre-veraison or veraison).\n3. Suggest the percentage of clusters to remove for each balance category.\nExpected output: recommended timing window, thinning percentage, cluster selection criterion.\nGuardrail: avoid late post-veraison thinning that does not improve quality and only reduces quantity."
+    }
+  },
+  "piano-fertilizzazione-vite": {
+    "listFingerprint": "87482f52da294deecce74062953b3a1a7e1f7b8f24f345bc3cbc9bc7a6b23a06",
+    "detailFingerprint": "0c289f57203e8975ad4f2354682e7c6dc661de096d613f040a760709ebcccca7",
+    "it": {
+      "name": "Piano di fertilizzazione vite",
+      "description": "Costruisce un piano di fertilizzazione annuale per il vigneto in base ad analisi del suolo, varietà e obiettivo produttivo.",
+      "instructions": "Obiettivo: costruire un piano di fertilizzazione annuale per il vigneto coerente con analisi del suolo e obiettivo produttivo.\nInput richiesti: risultati analisi del suolo (N, P, K, sostanza organica), varietà, resa obiettivo.\nPassi operativi:\n1. Confronta i valori dell'analisi del suolo con le soglie di riferimento per la vite.\n2. Calcola gli asporti previsti in base alla resa obiettivo.\n3. Proponi un piano di apporti (macro e microelementi) distribuito nelle fasi fenologiche chiave.\nOutput atteso: piano di fertilizzazione con quantità per elemento e finestre di applicazione.\nGuardrail: non superare le dosi massime di azoto consentite dal disciplinare di produzione integrata, se applicabile."
+    },
+    "en": {
+      "name": "Vineyard fertilization plan",
+      "description": "Build an annual vineyard fertilization plan from soil analysis, variety and target yield.",
+      "instructions": "Goal: build an annual vineyard fertilization plan consistent with soil analysis and the production target.\nRequired input: soil analysis results (N, P, K, organic matter), variety, target yield.\nWorkflow steps:\n1. Compare soil analysis values with reference thresholds for grapevines.\n2. Calculate expected nutrient removal based on target yield.\n3. Propose a nutrient input plan (macro and micronutrients) distributed across key phenological stages.\nExpected output: fertilization plan with quantities per nutrient and application windows.\nGuardrail: do not exceed the maximum nitrogen doses permitted by the integrated production specification, where applicable."
+    }
+  },
+  "piano-green-pruning": {
+    "listFingerprint": "294f962bf99702392d7cefb2a38dbf3d2a91621a8ebfef565f3da6f4ef617f9f",
+    "detailFingerprint": "94f54271d9d0bf358fc625aae72c71286c9662256d95266e9500f143dc8b7428",
+    "it": {
+      "name": "Piano di potatura verde",
+      "description": "Genera un piano di interventi di potatura verde (spollonatura, cimatura, sfogliatura) calibrato su varietà e obiettivo qualitativo.",
+      "instructions": "Obiettivo: costruire un piano di potatura verde (spollonatura, cimatura, sfogliatura) adeguato alla varietà e agli obiettivi di resa e qualità.\nInput richiesti: varietà, sistema di allevamento, densità attuale della chioma, stile di vino previsto.\nPassi operativi:\n1. Valuta la densità della chioma e l'ombreggiamento della zona dei grappoli dalla descrizione fornita.\n2. Ordina gli interventi per priorità (spollonatura, cimatura, poi sfogliatura).\n3. Suggerisci una finestra temporale rispetto a fioritura e invaiatura.\nOutput atteso: elenco ordinato di interventi con tempistica ed effetto atteso sull'esposizione dei grappoli.\nGuardrail: nei climi caldi, raccomanda di lasciare una fascia di foglie sopra la zona dei grappoli per proteggerli dalle scottature."
+    },
+    "en": {
+      "name": "Green pruning plan",
+      "description": "Generate a green pruning plan covering desuckering, topping and leaf removal, tailored to variety and quality targets.",
+      "instructions": "Goal: build a green pruning plan (desuckering, topping, leaf removal) tailored to variety and target yield/quality.\nRequired input: variety, training system, current canopy density, target wine style.\nWorkflow steps:\n1. Assess canopy density and shading of the fruit zone from the description provided.\n2. Prioritize interventions in order (desuckering, topping, then leaf removal).\n3. Suggest a timing window relative to bloom/veraison.\nExpected output: ordered list of interventions with timing and expected effect on cluster exposure.\nGuardrail: recommend leaving a buffer of leaves above the fruit zone for sunburn protection in hot climates."
+    }
+  },
+  "powdery-mildew-model": {
+    "listFingerprint": "1446728a1c5db856fb0ab4fb936dd1ad9c6889dab430992d3dcac94c771944ab",
+    "detailFingerprint": "4f8563e0a63d9249f75657c70ea4cbc1ed82d58bfe161d1151318cbbe2a14473",
+    "it": {
+      "name": "Modello previsionale oidio",
+      "description": "Stima il rischio di infezione da oidio in base a temperatura, umidità relativa e stadio fenologico della vite.",
+      "instructions": "Obiettivo: stimare il rischio di infezione da oidio sulla base di temperatura, umidità relativa e stadio fenologico corrente della vite.\nInput richiesti: temperatura media, intervallo di umidità relativa, stadio fenologico corrente.\nPassi operativi:\n1. Verifica se temperatura e umidità rientrano nell'intervallo favorevole allo sviluppo dell'oidio.\n2. Classifica il livello di rischio in base a quanto sono favorevoli e persistenti le condizioni.\n3. Raccomanda la tempistica di un intervento preventivo se il rischio è medio o alto.\nOutput atteso: livello di rischio con spiegazione e tempistica dell'intervento preventivo.\nGuardrail: raccomanda una conferma mediante sopralluogo in campo prima di passare a un trattamento curativo."
+    },
+    "en": {
+      "name": "Powdery mildew risk model",
+      "description": "Estimate powdery mildew infection risk from temperature, relative humidity and the vine's phenological stage.",
+      "instructions": "Goal: estimate powdery mildew infection risk based on temperature, relative humidity, and current grapevine phenological stage.\nRequired input: average temperature, relative humidity range, current phenological stage.\nWorkflow steps:\n1. Check whether temperature and humidity fall within the favorable range for powdery mildew development.\n2. Classify risk level based on how favorable and how persistent the conditions are.\n3. Recommend preventive action timing if risk is medium or high.\nExpected output: risk level with explanation and preventive action timing.\nGuardrail: recommend field scouting confirmation before escalating to a curative treatment."
+    }
+  },
+  "production-batch-tracker": {
+    "listFingerprint": "4e29b622375d765f46dbf760cdbeb78c08a7676aef9487deefe5004ff31da9d5",
+    "detailFingerprint": "7470daec398ead27dff2e79b9bc0d7e4372766e7966bfe3d93bb1401df49bdf8",
+    "it": {
+      "name": "Tracciamento lotto di produzione",
+      "description": "Traccia lo stato di avanzamento di un lotto di produzione attraverso le fasi definite, segnalando ritardi rispetto al piano.",
+      "instructions": "Obiettivo: tracciare lo stato di avanzamento di un lotto di produzione attraverso le fasi definite dal ciclo produttivo.\nInput richiesti: fasi del ciclo produttivo con tempi pianificati, avanzamento registrato per il lotto.\nPassi operativi:\n1. Confronta l'avanzamento registrato con il piano di ciascuna fase.\n2. Calcola il ritardo o anticipo rispetto al piano per la fase corrente.\n3. Stima l'impatto del ritardo sulla data di completamento finale del lotto.\nOutput atteso: stato di avanzamento per fase, ritardo/anticipo rilevato, nuova data stimata di completamento.\nGuardrail: segnala sempre come \"dato incompleto\" le fasi per cui non è stato registrato alcun avanzamento, senza stimarlo."
+    },
+    "en": {
+      "name": "Production batch tracker",
+      "description": "Track a production batch through its defined stages and flag delays against the plan.",
+      "instructions": "Goal: track a production batch's progress through the stages defined by its production routing.\nRequired input: production routing stages with planned times, recorded batch progress.\nWorkflow steps:\n1. Compare recorded progress with each stage's plan.\n2. Calculate how far the current stage is behind or ahead of schedule.\n3. Estimate the delay's impact on the batch's final completion date.\nExpected output: progress by stage, observed delay or lead, revised estimated completion date.\nGuardrail: always label stages without recorded progress as \"incomplete data\" rather than estimating their progress."
+    }
+  },
+  "production-line-oee-report": {
+    "listFingerprint": "e8472d6f2b45c3a1e50f828f51897d315166c1a63f2b00d059bad083e1896eb5",
+    "detailFingerprint": "96ade6c9b21f7f8467189fa32df9166d4f4e4caddbb709e4138bad94f30a67c1",
+    "it": {
+      "name": "Report OEE linea produttiva",
+      "description": "Calcola l'indicatore OEE (Overall Equipment Effectiveness) di una linea produttiva a partire da disponibilità, prestazione e qualità.",
+      "instructions": "Obiettivo: calcolare l'indicatore OEE (Overall Equipment Effectiveness) di una linea produttiva per il periodo indicato.\nInput richiesti: tempo di disponibilità pianificato ed effettivo, output effettivo vs teorico, pezzi conformi vs totali prodotti.\nPassi operativi:\n1. Calcola il tasso di disponibilità (tempo operativo effettivo / tempo pianificato).\n2. Calcola il tasso di prestazione (output effettivo / output teorico) e il tasso di qualità (pezzi conformi / totale).\n3. Combina i tre tassi per ottenere l'OEE complessivo del periodo.\nOutput atteso: OEE complessivo con i tre tassi componenti (disponibilità, prestazione, qualità) evidenziati separatamente.\nGuardrail: segnala chiaramente se uno dei tre tassi non è calcolabile per dati mancanti, invece di assumere un valore di default."
+    },
+    "en": {
+      "name": "Production line OEE report",
+      "description": "Calculate a production line's Overall Equipment Effectiveness (OEE) from availability, performance and quality.",
+      "instructions": "Goal: calculate a production line's Overall Equipment Effectiveness (OEE) for the specified period.\nRequired input: planned and actual available time, actual versus theoretical output, conforming units versus total units produced.\nWorkflow steps:\n1. Calculate availability (actual operating time / planned time).\n2. Calculate performance (actual output / theoretical output) and quality (conforming units / total units).\n3. Combine the three rates to obtain the period's overall OEE.\nExpected output: overall OEE with the three component rates (availability, performance, quality) highlighted separately.\nGuardrail: clearly indicate if any of the three rates cannot be calculated because of missing data, rather than assuming a default value."
+    }
+  },
+  "proforma-generator": {
+    "listFingerprint": "0cabd6f06c95ed8391edb25c0d74fc5ad0f8130f90650d3625f4c2ea324322c1",
+    "detailFingerprint": "97af33d2edbe1fdcdd39a2553fe556ff906d93be5a1f5474eff419b9991c65cd",
+    "it": {
+      "name": "Generatore proforma",
+      "description": "Genera una fattura proforma a partire da un ordine di vendita confermato, con calcolo di IVA e totali.",
+      "instructions": "Obiettivo: generare una fattura proforma a partire da un ordine di vendita confermato, includendo il calcolo dell'IVA e i totali.\nInput richiesti: ordine di vendita confermato (righe, quantità, prezzi unitari, aliquote IVA), dati di fatturazione del cliente.\nPassi operativi:\n1. Aggrega le righe con quantità, prezzo unitario e aliquota IVA applicabile.\n2. Calcola imponibile, importo IVA per aliquota e totale complessivo.\n3. Formatta l'output come documento proforma pronto per la revisione del cliente.\nOutput atteso: fattura proforma strutturata con imponibile, dettaglio IVA e totale complessivo.\nGuardrail: non generare mai una proforma per un ordine ancora in bozza; richiedi prima lo stato confermato."
+    },
+    "en": {
+      "name": "Proforma invoice generator",
+      "description": "Generate a proforma invoice from a confirmed sales order, including VAT calculations and totals.",
+      "instructions": "Goal: generate a proforma invoice from a confirmed sales order, including VAT calculation and totals.\nRequired input: confirmed sales order (line items, quantities, unit prices, VAT rates), customer billing data.\nWorkflow steps:\n1. Aggregate line items with quantity, unit price, and applicable VAT rate.\n2. Calculate subtotal, VAT amount per rate, and grand total.\n3. Format the output as a proforma document ready for customer review.\nExpected output: structured proforma invoice with subtotal, VAT breakdown, and grand total.\nGuardrail: never generate a proforma for an order that is still in draft status; require confirmed status first."
+    }
+  },
+  "quality-hold-release": {
+    "listFingerprint": "d97511abf8a0b6722d6be04543b56a35d71f5c0b9723e9c4426b1259d2a502f0",
+    "detailFingerprint": "d0749b5619fc176370c5e3f2067d7dd680ae3ec76f4ef6f86aea6dc2c232e5e0",
+    "it": {
+      "name": "Gestione blocco qualità",
+      "description": "Gestisce la decisione di blocco o rilascio qualità di un lotto in base ai risultati dei controlli effettuati.",
+      "instructions": "Obiettivo: supportare la decisione di blocco o rilascio qualità di un lotto di produzione sulla base dei risultati dei controlli qualità.\nInput richiesti: risultati dei controlli qualità del lotto, criteri o specifiche di accettazione.\nPassi operativi:\n1. Confronta ogni risultato del controllo qualità con la specifica corrispondente.\n2. Determina se tutti i criteri sono rispettati, parzialmente rispettati o non rispettati.\n3. Raccomanda rilascio, blocco o rilavorazione in base alla valutazione complessiva.\nOutput atteso: raccomandazione di rilascio, blocco o rilavorazione con i criteri specifici che hanno determinato la decisione.\nGuardrail: indica sempre \"blocco\" quando manca un risultato di controllo qualità obbligatorio, anziché presumere la conformità."
+    },
+    "en": {
+      "name": "Quality hold and release",
+      "description": "Support a production batch's quality hold or release decision using the results of quality checks.",
+      "instructions": "Goal: support the quality hold/release decision for a production batch based on quality control results.\nRequired input: quality control results for the batch, acceptance criteria/specifications.\nWorkflow steps:\n1. Compare each quality control result against the corresponding specification.\n2. Determine whether all criteria are met, partially met, or failed.\n3. Recommend release, hold, or rework based on the overall assessment.\nExpected output: pass/hold/rework recommendation with the specific criteria that drove the decision.\nGuardrail: default to \"hold\" whenever a required quality control result is missing rather than assuming compliance."
+    }
+  },
+  "registro-trattamenti-qdc": {
+    "listFingerprint": "1112948ec31d1280378fbd6416920dcfae1abf2cda517498d7e05372041084e2",
+    "detailFingerprint": "b16c7d183e4e966fc617ee1660150083d4618a9abc674018eca761911ecf0510",
+    "it": {
+      "name": "Registro trattamenti QDC",
+      "description": "Compila la voce del registro trattamenti (quaderno di campagna) a partire dai dati del trattamento appena eseguito.",
+      "instructions": "Obiettivo: generare la voce del quaderno di campagna (QDC) per un trattamento fitosanitario appena eseguito.\nInput richiesti: prodotto utilizzato, dose applicata, superficie trattata, data e operatore.\nPassi operativi:\n1. Struttura i dati ricevuti nel formato standard richiesto dal registro trattamenti.\n2. Calcola la quantità totale di prodotto utilizzato (dose x superficie).\n3. Aggiungi il calcolo dell'intervallo di sicurezza collegato al trattamento.\nOutput atteso: voce di registro pronta per l'inserimento, con tutti i campi obbligatori compilati.\nGuardrail: non omettere mai il numero di patentino dell'operatore se richiesto dalla normativa regionale."
+    },
+    "en": {
+      "name": "Field treatment register entry",
+      "description": "Prepare a field treatment register entry using the details of a treatment that has just been performed.",
+      "instructions": "Goal: generate a field logbook (QDC) entry for a plant protection treatment that has just been performed.\nRequired input: product used, applied dose, treated area, date and operator.\nWorkflow steps:\n1. Structure the supplied data in the standard format required by the treatment register.\n2. Calculate the total quantity of product used (dose x area).\n3. Add the pre-harvest interval calculation associated with the treatment.\nExpected output: register entry ready for insertion, with all mandatory fields completed.\nGuardrail: never omit the operator's license number if required by regional regulations."
+    }
+  },
+  "rotazione-principi-attivi": {
+    "listFingerprint": "e71c43cf87c38930cb1a18eca1c2d9e710a0c625ff8b7eeb111bb6a00f7b05cb",
+    "detailFingerprint": "73919023c6b886f7e925cf229689e853a28e0195786cb9676051563ebd84d8be",
+    "it": {
+      "name": "Rotazione principi attivi",
+      "description": "Suggerisce una rotazione dei principi attivi/gruppi FRAC-IRAC per evitare l'insorgenza di resistenze sulle principali avversità.",
+      "instructions": "Obiettivo: suggerire una rotazione dei principi attivi (gruppi FRAC/IRAC) per una coltura, per prevenire l'insorgenza di resistenze.\nInput richiesti: avversità target, elenco dei trattamenti già effettuati nella stagione con relativo principio attivo.\nPassi operativi:\n1. Classifica i trattamenti già effettuati per gruppo FRAC/IRAC.\n2. Verifica se ci sono ripetizioni dello stesso gruppo in trattamenti consecutivi.\n3. Suggerisci il gruppo da utilizzare nel prossimo trattamento per mantenere la rotazione.\nOutput atteso: cronologia dei gruppi utilizzati e raccomandazione per il trattamento successivo.\nGuardrail: non consigliare mai lo stesso gruppo FRAC/IRAC in trattamenti consecutivi salvo indicazioni specifiche di etichetta."
+    },
+    "en": {
+      "name": "Active ingredient rotation",
+      "description": "Suggest active ingredient and FRAC/IRAC group rotation to prevent resistance in key pests and diseases.",
+      "instructions": "Goal: suggest active ingredient rotation (FRAC/IRAC groups) for a crop to prevent resistance.\nRequired input: target pest or disease, list of treatments already performed during the season with their active ingredients.\nWorkflow steps:\n1. Classify previous treatments by FRAC/IRAC group.\n2. Check for repetitions of the same group in consecutive treatments.\n3. Suggest the group to use for the next treatment to maintain rotation.\nExpected output: history of groups used and a recommendation for the next treatment.\nGuardrail: never recommend the same FRAC/IRAC group in consecutive treatments unless specifically indicated on the label."
+    }
+  },
+  "sales-order-from-inbox": {
+    "listFingerprint": "1ecf52882dba0c77c8ace5a6055b2ee44564476d6f6d557f09d711821bf9723d",
+    "detailFingerprint": "126195aa444231d3eee1e014eed797ffb07243fa49d1fd0f1899420d7d290ad7",
+    "it": {
+      "name": "Creazione ordine da inbox",
+      "description": "Estrae i dettagli di un ordine cliente da un messaggio in inbox (email/WhatsApp) e propone la bozza di ordine di vendita.",
+      "instructions": "Obiettivo: estrarre i dettagli di un ordine cliente da un messaggio ricevuto in inbox e proporre la bozza di ordine di vendita.\nInput richiesti: testo del messaggio ricevuto, elenco clienti e catalogo prodotti disponibili.\nPassi operativi:\n1. Identifica il cliente citato nel messaggio, confrontandolo con l'anagrafica esistente.\n2. Estrai prodotti, quantità e eventuali richieste speciali (data di consegna, sconto).\n3. Costruisci una bozza di ordine di vendita con i campi estratti, segnalando le informazioni mancanti.\nOutput atteso: bozza di ordine di vendita pronta per la revisione, con eventuali campi da confermare evidenziati.\nGuardrail: non confermare mai automaticamente un ordine; genera sempre una bozza da validare da un operatore."
+    },
+    "en": {
+      "name": "Sales order draft from inbox",
+      "description": "Extract customer order details from an inbox message, such as email or WhatsApp, and propose a sales order draft.",
+      "instructions": "Goal: extract customer order details from an inbox message and propose a sales order draft.\nRequired input: received message text, customer list and available product catalogue.\nWorkflow steps:\n1. Identify the customer mentioned in the message by matching the existing customer records.\n2. Extract products, quantities and any special requests (delivery date, discount).\n3. Build a sales order draft using the extracted fields, flagging missing information.\nExpected output: sales order draft ready for review, with fields requiring confirmation highlighted.\nGuardrail: never confirm an order automatically; always generate a draft for an operator to validate."
+    }
+  },
+  "satellite-ndvi-summary": {
+    "listFingerprint": "2300d1972f2f9d4b48baf119e7dddc66fad960d157ae206b098dab272e71abc5",
+    "detailFingerprint": "0594a4477d0c7d934786dd669fb3b3f6f5d4ee99779986d7efc70d7a1a430c78",
+    "it": {
+      "name": "Riepilogo NDVI satellitare",
+      "description": "Sintetizza i dati NDVI satellitari di un campo evidenziando aree di vigore anomalo rispetto alla media aziendale.",
+      "instructions": "Obiettivo: sintetizzare i dati NDVI satellitari di un campo, evidenziando zone con vigore anomalo rispetto alla media aziendale.\nInput richiesti: valori NDVI o statistiche zonali per campo o zona, data di acquisizione.\nPassi operativi:\n1. Calcola l'NDVI medio del campo e confronta ogni zona con tale valore.\n2. Segnala le zone con NDVI significativamente inferiore o superiore alla media.\n3. Suggerisci un approfondimento (verifica sul terreno, campionamento mirato) per le zone segnalate.\nOutput atteso: riepilogo per zona con segnalazioni di anomalie e approfondimenti consigliati.\nGuardrail: considera la copertura nuvolosa o i problemi di qualità dell'acquisizione prima di ritenere un'anomalia agronomicamente significativa."
+    },
+    "en": {
+      "name": "Satellite NDVI summary",
+      "description": "Summarize a field's satellite NDVI data and highlight areas with unusual vigor compared with the farm average.",
+      "instructions": "Goal: summarize satellite NDVI data for a field, highlighting zones with anomalous vigor compared to the farm average.\nRequired input: NDVI values or zonal statistics per field/zone, acquisition date.\nWorkflow steps:\n1. Compute the average NDVI for the field and compare each zone against it.\n2. Flag zones with significantly lower or higher NDVI than the average.\n3. Suggest a follow-up action (ground check, targeted sampling) for the flagged zones.\nExpected output: zone-level summary with anomaly flags and suggested follow-up.\nGuardrail: account for cloud cover or acquisition quality issues before flagging an anomaly as agronomically meaningful."
+    }
+  },
+  "soil-analysis-interpreter": {
+    "listFingerprint": "e45638c31de45454bae2bda77a16cbae3a7b8ef669b70749934a0fa8d94366a4",
+    "detailFingerprint": "24cf90d4cf6f9a2c960cd4a0a8dcd6ab4c3e78ee3efd9702354a9e1b79b28c7f",
+    "it": {
+      "name": "Interprete analisi del suolo",
+      "description": "Interpreta i risultati di un'analisi chimico-fisica del suolo evidenziando carenze, eccessi e raccomandazioni agronomiche.",
+      "instructions": "Obiettivo: interpretare i risultati dell'analisi chimico-fisica del suolo ed evidenziare carenze, eccessi e raccomandazioni agronomiche.\nInput richiesti: risultati dell'analisi del suolo (pH, sostanza organica, N-P-K, tessitura) e coltura target.\nPassi operativi:\n1. Confronta ogni parametro con gli intervalli di riferimento per la coltura target.\n2. Classifica ciascun parametro come carente, adeguato o eccessivo.\n3. Traduci la classificazione in raccomandazioni agronomiche concrete (correzione calcica, sostanza organica, fertilizzanti specifici).\nOutput atteso: classificazione parametro per parametro con un elenco di raccomandazioni ordinate per priorità.\nGuardrail: prima di decisioni rilevanti sulla concimazione, raccomanda una nuova analisi del suolo se quella fornita risale a oltre 3 anni prima."
+    },
+    "en": {
+      "name": "Soil analysis interpreter",
+      "description": "Interpret soil chemical and physical analysis results, highlighting deficiencies, excesses and agronomic recommendations.",
+      "instructions": "Goal: interpret soil chemical/physical analysis results and highlight deficiencies, excesses, and agronomic recommendations.\nRequired input: soil analysis results (pH, organic matter, N-P-K, texture) and target crop.\nWorkflow steps:\n1. Compare each parameter against reference ranges for the target crop.\n2. Classify each parameter as deficient, adequate, or excessive.\n3. Translate the classification into concrete agronomic recommendations (liming, organic matter, specific fertilizers).\nExpected output: parameter-by-parameter classification with a prioritized list of recommendations.\nGuardrail: recommend a fresh soil test if the provided analysis is older than 3 years before major fertilization decisions."
+    }
+  },
+  "tank-mix-compatibility-check": {
+    "listFingerprint": "3e872010826d3bee839ccd5b31436338a26329c24204bafa3017a6c2d0d5fb7b",
+    "detailFingerprint": "a1b7bc8cc9762c513ec4895c997999b07a6aabff23198a756e0e334e02829846",
+    "it": {
+      "name": "Analisi compatibilità miscele",
+      "description": "Analizza la compatibilità chimica di due o più prodotti fitosanitari da miscelare nella stessa botte, segnalando incompatibilità note.",
+      "instructions": "Obiettivo: analizzare la compatibilità di una miscela in botte tra due o più prodotti fitosanitari.\nInput richiesti: elenco dei prodotti da miscelare con relative formulazioni (se note).\nPassi operativi:\n1. Verifica se esistono incompatibilità note tra le formulazioni indicate (es. rame + zolfo, prodotti acidi + alcalini).\n2. Suggerisci l'ordine corretto di aggiunta dei prodotti in botte.\n3. Segnala se è necessario un test di compatibilità su piccola scala prima dell'applicazione su larga scala.\nOutput atteso: valutazione di compatibilità, ordine di miscelazione consigliato, eventuali avvertenze.\nGuardrail: in assenza di dati certi sulla compatibilità, raccomanda sempre il jar test prima dell'uso in campo."
+    },
+    "en": {
+      "name": "Tank mix compatibility check",
+      "description": "Assess the chemical compatibility of two or more plant protection products intended for the same tank, flagging known incompatibilities.",
+      "instructions": "Goal: assess the compatibility of a tank mix containing two or more plant protection products.\nRequired input: list of products to mix with their formulations, if known.\nWorkflow steps:\n1. Check for known incompatibilities between the specified formulations (for example, copper and sulfur, acidic and alkaline products).\n2. Suggest the correct order for adding the products to the tank.\n3. Indicate whether a small-scale compatibility test is needed before large-scale application.\nExpected output: compatibility assessment, recommended mixing order and any warnings.\nGuardrail: when compatibility data is uncertain, always recommend a jar test before field use."
+    }
+  },
+  "trap-monitoring-scout": {
+    "listFingerprint": "83400e53fb1f94ab88d6a1ccc70e1cda9ccd5b7a7ffda3f184dcf6e21768c3e2",
+    "detailFingerprint": "02b596a1a6fe4d11e7e15e69fdf51b1fea720c41cc322e0983eb13bdde7b4d66",
+    "it": {
+      "name": "Monitoraggio trappole scout",
+      "description": "Analizza i conteggi delle trappole per il monitoraggio di insetti target e determina se è stata superata la soglia di intervento.",
+      "instructions": "Obiettivo: analizzare i conteggi delle catture nelle trappole e determinare se è stata raggiunta la soglia di intervento.\nInput richiesti: conteggi delle catture per data di monitoraggio, insetto target, soglia di intervento nota se disponibile.\nPassi operativi:\n1. Segui l'andamento delle catture nelle ultime date di monitoraggio.\n2. Confronta il conteggio più recente con la soglia di intervento nota.\n3. Raccomanda se è giustificato un trattamento o se è sufficiente continuare il monitoraggio.\nOutput atteso: riepilogo dell'andamento, confronto con la soglia e raccomandazione chiara sull'opportunità di intervenire.\nGuardrail: quando le catture sono prossime alla soglia ma ancora inferiori, raccomanda di continuare il monitoraggio anziché un trattamento immediato."
+    },
+    "en": {
+      "name": "Pest trap monitoring",
+      "description": "Analyze pest trap catch counts and determine whether the intervention threshold has been exceeded.",
+      "instructions": "Goal: analyze pest trap catch counts and determine whether the intervention threshold has been reached.\nRequired input: trap catch counts per monitoring date, target pest, known intervention threshold if available.\nWorkflow steps:\n1. Track the catch trend over the last monitoring dates.\n2. Compare the latest count against the known intervention threshold.\n3. Recommend whether a treatment is warranted or continued monitoring is sufficient.\nExpected output: trend summary, threshold comparison, and a clear go/no-go recommendation.\nGuardrail: recommend continued monitoring rather than immediate treatment when counts are close to but below threshold."
+    }
+  },
+  "treatment-report-certification": {
+    "listFingerprint": "9bce119a0ecee167a85a64f54b608fa697022e0c26ecb7ba82276bf2d8217b63",
+    "detailFingerprint": "f86af1f2577853b59656ed27420dcf51b06a5ca1539ab955781177390af45c4c",
+    "it": {
+      "name": "Report trattamenti per certificazione",
+      "description": "Genera un report riepilogativo dei trattamenti effettuati in una stagione, utile per audit di certificazione biologica o integrata.",
+      "instructions": "Obiettivo: generare un report stagionale di tutti i trattamenti effettuati, adatto agli audit di certificazione biologica o integrata.\nInput richiesti: elenco dei trattamenti effettuati nella stagione (prodotto, data, dose, superficie, avversità).\nPassi operativi:\n1. Aggrega i trattamenti per prodotto e per mese.\n2. Calcola la quantità totale di sostanza attiva utilizzata per ettaro nella stagione.\n3. Evidenzia i trattamenti che potrebbero richiedere documentazione aggiuntiva per lo schema di certificazione in uso.\nOutput atteso: report stagionale strutturato pronto per la revisione dell'auditor, con totali ed elementi evidenziati.\nGuardrail: non omettere mai un trattamento dal report anche se sembra incompatibile con lo schema di certificazione; segnalalo invece."
+    },
+    "en": {
+      "name": "Treatment report for certification",
+      "description": "Generate a seasonal treatment summary report to support organic or integrated certification audits.",
+      "instructions": "Goal: generate a season summary report of all treatments performed, suitable for organic or integrated certification audits.\nRequired input: list of treatments performed during the season (product, date, dose, area, target).\nWorkflow steps:\n1. Aggregate treatments by product and by month.\n2. Calculate total active substance quantity used per hectare for the season.\n3. Highlight any treatment that may require additional documentation for the certification scheme in use.\nExpected output: structured season report ready for auditor review, with totals and highlighted items.\nGuardrail: never omit a treatment from the report even if it appears inconsistent with the certification scheme; flag it instead."
+    }
+  },
+  "valutazione-carico-produttivo": {
+    "listFingerprint": "23a21c4fc0365111b72a25e974ff84504dc3cfe829b1cc0ab83336f837b58553",
+    "detailFingerprint": "d8a438769188c24893070432630f58f154a71ffad192c9a7dfe6c2f4ec0368d7",
+    "it": {
+      "name": "Valutazione carico produttivo",
+      "description": "Stima il carico produttivo per pianta e confronta il valore con l'obiettivo qualitativo, suggerendo eventuale diradamento.",
+      "instructions": "Obiettivo: valutare se il carico produttivo (kg/pianta o kg/m di filare) è coerente con l'obiettivo qualitativo dichiarato.\nInput richiesti: numero di grappoli per pianta, peso medio storico del grappolo, obiettivo di qualità (base/premium).\nPassi operativi:\n1. Calcola il carico stimato per pianta o per metro di filare.\n2. Confronta il valore con soglie di riferimento per la tipologia di vino target.\n3. Indica se è necessario un diradamento e in quale percentuale.\nOutput atteso: carico stimato, soglia di riferimento, raccomandazione di diradamento in percentuale.\nGuardrail: considera sempre l'annata (vigore, stress) prima di consigliare un diradamento drastico."
+    },
+    "en": {
+      "name": "Vineyard crop load assessment",
+      "description": "Estimate crop load per vine, compare it with the quality target and suggest thinning where appropriate.",
+      "instructions": "Goal: assess whether crop load (kg per vine or kg per meter of row) is consistent with the stated quality target.\nRequired input: cluster count per vine, historical average cluster weight, quality target (basic or premium).\nWorkflow steps:\n1. Calculate estimated crop load per vine or per meter of row.\n2. Compare the value with reference thresholds for the target wine type.\n3. Indicate whether thinning is needed and at what percentage.\nExpected output: estimated crop load, reference threshold, recommended thinning percentage.\nGuardrail: always consider the growing season (vigor, stress) before recommending drastic thinning."
+    }
+  },
+  "weather-station-report": {
+    "listFingerprint": "0f69a21b25b41eef64d2baea780c6d41100547c6158bb48b78fbe4c0ee8c1982",
+    "detailFingerprint": "73c294271258552e361d6060e34b6494d9361f9c4ce41f3fee32e36a76de7a00",
+    "it": {
+      "name": "Report centralina agrometeo",
+      "description": "Sintetizza i dati raccolti da una centralina agrometeo aziendale in un report giornaliero facilmente leggibile.",
+      "instructions": "Obiettivo: sintetizzare i dati di una centralina agrometeo aziendale in un report giornaliero leggibile per l'agronomo.\nInput richiesti: dati raccolti dalla centralina (temperatura, umidità, pioggia, vento) per la giornata.\nPassi operativi:\n1. Calcola i valori medi, minimi e massimi giornalieri per ciascun parametro.\n2. Confronta i valori con la media storica del periodo, se disponibile.\n3. Segnala eventuali valori anomali che richiedono attenzione agronomica.\nOutput atteso: report giornaliero sintetico con valori chiave e segnalazioni di anomalie.\nGuardrail: segnala sempre eventuali gap di dati (sensori offline) invece di stimare valori mancanti."
+    },
+    "en": {
+      "name": "Farm weather station report",
+      "description": "Summarize data from a farm weather station in an accessible daily report.",
+      "instructions": "Goal: summarize a farm weather station's data in a daily report readable by the agronomist.\nRequired input: station data (temperature, humidity, rainfall, wind) for the day.\nWorkflow steps:\n1. Calculate daily average, minimum and maximum values for each parameter.\n2. Compare the values with the historical average for the period, if available.\n3. Flag unusual values that require agronomic attention.\nExpected output: concise daily report with key values and anomaly alerts.\nGuardrail: always indicate data gaps (offline sensors) rather than estimating missing values."
+    }
+  },
+  "weekly-vigor-report": {
+    "listFingerprint": "575a777eb71c9b00fd1e773de21f3130af18083a860713ad746a143b9f0ffaab",
+    "detailFingerprint": "acc68c65a87b72dade85a4fa96016009ab2abc65ae6e174659f4bf926f0ea1b2",
+    "it": {
+      "name": "Report stato vegetativo settimanale",
+      "description": "Compila un report settimanale sullo stato vegetativo del vigneto aggregando osservazioni di campo e indici disponibili.",
+      "instructions": "Obiettivo: compilare un report settimanale sintetico sullo stato vegetativo del vigneto.\nInput richiesti: osservazioni di campo della settimana, eventuali indici di vigore disponibili (NDVI, note operatore).\nPassi operativi:\n1. Aggrega le osservazioni ricevute per parcella/campo.\n2. Individua trend positivi o negativi rispetto alla settimana precedente.\n3. Segnala le parcelle che richiedono un controllo prioritario.\nOutput atteso: report settimanale con sintesi per parcella e lista priorità di controllo.\nGuardrail: non generare valutazioni quantitative se non sono disponibili dati sufficienti, segnala il gap informativo."
+    },
+    "en": {
+      "name": "Weekly vineyard vigor report",
+      "description": "Compile a weekly vineyard vegetation report by aggregating field observations and available indicators.",
+      "instructions": "Goal: compile a concise weekly report on the vineyard's vegetative condition.\nRequired input: the week's field observations, any available vigor indicators (NDVI, operator notes).\nWorkflow steps:\n1. Aggregate observations by plot or field.\n2. Identify positive or negative trends compared with the previous week.\n3. Flag plots requiring priority checks.\nExpected output: weekly report with a summary per plot and a prioritized list of checks.\nGuardrail: do not generate quantitative assessments when sufficient data is unavailable; indicate the information gap."
+    }
+  },
+  "wine-registry-entry": {
+    "listFingerprint": "e4a69a72a4907a7a8bbe1569075398f335a799621699ffbdedaaa0583ddd7fa2",
+    "detailFingerprint": "7616ea71043ae2aff4a50735e38e995df1721b28aa25fa8cf134bf4b3cf478fc",
+    "it": {
+      "name": "Registrazione registro vitivinicolo",
+      "description": "Compila una voce del registro vitivinicolo obbligatorio a partire dai dati di conferimento uva o movimentazione vino.",
+      "instructions": "Obiettivo: compilare una voce del registro vitivinicolo obbligatorio a partire dai dati di conferimento uva o movimentazione di vino.\nInput richiesti: tipo di movimento (conferimento, imbottigliamento, vendita), quantità, data, riferimenti al lotto.\nPassi operativi:\n1. Identifica la tipologia di registro richiesta in base al tipo di movimento.\n2. Struttura i dati ricevuti nei campi obbligatori previsti dalla normativa.\n3. Segnala eventuali campi obbligatori mancanti prima di considerare la voce completa.\nOutput atteso: voce di registro strutturata e pronta per la registrazione ufficiale.\nGuardrail: non marcare mai una voce come \"completa\" se manca un campo obbligatorio previsto dalla normativa vitivinicola."
+    },
+    "en": {
+      "name": "Wine registry entry",
+      "description": "Prepare a mandatory wine registry entry from grape delivery or wine movement data.",
+      "instructions": "Goal: prepare a mandatory wine registry entry from grape delivery or wine movement data.\nRequired input: movement type (delivery, bottling, sale), quantity, date, batch references.\nWorkflow steps:\n1. Identify the required register type based on the movement type.\n2. Structure the supplied data into the mandatory fields required by regulation.\n3. Flag any missing mandatory fields before considering the entry complete.\nExpected output: structured register entry ready for official recording.\nGuardrail: never mark an entry as \"complete\" if a mandatory field required by wine regulations is missing."
+    }
+  }
+}

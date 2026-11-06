@@ -1,9 +1,11 @@
 ---
 import RuleCard from './RuleCard.astro';
+import CatalogNavigation from './CatalogNavigation.astro';
+import '../styles/catalog.css';
 import {absolute, rulesPath, categoryPath, label, demoPath, safeSource, type Language} from '../lib/paths';
 import type {PublicRule, RulePage} from '../lib/api';
-interface Props {lang: Language; path: string; rule?: PublicRule; listing?: RulePage; category?: string; categories: Array<{category:string;count:number}>; status?: number}
-const {lang,path,rule,listing,category,categories,status=200} = Astro.props;
+interface Props {lang: Language; path: string; rule?: PublicRule; listing?: RulePage; category?: string; categories: Array<{category:string;count:number}>; status?: number; skillCount?: number}
+const {lang,path,rule,listing,category,categories,status=200,skillCount} = Astro.props;
 const en=lang==='en';
 const base=rulesPath(lang);
 const filtered=Astro.url.searchParams.has('search') || Astro.url.searchParams.has('region');
@@ -19,7 +21,7 @@ const graph=rule ? { '@context':'https://schema.org', '@type':'CreativeWork', '@
 ---
 <!doctype html><html lang={lang}><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>{title} | Seminai</title><meta name="description" content={description.slice(0,170)}/><meta name="robots" content={status!==200 || filtered || listing?.total===0 ? 'noindex, follow':'index, follow, max-image-preview:large'}/>
-<link rel="canonical" href={canonical}/><link rel="alternate" hreflang="" href={absolute(italian)+pageQuery}/><link rel="alternate" hreflang="en" href={absolute(english)+pageQuery}/><link rel="alternate" hreflang="x-default" href={absolute(italian)+pageQuery}/><link rel="icon" href="/icons/favicon-64.png"/>
+<link rel="canonical" href={canonical}/><link rel="alternate" hreflang="it" href={absolute(italian)+pageQuery}/><link rel="alternate" hreflang="en" href={absolute(english)+pageQuery}/><link rel="alternate" hreflang="x-default" href={absolute(italian)+pageQuery}/><link rel="icon" href="/icons/favicon-64.png"/>
 <meta property="og:title" content={`${title} | Seminai`}/><meta property="og:description" content={description}/><meta property="og:url" content={canonical}/><meta property="og:image" content="https://seminai.tech/og/og-image.jpg"/>
 <link rel="describedby" href="/llms.txt"/><script type="application/ld+json" set:html={JSON.stringify(graph).replace(/</g,'\\u003c')}/>
 <script>
@@ -27,11 +29,9 @@ const graph=rule ? { '@context':'https://schema.org', '@type':'CreativeWork', '@
  installDemoClickTracking();
  if(readStoredConsent()==='granted') loadGoogleAnalytics();
 </script>
-<style is:global>
-@font-face{font-family:Geist;src:url('/fonts/geist-latin.woff2')}*{box-sizing:border-box}body{margin:0;background:#f9faf6;color:#22342a;font-family:Geist,Arial,sans-serif}a{color:#234d34;text-underline-offset:4px}header,main,footer{max-width:1120px;margin:auto;padding:24px}header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #dbe1d6;gap:18px;flex-wrap:wrap}header>a{font-size:22px;font-weight:700;text-decoration:none}nav{display:flex;gap:20px;flex-wrap:wrap}main{padding-top:44px;padding-bottom:70px;min-height:65vh}h1{font-size:clamp(34px,5vw,56px);letter-spacing:-.04em;line-height:1.1;max-width:900px;margin:30px 0}p{line-height:1.75;max-width:760px}.lead{font-size:20px}.kicker,.meta{font-size:12px;letter-spacing:.04em;color:#60715d}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin:32px 0}.rule-card{padding:26px;border:1px solid #dbe1d6;border-radius:4px;background:white}.rule-card h2{font-size:23px;line-height:1.3}.filters{display:flex;gap:12px;flex-wrap:wrap;margin:28px 0}input,select,button{font:inherit;padding:12px;border:1px solid #a6b4a1;border-radius:4px;background:white}label{display:grid;gap:8px}.button,button{display:inline-block;background:#234d34;color:white;border:0;padding:14px 22px;border-radius:5px;text-decoration:none}.categories{display:flex;gap:18px;flex-wrap:wrap}.pagination{margin:30px 0}.source{padding:24px;background:#edf1e9}.language-note{border-left:3px solid #78936a;padding-left:18px}footer{border-top:1px solid #dbe1d6;font-size:14px}dt{font-weight:700;margin-top:16px}dd{margin-left:0} @media(max-width:650px){.grid{grid-template-columns:1fr}header,main,footer{padding-left:20px;padding-right:20px}nav{gap:12px}}
-</style></head><body>
-<header><a href={en?'/en/':'/'}>SeminAI</a><nav aria-label={en?'Main navigation':'Navigazione'}><a href={en?'/en/resources/':'/risorse/'}>{en?'Resources':'Risorse'}</a><a href={en?'/en/news/':'/news/'}>News</a><a href={italian} hreflang="">IT</a><a href={english} hreflang="en">EN</a><a class="button" href={demoPath(lang)}>{en?'Request a demo':'Richiedi una demo'}</a></nav></header>
-<main><nav aria-label="Breadcrumb"><a href={en?'/en/':'/'}>Home</a><span>/</span><a href={base}>{en?'Public rules':'Regole pubbliche'}</a></nav>
+</head><body>
+<header><a href={en?'/en/':'/'}>SeminAI</a><nav aria-label={en?'Main navigation':'Navigazione'}><a href={en?'/en/resources/':'/risorse/'}>{en?'Resources':'Risorse'}</a><a href={en?'/en/news/':'/news/'}>News</a><a href={italian} hreflang="it">IT</a><a href={english} hreflang="en">EN</a><a class="button" href={demoPath(lang)}>{en?'Request a demo':'Richiedi una demo'}</a></nav></header>
+<main><CatalogNavigation lang={lang} active="rules" ruleCount={listing?.total} skillCount={skillCount}/><nav aria-label="Breadcrumb"><a href={en?'/en/':'/'}>Home</a><span>/</span><a href={base}>{en?'Public rules':'Regole pubbliche'}</a></nav>
 <h1 lang={rule?'':lang}>{title}</h1>
 {status===503 ? <p>{en?'The source service is temporarily unavailable. Please try again shortly.':'Il servizio delle fonti è temporaneamente non disponibile. Riprova tra poco.'}</p> : status===404 ? <p>{en?'This rule is not publicly available.':'Questa regola non è disponibile pubblicamente.'}</p> : rule ? <>
 <p class="language-note">{en?'Publisher content is shown in its original language, which the source API does not specify. The navigation is translated; this is not a translated legal document.':'Il contenuto del pubblicatore è riportato nella lingua originale, non specificata dall’API. La scheda non costituisce una verifica di validità normativa.'}</p>

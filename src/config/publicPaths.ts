@@ -7,3 +7,5 @@ export const resourcesPath = (lang: PublicLanguage) =>
   lang === "en" ? "/en/resources/" : "/risorse/";
 export const rulesPath = (lang: PublicLanguage) =>
   lang === "en" ? "/en/rules/" : "/regole/";
+export const skillsPath = (lang: PublicLanguage) =>
+  lang === "en" ? "/en/skills/" : "/skills/";
