@@ -19,7 +19,7 @@ export const ANCHORS = {
 } as const;
 
 export const LEGAL_ROUTES = {
-  privacy: "/privacy-policy",
-  cookies: "/cookie-policy",
-  terms: "/terms-of-service",
+  privacy: "/privacy-policy/",
+  cookies: "/cookie-policy/",
+  terms: "/terms-of-service/",
 } as const;

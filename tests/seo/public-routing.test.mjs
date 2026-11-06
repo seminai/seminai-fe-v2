@@ -108,3 +108,12 @@ test("a missing catalogue binding fails closed instead of showing the homepage",
   assert.equal(response.headers.get("Cache-Control"), "no-store");
   assert.equal(isCataloguePath("/regolamenti/"), false);
 });
+test("directory routes stay reachable after the static origin adds a trailing slash", async () => {
+  globalThis.fetch = async () => { throw new Error("The gateway must not fetch a 404 for a known directory route"); };
+  for (const path of ["/privacy-policy", "/cookie-policy", "/terms-of-service"]) {
+    const response = await routePublicRequest(new Request(`https://seminai.tech${path}?utm_source=synthetic`));
+    assert.equal(response.status, 301);
+    assert.equal(response.headers.get("Location"), `https://seminai.tech${path}/?utm_source=synthetic`);
+    assert.equal(await routePublicRequest(new Request(`https://seminai.tech${path}/`)), null);
+  }
+});

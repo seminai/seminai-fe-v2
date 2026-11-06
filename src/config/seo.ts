@@ -56,21 +56,21 @@ export const SEO: Record<
     title: "Privacy Policy | Seminai",
     description:
       "Informativa privacy di Seminai: modalità di trattamento dei dati personali, finalità, conservazione, contatti e diritti degli interessati.",
-    canonical: absoluteUrl("/privacy-policy"),
+    canonical: absoluteUrl("/privacy-policy/"),
     locale: "it_IT",
   },
   cookie: {
     title: "Cookie Policy | Seminai",
     description:
       "Cookie Policy di Seminai: cookie tecnici, analitici e di preferenza usati dalla piattaforma e come gestirli.",
-    canonical: absoluteUrl("/cookie-policy"),
+    canonical: absoluteUrl("/cookie-policy/"),
     locale: "it_IT",
   },
   terms: {
     title: "Termini di Servizio | Seminai",
     description:
       "Termini e condizioni di servizio della piattaforma Seminai per la produzione del quaderno di campagna digitale.",
-    canonical: absoluteUrl("/terms-of-service"),
+    canonical: absoluteUrl("/terms-of-service/"),
     locale: "it_IT",
   },
   beta: {

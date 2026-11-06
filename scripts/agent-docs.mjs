@@ -298,7 +298,7 @@ function legalMarkdown(page) {
   return [
     htmlToMarkdown(main[1]).replace(
       /^# .*/,
-      (h1) => `${h1}\n\n> Versione Markdown di ${SITE}/${page.slug}`,
+      (h1) => `${h1}\n\n> Versione Markdown di ${SITE}/${page.slug}/`,
     ),
     "",
   ].join("\n");
