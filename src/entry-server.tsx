@@ -11,17 +11,18 @@
  */
 import { prerenderToNodeStream } from "react-dom/static";
 import { Suspense } from "react";
-import { StaticRouter, Routes, Route } from "react-router";
+import { StaticRouter } from "react-router";
 import { HelmetProvider, type HelmetServerState } from "react-helmet-async";
-import i18n from "./i18n";
-import { NEWS_POSTS, newsIndexPath, translationOf, type NewsLang } from "./lib/news";
+import i18n from "./i18n/public";
+import {
+  NEWS_POSTS,
+  newsIndexPath,
+  translationOf,
+  type NewsLang,
+} from "./lib/news";
 
-import Home from "./routes/Home";
-import PrivacyPolicy from "./routes/PrivacyPolicy";
-import CookiePolicy from "./routes/CookiePolicy";
-import TermsOfService from "./routes/TermsOfService";
-import NewsIndex from "./routes/News/NewsIndex";
-import NewsArticle from "./routes/News/NewsArticle";
+import PublicApp from "./PublicApp";
+import { PUBLIC_PAGES } from "./config/publicPages";
 
 export interface RenderResult {
   html: string;
@@ -49,8 +50,16 @@ function outFor(url: string): string {
 export function newsRoutes(): PublicRoute[] {
   const langs: NewsLang[] = ["it", "en"];
   return [
-    ...langs.map((lng) => ({ url: newsIndexPath(lng), out: outFor(newsIndexPath(lng)), lng })),
-    ...NEWS_POSTS.map((post) => ({ url: post.path, out: outFor(post.path), lng: post.lang })),
+    ...langs.map((lng) => ({
+      url: newsIndexPath(lng),
+      out: outFor(newsIndexPath(lng)),
+      lng,
+    })),
+    ...NEWS_POSTS.map((post) => ({
+      url: post.path,
+      out: outFor(post.path),
+      lng: post.lang,
+    })),
   ];
 }
 
@@ -66,8 +75,16 @@ export function newsSitemap(): SitemapEntry[] {
     { hrefLang: "x-default", path: newsIndexPath("it") },
   ];
   return [
-    { path: newsIndexPath("it"), lastmod: latest("it"), alternates: indexAlternates },
-    { path: newsIndexPath("en"), lastmod: latest("en"), alternates: indexAlternates },
+    {
+      path: newsIndexPath("it"),
+      lastmod: latest("it"),
+      alternates: indexAlternates,
+    },
+    {
+      path: newsIndexPath("en"),
+      lastmod: latest("en"),
+      alternates: indexAlternates,
+    },
     ...NEWS_POSTS.map((post) => {
       const translation = translationOf(post);
       const italian = post.lang === "it" ? post : translation;
@@ -87,11 +104,16 @@ export function newsSitemap(): SitemapEntry[] {
 }
 
 /** Decodes as a stream so accented characters split across chunks stay intact. */
-async function streamToString(stream: AsyncIterable<string | Uint8Array>): Promise<string> {
+async function streamToString(
+  stream: AsyncIterable<string | Uint8Array>,
+): Promise<string> {
   const decoder = new TextDecoder();
   let html = "";
   for await (const chunk of stream) {
-    html += typeof chunk === "string" ? chunk : decoder.decode(chunk, { stream: true });
+    html +=
+      typeof chunk === "string"
+        ? chunk
+        : decoder.decode(chunk, { stream: true });
   }
   return html + decoder.decode();
 }
@@ -105,16 +127,7 @@ export async function render(url: string, lng = "it"): Promise<RenderResult> {
     <HelmetProvider context={helmetContext}>
       <StaticRouter location={url}>
         <Suspense fallback={null}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/cookie-policy" element={<CookiePolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-            <Route path="/news" element={<NewsIndex lang="it" />} />
-            <Route path="/news/:slug" element={<NewsArticle lang="it" />} />
-            <Route path="/en/news" element={<NewsIndex lang="en" />} />
-            <Route path="/en/news/:slug" element={<NewsArticle lang="en" />} />
-          </Routes>
+          <PublicApp />
         </Suspense>
       </StaticRouter>
     </HelmetProvider>,
@@ -134,4 +147,27 @@ export async function render(url: string, lng = "it"): Promise<RenderResult> {
     : "";
 
   return { html, head };
+}
+
+export function staticRoutes(): PublicRoute[] {
+  return [
+    { url: "/", out: "index.html", lng: "it" },
+    { url: "/en/", out: "en/index.html", lng: "en" },
+    ...["privacy-policy", "cookie-policy", "terms-of-service"].map((slug) => ({
+      url: `/${slug}`,
+      out: `${slug}/index.html`,
+      lng: "it" as const,
+    })),
+    { url: "/richiedi-demo/", out: "richiedi-demo/index.html", lng: "it" },
+    {
+      url: "/en/request-a-demo/",
+      out: "en/request-a-demo/index.html",
+      lng: "en",
+    },
+    ...PUBLIC_PAGES.map((page) => ({
+      url: page.path,
+      out: outFor(page.path),
+      lng: page.lang,
+    })),
+  ];
 }

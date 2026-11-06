@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { ANCHORS } from "./constants";
 import { HERO_DOCS, SCENE } from "./sceneImages";
-import { useAutoAdvance } from "./useAutoAdvance";
+import { useState } from "react";
 
 interface HeroDoc {
   word: string;
@@ -13,8 +13,10 @@ interface HeroDoc {
 export function LandingHero() {
   const { t } = useTranslation();
   const docs = t("landing.hero.docs", { returnObjects: true }) as HeroDoc[];
-  const outputs = t("landing.hero.outputs", { returnObjects: true }) as string[];
-  const { index, select } = useAutoAdvance(docs.length, 3200);
+  const outputs = t("landing.hero.outputs", {
+    returnObjects: true,
+  }) as string[];
+  const [index, select] = useState(0);
   const active = docs[index];
 
   return (
@@ -58,7 +60,11 @@ export function LandingHero() {
                 aria-pressed={docIndex === index}
                 onClick={() => select(docIndex)}
               >
-                <img src={HERO_DOCS[docIndex]} alt={doc.alt} />
+                <img
+                  src={HERO_DOCS[docIndex]}
+                  alt={doc.alt}
+                  fetchPriority={docIndex === 0 ? "high" : "low"}
+                />
               </button>
             ))}
           </div>
@@ -99,7 +105,9 @@ export function LandingHero() {
             </div>
           </div>
 
-          <figcaption className="demo-caption">{t("landing.hero.stageLabel")}</figcaption>
+          <figcaption className="demo-caption">
+            {t("landing.hero.stageLabel")}
+          </figcaption>
         </figure>
       </div>
     </section>

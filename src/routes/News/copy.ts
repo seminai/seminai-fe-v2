@@ -1,9 +1,5 @@
 import type { NewsLang } from "@/lib/news";
 
-/** UTM-tagged so signups from the news are attributable without JS. */
-export const NEWS_SIGNUP_URL =
-  "https://app.seminai.tech/register?utm_source=seminai.tech&utm_medium=referral&utm_campaign=news";
-
 /**
  * UI copy of the news pages. Language comes from the URL (/news vs /en/news),
  * not from the i18n switcher, so it lives here instead of the i18n JSON.
@@ -26,8 +22,8 @@ export const NEWS_COPY = {
     inPractice: "In pratica",
     infographic: "Infografica in arrivo",
     ctaText:
-      "Prova Seminai gratis per 14 giorni. Carica le fatture, ricevi il quaderno pronto da rivedere.",
-    ctaButton: "Inizia la prova gratuita",
+      "Raccontaci il tuo flusso. Il team ti contatterà per concordare una demo e confermare l’appuntamento.",
+    ctaButton: "Richiedi una demo",
   },
   en: {
     section: "News",
@@ -45,7 +41,8 @@ export const NEWS_COPY = {
     researchLabel: "What the research says",
     inPractice: "In practice",
     infographic: "Infographic coming soon",
-    ctaText: "Try Seminai free for 14 days. Upload your invoices, get a register ready for review.",
-    ctaButton: "Start the free trial",
+    ctaText:
+      "Tell us about your workflow. The team will contact you to agree and confirm a demo.",
+    ctaButton: "Request a demo",
   },
 } satisfies Record<NewsLang, Record<string, string>>;

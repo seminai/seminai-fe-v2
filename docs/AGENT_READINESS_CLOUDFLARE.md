@@ -17,10 +17,10 @@ In Cloudflare DNS for `seminai.tech`:
 Authenticate with an account that can edit the `seminai.tech` zone, then run:
 
 ```bash
-npx wrangler deploy --config wrangler.toml
+npx wrangler deploy --config wrangler.jsonc
 ```
 
-The Worker route configuration is in `wrangler.toml` and applies to:
+The Worker route configuration is in `wrangler.jsonc` and applies to:
 
 - `seminai.tech/*`
 - `www.seminai.tech/*`
@@ -66,3 +66,5 @@ Expected results:
 - `Accept: text/markdown` on `/` returns `Content-Type: text/markdown; charset=utf-8`.
 - `/.well-known/api-catalog` returns `Content-Type: application/linkset+json; charset=utf-8`.
 - DNS queries return HTTPS and TXT answers for `_index` and `_a2a`.
+
+Deploy seminai-public-catalog before the gateway. The CATALOG binding is mandatory for the catalogue and sitemap-rules.xml. On Cloudflare, remove the Managed robots.txt injection after preserving its training opt-out in public/robots.txt; verify effective bot and WAF rules against verified crawler IPs. Keep preview hosts noindex.

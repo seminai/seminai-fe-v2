@@ -66,12 +66,10 @@ function buildSoftwareApplication() {
     name: SITE_NAME,
     applicationCategory: "BusinessApplication",
     applicationSubCategory: "Agricultural Software",
-    operatingSystem: "Web, iOS, Android",
+    operatingSystem: "Web",
     description: GEO_DESCRIPTION,
     url: SITE_URL,
     inLanguage: "it-IT",
-    datePublished: "2025-01-01",
-    dateModified: "2026-10-28",
     publisher: { "@id": ORG_ID },
     featureList: [
       "Estrazione dati da fatture, DDT, etichette, fascicoli aziendali e note manuali",
@@ -80,7 +78,6 @@ function buildSoftwareApplication() {
       "Compilazione del quaderno di campagna",
       "Verifica dei trattamenti su fonti normative ufficiali",
       "Magazzino e registri aggiornati dai documenti",
-      "Server europei — conforme GDPR",
     ],
   };
 }
@@ -142,14 +139,33 @@ function buildBreadcrumb() {
 }
 
 /** Full @graph for the homepage. `faqItems` come from i18n `landing.faq.items`. */
-export function buildHomeGraph(faqItems: FaqItem[]) {
+export function buildHomeGraph(faqItems: FaqItem[], lang: "it" | "en" = "it") {
   return {
     "@context": "https://schema.org",
     "@graph": [
-      buildWebSite(),
+      {
+        ...buildWebSite(),
+        inLanguage: lang,
+        url: lang === "en" ? `${SITE_URL}/en/` : `${SITE_URL}/`,
+      },
       buildOrganization(),
-      buildSoftwareApplication(),
-      buildHowTo(),
+      {
+        ...buildSoftwareApplication(),
+        inLanguage: lang,
+        ...(lang === "en"
+          ? {
+              description:
+                "Connect agricultural documents and farm data, prepare proposals and review the result before confirmation.",
+              featureList: [
+                "Agricultural document extraction",
+                "Chat with extracted data",
+                "PDF and spreadsheet exports",
+                "Field logbook preparation for review",
+              ],
+            }
+          : {}),
+      },
+      ...(lang === "it" ? [buildHowTo()] : []),
       buildFaqPage(faqItems),
       buildBreadcrumb(),
     ],
@@ -198,7 +214,7 @@ export function buildArticleGraph(input: ArticleGraphInput) {
       })),
     },
   ];
-  if (input.faqs.length > 0) graph.push(buildFaqPage(input.faqs, `${input.url}#faq`));
+  if (input.faqs.length > 0)
+    graph.push(buildFaqPage(input.faqs, `${input.url}#faq`));
   return { "@context": "https://schema.org", "@graph": graph };
 }
-

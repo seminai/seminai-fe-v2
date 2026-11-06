@@ -4,54 +4,31 @@
     "useCases": "What you can do",
     "faq": "FAQ",
     "login": "Login",
-    "demo": "Book 20 minutes",
+    "demo": "Request a demo",
     "news": "News"
   },
   "hero": {
     "titleBefore": "We turn",
     "titleAfter": "into data you can use.",
-    "body": "Seminai reads the documents your farm already receives and makes them usable: in chat, in Excel, in the field logbook. Without changing how you work.",
+    "body": "Seminai helps turn the documents your farm already receives into usable data: in chat, in Excel and in a field logbook for review.",
     "ctaPrimary": "Book 20 minutes",
     "ctaSecondary": "See how it works",
     "stageLabel": "Example: a document goes in, data comes out",
     "extracted": "Extracted data",
     "from": "from",
-    "outputs": [
-      "Chat",
-      "Excel",
-      "PDF",
-      "Field logbook"
-    ],
+    "outputs": ["Chat", "Excel", "PDF", "Field logbook"],
     "docs": [
       {
         "word": "invoices",
         "source": "Invoice 2026/0611",
         "alt": "Agri Supply invoice with a handwritten note: Field 11",
         "fields": [
-          [
-            "Supplier",
-            "Agri Supply"
-          ],
-          [
-            "Tervalon 250 EC",
-            "15 L"
-          ],
-          [
-            "Soybean seed",
-            "20 bags"
-          ],
-          [
-            "Diesel",
-            "400 L"
-          ],
-          [
-            "Plot",
-            "Field 11"
-          ],
-          [
-            "Total",
-            "€ 2,220.50"
-          ]
+          ["Supplier", "Agri Supply"],
+          ["Tervalon 250 EC", "15 L"],
+          ["Soybean seed", "20 bags"],
+          ["Diesel", "400 L"],
+          ["Plot", "Field 11"],
+          ["Total", "€ 2,220.50"]
         ]
       },
       {
@@ -59,26 +36,11 @@
         "source": "Delivery note D-2026-118",
         "alt": "Handwritten delivery note: soybean, 38.2 tonnes",
         "fields": [
-          [
-            "From",
-            "Frank's farm"
-          ],
-          [
-            "To",
-            "North Feed Mill"
-          ],
-          [
-            "Date",
-            "02/10/2026"
-          ],
-          [
-            "Goods",
-            "Soybean"
-          ],
-          [
-            "Net weight",
-            "38.2 t"
-          ]
+          ["From", "Frank's farm"],
+          ["To", "North Feed Mill"],
+          ["Date", "02/10/2026"],
+          ["Goods", "Soybean"],
+          ["Net weight", "38.2 t"]
         ]
       },
       {
@@ -86,26 +48,11 @@
         "source": "Field log",
         "alt": "Handwritten notebook page about Field 11",
         "fields": [
-          [
-            "Plot",
-            "Field 11"
-          ],
-          [
-            "Area",
-            "12.4 ha"
-          ],
-          [
-            "Sprayed",
-            "11/06"
-          ],
-          [
-            "Harvest",
-            "End of September"
-          ],
-          [
-            "Contact",
-            "Luca"
-          ]
+          ["Plot", "Field 11"],
+          ["Area", "12.4 ha"],
+          ["Sprayed", "11/06"],
+          ["Harvest", "End of September"],
+          ["Contact", "Luca"]
         ]
       },
       {
@@ -113,22 +60,10 @@
         "source": "Field note #11",
         "alt": "Field note: soybean harvest on Monday, call Luca",
         "fields": [
-          [
-            "Task",
-            "Soybean harvest"
-          ],
-          [
-            "Plot",
-            "Field 11"
-          ],
-          [
-            "When",
-            "Monday"
-          ],
-          [
-            "To do",
-            "Call Luca"
-          ]
+          ["Task", "Soybean harvest"],
+          ["Plot", "Field 11"],
+          ["When", "Monday"],
+          ["To do", "Call Luca"]
         ]
       }
     ]
@@ -237,17 +172,17 @@
       },
       {
         "question": "Does it connect to the software I already use?",
-        "answer": "Yes, through APIs. Or export the data to Excel or PDF and take it wherever you need."
+        "answer": "Available APIs and export formats can support integration. Compatibility with your software must be checked with the team; it is not automatic."
       },
       {
         "question": "Is my data safe?",
-        "answer": "It is encrypted in transit and at rest, on European servers. It is not shared with third parties or used to train AI models. You can export or delete it anytime."
+        "answer": "Processing arrangements, providers and data rights are described in the privacy policy. Before using real documents, agree access, processing and retention requirements with the team."
       }
     ]
   },
   "booking": {
     "title": "Let's talk about your farm.",
-    "lead": "Tell us what slows you down: in 20 minutes we'll see what Seminai can do with your documents.",
+    "lead": "Tell us about your workflow and a preferred time. The team will contact you to agree and confirm the appointment.",
     "fields": {
       "name": "Full name",
       "email": "Email",
@@ -285,7 +220,7 @@
       "Inventory",
       "Other"
     ],
-    "submit": "Book the demo",
+    "submit": "Request a demo",
     "submitting": "Sending…",
     "privacy": "By sending this request you accept the <a href=\"/privacy-policy\">privacy policy</a>.",
     "successTitle": "Request sent.",
@@ -352,22 +287,11 @@
       "title": "Tenuta La Sorgente",
       "tab": "Register · Tenuta La Sorgente",
       "navActive": "Register",
-      "nav": [
-        "Home",
-        "Archive",
-        "Register",
-        "Chat"
-      ],
+      "nav": ["Home", "Archive", "Register", "Chat"],
       "upload": "Upload invoice",
       "empty": "The register is empty. The cursor is about to upload the invoice.",
       "note": "4 products in the register, ready for the logbook.",
-      "headers": [
-        "Date",
-        "Product",
-        "Field",
-        "Dose",
-        "Status"
-      ],
+      "headers": ["Date", "Product", "Field", "Dose", "Status"],
       "rows": [
         {
           "date": "12 Mar",

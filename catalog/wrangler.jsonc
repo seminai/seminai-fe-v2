@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "seminai-public-catalog",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "compatibility_date": "2026-11-05",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "assets": {"binding": "ASSETS", "directory": "./dist"},
+  "vars": {"HUB_API_BASE_URL": "https://seminai-be-v2-661301438659.europe-west1.run.app", "PUBLIC_SITE_URL": "https://seminai.tech"},
+  "observability": {"enabled": true, "head_sampling_rate": 0.1}
+}

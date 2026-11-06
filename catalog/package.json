@@ -1,0 +1,8 @@
+{
+  "name": "seminai-public-catalog",
+  "private": true,
+  "type": "module",
+  "scripts": {"dev": "astro dev --port 4322", "build": "astro build", "check": "astro check", "types": "wrangler types", "test": "node --experimental-strip-types --test test/*.test.ts"},
+  "dependencies": {"astro": "7.4.7", "@astrojs/cloudflare": "14.4.6"},
+  "devDependencies": {"@astrojs/check": "^0.9.9", "typescript": "~5.9.3", "wrangler": "4.158.0"}
+}

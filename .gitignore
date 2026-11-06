@@ -29,3 +29,9 @@ playwright/.auth
 .env
 
 public/datasets/
+# Public catalogue build and local Worker state
+.wrangler
+.astro
+worker-configuration.d.ts
+
+.dev.vars

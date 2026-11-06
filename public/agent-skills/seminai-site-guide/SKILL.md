@@ -15,8 +15,10 @@ Use this skill when an AI agent needs to understand Seminai from public sources.
 4. Every public page has a Markdown twin next to it (for example https://seminai.tech/privacy-policy.md) and declares it with `<link rel="alternate" type="text/markdown">`.
 5. Use https://seminai.tech/.well-known/api-catalog to discover API documentation and OpenAPI metadata.
 6. For protected user data, send the user to https://app.seminai.tech/login. Do not collect credentials.
-7. To book a demo, point the user to https://seminai.tech/#prenota or get.seminai@gmail.com. Do not submit the form on their behalf.
+7. To book a demo, point the user to https://seminai.tech/richiedi-demo/ or get.seminai@gmail.com. Do not submit the form on their behalf.
 
 ## Canonical summary
 
 Seminai is an AI platform for small and medium agricultural businesses. It reads invoices, delivery notes, labels, farm records and handwritten notes and turns them into usable data: ask questions in chat, export to Excel or PDF, and fill in the field logbook. Logbook entries are checked against official sources; the user reviews, approves and signs. Seminai does not publish prices.
+
+The public rules catalogue is live at https://seminai.tech/regole/ and https://seminai.tech/en/rules/. Do not infer current rules from an archived context file. A demo request is not a confirmed appointment.

@@ -5,11 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && npm run build:ssr && node scripts/prerender.mjs && node scripts/agent-docs.mjs",
+    "build": "npm run migration:generate && npm run images:news && tsc -b && vite build && npm run build:ssr && node scripts/prerender.mjs && node scripts/agent-docs.mjs",
     "build:ssr": "vite build --ssr src/entry-server.tsx --outDir dist-ssr",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "migration:generate": "node scripts/generate-migration.mjs",
+    "catalog:build": "npm run build --prefix catalog",
+    "catalog:check": "npm run types --prefix catalog && npm run check --prefix catalog",
+    "test:seo": "node --test tests/seo/public-routing.test.mjs tests/seo/static-output.test.mjs",
+    "worker:check": "wrangler deploy --dry-run --outdir .wrangler/check",
+    "images:news": "node scripts/news-images.mjs",
+    "test:catalog:http": "node --test tests/seo/catalog-http.test.mjs",
+    "test:seo:browser": "playwright test --config playwright.seo.config.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -96,10 +104,12 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "sharp": "^0.35.5",
     "terser": "^5.43.1",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.26.1",
     "vite": "^6.3.1",
+    "wrangler": "^4.158.0",
     "yaml": "^2.9.1"
   }
 }

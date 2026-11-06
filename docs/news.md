@@ -54,8 +54,20 @@ Short summary of the study.
 ```
 
 `Infografica` shows a placeholder until `src="/news/infografiche/<name>.webp"` is set.
-The CTA box (14-day trial, `app.seminai.tech/register`) is added to every article automatically.
+The CTA box links to `/richiedi-demo/` or `/en/request-a-demo/`. It requests an
+appointment that the team confirms manually. Do not promise trials, credits,
+response times or performance without approved product evidence.
 
 4. `npm run build`, then check `dist/news/<slug>/index.html`.
 
 URLs: `/news/<slug>/` (Italian), `/en/news/<slug>/` (English).
+
+The migration includes 16 Italian articles and 16 English counterparts. Keep
+publication dates unchanged; set `updated` only for substantive editorial changes.
+The same front matter supplies HTML, Markdown, JSON-LD and sitemap dates. A real
+approved author/reviewer can replace the current responsible editorial team; do
+not invent individual names or approvals. Follow `/politica-editoriale/` and the
+human review gates in `SEO_GEO_RELEASE.md` before publication.
+
+After changing cover images, `npm run images:news` generates responsive 320px and
+640px WebP variants. `npm run build` runs this step automatically.

@@ -1,0 +1,92 @@
+.public-article {
+  padding-top: 44px;
+}
+.public-heading {
+  padding-top: 54px;
+  padding-bottom: 52px;
+  max-width: 900px;
+}
+.public-heading h1 {
+  font-size: clamp(38px, 6vw, 64px);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+  max-width: 850px;
+  margin: 18px 0 28px;
+}
+.public-heading .lead {
+  max-width: 740px;
+  font-size: 21px;
+  line-height: 1.6;
+}
+.public-kicker {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--green);
+}
+.public-sections {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px;
+  border-top: 1px solid var(--line, #dce1d8);
+  padding-top: 36px;
+}
+.public-sections section {
+  padding-right: 12px;
+}
+.public-sections h2 {
+  font-size: 24px;
+  letter-spacing: -0.025em;
+  margin: 20px 0 14px;
+}
+.public-sections p {
+  line-height: 1.8;
+  color: var(--muted, #505c50);
+}
+.public-number {
+  font-family: monospace;
+  color: var(--green);
+  font-size: 13px;
+}
+.public-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 38px 0 64px;
+}
+.public-reading {
+  padding-top: 36px;
+  padding-bottom: 32px;
+}
+.public-reading > h2 {
+  font-size: 30px;
+  margin-bottom: 32px;
+}
+.public-links {
+  display: grid;
+  gap: 16px;
+  padding-top: 30px;
+  padding-bottom: 70px;
+  border-top: 1px solid var(--line, #dce1d8);
+}
+.public-links a {
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+@media (max-width: 760px) {
+  .public-sections {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .public-heading {
+    padding-top: 34px;
+  }
+  .public-heading .lead {
+    font-size: 18px;
+  }
+  .public-sections section {
+    border-bottom: 1px solid #dce1d8;
+    padding-bottom: 24px;
+  }
+}

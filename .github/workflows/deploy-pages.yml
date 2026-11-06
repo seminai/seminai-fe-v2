@@ -28,7 +28,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -47,8 +47,6 @@ jobs:
           VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
           VITE_REGISTRATION_CODE: ${{ vars.VITE_REGISTRATION_CODE }}
 
-      - name: Add SPA fallback
-        run: cp dist/index.html dist/404.html
 
       - name: Check GitHub Pages availability
         id: pages

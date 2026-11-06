@@ -12,17 +12,48 @@ import { LandingNews } from "./LandingNews";
 import { LandingProblem } from "./LandingProblem";
 import { LandingUseCases } from "./LandingUseCases";
 import { MobileCtaBar } from "./MobileCtaBar";
-import "./landing.css";
-import "./home.css";
 
 export default function Home() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const faqItems = t("landing.faq.items", { returnObjects: true }) as FaqItem[];
 
   return (
     <div className="landing-page wrap">
-      <Seo {...SEO.home} jsonLd={buildHomeGraph(faqItems)} />
+      <Seo
+        {...SEO.home}
+        title={
+          i18n.language.startsWith("en")
+            ? "Seminai — AI for agricultural documents and farm data"
+            : SEO.home.title
+        }
+        description={
+          i18n.language.startsWith("en")
+            ? "Connect invoices, delivery notes and field records with Seminai. Extract data, ask questions and prepare a field logbook for human review."
+            : SEO.home.description
+        }
+        canonical={
+          i18n.language.startsWith("en")
+            ? "https://seminai.tech/en/"
+            : "https://seminai.tech/"
+        }
+        locale={i18n.language.startsWith("en") ? "en_US" : "it_IT"}
+        hreflang={false}
+        alternates={[
+          { hrefLang: "it", href: "https://seminai.tech/" },
+          { hrefLang: "en", href: "https://seminai.tech/en/" },
+          { hrefLang: "x-default", href: "https://seminai.tech/" },
+        ]}
+        markdownHref={
+          i18n.language.startsWith("en")
+            ? "https://seminai.tech/index.en.md"
+            : "https://seminai.tech/index.md"
+        }
+        jsonLd={buildHomeGraph(
+          faqItems,
+          i18n.language.startsWith("en") ? "en" : "it",
+        )}
+      />
       <LandingNav />
       <main id="contenuto">
         <LandingHero />

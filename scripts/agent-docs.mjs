@@ -27,8 +27,12 @@ const APP_LOGIN = "https://app.seminai.tech/login";
 const CONTACT = "get.seminai@gmail.com";
 
 const landing = {
-  it: JSON.parse(readFileSync(join(root, "src/i18n/locales/landing-it.json"), "utf-8")),
-  en: JSON.parse(readFileSync(join(root, "src/i18n/locales/landing-en.json"), "utf-8")),
+  it: JSON.parse(
+    readFileSync(join(root, "src/i18n/locales/landing-it.json"), "utf-8"),
+  ),
+  en: JSON.parse(
+    readFileSync(join(root, "src/i18n/locales/landing-en.json"), "utf-8"),
+  ),
 };
 
 /** News articles, newest first. Same layout as src/lib/news.ts: src/content/news/<lang>/<slug>.mdx. */
@@ -37,8 +41,13 @@ const NEWS = ["it", "en"]
     readdirSync(join(root, "src/content/news", lang))
       .filter((file) => file.endsWith(".mdx"))
       .map((file) => {
-        const source = readFileSync(join(root, "src/content/news", lang, file), "utf-8");
-        const front = parseYaml(source.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? "") ?? {};
+        const source = readFileSync(
+          join(root, "src/content/news", lang, file),
+          "utf-8",
+        );
+        const front =
+          parseYaml(source.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? "") ??
+          {};
         const slug = file.slice(0, -".mdx".length);
         const base = lang === "en" ? "en/news" : "news";
         return {
@@ -59,12 +68,14 @@ const LEGAL_PAGES = [
   {
     slug: "privacy-policy",
     title: "Privacy Policy",
-    description: "Come Seminai tratta i dati personali (GDPR): titolari, finalità, conservazione, diritti.",
+    description:
+      "Come Seminai tratta i dati personali (GDPR): titolari, finalità, conservazione, diritti.",
   },
   {
     slug: "cookie-policy",
     title: "Cookie Policy",
-    description: "Cookie tecnici, analitici e di preferenza usati dal sito e come gestirli.",
+    description:
+      "Cookie tecnici, analitici e di preferenza usati dal sito e come gestirli.",
   },
   {
     slug: "terms-of-service",
@@ -87,7 +98,7 @@ function homeMarkdown(lang) {
   const c = landing[lang];
   const isIt = lang === "it";
   const words = c.hero.docs.map((doc) => doc.word).join(", ");
-  const url = isIt ? `${SITE}/` : `${SITE}/ (EN)`;
+  const url = isIt ? `${SITE}/` : `${SITE}/en/`;
   const lines = [
     `# Seminai`,
     "",
@@ -107,7 +118,9 @@ function homeMarkdown(lang) {
     "",
     c.how.lead,
     "",
-    ...c.how.steps.map((step, index) => `${index + 1}. **${step.title}** ${step.body}`),
+    ...c.how.steps.map(
+      (step, index) => `${index + 1}. **${step.title}** ${step.body}`,
+    ),
     "",
     `## ${c.useCases.title}`,
     "",
@@ -117,7 +130,12 @@ function homeMarkdown(lang) {
     "",
     `## ${c.faq.title}`,
     "",
-    ...c.faq.items.flatMap((item) => [`### ${item.question}`, "", plain(item.answer), ""]),
+    ...c.faq.items.flatMap((item) => [
+      `### ${item.question}`,
+      "",
+      plain(item.answer),
+      "",
+    ]),
     `## ${c.booking.title}`,
     "",
     c.booking.lead,
@@ -136,7 +154,19 @@ function homeMarkdown(lang) {
   return lines.join("\n");
 }
 
-const BLOCK_TAGS = new Set(["p", "div", "section", "ul", "ol", "li", "h1", "h2", "h3", "h4", "br"]);
+const BLOCK_TAGS = new Set([
+  "p",
+  "div",
+  "section",
+  "ul",
+  "ol",
+  "li",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "br",
+]);
 
 /**
  * Converts the simple markup of the legal pages (headings, paragraphs, lists, links,
@@ -167,7 +197,8 @@ function htmlToMarkdown(html) {
     if (!tag) {
       let text = decode(token).replace(/\s+/g, " ");
       // No space right after an opening ** or _.
-      if (/(\*\*|_)$/.test(line) && !/\S(\*\*|_)$/.test(line)) text = text.trimStart();
+      if (/(\*\*|_)$/.test(line) && !/\S(\*\*|_)$/.test(line))
+        text = text.trimStart();
       line += text;
       continue;
     }
@@ -262,20 +293,31 @@ function decode(text) {
 function legalMarkdown(page) {
   const html = readFileSync(join(distDir, page.slug, "index.html"), "utf-8");
   const main = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i);
-  if (!main) throw new Error(`agent-docs: no <main> in dist/${page.slug}/index.html`);
+  if (!main)
+    throw new Error(`agent-docs: no <main> in dist/${page.slug}/index.html`);
   return [
-    htmlToMarkdown(main[1]).replace(/^# .*/, (h1) => `${h1}\n\n> Versione Markdown di ${SITE}/${page.slug}`),
+    htmlToMarkdown(main[1]).replace(
+      /^# .*/,
+      (h1) => `${h1}\n\n> Versione Markdown di ${SITE}/${page.slug}`,
+    ),
     "",
   ].join("\n");
 }
 
 function newsArticleMarkdown(post) {
   const html = readFileSync(join(distDir, post.htmlFile), "utf-8");
-  const article = html.match(/<article class="news-article[^"]*">([\s\S]*?)<\/article>/i);
-  if (!article) throw new Error(`agent-docs: no <article> in dist/${post.htmlFile}`);
-  const note = post.lang === "en" ? "Markdown version of" : "Versione Markdown di";
+  const article = html.match(
+    /<article class="news-article[^"]*">([\s\S]*?)<\/article>/i,
+  );
+  if (!article)
+    throw new Error(`agent-docs: no <article> in dist/${post.htmlFile}`);
+  const note =
+    post.lang === "en" ? "Markdown version of" : "Versione Markdown di";
   return [
-    htmlToMarkdown(article[1]).replace(/^# .*/m, (h1) => `${h1}\n\n> ${note} ${post.url}`),
+    htmlToMarkdown(article[1]).replace(
+      /^# .*/m,
+      (h1) => `${h1}\n\n> ${note} ${post.url}`,
+    ),
     "",
   ].join("\n");
 }
@@ -289,7 +331,8 @@ function newsIndexMarkdown(lang) {
     `> ${isIt ? "Versione Markdown di" : "Markdown version of"} ${url}`,
     "",
     ...NEWS.filter((post) => post.lang === lang).map(
-      (post) => `- [${post.title}](${SITE}/${post.mdFile}) (${post.date}): ${post.description}`,
+      (post) =>
+        `- [${post.title}](${SITE}/${post.mdFile}) (${post.date}): ${post.description}`,
     ),
     "",
   ].join("\n");
@@ -314,13 +357,32 @@ function llmsTxt() {
     "## News",
     "",
     ...NEWS.filter((post) => post.lang === "it").map(
-      (post) => `- [${post.title}](${SITE}/${post.mdFile}): ${post.description}`,
+      (post) =>
+        `- [${post.title}](${SITE}/${post.mdFile}): ${post.description}`,
     ),
     `- [News (English)](${SITE}/en/news.md): English articles`,
     "",
+    "## Prodotto e risorse",
+    "",
+    ...pages
+      .filter(
+        (page) =>
+          !page.file.startsWith("news/") &&
+          !page.file.startsWith("en/news/") &&
+          !["index.md", "index.en.md", "news.md", "en/news.md"].includes(
+            page.file,
+          ),
+      )
+      .map((page) => `- [${page.file}](${SITE}/${page.file})`),
+    `- [Catalogo pubblico vivo](${SITE}/regole/): le regole vengono lette dalle API pubbliche, non copiate nel contesto aggregato.`,
+    `- [Live public catalogue (English)](${SITE}/en/rules/)`,
+    "",
     "## Legale",
     "",
-    ...LEGAL_PAGES.map((page) => `- [${page.title}](${SITE}/${page.slug}.md): ${page.description}`),
+    ...LEGAL_PAGES.map(
+      (page) =>
+        `- [${page.title}](${SITE}/${page.slug}.md): ${page.description}`,
+    ),
     "",
     "## Per agenti",
     "",
@@ -340,11 +402,37 @@ function llmsTxt() {
 const pages = [
   { file: "index.md", body: homeMarkdown("it") },
   { file: "index.en.md", body: homeMarkdown("en") },
-  ...LEGAL_PAGES.map((page) => ({ file: `${page.slug}.md`, body: legalMarkdown(page) })),
+  ...LEGAL_PAGES.map((page) => ({
+    file: `${page.slug}.md`,
+    body: legalMarkdown(page),
+  })),
   { file: "news.md", body: newsIndexMarkdown("it") },
   { file: "en/news.md", body: newsIndexMarkdown("en") },
-  ...NEWS.map((post) => ({ file: post.mdFile, body: newsArticleMarkdown(post) })),
+  ...NEWS.map((post) => ({
+    file: post.mdFile,
+    body: newsArticleMarkdown(post),
+  })),
 ];
+
+// Stable public pages share their HTML content with agent-readable equivalents.
+const known = new Set(pages.map((page) => page.file));
+for (const route of JSON.parse(
+  readFileSync(join(distDir, "public-routes.json"), "utf8"),
+)) {
+  if (route === "/" || route === "/en/") continue;
+  const file = `${route.replace(/^\//, "").replace(/\/$/, "")}.md`;
+  if (known.has(file)) continue;
+  const html = readFileSync(
+    join(distDir, route.replace(/^\//, ""), "index.html"),
+    "utf8",
+  );
+  const main = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i);
+  if (main)
+    pages.push({
+      file,
+      body: `> ${SITE}${route}\n\n${htmlToMarkdown(main[1])}\n`,
+    });
+}
 
 for (const page of pages) {
   writeFileSync(join(distDir, page.file), page.body, "utf-8");
@@ -355,7 +443,12 @@ const index = llmsTxt();
 writeFileSync(join(distDir, "llms.txt"), index, "utf-8");
 writeFileSync(
   join(distDir, "llms-full.txt"),
-  [index, ...pages.map((page) => `---\n\n<!-- ${SITE}/${page.file} -->\n\n${page.body}`)].join("\n"),
+  [
+    index,
+    ...pages.map(
+      (page) => `---\n\n<!-- ${SITE}/${page.file} -->\n\n${page.body}`,
+    ),
+  ].join("\n"),
   "utf-8",
 );
 console.log("✓ agent doc dist/llms.txt, dist/llms-full.txt");
@@ -368,5 +461,11 @@ for (const skill of skillsIndex.skills) {
   const file = readFileSync(join(distDir, skill.url.slice(SITE.length + 1)));
   skill.sha256 = createHash("sha256").update(file).digest("hex");
 }
-writeFileSync(skillsIndexPath, `${JSON.stringify(skillsIndex, null, 2)}\n`, "utf-8");
-console.log("✓ agent doc dist/.well-known/agent-skills/index.json (hashes refreshed)");
+writeFileSync(
+  skillsIndexPath,
+  `${JSON.stringify(skillsIndex, null, 2)}\n`,
+  "utf-8",
+);
+console.log(
+  "✓ agent doc dist/.well-known/agent-skills/index.json (hashes refreshed)",
+);

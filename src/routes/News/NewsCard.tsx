@@ -9,7 +9,15 @@ export function NewsCard({ post }: { post: NewsPost }) {
       <a href={post.path} className="news-card-link">
         <div className="news-card-visual" aria-hidden="true">
           {post.image ? (
-            <img src={post.image} alt="" loading="lazy" width={600} height={400} />
+            <img
+              src={post.image.replace(".webp", "-640.webp")}
+              srcSet={`${post.image.replace(".webp", "-320.webp")} 320w, ${post.image.replace(".webp", "-640.webp")} 640w`}
+              sizes="(max-width: 760px) 90vw, 400px"
+              alt=""
+              loading="lazy"
+              width={600}
+              height={400}
+            />
           ) : null}
         </div>
         <p className="news-card-label">{label}</p>

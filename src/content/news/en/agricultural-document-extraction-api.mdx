@@ -1,0 +1,41 @@
+---
+title: "API Seminai: integrating farm documents with a verifiable contract"
+description: "A practical introduction to the Seminai document extraction API: access, supported document types, responses and human review."
+date: 2026-03-10
+updated: 2026-11-05
+showUpdated: true
+author: "Redazione Seminai"
+lang: en
+translationKey: "product-api-seminai-integrazione-15-minuti"
+image: "/news/api-seminai-integrazione-15-minuti.webp"
+imageAlt: "Illustrative agricultural document workflow"
+tags: ["farm data", "sources", "review"]
+sources:
+  - title: "Seminai Extraction API \u2014 current contract"
+    url: "https://seminai-be-v2-661301438659.europe-west1.run.app/developer/docs/"
+    accessed: 2026-11-05
+---
+
+Reliable integration starts with the published contract. The Seminai extraction API receives a document and proposes structured data for your application to check before using it in a real process.
+
+## Access and documentation
+
+The [developer portal](https://seminai-be-v2-661301438659.europe-west1.run.app/developer/) and [Extraction API documentation](https://seminai-be-v2-661301438659.europe-west1.run.app/developer/docs/) describe access and operations. Current registration requires a name, email, password and invitation code. Confirm access and commercial conditions with the team; this guide does not promise free credits or immediate access after an email address alone.
+
+Keep API keys in your backend, outside browser code, repositories and logs. The extraction endpoint uses the `X-Api-Key` header.
+
+## The document request
+
+`POST /api/v1/extract/document` accepts multipart form data containing `file` and `documentType`. Accepted types are `invoice`, `ddt` and `auto`. `field-note` is not part of this contract. Verify supported file formats against the current documentation before sending documents.
+
+The controller waits for extraction and returns an envelope with `status` and `data`. This guide does not document a polling endpoint. Read the current response schema rather than relying on an invented supplier or product example.
+
+## Handle failures before creating records
+
+Treat an invalid file, rejected key, usage limit and temporary service failure separately. Respect retry headers when supplied, without assuming a universal quota or fixed retry interval. A retried extraction must not create duplicate final records in your own system.
+
+Extracted quantities and names require comparison with the source. A purchase invoice does not establish that a field treatment took place.
+
+## Evaluate on representative documents
+
+Agree an authorised sample and measure correct fields, corrections and review time. No universal fifteen-minute integration result is claimed here. Start with the [API product guide](/en/agricultural-api/) or [request a demo](/en/request-a-demo/) to define the workflow.

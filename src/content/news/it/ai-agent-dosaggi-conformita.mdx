@@ -8,6 +8,16 @@ image: "/news/ai-agent-dosaggi-conformita.webp"
 imageAlt: "Una caraffa graduata tenuta in mano davanti a un campo coltivato a file"
 
 lang: it
+updated: 2026-11-05
+showUpdated: true
+translationKey: "product-ai-agent-dosaggi-conformita"
+sources:
+  - title: "Big Data in Smart Farming — A review (Wolfert et al., 2017)"
+    url: "https://doi.org/10.1016/j.agsy.2017.01.023"
+    accessed: 2026-11-05
+  - title: "Seminai Extraction API — current contract"
+    url: "https://seminai-be-v2-661301438659.europe-west1.run.app/developer/docs/"
+    accessed: 2026-11-05
 ---
 
 Calcolare il dosaggio corretto di un prodotto fitosanitario richiede di incrociare più informazioni contemporaneamente: la superficie o il volume del trattamento, la coltura, il disciplinare applicabile per quella zona e coltura, il tempo di carenza, e (sempre più spesso) la storia dei trattamenti già effettuati sulla stessa parcella nella stagione. Farlo a mano, consultando etichette e disciplinari in PDF, è lento ed è il punto in cui si insidiano **gli errori più costosi**: un dosaggio fuori norma o un tempo di carenza non rispettato.
@@ -18,10 +28,10 @@ Un agente AI conversazionale specializzato in agronomia può automatizzare gran 
 
 L'architettura **ReAct** (Reason + Act) fa alternare al modello linguistico un ciclo di ragionamento e azione: il modello non risponde direttamente, ma decide quali strumenti (tool) invocare (ricerca prodotto, calcolo dosaggio, verifica disciplinare, lettura storico trattamenti), osserva il risultato di ciascuno e decide il passo successivo, fino ad avere abbastanza informazioni per una risposta operativa.
 
-Nel caso del `dosage_agent` di Seminai, questo significa che a una domanda come *"quanto Confidor devo usare su 2 hectari di vite per la cicalina, rispettando il disciplinare biologico Veneto?"* il sistema:
+Nel caso del `dosage_agent` di Seminai, questo significa che a una domanda come *"quali dati e fonti devo verificare prima di proporre una dose su questo appezzamento?"* il sistema:
 
 1. Riconosce il prodotto e recupera principio attivo e dosaggio di etichetta.
-2. Verifica se il prodotto è ammesso nel disciplinare assegnato all'azienda per quella coltura e regione (interrogando la base vettorializzata dei disciplinari, le stesse [regole pubblicate nel marketplace](https://app.seminai.tech/hub/rules/) se l'azienda le ha adottate).
+2. Verifica se il prodotto è ammesso nel disciplinare assegnato all'azienda per quella coltura e regione (consultando le fonti e le regole assegnate all’azienda).
 3. Calcola il dosaggio per la superficie indicata, segnalando eventuali limiti massimi imposti dal disciplinare.
 4. Controlla lo storico dei trattamenti già registrati sulla parcella, per evitare superamenti del numero massimo di interventi stagionali quando previsto.
 5. Restituisce una risposta con il calcolo, la fonte normativa e un avviso se qualcosa richiede attenzione (tempo di carenza, prodotto non ammesso, dato mancante).
@@ -51,6 +61,9 @@ Se stai valutando uno strumento simile per il tuo studio o la tua azienda, alcun
 
 ## Dalla conversazione al registro trattamenti
 
-Il passo finale, spesso sottovalutato, è che il risultato di questa interazione non deve rimanere "nella chat": va **registrato in modo strutturato**, collegato alla parcella e alla data, così da alimentare automaticamente il registro dei trattamenti e la reportistica di conformità di fine stagione, chiudendo il cerchio tra decisione operativa e obbligo documentale.
+Il passo finale, spesso sottovalutato, è che il risultato di questa interazione non deve rimanere "nella chat": va **proposto come bozza strutturata da confermare**, collegato alla parcella e alla data, così da alimentare automaticamente il registro dei trattamenti e la reportistica di conformità di fine stagione, chiudendo il cerchio tra decisione operativa e obbligo documentale.
 
-Se vuoi vedere come Seminai struttura i disciplinari che alimentano questo tipo di verifica, il [catalogo pubblico di regole](https://app.seminai.tech/hub/rules/) è un buon punto di partenza per capire il livello di dettaglio richiesto per rendere una regola davvero utilizzabile da un agente.
+Se vuoi vedere come Seminai struttura i disciplinari che alimentano questo tipo di verifica, il [catalogo pubblico di regole](/regole/) è un buon punto di partenza per capire il livello di dettaglio richiesto per rendere una regola davvero utilizzabile da un agente.
+
+
+La sequenza descrive un flusso di supporto, non una garanzia di copertura di ogni norma o coltura. La demo deve verificare le fonti effettivamente disponibili. [Scopri il quaderno di campagna](/quaderno-di-campagna/) e [richiedi una demo](/richiedi-demo/).

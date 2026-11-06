@@ -1,4 +1,6 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://seminai-be-v2-661301438659.europe-west1.run.app";
 
 async function safeReadText(response: Response): Promise<string> {
   try {
@@ -28,7 +30,7 @@ export class EmailApiService {
   }
 
   public async sendContactEmail(
-    payload: ContactEmailRequest
+    payload: ContactEmailRequest,
   ): Promise<ContactEmailResponse> {
     // If files are provided, send as multipart/form-data, otherwise JSON
     if (payload.files && payload.files.length > 0) {
@@ -36,7 +38,7 @@ export class EmailApiService {
       formData.append("name", payload.name);
       formData.append("email", payload.email);
       formData.append("body", payload.body);
-      
+
       // Append each file with the key "files" (backend expects files=[])
       payload.files.forEach((file) => {
         formData.append("files", file);
@@ -81,4 +83,3 @@ export class EmailApiService {
 }
 
 export const emailApiService = new EmailApiService();
-

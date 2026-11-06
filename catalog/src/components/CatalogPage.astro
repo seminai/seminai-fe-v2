@@ -1,0 +1,50 @@
+---
+import RuleCard from './RuleCard.astro';
+import {absolute, rulesPath, categoryPath, label, demoPath, safeSource, type Language} from '../lib/paths';
+import type {PublicRule, RulePage} from '../lib/api';
+interface Props {lang: Language; path: string; rule?: PublicRule; listing?: RulePage; category?: string; categories: Array<{category:string;count:number}>; status?: number}
+const {lang,path,rule,listing,category,categories,status=200} = Astro.props;
+const en=lang==='en';
+const base=rulesPath(lang);
+const filtered=Astro.url.searchParams.has('search') || Astro.url.searchParams.has('region');
+const title=status===503 ? (en?'Catalogue temporarily unavailable':'Catalogo temporaneamente non disponibile') : status===404 ? (en?'Rule not found':'Regola non trovata') : rule?.name ?? (category ? label(category,lang) : en?'Public agronomic rules catalogue':'Catalogo delle regole agronomiche pubbliche');
+const description=rule ? (en ? `Public ${label(rule.category,lang).toLowerCase()} entry: ${rule.name}. Consult the original publisher content and source.` : rule.description ?? `Consulta la regola pubblica ${rule.name} e la fonte del pubblicatore.`) : en?'Consult public production rules, standards and methods. Source content is provided in its original language.':'Consulta disciplinari, standard e metodologie pubbliche con contenuto originale e riferimenti alle fonti.';
+const italian=path.replace(/^\/en\/rules\//,'/regole/').replace('/category/','/categoria/');
+const english=path.replace(/^\/regole\//,'/en/rules/').replace('/categoria/','/category/');
+const source=safeSource(rule?.sourceUrl);
+const pageQuery=listing && listing.page>1?`?page=${listing.page}`:'';
+const canonical=absolute(path)+(listing && listing.page>1 ? `?page=${listing.page}`:'');
+const graph=rule ? { '@context':'https://schema.org', '@type':'CreativeWork', '@id':canonical, url:canonical, name:rule.name, description:rule.description, ...(source ? {isBasedOn:source}:{}), ...(rule.version ? {version:rule.version}:{}) } : {'@context':'https://schema.org','@type':'CollectionPage', url:canonical, name:title, inLanguage:lang};
+// The API's updatedAt may include historical counter writes. Do not claim a content modification date.
+---
+<!doctype html><html lang={lang}><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>{title} | Seminai</title><meta name="description" content={description.slice(0,170)}/><meta name="robots" content={status!==200 || filtered || listing?.total===0 ? 'noindex, follow':'index, follow, max-image-preview:large'}/>
+<link rel="canonical" href={canonical}/><link rel="alternate" hreflang="" href={absolute(italian)+pageQuery}/><link rel="alternate" hreflang="en" href={absolute(english)+pageQuery}/><link rel="alternate" hreflang="x-default" href={absolute(italian)+pageQuery}/><link rel="icon" href="/icons/favicon-64.png"/>
+<meta property="og:title" content={`${title} | Seminai`}/><meta property="og:description" content={description}/><meta property="og:url" content={canonical}/><meta property="og:image" content="https://seminai.tech/og/og-image.jpg"/>
+<link rel="describedby" href="/llms.txt"/><script type="application/ld+json" set:html={JSON.stringify(graph).replace(/</g,'\\u003c')}/>
+<script>
+ import {installDemoClickTracking,loadGoogleAnalytics,readStoredConsent} from '../../../src/lib/analytics';
+ installDemoClickTracking();
+ if(readStoredConsent()==='granted') loadGoogleAnalytics();
+</script>
+<style is:global>
+@font-face{font-family:Geist;src:url('/fonts/geist-latin.woff2')}*{box-sizing:border-box}body{margin:0;background:#f9faf6;color:#22342a;font-family:Geist,Arial,sans-serif}a{color:#234d34;text-underline-offset:4px}header,main,footer{max-width:1120px;margin:auto;padding:24px}header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #dbe1d6;gap:18px;flex-wrap:wrap}header>a{font-size:22px;font-weight:700;text-decoration:none}nav{display:flex;gap:20px;flex-wrap:wrap}main{padding-top:44px;padding-bottom:70px;min-height:65vh}h1{font-size:clamp(34px,5vw,56px);letter-spacing:-.04em;line-height:1.1;max-width:900px;margin:30px 0}p{line-height:1.75;max-width:760px}.lead{font-size:20px}.kicker,.meta{font-size:12px;letter-spacing:.04em;color:#60715d}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin:32px 0}.rule-card{padding:26px;border:1px solid #dbe1d6;border-radius:4px;background:white}.rule-card h2{font-size:23px;line-height:1.3}.filters{display:flex;gap:12px;flex-wrap:wrap;margin:28px 0}input,select,button{font:inherit;padding:12px;border:1px solid #a6b4a1;border-radius:4px;background:white}label{display:grid;gap:8px}.button,button{display:inline-block;background:#234d34;color:white;border:0;padding:14px 22px;border-radius:5px;text-decoration:none}.categories{display:flex;gap:18px;flex-wrap:wrap}.pagination{margin:30px 0}.source{padding:24px;background:#edf1e9}.language-note{border-left:3px solid #78936a;padding-left:18px}footer{border-top:1px solid #dbe1d6;font-size:14px}dt{font-weight:700;margin-top:16px}dd{margin-left:0} @media(max-width:650px){.grid{grid-template-columns:1fr}header,main,footer{padding-left:20px;padding-right:20px}nav{gap:12px}}
+</style></head><body>
+<header><a href={en?'/en/':'/'}>SeminAI</a><nav aria-label={en?'Main navigation':'Navigazione'}><a href={en?'/en/resources/':'/risorse/'}>{en?'Resources':'Risorse'}</a><a href={en?'/en/news/':'/news/'}>News</a><a href={italian} hreflang="">IT</a><a href={english} hreflang="en">EN</a><a class="button" href={demoPath(lang)}>{en?'Request a demo':'Richiedi una demo'}</a></nav></header>
+<main><nav aria-label="Breadcrumb"><a href={en?'/en/':'/'}>Home</a><span>/</span><a href={base}>{en?'Public rules':'Regole pubbliche'}</a></nav>
+<h1 lang={rule?'':lang}>{title}</h1>
+{status===503 ? <p>{en?'The source service is temporarily unavailable. Please try again shortly.':'Il servizio delle fonti è temporaneamente non disponibile. Riprova tra poco.'}</p> : status===404 ? <p>{en?'This rule is not publicly available.':'Questa regola non è disponibile pubblicamente.'}</p> : rule ? <>
+<p class="language-note">{en?'Publisher content is shown in its original language, which the source API does not specify. The navigation is translated; this is not a translated legal document.':'Il contenuto del pubblicatore è riportato nella lingua originale, non specificata dall’API. La scheda non costituisce una verifica di validità normativa.'}</p>
+{rule.description && <p class="lead" lang="">{rule.description}</p>}
+<dl><dt>{en?'Category':'Categoria'}</dt><dd>{label(rule.category,lang)}</dd>{rule.region && <><dt>{en?'Region':'Regione'}</dt><dd>{rule.region}</dd></>}{rule.version && <><dt>{en?'Publisher version':'Versione del pubblicatore'}</dt><dd>{rule.version}</dd></>}{rule.validFrom && <><dt>{en?'Valid from (publisher metadata)':'Valida dal (metadato del pubblicatore)'}</dt><dd>{rule.validFrom.slice(0,10)}</dd></>}{rule.validUntil && <><dt>{en?'Valid until (publisher metadata)':'Valida fino al (metadato del pubblicatore)'}</dt><dd>{rule.validUntil.slice(0,10)}</dd></>}</dl>
+{source && <p class="source"><a href={source} rel="noopener noreferrer">{en?'Original source':'Fonte originale'}: <span lang="">{rule.sourceDocument || source}</span></a></p>}
+<p>{en?'Public metadata does not certify that a rule applies to your farm. Verify the source, version and scope with a competent professional.':'I metadati pubblici non certificano l’applicabilità alla tua azienda. Verifica fonte, versione e ambito con un professionista competente.'}</p><a class="button" href={demoPath(lang)}>{en?'Discuss this workflow in a demo':'Parliamone in demo'}</a>
+</> : listing && <>
+<p class="lead">{description}</p><div class="categories">{categories.filter(item=>item.count>0).map(item=><a href={categoryPath(lang,item.category)}>{label(item.category,lang)} ({item.count})</a>)}</div>
+<form method="get" class="filters"><label>{en?'Search':'Cerca'}<input name="search" value={Astro.url.searchParams.get('search')??''}/></label><label>{en?'Region':'Regione'}<input name="region" value={Astro.url.searchParams.get('region')??''}/></label><button type="submit">{en?'Filter':'Filtra'}</button></form>
+<p>{listing.total} {en?'public entries':'schede pubbliche'}</p><div class="grid">{listing.items.map(item=><RuleCard rule={item} lang={lang}/>)}</div>
+{listing.total===0 && <p>{en?'No public rules match this view.':'Nessuna regola pubblica corrisponde a questa vista.'}</p>}
+<nav class="pagination" aria-label={en?'Pagination':'Paginazione'}>{listing.page>1 && <a href={`?${new URLSearchParams({...Object.fromEntries(Astro.url.searchParams), page:String(listing.page-1)})}`}>← {en?'Previous':'Precedente'}</a>}{listing.hasNextPage && <a href={`?${new URLSearchParams({...Object.fromEntries(Astro.url.searchParams), page:String(listing.page+1)})}`}>{en?'Next':'Successiva'} →</a>}</nav>
+</>}
+</main><footer><nav><a href={en?'/en/about/':'/chi-siamo/'}>{en?'About Seminai':'Chi siamo'}</a><a href={en?'/en/editorial-policy/':'/politica-editoriale/'}>{en?'Editorial policy':'Politica editoriale'}</a><a href="/privacy-policy">Privacy</a><a href="/cookie-policy">Cookie</a><a href={demoPath(lang)}>{en?'Request a demo':'Richiedi una demo'}</a></nav></footer>
+</body></html>

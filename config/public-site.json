@@ -1,0 +1,379 @@
+{
+  "origin": "https://seminai.tech",
+  "routes": [
+    "/",
+    "/en/",
+    "/privacy-policy",
+    "/cookie-policy",
+    "/terms-of-service",
+    "/richiedi-demo/",
+    "/en/request-a-demo/",
+    "/quaderno-di-campagna/",
+    "/en/field-logbook/",
+    "/ocr-documenti-agricoli/",
+    "/en/agricultural-document-ocr/",
+    "/software-studi-agronomici/",
+    "/en/software-for-agronomists/",
+    "/api-agricoltura/",
+    "/en/agricultural-api/",
+    "/chi-siamo/",
+    "/en/about/",
+    "/politica-editoriale/",
+    "/en/editorial-policy/",
+    "/risorse/",
+    "/en/resources/",
+    "/news/",
+    "/en/news/",
+    "/news/ai-agent-dosaggi-conformita/",
+    "/news/ai-propone-persona-decide/",
+    "/news/api-seminai-integrazione-15-minuti/",
+    "/news/biologico-errore-appezzamento/",
+    "/news/cantina-ordini-bolle-incassi/",
+    "/news/dati-sparsi-azienda-agricola/",
+    "/news/disciplinari-agronomici-digitali/",
+    "/news/dose-giusta-superficie-vera/",
+    "/news/magazzino-e-registro/",
+    "/news/marketplace-regole-best-practice/",
+    "/news/ocr-fatture-fitofarmaci/",
+    "/news/perche-centralizzare-i-dati-agricoli/",
+    "/news/quaderno-compilato-tardi/",
+    "/news/tempo-dei-tecnici/",
+    "/news/tenere-i-software-che-avete/",
+    "/news/whatsapp-non-e-un-registro/",
+    "/en/news/agricultural-document-extraction-api/",
+    "/en/news/agricultural-invoice-ocr/",
+    "/en/news/ai-agent-dose-and-compliance/",
+    "/en/news/ai-proposes-person-decides/",
+    "/en/news/digital-agronomic-rules/",
+    "/en/news/field-notebook-written-too-late/",
+    "/en/news/keep-the-software-you-already-use/",
+    "/en/news/organic-one-mistake-whole-plot/",
+    "/en/news/right-dose-real-area/",
+    "/en/news/scattered-farm-data/",
+    "/en/news/sharing-agronomic-rules/",
+    "/en/news/warehouse-and-register/",
+    "/en/news/whatsapp-is-not-a-register/",
+    "/en/news/where-advisers-time-goes/",
+    "/en/news/why-centralize-farm-data/",
+    "/en/news/winery-orders-delivery-notes-payments/"
+  ],
+  "markdown": {
+    "/": "/index.md",
+    "/en/": "/index.en.md",
+    "/privacy-policy": "/privacy-policy.md",
+    "/cookie-policy": "/cookie-policy.md",
+    "/terms-of-service": "/terms-of-service.md",
+    "/richiedi-demo/": "/richiedi-demo.md",
+    "/en/request-a-demo/": "/en/request-a-demo.md",
+    "/quaderno-di-campagna/": "/quaderno-di-campagna.md",
+    "/en/field-logbook/": "/en/field-logbook.md",
+    "/ocr-documenti-agricoli/": "/ocr-documenti-agricoli.md",
+    "/en/agricultural-document-ocr/": "/en/agricultural-document-ocr.md",
+    "/software-studi-agronomici/": "/software-studi-agronomici.md",
+    "/en/software-for-agronomists/": "/en/software-for-agronomists.md",
+    "/api-agricoltura/": "/api-agricoltura.md",
+    "/en/agricultural-api/": "/en/agricultural-api.md",
+    "/chi-siamo/": "/chi-siamo.md",
+    "/en/about/": "/en/about.md",
+    "/politica-editoriale/": "/politica-editoriale.md",
+    "/en/editorial-policy/": "/en/editorial-policy.md",
+    "/risorse/": "/risorse.md",
+    "/en/resources/": "/en/resources.md",
+    "/news/": "/news.md",
+    "/en/news/": "/en/news.md",
+    "/news/ai-agent-dosaggi-conformita/": "/news/ai-agent-dosaggi-conformita.md",
+    "/news/ai-propone-persona-decide/": "/news/ai-propone-persona-decide.md",
+    "/news/api-seminai-integrazione-15-minuti/": "/news/api-seminai-integrazione-15-minuti.md",
+    "/news/biologico-errore-appezzamento/": "/news/biologico-errore-appezzamento.md",
+    "/news/cantina-ordini-bolle-incassi/": "/news/cantina-ordini-bolle-incassi.md",
+    "/news/dati-sparsi-azienda-agricola/": "/news/dati-sparsi-azienda-agricola.md",
+    "/news/disciplinari-agronomici-digitali/": "/news/disciplinari-agronomici-digitali.md",
+    "/news/dose-giusta-superficie-vera/": "/news/dose-giusta-superficie-vera.md",
+    "/news/magazzino-e-registro/": "/news/magazzino-e-registro.md",
+    "/news/marketplace-regole-best-practice/": "/news/marketplace-regole-best-practice.md",
+    "/news/ocr-fatture-fitofarmaci/": "/news/ocr-fatture-fitofarmaci.md",
+    "/news/perche-centralizzare-i-dati-agricoli/": "/news/perche-centralizzare-i-dati-agricoli.md",
+    "/news/quaderno-compilato-tardi/": "/news/quaderno-compilato-tardi.md",
+    "/news/tempo-dei-tecnici/": "/news/tempo-dei-tecnici.md",
+    "/news/tenere-i-software-che-avete/": "/news/tenere-i-software-che-avete.md",
+    "/news/whatsapp-non-e-un-registro/": "/news/whatsapp-non-e-un-registro.md",
+    "/en/news/agricultural-document-extraction-api/": "/en/news/agricultural-document-extraction-api.md",
+    "/en/news/agricultural-invoice-ocr/": "/en/news/agricultural-invoice-ocr.md",
+    "/en/news/ai-agent-dose-and-compliance/": "/en/news/ai-agent-dose-and-compliance.md",
+    "/en/news/ai-proposes-person-decides/": "/en/news/ai-proposes-person-decides.md",
+    "/en/news/digital-agronomic-rules/": "/en/news/digital-agronomic-rules.md",
+    "/en/news/field-notebook-written-too-late/": "/en/news/field-notebook-written-too-late.md",
+    "/en/news/keep-the-software-you-already-use/": "/en/news/keep-the-software-you-already-use.md",
+    "/en/news/organic-one-mistake-whole-plot/": "/en/news/organic-one-mistake-whole-plot.md",
+    "/en/news/right-dose-real-area/": "/en/news/right-dose-real-area.md",
+    "/en/news/scattered-farm-data/": "/en/news/scattered-farm-data.md",
+    "/en/news/sharing-agronomic-rules/": "/en/news/sharing-agronomic-rules.md",
+    "/en/news/warehouse-and-register/": "/en/news/warehouse-and-register.md",
+    "/en/news/whatsapp-is-not-a-register/": "/en/news/whatsapp-is-not-a-register.md",
+    "/en/news/where-advisers-time-goes/": "/en/news/where-advisers-time-goes.md",
+    "/en/news/why-centralize-farm-data/": "/en/news/why-centralize-farm-data.md",
+    "/en/news/winery-orders-delivery-notes-payments/": "/en/news/winery-orders-delivery-notes-payments.md"
+  },
+  "redirects": {
+    "/hub/": "/risorse/",
+    "/hub/about/": "/chi-siamo/",
+    "/hub/blog/": "/news/",
+    "/hub/en/blog/": "/en/news/",
+    "/hub/rules/": "/regole/",
+    "/hub/sitemap-index.xml": "/sitemap.xml",
+    "/hub/sitemap-0.xml": "/sitemap.xml",
+    "/hub/rules/category/disciplinare/": "/regole/categoria/disciplinare/",
+    "/hub/rules/category/standard/": "/regole/categoria/standard/",
+    "/hub/rules/category/best_practice/": "/regole/categoria/best_practice/",
+    "/hub/rules/category/methodology/": "/regole/categoria/methodology/",
+    "/hub/rules/category/custom/": "/regole/categoria/custom/",
+    "/hub/blog/ai-agent-dosaggi-conformita/": "/news/ai-agent-dosaggi-conformita/",
+    "/hub/blog/ai-propone-persona-decide/": "/news/ai-propone-persona-decide/",
+    "/hub/blog/api-seminai-integrazione-15-minuti/": "/news/api-seminai-integrazione-15-minuti/",
+    "/hub/blog/biologico-errore-appezzamento/": "/news/biologico-errore-appezzamento/",
+    "/hub/blog/cantina-ordini-bolle-incassi/": "/news/cantina-ordini-bolle-incassi/",
+    "/hub/blog/dati-sparsi-azienda-agricola/": "/news/dati-sparsi-azienda-agricola/",
+    "/hub/blog/disciplinari-agronomici-digitali/": "/news/disciplinari-agronomici-digitali/",
+    "/hub/blog/dose-giusta-superficie-vera/": "/news/dose-giusta-superficie-vera/",
+    "/hub/blog/magazzino-e-registro/": "/news/magazzino-e-registro/",
+    "/hub/blog/marketplace-regole-best-practice/": "/news/marketplace-regole-best-practice/",
+    "/hub/blog/ocr-fatture-fitofarmaci/": "/news/ocr-fatture-fitofarmaci/",
+    "/hub/blog/perche-centralizzare-i-dati-agricoli/": "/news/perche-centralizzare-i-dati-agricoli/",
+    "/hub/blog/quaderno-compilato-tardi/": "/news/quaderno-compilato-tardi/",
+    "/hub/blog/tempo-dei-tecnici/": "/news/tempo-dei-tecnici/",
+    "/hub/blog/tenere-i-software-che-avete/": "/news/tenere-i-software-che-avete/",
+    "/hub/blog/whatsapp-non-e-un-registro/": "/news/whatsapp-non-e-un-registro/",
+    "/hub/en/blog/agricultural-document-extraction-api/": "/en/news/agricultural-document-extraction-api/",
+    "/hub/en/blog/agricultural-invoice-ocr/": "/en/news/agricultural-invoice-ocr/",
+    "/hub/en/blog/ai-agent-dose-and-compliance/": "/en/news/ai-agent-dose-and-compliance/",
+    "/hub/en/blog/ai-proposes-person-decides/": "/en/news/ai-proposes-person-decides/",
+    "/hub/en/blog/digital-agronomic-rules/": "/en/news/digital-agronomic-rules/",
+    "/hub/en/blog/field-notebook-written-too-late/": "/en/news/field-notebook-written-too-late/",
+    "/hub/en/blog/keep-the-software-you-already-use/": "/en/news/keep-the-software-you-already-use/",
+    "/hub/en/blog/organic-one-mistake-whole-plot/": "/en/news/organic-one-mistake-whole-plot/",
+    "/hub/en/blog/right-dose-real-area/": "/en/news/right-dose-real-area/",
+    "/hub/en/blog/scattered-farm-data/": "/en/news/scattered-farm-data/",
+    "/hub/en/blog/sharing-agronomic-rules/": "/en/news/sharing-agronomic-rules/",
+    "/hub/en/blog/warehouse-and-register/": "/en/news/warehouse-and-register/",
+    "/hub/en/blog/whatsapp-is-not-a-register/": "/en/news/whatsapp-is-not-a-register/",
+    "/hub/en/blog/where-advisers-time-goes/": "/en/news/where-advisers-time-goes/",
+    "/hub/en/blog/why-centralize-farm-data/": "/en/news/why-centralize-farm-data/",
+    "/hub/en/blog/winery-orders-delivery-notes-payments/": "/en/news/winery-orders-delivery-notes-payments/",
+    "/hub/blog/diagrams/adviser-time.svg": "/legacy-hub-assets/blog/diagrams/adviser-time.svg",
+    "/hub/blog/diagrams/centralize-pillar.svg": "/legacy-hub-assets/blog/diagrams/centralize-pillar.svg",
+    "/hub/blog/diagrams/human-decides.svg": "/legacy-hub-assets/blog/diagrams/human-decides.svg",
+    "/hub/blog/diagrams/keep-software.svg": "/legacy-hub-assets/blog/diagrams/keep-software.svg",
+    "/hub/blog/diagrams/late-notebook.svg": "/legacy-hub-assets/blog/diagrams/late-notebook.svg",
+    "/hub/blog/diagrams/organic-plot.svg": "/legacy-hub-assets/blog/diagrams/organic-plot.svg",
+    "/hub/blog/diagrams/real-area-dose.svg": "/legacy-hub-assets/blog/diagrams/real-area-dose.svg",
+    "/hub/blog/diagrams/scattered-data.svg": "/legacy-hub-assets/blog/diagrams/scattered-data.svg",
+    "/hub/blog/diagrams/warehouse-register.svg": "/legacy-hub-assets/blog/diagrams/warehouse-register.svg",
+    "/hub/blog/diagrams/whatsapp-register.svg": "/legacy-hub-assets/blog/diagrams/whatsapp-register.svg",
+    "/hub/blog/diagrams/winery-story.svg": "/legacy-hub-assets/blog/diagrams/winery-story.svg",
+    "/hub/blog/heroes/adviser-time.webp": "/legacy-hub-assets/blog/heroes/adviser-time.webp",
+    "/hub/blog/heroes/centralize-pillar.webp": "/legacy-hub-assets/blog/heroes/centralize-pillar.webp",
+    "/hub/blog/heroes/human-decides.webp": "/legacy-hub-assets/blog/heroes/human-decides.webp",
+    "/hub/blog/heroes/keep-software.webp": "/legacy-hub-assets/blog/heroes/keep-software.webp",
+    "/hub/blog/heroes/late-notebook.webp": "/legacy-hub-assets/blog/heroes/late-notebook.webp",
+    "/hub/blog/heroes/organic-plot.webp": "/legacy-hub-assets/blog/heroes/organic-plot.webp",
+    "/hub/blog/heroes/real-area-dose.webp": "/legacy-hub-assets/blog/heroes/real-area-dose.webp",
+    "/hub/blog/heroes/scattered-data.webp": "/legacy-hub-assets/blog/heroes/scattered-data.webp",
+    "/hub/blog/heroes/warehouse-register.webp": "/legacy-hub-assets/blog/heroes/warehouse-register.webp",
+    "/hub/blog/heroes/whatsapp-register.webp": "/legacy-hub-assets/blog/heroes/whatsapp-register.webp",
+    "/hub/blog/heroes/winery-story.webp": "/legacy-hub-assets/blog/heroes/winery-story.webp"
+  },
+  "articles": [
+    {
+      "lang": "it",
+      "slug": "ai-agent-dosaggi-conformita",
+      "path": "/news/ai-agent-dosaggi-conformita/",
+      "translationKey": "product-ai-agent-dosaggi-conformita"
+    },
+    {
+      "lang": "it",
+      "slug": "ai-propone-persona-decide",
+      "path": "/news/ai-propone-persona-decide/",
+      "translationKey": "human-decides"
+    },
+    {
+      "lang": "it",
+      "slug": "api-seminai-integrazione-15-minuti",
+      "path": "/news/api-seminai-integrazione-15-minuti/",
+      "translationKey": "product-api-seminai-integrazione-15-minuti"
+    },
+    {
+      "lang": "it",
+      "slug": "biologico-errore-appezzamento",
+      "path": "/news/biologico-errore-appezzamento/",
+      "translationKey": "organic-plot"
+    },
+    {
+      "lang": "it",
+      "slug": "cantina-ordini-bolle-incassi",
+      "path": "/news/cantina-ordini-bolle-incassi/",
+      "translationKey": "winery-story"
+    },
+    {
+      "lang": "it",
+      "slug": "dati-sparsi-azienda-agricola",
+      "path": "/news/dati-sparsi-azienda-agricola/",
+      "translationKey": "scattered-data"
+    },
+    {
+      "lang": "it",
+      "slug": "disciplinari-agronomici-digitali",
+      "path": "/news/disciplinari-agronomici-digitali/",
+      "translationKey": "product-disciplinari-agronomici-digitali"
+    },
+    {
+      "lang": "it",
+      "slug": "dose-giusta-superficie-vera",
+      "path": "/news/dose-giusta-superficie-vera/",
+      "translationKey": "real-area-dose"
+    },
+    {
+      "lang": "it",
+      "slug": "magazzino-e-registro",
+      "path": "/news/magazzino-e-registro/",
+      "translationKey": "warehouse-register"
+    },
+    {
+      "lang": "it",
+      "slug": "marketplace-regole-best-practice",
+      "path": "/news/marketplace-regole-best-practice/",
+      "translationKey": "product-marketplace-regole-best-practice"
+    },
+    {
+      "lang": "it",
+      "slug": "ocr-fatture-fitofarmaci",
+      "path": "/news/ocr-fatture-fitofarmaci/",
+      "translationKey": "product-ocr-fatture-fitofarmaci"
+    },
+    {
+      "lang": "it",
+      "slug": "perche-centralizzare-i-dati-agricoli",
+      "path": "/news/perche-centralizzare-i-dati-agricoli/",
+      "translationKey": "centralize-pillar"
+    },
+    {
+      "lang": "it",
+      "slug": "quaderno-compilato-tardi",
+      "path": "/news/quaderno-compilato-tardi/",
+      "translationKey": "late-notebook"
+    },
+    {
+      "lang": "it",
+      "slug": "tempo-dei-tecnici",
+      "path": "/news/tempo-dei-tecnici/",
+      "translationKey": "adviser-time"
+    },
+    {
+      "lang": "it",
+      "slug": "tenere-i-software-che-avete",
+      "path": "/news/tenere-i-software-che-avete/",
+      "translationKey": "keep-software"
+    },
+    {
+      "lang": "it",
+      "slug": "whatsapp-non-e-un-registro",
+      "path": "/news/whatsapp-non-e-un-registro/",
+      "translationKey": "whatsapp-register"
+    },
+    {
+      "lang": "en",
+      "slug": "agricultural-document-extraction-api",
+      "path": "/en/news/agricultural-document-extraction-api/",
+      "translationKey": "product-api-seminai-integrazione-15-minuti"
+    },
+    {
+      "lang": "en",
+      "slug": "agricultural-invoice-ocr",
+      "path": "/en/news/agricultural-invoice-ocr/",
+      "translationKey": "product-ocr-fatture-fitofarmaci"
+    },
+    {
+      "lang": "en",
+      "slug": "ai-agent-dose-and-compliance",
+      "path": "/en/news/ai-agent-dose-and-compliance/",
+      "translationKey": "product-ai-agent-dosaggi-conformita"
+    },
+    {
+      "lang": "en",
+      "slug": "ai-proposes-person-decides",
+      "path": "/en/news/ai-proposes-person-decides/",
+      "translationKey": "human-decides"
+    },
+    {
+      "lang": "en",
+      "slug": "digital-agronomic-rules",
+      "path": "/en/news/digital-agronomic-rules/",
+      "translationKey": "product-disciplinari-agronomici-digitali"
+    },
+    {
+      "lang": "en",
+      "slug": "field-notebook-written-too-late",
+      "path": "/en/news/field-notebook-written-too-late/",
+      "translationKey": "late-notebook"
+    },
+    {
+      "lang": "en",
+      "slug": "keep-the-software-you-already-use",
+      "path": "/en/news/keep-the-software-you-already-use/",
+      "translationKey": "keep-software"
+    },
+    {
+      "lang": "en",
+      "slug": "organic-one-mistake-whole-plot",
+      "path": "/en/news/organic-one-mistake-whole-plot/",
+      "translationKey": "organic-plot"
+    },
+    {
+      "lang": "en",
+      "slug": "right-dose-real-area",
+      "path": "/en/news/right-dose-real-area/",
+      "translationKey": "real-area-dose"
+    },
+    {
+      "lang": "en",
+      "slug": "scattered-farm-data",
+      "path": "/en/news/scattered-farm-data/",
+      "translationKey": "scattered-data"
+    },
+    {
+      "lang": "en",
+      "slug": "sharing-agronomic-rules",
+      "path": "/en/news/sharing-agronomic-rules/",
+      "translationKey": "product-marketplace-regole-best-practice"
+    },
+    {
+      "lang": "en",
+      "slug": "warehouse-and-register",
+      "path": "/en/news/warehouse-and-register/",
+      "translationKey": "warehouse-register"
+    },
+    {
+      "lang": "en",
+      "slug": "whatsapp-is-not-a-register",
+      "path": "/en/news/whatsapp-is-not-a-register/",
+      "translationKey": "whatsapp-register"
+    },
+    {
+      "lang": "en",
+      "slug": "where-advisers-time-goes",
+      "path": "/en/news/where-advisers-time-goes/",
+      "translationKey": "adviser-time"
+    },
+    {
+      "lang": "en",
+      "slug": "why-centralize-farm-data",
+      "path": "/en/news/why-centralize-farm-data/",
+      "translationKey": "centralize-pillar"
+    },
+    {
+      "lang": "en",
+      "slug": "winery-orders-delivery-notes-payments",
+      "path": "/en/news/winery-orders-delivery-notes-payments/",
+      "translationKey": "winery-story"
+    }
+  ]
+}
