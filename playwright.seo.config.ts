@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: ["seo-migration.spec.ts", "seo-skills.spec.ts"],
+  testMatch: ["seo-migration.spec.ts", "seo-skills.spec.ts", "public-shell.spec.ts"],
   workers: 1,
   use: {
     baseURL: process.env.SEO_STATIC_BASE ?? "http://127.0.0.1:8765",

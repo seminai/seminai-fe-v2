@@ -1,9 +1,0 @@
----
-import {rulesPath, skillsPath, type Language} from '../lib/paths';
-interface Props {lang: Language; active: 'skills' | 'rules'; skillCount?: number; ruleCount?: number}
-const {lang,active,skillCount,ruleCount}=Astro.props;
----
-<nav class="catalog-navigation" aria-label={lang==='en'?'Public catalogues':'Cataloghi pubblici'}>
- <a href={skillsPath(lang)} aria-current={active==='skills'?'page':undefined}>{lang==='en'?'AI skills':'Skill AI'}{skillCount!==undefined && <span class="catalog-count">{skillCount}</span>}</a>
- <a href={rulesPath(lang)} aria-current={active==='rules'?'page':undefined}>{lang==='en'?'Public rules':'Regole pubbliche'}{ruleCount!==undefined && <span class="catalog-count">{ruleCount}</span>}</a>
-</nav>

@@ -1,11 +1,10 @@
 ---
 import RuleCard from './RuleCard.astro';
-import CatalogNavigation from './CatalogNavigation.astro';
 import '../styles/catalog.css';
-import {absolute, rulesPath, categoryPath, label, demoPath, safeSource, type Language} from '../lib/paths';
+import {absolute, rulesPath, categoryPath, label, demoPath, safeSource, skillsPath, type Language} from '../lib/paths';
 import type {PublicRule, RulePage} from '../lib/api';
-interface Props {lang: Language; path: string; rule?: PublicRule; listing?: RulePage; category?: string; categories: Array<{category:string;count:number}>; status?: number; skillCount?: number}
-const {lang,path,rule,listing,category,categories,status=200,skillCount} = Astro.props;
+interface Props {lang: Language; path: string; rule?: PublicRule; listing?: RulePage; category?: string; categories: Array<{category:string;count:number}>; status?: number}
+const {lang,path,rule,listing,category,categories,status=200} = Astro.props;
 const en=lang==='en';
 const base=rulesPath(lang);
 const filtered=Astro.url.searchParams.has('search') || Astro.url.searchParams.has('region');
@@ -26,12 +25,15 @@ const graph=rule ? { '@context':'https://schema.org', '@type':'CreativeWork', '@
 <link rel="describedby" href="/llms.txt"/><script type="application/ld+json" set:html={JSON.stringify(graph).replace(/</g,'\\u003c')}/>
 <script>
  import {installDemoClickTracking,loadGoogleAnalytics,readStoredConsent} from '../../../src/lib/analytics';
+ import {bindHeaderScroll} from '../../../src/lib/publicHeader';
  installDemoClickTracking();
  if(readStoredConsent()==='granted') loadGoogleAnalytics();
+ const header=document.querySelector<HTMLElement>('[data-public-header]');
+ if(header) bindHeaderScroll(header);
 </script>
-</head><body>
-<header><a href={en?'/en/':'/'}>SeminAI</a><nav aria-label={en?'Main navigation':'Navigazione'}><a href={en?'/en/resources/':'/risorse/'}>{en?'Resources':'Risorse'}</a><a href={en?'/en/news/':'/news/'}>News</a><a href={italian} hreflang="it">IT</a><a href={english} hreflang="en">EN</a><a class="button" href={demoPath(lang)}>{en?'Request a demo':'Richiedi una demo'}</a></nav></header>
-<main><CatalogNavigation lang={lang} active="rules" ruleCount={listing?.total} skillCount={skillCount}/><nav aria-label="Breadcrumb"><a href={en?'/en/':'/'}>Home</a><span>/</span><a href={base}>{en?'Public rules':'Regole pubbliche'}</a></nav>
+</head><body class="rules-catalog">
+<header data-public-header data-scrolled="false"><a href={en?'/en/':'/'}>SeminAI</a><nav aria-label={en?'Main navigation':'Navigazione'}><a href={en?'/en/news/':'/news/'}>News</a><a href={italian} hreflang="it">IT</a><a href={english} hreflang="en">EN</a><a class="button" href={demoPath(lang)}>{en?'Request a demo':'Richiedi una demo'}</a></nav></header>
+<main><nav aria-label="Breadcrumb"><a href={en?'/en/':'/'}>Home</a><span>/</span><a href={base}>{en?'Public rules':'Regole pubbliche'}</a></nav>
 <h1 lang={rule?'':lang}>{title}</h1>
 {status===503 ? <p>{en?'The source service is temporarily unavailable. Please try again shortly.':'Il servizio delle fonti è temporaneamente non disponibile. Riprova tra poco.'}</p> : status===404 ? <p>{en?'This rule is not publicly available.':'Questa regola non è disponibile pubblicamente.'}</p> : rule ? <>
 <p class="language-note">{en?'Publisher content is shown in its original language, which the source API does not specify. The navigation is translated; this is not a translated legal document.':'Il contenuto del pubblicatore è riportato nella lingua originale, non specificata dall’API. La scheda non costituisce una verifica di validità normativa.'}</p>
@@ -46,5 +48,5 @@ const graph=rule ? { '@context':'https://schema.org', '@type':'CreativeWork', '@
 {listing.total===0 && <p>{en?'No public rules match this view.':'Nessuna regola pubblica corrisponde a questa vista.'}</p>}
 <nav class="pagination" aria-label={en?'Pagination':'Paginazione'}>{listing.page>1 && <a href={`?${new URLSearchParams({...Object.fromEntries(Astro.url.searchParams), page:String(listing.page-1)})}`}>← {en?'Previous':'Precedente'}</a>}{listing.hasNextPage && <a href={`?${new URLSearchParams({...Object.fromEntries(Astro.url.searchParams), page:String(listing.page+1)})}`}>{en?'Next':'Successiva'} →</a>}</nav>
 </>}
-</main><footer><nav><a href={en?'/en/about/':'/chi-siamo/'}>{en?'About Seminai':'Chi siamo'}</a><a href={en?'/en/editorial-policy/':'/politica-editoriale/'}>{en?'Editorial policy':'Politica editoriale'}</a><a href="/privacy-policy">Privacy</a><a href="/cookie-policy">Cookie</a><a href={demoPath(lang)}>{en?'Request a demo':'Richiedi una demo'}</a></nav></footer>
+</main><footer><nav><a href={en?'/en/resources/':'/risorse/'}>{en?'Resources':'Risorse'}</a><a href={skillsPath(lang)}>{en?'AI skills':'Skill AI'}</a><a href={en?'/en/about/':'/chi-siamo/'}>{en?'About Seminai':'Chi siamo'}</a><a href={en?'/en/editorial-policy/':'/politica-editoriale/'}>{en?'Editorial policy':'Politica editoriale'}</a><a href="/privacy-policy/">Privacy</a><a href="/cookie-policy/">Cookie</a><a href={demoPath(lang)}>{en?'Request a demo':'Richiedi una demo'}</a></nav></footer>
 </body></html>

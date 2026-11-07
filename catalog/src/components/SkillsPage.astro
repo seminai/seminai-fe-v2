@@ -1,8 +1,9 @@
 ---
-import CatalogNavigation from './CatalogNavigation.astro';
+import LandingShell from './LandingShell';
 import {absolute, demoPath, skillsPath} from '../lib/paths';
 import type {SkillView} from '../lib/skill-page';
-import '../styles/catalog.css';
+import '../../../src/public-styles.css';
+import '../styles/skills.css';
 interface Props {view: SkillView}
 const {view}=Astro.props;
 const {lang,skill,listing,path,title,description,canonical,status}=view;
@@ -31,24 +32,30 @@ const graph={'@context':'https://schema.org','@graph':[
  installDemoClickTracking();
  if(readStoredConsent()==='granted') loadGoogleAnalytics();
 </script>
-</head><body>
-<header><a href={en?'/en/':'/'}>SeminAI</a><nav aria-label={en?'Main navigation':'Navigazione'}><a href={en?'/en/resources/':'/risorse/'}>{en?'Resources':'Risorse'}</a><a href={en?'/en/news/':'/news/'}>News</a><a href={italian+pageQuery} hreflang="it" lang="it">IT</a><a href={english+pageQuery} hreflang="en" lang="en">EN</a><a class="button" href={demoPath(lang)}>{en?'Request a demo':'Richiedi una demo'}</a></nav></header>
-<main><CatalogNavigation lang={lang} active="skills" skillCount={listing?.publicTotal} ruleCount={view.ruleCount}/>
-<nav class="breadcrumbs" aria-label={en?'Breadcrumb':'Percorso'}>{breadcrumbs.map((item,index)=><>{index>0 && <span aria-hidden="true">/</span>}<a href={new URL(item.url).pathname}>{item.name}</a></>)}</nav>
-<p class="kicker">{en?'Seminai · Public AI workflows':'Seminai · Workflow AI pubblici'}</p><h1>{title}</h1>
+</head><body class="skills-catalog-body">
+<LandingShell client:load lang={lang} path={path} languageLinks={{it:italian+pageQuery,en:english+pageQuery}}>
+<article class="container skills-catalog">
+<nav class="news-crumbs breadcrumbs" aria-label={en?'Breadcrumb':'Percorso'}>{breadcrumbs.map((item,index)=><>{index>0 && <span aria-hidden="true">/</span>}<a href={new URL(item.url).pathname}>{item.name}</a></>)}</nav>
+<header class="public-heading">
+<p class="public-kicker">{en?'Seminai · Public AI workflows':'Seminai · Workflow AI pubblici'}</p>
+<h1>{title}</h1>
+{status===200 && <p class="lead">{description}</p>}
+</header>
 {status===503?<p>{en?'The source service is temporarily unavailable. Please try again shortly.':'Il servizio delle fonti è temporaneamente non disponibile. Riprova tra poco.'}</p>:status===404?<p>{en?'This skill is not publicly available.':'Questa skill non è disponibile pubblicamente.'}</p>:skill?<>
-<p class="lead">{skill.description}</p>
 {!skill.translated && <p class="language-note" role="status">{en?'Original publisher content. Translation pending review; the source language is not declared.':'Contenuto originale del pubblicatore. Traduzione in attesa di revisione; lingua sorgente non dichiarata.'}</p>}
 <section class="skill-workflow" aria-labelledby="workflow-title"><h2 id="workflow-title">{en?'Workflow instructions':'Istruzioni del workflow'}</h2><div class="skill-instructions" lang={skill.translated?lang:undefined}>{skill.instructions}</div></section>
 <p class="source">{en?'This page documents a workflow. Browsing does not execute a skill or certify an outcome. Review the required data and operating limits before using it.':'Questa pagina descrive un workflow. La consultazione non esegue una skill e non certifica un risultato. Verifica dati richiesti e limiti operativi prima dell’utilizzo.'}</p>
-<a class="button" href={demoPath(lang)}>{en?'Discuss this workflow in a demo':'Parliamone in demo'}</a>
+<a class="btn-primary" href={demoPath(lang)}>{en?'Discuss this workflow in a demo':'Parliamone in demo'}</a>
 </>:listing && <>
-<p class="lead">{description}</p><p>{en?'AI skills describe operational workflows. Rules are published standards, methods and production specifications, available in their separate catalogue.':'Le skill AI descrivono workflow operativi. Regole, standard, metodologie e disciplinari si consultano nel catalogo dedicato.'}</p>
-<form method="get" class="filters skill-search"><label>{en?'Search skills':'Cerca skill'}<input type="search" name="search" value={view.search} maxlength="200" placeholder={en?'For example: weather, sales, production':'Per esempio: meteo, vendite, produzione'}/></label><button type="submit">{en?'Search':'Cerca'}</button>{view.search && <a href={base}>{en?'Clear search':'Cancella ricerca'}</a>}</form>
+<p class="skills-intro">{en?'AI skills describe operational workflows. Rules are published standards, methods and production specifications, available in their separate catalogue.':'Le skill AI descrivono workflow operativi. Regole, standard, metodologie e disciplinari si consultano nel catalogo dedicato.'}</p>
+<div class="skills-toolbar">
+<form method="get" class="skill-search"><label>{en?'Search skills':'Cerca skill'}<input type="search" name="search" value={view.search} maxlength="200" placeholder={en?'For example: weather, sales, production':'Per esempio: meteo, vendite, produzione'}/></label><button class="btn-primary" type="submit">{en?'Search':'Cerca'}</button>{view.search && <a class="clear-search" href={base}>{en?'Clear search':'Cancella ricerca'}</a>}</form>
 <p class="results-count">{listing.total} {view.search?(en?'matching skills':'skill corrispondenti'):(en?'public skills':'skill pubbliche')}</p>
-<div class="grid">{listing.items.map(item=><article class="rule-card skill-card"><p class="kicker">{en?'AI skill':'Skill AI'}</p><h2><a href={`${base}${item.slug}/`}>{item.name}</a></h2>{item.description && <p>{item.description}</p>}{!item.translated && <p class="meta">{en?'Original content · translation pending review':'Contenuto originale · traduzione in attesa di revisione'}</p>}<a class="skill-detail-link" href={`${base}${item.slug}/`}>{en?'Explore the workflow':'Scopri il workflow'} <span aria-hidden="true">↗</span></a></article>)}</div>
+</div>
+<div class="skills-grid">{listing.items.map((item,index)=><article class="rule-card skill-card"><p class="kicker"><span>{String((listing.page-1)*listing.limit+index+1).padStart(2,'0')}</span> {en?'AI skill':'Skill AI'}</p><h2><a href={`${base}${item.slug}/`}>{item.name}</a></h2>{item.description && <p class="skill-description">{item.description}</p>}{!item.translated && <p class="meta">{en?'Original content · translation pending review':'Contenuto originale · traduzione in attesa di revisione'}</p>}<a class="skill-detail-link" href={`${base}${item.slug}/`}>{en?'Explore the workflow':'Scopri il workflow'} <span aria-hidden="true">↗</span></a></article>)}</div>
 {listing.total===0 && <p>{en?'No public skills match this search.':'Nessuna skill pubblica corrisponde alla ricerca.'}</p>}
-<nav class="pagination" aria-label={en?'Pagination':'Paginazione'}>{listing.page>1 && <a rel="prev" href={linksQuery(listing.page-1)}>← {en?'Previous':'Precedente'}</a>}<span>{en?'Page':'Pagina'} {listing.page}</span>{listing.hasNextPage && <a rel="next" href={linksQuery(listing.page+1)}>{en?'Next':'Successiva'} →</a>}</nav>
+<nav class="pagination" aria-label={en?'Pagination':'Paginazione'}>{listing.page>1 && <a class="btn-secondary" rel="prev" href={linksQuery(listing.page-1)}>← {en?'Previous':'Precedente'}</a>}<span>{en?'Page':'Pagina'} {listing.page}</span>{listing.hasNextPage && <a class="btn-secondary" rel="next" href={linksQuery(listing.page+1)}>{en?'Next':'Successiva'} →</a>}</nav>
 </>}
-</main><footer><nav><a href={base}>{en?'AI skills':'Skill AI'}</a><a href={en?'/en/rules/':'/regole/'}>{en?'Public rules':'Regole pubbliche'}</a><a href={en?'/en/editorial-policy/':'/politica-editoriale/'}>{en?'Editorial policy':'Politica editoriale'}</a><a href="/privacy-policy/">Privacy</a><a href="/cookie-policy/">Cookie</a><a href={demoPath(lang)}>{en?'Request a demo':'Richiedi una demo'}</a></nav></footer>
+</article>
+</LandingShell>
 </body></html>

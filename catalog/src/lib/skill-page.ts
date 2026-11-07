@@ -1,4 +1,4 @@
-import {listRules, PublicApiError} from './api.ts';
+import {PublicApiError} from './api.ts';
 import {getSkill} from './skills-api.ts';
 import {localizeSkill} from './skill-localization.ts';
 import {skillListing} from './skill-listing.ts';
@@ -16,7 +16,6 @@ export interface SkillView {
   search: string;
   skill?: LocalizedSkill;
   listing?: LocalizedSkillPage;
-  ruleCount?: number;
 }
 
 /** A single presentation model feeds HTML, Markdown and structured data. */
@@ -29,7 +28,6 @@ export async function resolveSkillView(url: URL, path: string, base: string): Pr
   let status = 200;
   let skill: LocalizedSkill | undefined;
   let listing: LocalizedSkillPage | undefined;
-  let ruleCount: number | undefined;
   try {
     const suffix = path.slice(skillsPath(lang).length).replace(/\/$/, '');
     if (suffix) {
@@ -38,8 +36,6 @@ export async function resolveSkillView(url: URL, path: string, base: string): Pr
     } else {
       if (!/^\d+$/.test(pageText) || !Number.isSafeInteger(page) || page < 1) throw new PublicApiError(404);
       listing = await skillListing(base, lang, page, search);
-      // A failing rules counter must not take a healthy skills catalogue offline.
-      try {ruleCount = (await listRules(base, new URLSearchParams({page: '1', limit: '1'}))).total;} catch { /* Omit unavailable count. */ }
     }
   } catch (error) {
     status = error instanceof PublicApiError ? error.status : 503;
@@ -53,6 +49,6 @@ export async function resolveSkillView(url: URL, path: string, base: string): Pr
   const description = skill?.description ?? (en
     ? 'Explore public AI workflows for agriculture, sales and production: goals, required inputs, steps, expected outputs and operating limits.'
     : 'Esplora workflow AI pubblici per agricoltura, vendite e produzione: obiettivi, dati richiesti, passaggi, risultati attesi e limiti operativi.');
-  return {lang, path, canonical, title, description, status, search, skill, listing, ruleCount,
+  return {lang, path, canonical, title, description, status, search, skill, listing,
     noindex: status !== 200 || url.searchParams.has('search') || Boolean(skill && !skill.translated) || listing?.total === 0};
 }
