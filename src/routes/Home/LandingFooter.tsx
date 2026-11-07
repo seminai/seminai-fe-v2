@@ -2,13 +2,15 @@ import { useTranslation } from "react-i18next";
 import { normalizeLanguage } from "@/i18n/language";
 import { openCookiePreferences } from "@/lib/analytics";
 import { newsIndexPath } from "@/lib/news";
-import { ANCHORS, CONTACT_URL, LEGAL_ROUTES } from "./constants";
+import { demoPath, homePath } from "@/config/publicPaths";
+import { CONTACT_URL, LEGAL_ROUTES } from "./constants";
 import { CookieConsent } from "./CookieConsent";
 import { LandingBrand } from "./LandingNav";
 
 export function LandingFooter() {
   const { t, i18n } = useTranslation();
   const year = new Date().getFullYear();
+  const lang = normalizeLanguage(i18n.language);
 
   return (
     <footer>
@@ -32,7 +34,11 @@ export function LandingFooter() {
                   {i18n.language.startsWith("en") ? "Resources" : "Risorse"}
                 </a>
               </li>
-              <li><a href={i18n.language.startsWith("en") ? "/en/skills/" : "/skills/"}>{i18n.language.startsWith("en") ? "AI skills" : "Skill AI"}</a></li>
+              <li>
+                <a href={i18n.language.startsWith("en") ? "/en/skills/" : "/skills/"}>
+                  {i18n.language.startsWith("en") ? "AI skills" : "Skill AI"}
+                </a>
+              </li>
               <li>
                 <a
                   href={
@@ -69,15 +75,15 @@ export function LandingFooter() {
                 </a>
               </li>
               <li>
-                <a href={ANCHORS.how}>{t("landing.footer.productLinks.how")}</a>
+                <a href={`${homePath(lang)}#come-funziona`}>{t("landing.footer.productLinks.how")}</a>
               </li>
               <li>
-                <a href={ANCHORS.useCases}>
+                <a href={`${homePath(lang)}#cosa-puoi-fare`}>
                   {t("landing.footer.productLinks.useCases")}
                 </a>
               </li>
               <li>
-                <a href={ANCHORS.faq}>{t("landing.footer.productLinks.faq")}</a>
+                <a href={`${homePath(lang)}#faq`}>{t("landing.footer.productLinks.faq")}</a>
               </li>
               <li>
                 <a href={newsIndexPath(normalizeLanguage(i18n.language))}>
@@ -98,7 +104,7 @@ export function LandingFooter() {
                 <a href={CONTACT_URL}>{t("landing.footer.email")}</a>
               </li>
               <li>
-                <a href={ANCHORS.booking}>{t("landing.footer.demo")}</a>
+                <a href={demoPath(lang)}>{t("landing.footer.demo")}</a>
               </li>
               <li>
                 <a href={CONTACT_URL}>{t("landing.footer.contact")}</a>

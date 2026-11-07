@@ -25,7 +25,7 @@ for(const lang of ['it','en'] as const) for(const viewport of [{width:1440,heigh
    await expect(page.locator('.skill-instructions')).toContainText(lang==='en'?'Required input:':'Input richiesti:');
    await expect(page.locator('link[hreflang=it]')).toHaveAttribute('href',`https://seminai.tech/skills/${slug}/`);
   }
-  await expect(page.getByRole('link',{name:lang==='en'?'Request a demo':'Richiedi una demo',exact:true}).first()).toHaveAttribute('href',lang==='en'?'/en/request-a-demo/':'/richiedi-demo/');
+  await expect(page.getByRole('link',{name:lang==='en'?'Discuss this workflow in a demo':'Parliamone in demo',exact:true})).toHaveAttribute('href',lang==='en'?'/en/request-a-demo/':'/richiedi-demo/');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
   await page.screenshot({path:`test-results/skill-detail-${lang}-${viewport.width}.png`,fullPage:true});
   await context.close();

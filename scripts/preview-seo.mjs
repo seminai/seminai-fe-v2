@@ -1,8 +1,12 @@
 import { createServer } from "node:http";
+import { fileURLToPath } from "node:url";
+const workspacePath = fileURLToPath(new URL('../', import.meta.url));
 createServer(async (request, response) => {
   const path = new URL(request.url, "http://127.0.0.1").pathname;
+  const catalogueDevelopmentAsset = process.env.SEO_CATALOG_DEV === "1" &&
+    (/^\/(?:@|src\/|node_modules\/)/.test(path) || path.startsWith(workspacePath));
   const port =
-    /^\/(?:regole(?:\/|$)|en\/rules(?:\/|$)|(?:en\/)?skills(?:\/|\.md$|$)|catalog-assets\/|sitemap-(?:rules|skills).xml)/.test(
+    catalogueDevelopmentAsset || /^\/(?:regole(?:\/|$)|en\/rules(?:\/|$)|(?:en\/)?skills(?:\/|\.md$|$)|catalog-assets\/|sitemap-(?:rules|skills).xml)/.test(
       path,
     )
       ? Number(process.env.SEO_CATALOG_PORT ?? 8769)

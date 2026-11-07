@@ -1,13 +1,15 @@
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
+import { useEffect, useRef } from "react";
 import {
   LANGUAGE_OPTIONS,
   normalizeLanguage,
   type SupportedLanguage,
 } from "@/i18n/language";
 import { newsIndexPath } from "@/lib/news";
+import { demoPath } from "@/config/publicPaths";
+import { bindHeaderScroll } from "@/lib/publicHeader";
 import {
-  ANCHORS,
   LANDING_LOGIN_URL,
   LANDING_LOGO,
   LANDING_LOGO_SRCSET,
@@ -45,6 +47,11 @@ export function LandingNav({ languageLinks }: LandingNavProps = {}) {
   const currentLanguage = normalizeLanguage(i18n.language);
   const isEnglish = currentLanguage === "en";
   const isNewsPage = /^\/(en\/)?news(\/|$)/.test(useLocation().pathname);
+  const header = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (header.current) return bindHeaderScroll(header.current);
+  }, []);
 
   const links = languageLinks ?? { it: "/", en: "/en/" };
 
@@ -53,7 +60,7 @@ export function LandingNav({ languageLinks }: LandingNavProps = {}) {
       <a className="skip-link" href="#contenuto">
         {isEnglish ? "Skip to content" : "Vai al contenuto"}
       </a>
-      <header className="site-header">
+      <header className="site-header" ref={header} data-scrolled="false">
         <LandingBrand />
         <nav
           className="nav-links"
@@ -71,12 +78,6 @@ export function LandingNav({ languageLinks }: LandingNavProps = {}) {
             aria-current={isNewsPage ? "page" : undefined}
           >
             {t("landing.nav.news")}
-          </a>
-          <a href={isEnglish ? "/en/resources/" : "/risorse/"}>
-            {isEnglish ? "Resources" : "Risorse"}
-          </a>
-          <a href={isEnglish ? "/en/skills/" : "/skills/"}>
-            {isEnglish ? "AI skills" : "Skill AI"}
           </a>
         </nav>
         <div className="nav-actions">
@@ -107,7 +108,7 @@ export function LandingNav({ languageLinks }: LandingNavProps = {}) {
           >
             {t("landing.nav.login")}
           </a>
-          <a href={ANCHORS.booking} className="nav-cta">
+          <a href={demoPath(currentLanguage)} className="nav-cta">
             {t("landing.nav.demo")}
           </a>
         </div>

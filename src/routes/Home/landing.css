@@ -138,7 +138,12 @@
   background: rgb(255 255 255 / 94%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgb(231 232 228 / 55%);
+  border-bottom: 1px solid transparent;
+  transition: border-color 160ms ease;
+}
+
+.site-header[data-scrolled="true"] {
+  border-bottom-color: rgb(231 232 228 / 55%);
 }
 
 .brand {
