@@ -1,7 +1,7 @@
 import sharp from "sharp";
 import { readdirSync, existsSync } from "node:fs";
 for (const name of readdirSync("public/news").filter(
-  (file) => file.endsWith(".webp") && !/-\d+\.webp$/.test(file),
+  (file) => file.endsWith(".webp") && !/-(320|640)\.webp$/.test(file),
 )) {
   for (const width of [320, 640]) {
     const target = `public/news/${name.replace(".webp", `-${width}.webp`)}`;
