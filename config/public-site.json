@@ -37,6 +37,7 @@
     "/news/ocr-fatture-fitofarmaci/",
     "/news/perche-centralizzare-i-dati-agricoli/",
     "/news/quaderno-compilato-tardi/",
+    "/news/quaderno-di-campagna-digitale-2027/",
     "/news/tempo-dei-tecnici/",
     "/news/tenere-i-software-che-avete/",
     "/news/whatsapp-non-e-un-registro/",
@@ -45,6 +46,7 @@
     "/en/news/ai-agent-dose-and-compliance/",
     "/en/news/ai-proposes-person-decides/",
     "/en/news/digital-agronomic-rules/",
+    "/en/news/digital-spray-records-italy-2027/",
     "/en/news/field-notebook-written-too-late/",
     "/en/news/keep-the-software-you-already-use/",
     "/en/news/organic-one-mistake-whole-plot/",
@@ -94,6 +96,7 @@
     "/news/ocr-fatture-fitofarmaci/": "/news/ocr-fatture-fitofarmaci.md",
     "/news/perche-centralizzare-i-dati-agricoli/": "/news/perche-centralizzare-i-dati-agricoli.md",
     "/news/quaderno-compilato-tardi/": "/news/quaderno-compilato-tardi.md",
+    "/news/quaderno-di-campagna-digitale-2027/": "/news/quaderno-di-campagna-digitale-2027.md",
     "/news/tempo-dei-tecnici/": "/news/tempo-dei-tecnici.md",
     "/news/tenere-i-software-che-avete/": "/news/tenere-i-software-che-avete.md",
     "/news/whatsapp-non-e-un-registro/": "/news/whatsapp-non-e-un-registro.md",
@@ -102,6 +105,7 @@
     "/en/news/ai-agent-dose-and-compliance/": "/en/news/ai-agent-dose-and-compliance.md",
     "/en/news/ai-proposes-person-decides/": "/en/news/ai-proposes-person-decides.md",
     "/en/news/digital-agronomic-rules/": "/en/news/digital-agronomic-rules.md",
+    "/en/news/digital-spray-records-italy-2027/": "/en/news/digital-spray-records-italy-2027.md",
     "/en/news/field-notebook-written-too-late/": "/en/news/field-notebook-written-too-late.md",
     "/en/news/keep-the-software-you-already-use/": "/en/news/keep-the-software-you-already-use.md",
     "/en/news/organic-one-mistake-whole-plot/": "/en/news/organic-one-mistake-whole-plot.md",
@@ -140,6 +144,7 @@
     "/hub/blog/ocr-fatture-fitofarmaci/": "/news/ocr-fatture-fitofarmaci/",
     "/hub/blog/perche-centralizzare-i-dati-agricoli/": "/news/perche-centralizzare-i-dati-agricoli/",
     "/hub/blog/quaderno-compilato-tardi/": "/news/quaderno-compilato-tardi/",
+    "/hub/blog/quaderno-di-campagna-digitale-2027/": "/news/quaderno-di-campagna-digitale-2027/",
     "/hub/blog/tempo-dei-tecnici/": "/news/tempo-dei-tecnici/",
     "/hub/blog/tenere-i-software-che-avete/": "/news/tenere-i-software-che-avete/",
     "/hub/blog/whatsapp-non-e-un-registro/": "/news/whatsapp-non-e-un-registro/",
@@ -148,6 +153,7 @@
     "/hub/en/blog/ai-agent-dose-and-compliance/": "/en/news/ai-agent-dose-and-compliance/",
     "/hub/en/blog/ai-proposes-person-decides/": "/en/news/ai-proposes-person-decides/",
     "/hub/en/blog/digital-agronomic-rules/": "/en/news/digital-agronomic-rules/",
+    "/hub/en/blog/digital-spray-records-italy-2027/": "/en/news/digital-spray-records-italy-2027/",
     "/hub/en/blog/field-notebook-written-too-late/": "/en/news/field-notebook-written-too-late/",
     "/hub/en/blog/keep-the-software-you-already-use/": "/en/news/keep-the-software-you-already-use/",
     "/hub/en/blog/organic-one-mistake-whole-plot/": "/en/news/organic-one-mistake-whole-plot/",
@@ -263,6 +269,12 @@
     },
     {
       "lang": "it",
+      "slug": "quaderno-di-campagna-digitale-2027",
+      "path": "/news/quaderno-di-campagna-digitale-2027/",
+      "translationKey": "spray-records-2027"
+    },
+    {
+      "lang": "it",
       "slug": "tempo-dei-tecnici",
       "path": "/news/tempo-dei-tecnici/",
       "translationKey": "adviser-time"
@@ -308,6 +320,12 @@
       "slug": "digital-agronomic-rules",
       "path": "/en/news/digital-agronomic-rules/",
       "translationKey": "product-disciplinari-agronomici-digitali"
+    },
+    {
+      "lang": "en",
+      "slug": "digital-spray-records-italy-2027",
+      "path": "/en/news/digital-spray-records-italy-2027/",
+      "translationKey": "spray-records-2027"
     },
     {
       "lang": "en",
