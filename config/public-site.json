@@ -32,6 +32,7 @@
     "/news/dati-sparsi-azienda-agricola/",
     "/news/disciplinari-agronomici-digitali/",
     "/news/dose-giusta-superficie-vera/",
+    "/news/intelligenza-artificiale-agricoltura-spiegata-semplice/",
     "/news/magazzino-e-registro/",
     "/news/marketplace-regole-best-practice/",
     "/news/ocr-fatture-fitofarmaci/",
@@ -44,6 +45,7 @@
     "/en/news/agricultural-document-extraction-api/",
     "/en/news/agricultural-invoice-ocr/",
     "/en/news/ai-agent-dose-and-compliance/",
+    "/en/news/ai-in-farming-explained-simply/",
     "/en/news/ai-proposes-person-decides/",
     "/en/news/digital-agronomic-rules/",
     "/en/news/digital-spray-records-italy-2027/",
@@ -91,6 +93,7 @@
     "/news/dati-sparsi-azienda-agricola/": "/news/dati-sparsi-azienda-agricola.md",
     "/news/disciplinari-agronomici-digitali/": "/news/disciplinari-agronomici-digitali.md",
     "/news/dose-giusta-superficie-vera/": "/news/dose-giusta-superficie-vera.md",
+    "/news/intelligenza-artificiale-agricoltura-spiegata-semplice/": "/news/intelligenza-artificiale-agricoltura-spiegata-semplice.md",
     "/news/magazzino-e-registro/": "/news/magazzino-e-registro.md",
     "/news/marketplace-regole-best-practice/": "/news/marketplace-regole-best-practice.md",
     "/news/ocr-fatture-fitofarmaci/": "/news/ocr-fatture-fitofarmaci.md",
@@ -103,6 +106,7 @@
     "/en/news/agricultural-document-extraction-api/": "/en/news/agricultural-document-extraction-api.md",
     "/en/news/agricultural-invoice-ocr/": "/en/news/agricultural-invoice-ocr.md",
     "/en/news/ai-agent-dose-and-compliance/": "/en/news/ai-agent-dose-and-compliance.md",
+    "/en/news/ai-in-farming-explained-simply/": "/en/news/ai-in-farming-explained-simply.md",
     "/en/news/ai-proposes-person-decides/": "/en/news/ai-proposes-person-decides.md",
     "/en/news/digital-agronomic-rules/": "/en/news/digital-agronomic-rules.md",
     "/en/news/digital-spray-records-italy-2027/": "/en/news/digital-spray-records-italy-2027.md",
@@ -139,6 +143,7 @@
     "/hub/blog/dati-sparsi-azienda-agricola/": "/news/dati-sparsi-azienda-agricola/",
     "/hub/blog/disciplinari-agronomici-digitali/": "/news/disciplinari-agronomici-digitali/",
     "/hub/blog/dose-giusta-superficie-vera/": "/news/dose-giusta-superficie-vera/",
+    "/hub/blog/intelligenza-artificiale-agricoltura-spiegata-semplice/": "/news/intelligenza-artificiale-agricoltura-spiegata-semplice/",
     "/hub/blog/magazzino-e-registro/": "/news/magazzino-e-registro/",
     "/hub/blog/marketplace-regole-best-practice/": "/news/marketplace-regole-best-practice/",
     "/hub/blog/ocr-fatture-fitofarmaci/": "/news/ocr-fatture-fitofarmaci/",
@@ -151,6 +156,7 @@
     "/hub/en/blog/agricultural-document-extraction-api/": "/en/news/agricultural-document-extraction-api/",
     "/hub/en/blog/agricultural-invoice-ocr/": "/en/news/agricultural-invoice-ocr/",
     "/hub/en/blog/ai-agent-dose-and-compliance/": "/en/news/ai-agent-dose-and-compliance/",
+    "/hub/en/blog/ai-in-farming-explained-simply/": "/en/news/ai-in-farming-explained-simply/",
     "/hub/en/blog/ai-proposes-person-decides/": "/en/news/ai-proposes-person-decides/",
     "/hub/en/blog/digital-agronomic-rules/": "/en/news/digital-agronomic-rules/",
     "/hub/en/blog/digital-spray-records-italy-2027/": "/en/news/digital-spray-records-italy-2027/",
@@ -239,6 +245,12 @@
     },
     {
       "lang": "it",
+      "slug": "intelligenza-artificiale-agricoltura-spiegata-semplice",
+      "path": "/news/intelligenza-artificiale-agricoltura-spiegata-semplice/",
+      "translationKey": "ai-explained"
+    },
+    {
+      "lang": "it",
       "slug": "magazzino-e-registro",
       "path": "/news/magazzino-e-registro/",
       "translationKey": "warehouse-register"
@@ -308,6 +320,12 @@
       "slug": "ai-agent-dose-and-compliance",
       "path": "/en/news/ai-agent-dose-and-compliance/",
       "translationKey": "product-ai-agent-dosaggi-conformita"
+    },
+    {
+      "lang": "en",
+      "slug": "ai-in-farming-explained-simply",
+      "path": "/en/news/ai-in-farming-explained-simply/",
+      "translationKey": "ai-explained"
     },
     {
       "lang": "en",
