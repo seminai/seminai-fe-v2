@@ -1,5 +1,6 @@
 ---
 import RuleCard from './RuleCard.astro';
+import OperationalChecklist from './OperationalChecklist.astro';
 import '../styles/catalog.css';
 import {absolute, rulesPath, categoryPath, label, demoPath, safeSource, skillsPath, type Language} from '../lib/paths';
 import type {PublicRule, RulePage} from '../lib/api';
@@ -38,6 +39,7 @@ const graph=rule ? { '@context':'https://schema.org', '@type':'CreativeWork', '@
 {status===503 ? <p>{en?'The source service is temporarily unavailable. Please try again shortly.':'Il servizio delle fonti è temporaneamente non disponibile. Riprova tra poco.'}</p> : status===404 ? <p>{en?'This rule is not publicly available.':'Questa regola non è disponibile pubblicamente.'}</p> : rule ? <>
 <p class="language-note">{en?'Publisher content is shown in its original language, which the source API does not specify. The navigation is translated; this is not a translated legal document.':'Il contenuto del pubblicatore è riportato nella lingua originale, non specificata dall’API. La scheda non costituisce una verifica di validità normativa.'}</p>
 {rule.description && <p class="lead" lang="">{rule.description}</p>}
+{rule.checklist && <OperationalChecklist checklist={rule.checklist} en={en}/>}
 <dl><dt>{en?'Category':'Categoria'}</dt><dd>{label(rule.category,lang)}</dd>{rule.region && <><dt>{en?'Region':'Regione'}</dt><dd>{rule.region}</dd></>}{rule.version && <><dt>{en?'Publisher version':'Versione del pubblicatore'}</dt><dd>{rule.version}</dd></>}{rule.validFrom && <><dt>{en?'Valid from (publisher metadata)':'Valida dal (metadato del pubblicatore)'}</dt><dd>{rule.validFrom.slice(0,10)}</dd></>}{rule.validUntil && <><dt>{en?'Valid until (publisher metadata)':'Valida fino al (metadato del pubblicatore)'}</dt><dd>{rule.validUntil.slice(0,10)}</dd></>}</dl>
 {source && <p class="source"><a href={source} rel="noopener noreferrer">{en?'Original source':'Fonte originale'}: <span lang="">{rule.sourceDocument || source}</span></a></p>}
 <p>{en?'Public metadata does not certify that a rule applies to your farm. Verify the source, version and scope with a competent professional.':'I metadati pubblici non certificano l’applicabilità alla tua azienda. Verifica fonte, versione e ambito con un professionista competente.'}</p><a class="button" href={demoPath(lang)}>{en?'Discuss this workflow in a demo':'Parliamone in demo'}</a>

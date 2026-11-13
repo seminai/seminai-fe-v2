@@ -13,6 +13,14 @@ export interface PublicRule {
   sourceDocument?: string | null;
   validFrom?: string | null;
   validUntil?: string | null;
+  checklist?: {
+    kind: 'operational-checklist';
+    scope: string;
+    inputs: string[];
+    steps: string[];
+    missingData: string;
+    example: string;
+  };
 }
 export interface RulePage {
   items: PublicRule[];
@@ -82,8 +90,16 @@ export async function getRule(
     `/public/rules/${encodeURIComponent(slug)}`,
     fetcher,
   );
-  if (!isRule(data.rule)) throw new PublicApiError(503);
+  if (!isRule(data.rule) || !hasValidChecklist(data.rule)) throw new PublicApiError(503);
   return data.rule;
+}
+function hasValidChecklist(rule: PublicRule): boolean {
+  const item = rule.checklist;
+  if (item === undefined) return true;
+  const strings = (values: unknown) => Array.isArray(values) && values.every((value) => typeof value === 'string');
+  return Boolean(item && item.kind === 'operational-checklist' &&
+    typeof item.scope === 'string' && strings(item.inputs) && strings(item.steps) &&
+    typeof item.missingData === 'string' && typeof item.example === 'string');
 }
 function isRule(rule: unknown): rule is PublicRule {
   if (!rule || typeof rule !== "object") return false;

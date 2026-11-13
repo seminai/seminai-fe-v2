@@ -1,0 +1,21 @@
+---
+import type { PublicRule } from '../lib/api';
+
+interface Props {
+  checklist: NonNullable<PublicRule['checklist']>;
+  en: boolean;
+}
+const { checklist, en } = Astro.props;
+---
+<section aria-labelledby="checklist-title">
+  <h2 id="checklist-title">{en ? 'Operational checklist' : 'Checklist operativa'}</h2>
+  <p lang="it">{checklist.scope}</p>
+  <h3>{en ? 'What you need' : 'Dati necessari'}</h3>
+  <ul lang="it">{checklist.inputs.map((input) => <li>{input}</li>)}</ul>
+  <h3>{en ? 'Steps' : 'Passaggi'}</h3>
+  <ol lang="it">{checklist.steps.map((step) => <li>{step}</li>)}</ol>
+  <h3>{en ? 'Missing data' : 'Se mancano dati'}</h3>
+  <p lang="it">{checklist.missingData}</p>
+  <h3>{en ? 'Example' : 'Esempio'}</h3>
+  <p lang="it">{checklist.example}</p>
+</section>
